@@ -451,21 +451,25 @@ function createPopupPlayerPanel() {
 }
 
 function createExUpdatePanel() {
-    if (document.querySelector(".exupdate-panel")) return;
-    var currentVer = (typeof P !== "undefined" && P) ? P : "2026.09.14.04";
+    var currentVer = (typeof P !== "undefined" && P) ? P : "2026.09.14.05";
+    var existing = document.querySelector(".exupdate-panel");
+    if (existing) {
+        if (existing.dataset.version === currentVer) return;
+        existing.remove();
+    }
     var p = document.createElement("div");
     p.className = "exupdate-panel miuix-modal";
+    p.dataset.version = currentVer;
     p.innerHTML = `
         <div class="exupdate-panel__card">
             <div class="exupdate-panel__card-header">
                 <span class="exupdate-panel__card-title">新增功能·</span>
             </div>
             <ul class="exupdate-list">
-                <li>① 二级 Dock 视觉与交互全面升级：尺寸等比放大 150%（高度 76px、按键 56px），移除 800ms 强制隐藏机制，改为常驻保活与点击锁定</li>
-                <li>② 三级控制台物理脱离与零阻碍居中锚定：面板彻底脱离聊天区包含块直接挂载至主视口，实现触发按钮 0px 像素级精准水平居中</li>
-                <li>③ 隐形热区连桥 (Hover Bridge)：Dock 按键上方延伸 18px 物理感应区，配合 400ms 黄金防抖，划过即触即开且杜绝误关闭</li>
-                <li>④ 版本更新三级模态化与智能生命周期系统：版本更新按钮全面 MIUIX 模态化，集成【我已收到 ➔ 检查更新 ➔ 已是最新 / 前往更新】多态交互状态机</li>
-                <li>⑤ 12 小时极轻量远端更新探测雷达 (Scheme B)：开播后极轻量嗅探 Greasy Fork 元数据（0 轮询）；发现新版联动二级 Dock 版本更新图标小红点常亮</li>
+                <li>① 三级模态标准四级卡片重构：版本更新日志三大模块（新增功能、优化与修复、其它）全面接入标准 .exupdate-panel__card 拟态磨砂卡片包裹，与一键续牌/同屏播放结构完全对齐</li>
+                <li>② 吸顶 Header 沉浸式动态遮盖：顶部标题栏固定吸顶（position: sticky; top: 0; z-index: 50），滑动日志时下方更新内容平滑滑入磨砂遮罩之下，质感纯正自然</li>
+                <li>③ 按钮流式沉底与底栏轻量化：移除底部固定白条底栏，操作按键统一为同款主操作微质感键 (ex-btn-primary)，自然沉入更新日志最底端，不占固定视口空间</li>
+                <li>④ 开播零打扰静默体验：彻底取消升级后首次开播自动唤起面板与强弹卡片的机制，全量收敛至二级 Dock 图标静默红点与划过唤醒</li>
             </ul>
         </div>
         <div class="exupdate-panel__card">
@@ -473,13 +477,9 @@ function createExUpdatePanel() {
                 <span class="exupdate-panel__card-title">优化与修复·</span>
             </div>
             <ul class="exupdate-list">
-                <li>① UI 界面全面 MIUIX 美学质感重构：全量落地 36px 拟态磨砂毛玻璃与 22px 连续物理圆角，触感高级极简，彻底告别土味与塑料电竞风</li>
-                <li>② 击穿 display:none 死锁：重构模态激活管线，彻底消除悬浮面板虚无隐形 Bug，配合 0.18s 物理弹簧上浮动效</li>
-                <li>③ 样式作用域强隔离：给所有表单控件追加严格容器命名空间，彻底根除污染斗鱼原生播放器（线路/画质框）的恶性 Bug</li>
-                <li>④ 吸顶 Header 左右贴合：消除滚动条出现时顶栏右侧漏缝与下边圆角异化问题，平滑滚动阻断率归零 (0%)</li>
-                <li>⑤ 跨域 Cookie 安全沙盒防御：重构 x() 存储读取增加异常隔离降级，杜绝无痕或第三方 Cookie 受限模式下的崩溃死锁</li>
-                <li>⑥ 拔除 753 行旧版冲突监听器：消除点击二级图标误触发新开标签页跳转 Greasy Fork 的恶性行为，交互 100% 收敛至面板内部</li>
-                <li>⑦ 结构与动效细节深度打磨：版本更新面板全量接入三级模态标准四级卡片包裹；取消开播主动强弹窗口；按钮统一为同款主操作微质感键并沉入更新日志底端流式排列</li>
+                <li>① 面板更新日志动态版本热载入：重构面板生命周期守卫，版本升级后自动刷新更新日志内容，彻底杜绝老旧版本内容缓存滞留</li>
+                <li>② 击穿布局冲突与恢复统一 Block 激活流：移除与 Flex 容器相冲突的冗余规则，统一所有三级面板的激活与物理弹簧动效管线</li>
+                <li>③ 状态机无缝衔接：【我已收到 ➔ 检查更新 ➔ 已是最新 / 前往更新】多态切换完美继承至新版流式操作按钮，按压与悬浮微交互 100% 保持</li>
             </ul>
         </div>
         <div class="exupdate-panel__card">
@@ -488,7 +488,7 @@ function createExUpdatePanel() {
             </div>
             <ul class="exupdate-list">
                 <li>① 核心画质拦截层 100% 守恒：src/core/ 黄金拦截逻辑严格 0 修改，首流极清秒开无二次切流</li>
-                <li>② 移除 404 盲轮询定时器，构建编译集成 V8 AST 原生语法核验机制 (耗时 13ms)</li>
+                <li>② 构建编译集成 V8 AST 原生语法核验机制 (耗时 13ms)</li>
             </ul>
         </div>
         <div class="exupdate-panel__action-wrap">
