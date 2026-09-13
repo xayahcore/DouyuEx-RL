@@ -832,7 +832,7 @@ function y(){var e=document.createElement("style");e.appendChild(document.create
 .vote__result.miuix-modal #vote__result-theme { display: none !important; }
 .vote__result.miuix-modal #vote__result-options { padding: 0 14px !important; }
 
-/* 3. Level 3 模态吸顶 Header (左右严密贴合，绝对不留缝) */
+/* 3. Level 3 模态吸顶 Header (左右严密贴合，彻底消灭滚动条右侧漏缝) */
 .miuix-modal__header {
     position: sticky !important; top: 0 !important; left: 0 !important; right: 0 !important;
     width: 100% !important; margin: 0 0 12px 0 !important; padding: 12px 16px !important;
@@ -844,6 +844,20 @@ function y(){var e=document.createElement("style");e.appendChild(document.create
     border-top-right-radius: 21px !important;
     border-bottom-left-radius: 0 !important;
     border-bottom-right-radius: 0 !important;
+}
+.miuix-modal__header::after {
+    content: "" !important;
+    position: absolute !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    left: 100% !important;
+    width: 30px !important;
+    background: inherit !important;
+    backdrop-filter: inherit !important;
+    -webkit-backdrop-filter: inherit !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
+    border-top-right-radius: 21px !important;
+    pointer-events: none !important;
 }
 
 .miuix-modal::-webkit-scrollbar, .extool::-webkit-scrollbar, .livetool::-webkit-scrollbar, .bloop::-webkit-scrollbar, .exlottery::-webkit-scrollbar, .ChatToolBar-DanmakuTail-Panel::-webkit-scrollbar, .fans-continue-panel::-webkit-scrollbar, .popup-player-panel::-webkit-scrollbar, .exupdate-panel::-webkit-scrollbar { width: 4px !important; }

@@ -612,7 +612,7 @@ function createPopupPlayerPanel() {
 }
 
 function createExUpdatePanel() {
-    var currentVer = (typeof P !== "undefined" && P) ? P : "2026.09.14.07";
+    var currentVer = (typeof P !== "undefined" && P) ? P : "2026.09.14.08";
     var existing = document.querySelector(".exupdate-panel");
     if (existing) {
         if (existing.dataset.version === currentVer) return;
@@ -627,10 +627,10 @@ function createExUpdatePanel() {
                 <span class="exupdate-panel__card-title">新增功能·</span>
             </div>
             <ul class="exupdate-list">
-                <li>① 5级模态选择器全域复用：深度复用至4级“背包送礼”与“打榜送礼”，彻底告别手动输入礼物ID，触控胶囊即点即选即回填</li>
-                <li>② 动态房间与背包礼物池：进房动态探测当前房间可用全部官方礼物及用户真实背包资产，零硬编码零内置死重</li>
-                <li>③ 5级选择器遮罩与即时搜索：新增半透明磨砂遮罩（点击遮罩/Esc关闭）与即时模糊搜索框，毫秒级快速定位目标礼物</li>
-                <li>④ 礼物自由变形全链路闭环：送礼弹幕广播文本、顶部跑道横幅与全屏豪华 SVGA 特效实时视觉置换</li>
+                <li>① 任意礼物自由变形系统：彻底重构废弃已久的“荧光棒变超火”，升级为全动态“任意礼物变任意礼物”全自由变形，送礼弹幕广播、顶部跑道横幅与全屏豪华 SVGA 特效全链路视觉置换</li>
+                <li>② 5级模态选择器全域复用：将5级选择器深度复用至“背包送礼”与“打榜送礼”，告别手动输入礼物ID，触控胶囊即点即选即回填</li>
+                <li>③ 动态房间与背包礼物池：进房动态抓取房间专属在播礼物与用户真实背包资产，融合官方全量礼物池，零内置死重</li>
+                <li>④ 5级选择器遮罩与即时搜索：新增半透明磨砂遮罩（点击遮罩/Esc关闭）与即时模糊搜索框，毫秒级快速定位目标礼物</li>
             </ul>
         </div>
         <div class="exupdate-panel__card">
@@ -638,9 +638,10 @@ function createExUpdatePanel() {
                 <span class="exupdate-panel__card-title">优化与修复·</span>
             </div>
             <ul class="exupdate-list">
-                <li>① 用户昵称探测与送礼拦截加固：修复 K() 跨域获取昵称隐患，优先提取 Cookie 与 DOM 自身信息，100% 确保送礼拦截生效</li>
-                <li>② 5级选择器作用域解耦：提升至顶层模块作用域并挂载全局，解除对特定 DOM 定时器的脆弱依赖</li>
-                <li>③ 智能初始 Tab 路由：根据触发入口（背包送礼/打榜送礼/自由变形）自动切换默认激活 Tab 与礼物池</li>
+                <li>① 三级面板滚动条右侧缝隙消灭：为 Sticky 标题栏装载专属延伸装甲，彻底抹平 Windows 垂直滚动条引发的右侧漏缝，100% 紧密贴合右边框</li>
+                <li>② 房间礼物捕获与全量池聚合：无缝融合官方全量礼物池与房间定制礼物池，彻底消除“暂无匹配礼物”问题</li>
+                <li>③ 背包道具图片全量反查补齐：移除破坏性的 no-cors 限制，接入已知道具库与全量礼物字典双重映射，100% 确保背包礼物高清图标正确加载</li>
+                <li>④ 用户昵称探测与送礼拦截加固：优先提取 Cookie 与 DOM 自身信息，100% 确保送礼拦截置换生效</li>
             </ul>
         </div>
         <div class="exupdate-panel__card">
@@ -650,7 +651,7 @@ function createExUpdatePanel() {
             <ul class="exupdate-list">
                 <li>① 核心画质拦截层 100% 守恒：src/core/ 黄金拦截逻辑严格 0 修改，首流极清秒开无二次切流</li>
                 <li>② 全按钮严格遵循零 Emoji 工业契约与 MIUIX 流式拟态微质感</li>
-                <li>③ 构建编译集成 V8 AST 原生语法核验机制 (耗时 14ms)</li>
+                <li>③ 构建编译集成 V8 AST 原生语法核验机制 (耗时 15ms)</li>
             </ul>
         </div>
         <div class="exupdate-panel__action-wrap">
