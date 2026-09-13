@@ -61,7 +61,7 @@ function build() {
         new vm.Script(finalCode);
         console.log(`[Verify] 语法核验通过 (V8 校验 100% OK) - 耗时 ${Date.now() - startTime}ms`);
     } catch (err) {
-        console.error('[Verify] 语法核验失败:', err.message);
+        console.error('[Verify] 语法核验失败:', err.message, '\nStack:', err.stack);
         process.exit(1);
     }
 
