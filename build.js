@@ -5,7 +5,7 @@
 
 const fs = require('fs');
 const path = require('path');
-const { execSync } = require('child_process');
+const vm = require('vm');
 
 const ROOT_DIR = __dirname;
 const SRC_DIR = path.join(ROOT_DIR, 'src');
@@ -38,7 +38,7 @@ function build() {
     const modulesDir = path.join(SRC_DIR, 'modules');
     const moduleFiles = fs.readdirSync(modulesDir)
         .filter(f => f.endsWith('.js'))
-        .sort(); // 保持确定性顺序
+        .sort();
 
     let modulesCode = '';
     for (const f of moduleFiles) {
@@ -56,19 +56,19 @@ function build() {
     // 5. 组合全部内容
     const finalCode = `${metaCode}\n\n${coreCode}${modulesCode}${mainCode}\n`;
 
-    // 6. 写入目标文件
-    fs.writeFileSync(OUTPUT_FILE, finalCode, 'utf8');
-    const sizeKB = (Buffer.byteLength(finalCode, 'utf8') / 1024).toFixed(2);
-    console.log(`[Build] 成功生成: ${OUTPUT_FILE} (${sizeKB} KB)`);
-
-    // 7. 语法检查
+    // 6. 语法检查 (基于 V8 原生 Script 编译，零子进程异常)
     try {
-        execSync(`node -c "${OUTPUT_FILE}"`);
-        console.log(`[Verify] 语法核验通过 (100% OK) - 耗时 ${Date.now() - startTime}ms`);
+        new vm.Script(finalCode);
+        console.log(`[Verify] 语法核验通过 (V8 校验 100% OK) - 耗时 ${Date.now() - startTime}ms`);
     } catch (err) {
         console.error('[Verify] 语法核验失败:', err.message);
         process.exit(1);
     }
+
+    // 7. 写入目标文件
+    fs.writeFileSync(OUTPUT_FILE, finalCode, 'utf8');
+    const sizeKB = (Buffer.byteLength(finalCode, 'utf8') / 1024).toFixed(2);
+    console.log(`[Build] 成功生成: ${OUTPUT_FILE} (${sizeKB} KB)`);
 }
 
 if (process.argv.includes('--watch')) {
