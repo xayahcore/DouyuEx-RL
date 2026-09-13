@@ -82,7 +82,8 @@ function openGiftPicker(type, onSelect) {
         if (!grid) return;
         grid.innerHTML = "";
         if (!gifts || gifts.length === 0) {
-            grid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: #94a3b8; padding: 40px 0; font-size: 13px;">暂无匹配礼物</div>';
+            var emptyText = (tabBag && tabBag.classList.contains("is-active")) ? "当前背包暂无道具（可前往直播间完成任务领取）" : "暂无匹配礼物";
+            grid.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; color: #94a3b8; padding: 40px 0; font-size: 13px;">${emptyText}</div>`;
             return;
         }
         var frag = document.createDocumentFragment();
@@ -612,7 +613,7 @@ function createPopupPlayerPanel() {
 }
 
 function createExUpdatePanel() {
-    var currentVer = (typeof P !== "undefined" && P) ? P : "2026.09.14.09";
+    var currentVer = (typeof P !== "undefined" && P) ? P : "2026.09.14.10";
     var existing = document.querySelector(".exupdate-panel");
     if (existing) {
         if (existing.dataset.version === currentVer) return;
@@ -627,10 +628,10 @@ function createExUpdatePanel() {
                 <span class="exupdate-panel__card-title">新增功能·</span>
             </div>
             <ul class="exupdate-list">
-                <li>① 百变礼物自由变形系统全链路落地：彻底废弃原作者停更已久、资源严重失效的硬编码“荧光棒变超火”，升级为全动态“任意礼物变任意礼物”全自由变形体系。用户可在“扩展功能”控制台四级卡片中直观配置【源礼物 ➔ 目标礼物】映射，聊天送礼广播弹幕、顶部跑道横幅与全屏豪华 SVGA 特效动画全链路端到端本地视觉置换</li>
-                <li>② 5级模态选择器全域复用与背包送礼现代化：将 540×410px MIUIX 拟态大选择器全量复用至“背包送礼”与“打榜送礼”，彻底淘汰手动输入礼物 ID 的远古痛点，触控胶囊即点即选即回填</li>
-                <li>③ 动态房间与全量官方礼物池智能聚合：进房动态拉取当前房间专属在播礼物，同时无缝融合斗鱼官方全量礼物配置库（1500+ 款），支持按名称与 ID 毫秒级即时检索，彻底告别“暂无匹配礼物”</li>
-                <li>④ 5级选择器遮罩与即时模糊检索：新增高饱和毛玻璃半透明遮罩层（支持点击遮罩/Esc 快捷关闭）与即时模糊搜索框，丝滑流畅</li>
+                <li>① 百变礼物四维视觉主动置换系统：彻底重构送礼拦截管线，由被动等待升级为主动构造。当自身送出源礼物（如荧光棒）时，聊天区弹幕文本与图标即时置换为目标礼物（如宇宙飞船），同时在播放器顶部主动生成官方原生跑道大横幅（复用斗鱼原生样式与背景动效），并调起 750KB 官方全屏豪华 SVGA 动效震撼覆盖</li>
+                <li>② 背包资产现场 DOM 直探引擎：5 级模态选择器点击“背包礼物”Tab 时，优先 0 毫秒直探页面底栏原生背包 DOM 节点，直接克隆已渲染的高清图标、名称与数量，彻底绕开 API 鉴权阻断与空白问题</li>
+                <li>③ 5级模态选择器全域复用与背包送礼现代化：将 540×410px MIUIX 拟态大选择器全量复用至“背包送礼”与“打榜送礼”，彻底淘汰手动输入礼物 ID 的远古痛点，触控胶囊即点即选即回填</li>
+                <li>④ 动态房间与官方全量礼物池智能聚合：进房动态拉取当前房间专属在播礼物，同时无缝融合斗鱼官方全量 1500+ 款礼物库，支持按名称与 ID 毫秒级即时检索</li>
             </ul>
         </div>
         <div class="exupdate-panel__card">
@@ -638,10 +639,10 @@ function createExUpdatePanel() {
                 <span class="exupdate-panel__card-title">优化与修复·</span>
             </div>
             <ul class="exupdate-list">
-                <li>① 三级面板滚动条右侧缝隙彻底抹平：针对 Windows/Chromium 环境下带垂直滚动条的三级菜单顶栏右侧漏缝问题，为 Sticky Header 装载延伸装甲，100% 紧密贴合右侧物理边框，彻底消灭缝隙断层</li>
-                <li>② 粉丝荧光棒死链修复与旧缓存热修复：拔除原版 404 静态死链，全量替换为官方活跃高清动图，并在初始化时自动将历史旧缓存热升级</li>
-                <li>③ 背包道具图片全量反查补齐：移除导致请求被阻断的 no-cors 模式，接入已知道具库与全量礼物字典双重映射，100% 确保背包礼物高清图标正确加载</li>
-                <li>④ 用户自身昵称嗅探与拦截加固：优先提取 Cookie 中的 acf_nickname 与 DOM 自身信息，100% 确保送礼拦截置换生效</li>
+                <li>① 顶部跑道大横幅原生结构零冗余复用：彻底摒弃手写 CSS 关键帧，直接复用斗鱼原生 BarrageBanner 容器与 Banner4gift 类名规范，100% 保持官方原生视觉质感</li>
+                <li>② 全屏 SVGA 动效可视宿主纠正：将动画挂载宿主由 body 深入纠正至播放器内部顶级可视容器，确保在网页全屏、窗口模式下均不被播放器图层遮挡，且加入 3 秒防抖防卡顿</li>
+                <li>③ 背包空状态卡片微交互重塑：背包无道具时友好呈现“当前背包暂无道具（可前往直播间完成任务领取）”，彻底替换模糊的“暂无匹配礼物”</li>
+                <li>④ 粉丝荧光棒死链修复与历史旧缓存热修复：拔除原版 404 静态死链，全量替换为官方活跃高清动图，并自动平滑升级本地历史存储</li>
             </ul>
         </div>
         <div class="exupdate-panel__card">
@@ -651,7 +652,7 @@ function createExUpdatePanel() {
             <ul class="exupdate-list">
                 <li>① 核心画质拦截层 100% 守恒：src/core/ 黄金拦截逻辑严格 0 修改，首流极清秒开无二次切流</li>
                 <li>② 全按钮严格遵循零 Emoji 工业契约与 MIUIX 流式拟态微质感</li>
-                <li>③ 构建编译集成 V8 AST 原生语法核验机制 (耗时 16ms)</li>
+                <li>③ 构建编译集成 V8 AST 原生语法核验机制 (耗时 15ms)</li>
             </ul>
         </div>
         <div class="exupdate-panel__action-wrap">

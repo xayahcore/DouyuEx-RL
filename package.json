@@ -1,6 +1,6 @@
 {
   "name": "douyuex-rl",
-  "version": "2026.09.14.09",
+  "version": "2026.09.14.10",
   "description": "DouyuEx-RL \u6597\u9c7c\u76f4\u64ad\u95f4\u589e\u5f3a\u63d2\u4ef6 (Reborn Lite)",
   "main": "DouyuEx_RL.user.js",
   "scripts": {
