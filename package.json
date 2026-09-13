@@ -1,11 +1,12 @@
 {
   "name": "douyuex-rl",
   "version": "2026.09.13.20",
-  "description": "DouyuEx-RL 斗鱼直播间增强插件 (Reborn Lite)",
+  "description": "DouyuEx-RL \u6597\u9c7c\u76f4\u64ad\u95f4\u589e\u5f3a\u63d2\u4ef6 (Reborn Lite)",
   "main": "DouyuEx_RL.user.js",
   "scripts": {
     "build": "node build.js",
-    "watch": "node build.js --watch"
+    "watch": "node build.js --watch",
+    "release": "node release.js"
   },
   "keywords": [
     "douyu",
