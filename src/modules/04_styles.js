@@ -785,7 +785,7 @@ function y(){var e=document.createElement("style");e.appendChild(document.create
 }
 
 /* 划过瞬间淡入 + 微上浮优雅动画与强制呈现 */
-.miuix-modal:not(.exupdate-panel).miuix-modal-in,
+.miuix-modal.miuix-modal-in,
 .extool.miuix-modal-in,
 .livetool.miuix-modal-in,
 .bloop.miuix-modal-in,
@@ -793,8 +793,9 @@ function y(){var e=document.createElement("style");e.appendChild(document.create
 .ChatToolBar-DanmakuTail-Panel.miuix-modal-in,
 .fans-continue-panel.miuix-modal-in,
 .popup-player-panel.miuix-modal-in,
-.miuix-modal:not(.exupdate-panel)[style*="display: block"], .miuix-modal:not(.exupdate-panel)[style*="display:block"],
-.miuix-modal:not(.exupdate-panel)[style*="display: flex"], .miuix-modal:not(.exupdate-panel)[style*="display:flex"],
+.exupdate-panel.miuix-modal-in,
+.miuix-modal[style*="display: block"], .miuix-modal[style*="display:block"],
+.miuix-modal[style*="display: flex"], .miuix-modal[style*="display:flex"],
 .extool[style*="display: block"], .extool[style*="display:block"],
 .extool[style*="display: flex"], .extool[style*="display:flex"],
 .livetool[style*="display: block"], .livetool[style*="display:block"],
@@ -808,19 +809,10 @@ function y(){var e=document.createElement("style");e.appendChild(document.create
 .fans-continue-panel[style*="display: block"], .fans-continue-panel[style*="display:block"],
 .fans-continue-panel[style*="display: flex"], .fans-continue-panel[style*="display:flex"],
 .popup-player-panel[style*="display: block"], .popup-player-panel[style*="display:block"],
-.popup-player-panel[style*="display: flex"], .popup-player-panel[style*="display:flex"] {
-    display: block !important;
-    opacity: 1 !important;
-    visibility: visible !important;
-    pointer-events: auto !important;
-    animation: miuix-modal-in 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
-}
-
-.exupdate-panel.miuix-modal-in,
+.popup-player-panel[style*="display: flex"], .popup-player-panel[style*="display:flex"],
 .exupdate-panel[style*="display: block"], .exupdate-panel[style*="display:block"],
 .exupdate-panel[style*="display: flex"], .exupdate-panel[style*="display:flex"] {
-    display: flex !important;
-    flex-direction: column !important;
+    display: block !important;
     opacity: 1 !important;
     visibility: visible !important;
     pointer-events: auto !important;
@@ -862,38 +854,16 @@ function y(){var e=document.createElement("style");e.appendChild(document.create
     background: transparent !important;
 }
 
-/* 版本更新面板 (.exupdate-panel) 三段式结构与多态按钮样式 */
-.exupdate-panel {
-    display: flex !important;
-    flex-direction: column !important;
-    padding: 0 !important;
-    overflow: hidden !important;
+/* 版本更新、一键续牌与同屏播放专属卡片布局 (三级模态标准四级卡片) */
+.fans-panel__card, .popup-panel__card, .exupdate-panel__card {
+    margin: 0 12px 10px 12px !important; padding: 12px 14px !important; box-sizing: border-box !important;
+    background: rgba(255, 255, 255, 0.55) !important; border: 1px solid rgba(255, 255, 255, 0.9) !important;
+    border-radius: 14px !important; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03) !important;
 }
-.exupdate-panel__body {
-    flex: 1 1 auto !important;
-    overflow-y: auto !important;
-    overflow-y: overlay !important;
-    padding: 12px 16px !important;
-    box-sizing: border-box !important;
+.fans-panel__card-header, .popup-panel__card-header, .exupdate-panel__card-header {
+    display: flex !important; align-items: center !important; justify-content: space-between !important; margin-bottom: 8px !important;
 }
-.exupdate-panel__body::-webkit-scrollbar { width: 4px !important; }
-.exupdate-panel__body::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0.18) !important;
-    border-radius: 4px !important;
-}
-.exupdate-section {
-    margin-bottom: 12px !important;
-}
-.exupdate-section__tag {
-    display: inline-block !important;
-    padding: 2px 8px !important;
-    font-size: 11px !important;
-    font-weight: 700 !important;
-    color: #007aff !important;
-    background: rgba(0, 122, 255, 0.1) !important;
-    border-radius: 6px !important;
-    margin-bottom: 6px !important;
-}
+.fans-panel__card-title, .popup-panel__card-title, .exupdate-panel__card-title { font-size: 13px !important; font-weight: 700 !important; color: #0f172a !important; }
 .exupdate-list {
     margin: 0 !important;
     padding: 0 !important;
@@ -906,69 +876,45 @@ function y(){var e=document.createElement("style");e.appendChild(document.create
     margin-bottom: 6px !important;
     word-break: break-word !important;
 }
-.exupdate-panel__footer {
-    flex: 0 0 auto !important;
-    padding: 10px 16px 12px 16px !important;
-    box-sizing: border-box !important;
-    background: rgba(255, 255, 255, 0.65) !important;
-    backdrop-filter: blur(20px) !important;
-    -webkit-backdrop-filter: blur(20px) !important;
-    border-top: 1px solid rgba(0, 0, 0, 0.05) !important;
-}
-.exupdate-state-btn {
-    width: 100% !important;
-    height: 38px !important;
-    line-height: 38px !important;
-    border-radius: 10px !important;
-    font-size: 13.5px !important;
-    font-weight: 600 !important;
-    text-align: center !important;
-    cursor: pointer !important;
-    outline: none !important;
-    box-sizing: border-box !important;
-    border: none !important;
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
-}
-.exupdate-state-btn:active {
-    transform: scale(0.96) !important;
-}
-/* 状态 1: 【我已收到】 */
+.fans-panel__action-wrap, .popup-panel__action-wrap, .exupdate-panel__action-wrap { padding: 0 12px !important; margin-top: 10px !important; margin-bottom: 8px !important; }
+.fans-panel__submit-btn, .popup-panel__submit-btn, .exupdate-panel__submit-btn { width: 100% !important; height: 36px !important; border-radius: 10px !important; font-size: 14px !important; font-weight: 600 !important; }
+
+/* 多态按钮状态微交互细节 */
 .exupdate-state-btn--ack {
-    background: #007aff !important;
+    background: linear-gradient(135deg, #2b7fff, #0055ff) !important;
     color: #ffffff !important;
-    box-shadow: 0 4px 14px rgba(0, 122, 255, 0.35) !important;
+    box-shadow: 0 4px 14px rgba(0, 102, 255, 0.35) !important;
 }
 .exupdate-state-btn--ack:hover {
-    background: #0062cc !important;
-    box-shadow: 0 6px 18px rgba(0, 122, 255, 0.45) !important;
+    background: linear-gradient(135deg, #3d8bff, #004de6) !important;
+    box-shadow: 0 6px 18px rgba(0, 102, 255, 0.45) !important;
     transform: translateY(-1px) !important;
 }
-/* 状态 2: 【检查更新】 */
 .exupdate-state-btn--check {
-    background: rgba(0, 122, 255, 0.08) !important;
-    color: #007aff !important;
-    border: 1px solid rgba(0, 122, 255, 0.2) !important;
+    background: linear-gradient(135deg, #2b7fff, #0055ff) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 14px rgba(0, 102, 255, 0.3) !important;
 }
 .exupdate-state-btn--check:hover {
-    background: rgba(0, 122, 255, 0.15) !important;
-    border-color: rgba(0, 122, 255, 0.35) !important;
+    background: linear-gradient(135deg, #3d8bff, #004de6) !important;
+    box-shadow: 0 6px 18px rgba(0, 102, 255, 0.42) !important;
+    transform: translateY(-1px) !important;
 }
-/* 状态 3: 【检查中...】 */
 .exupdate-state-btn--checking {
-    background: rgba(0, 0, 0, 0.06) !important;
+    background: rgba(0, 0, 0, 0.08) !important;
     color: #64748b !important;
+    box-shadow: none !important;
     cursor: wait !important;
 }
-/* 状态 4A: 【已是最新】 */
 .exupdate-state-btn--latest {
-    background: rgba(16, 185, 129, 0.12) !important;
+    background: rgba(16, 185, 129, 0.15) !important;
     color: #059669 !important;
-    border: 1px solid rgba(16, 185, 129, 0.25) !important;
+    border: 1px solid rgba(16, 185, 129, 0.3) !important;
+    box-shadow: none !important;
 }
 .exupdate-state-btn--latest:hover {
-    background: rgba(16, 185, 129, 0.2) !important;
+    background: rgba(16, 185, 129, 0.22) !important;
 }
-/* 状态 4B: 【前往更新】 */
 .exupdate-state-btn--upgrade {
     background: linear-gradient(135deg, #ff6a00, #ee5a24) !important;
     color: #ffffff !important;
@@ -980,16 +926,6 @@ function y(){var e=document.createElement("style");e.appendChild(document.create
     transform: translateY(-1px) !important;
 }
 
-/* 一键续牌与同屏播放专属卡片布局 */
-.fans-panel__card, .popup-panel__card {
-    margin: 0 12px 10px 12px !important; padding: 12px 14px !important; box-sizing: border-box !important;
-    background: rgba(255, 255, 255, 0.55) !important; border: 1px solid rgba(255, 255, 255, 0.9) !important;
-    border-radius: 14px !important; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03) !important;
-}
-.fans-panel__card-header, .popup-panel__card-header {
-    display: flex !important; align-items: center !important; justify-content: space-between !important; margin-bottom: 8px !important;
-}
-.fans-panel__card-title, .popup-panel__card-title { font-size: 13px !important; font-weight: 700 !important; color: #0f172a !important; }
 .fans-panel__badge-tag {
     font-size: 11px !important; font-weight: 600 !important; color: #0066ff !important;
     background: rgba(0, 102, 255, 0.1) !important; padding: 2px 8px !important; border-radius: 6px !important;

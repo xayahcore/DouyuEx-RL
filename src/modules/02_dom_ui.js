@@ -147,8 +147,7 @@ function anchorPanelToButton(panel, btnEl) {
     panel.style.setProperty("right", "auto", "important");
     panel.style.setProperty("top", "auto", "important");
     panel.style.setProperty("z-index", "100000", "important");
-    var displayMode = panel.classList.contains("exupdate-panel") ? "flex" : "block";
-    panel.style.setProperty("display", displayMode, "important");
+    panel.style.setProperty("display", "block", "important");
     panel.classList.add("miuix-modal-in");
 }
 window.anchorPanelToButton = anchorPanelToButton;
@@ -453,40 +452,47 @@ function createPopupPlayerPanel() {
 
 function createExUpdatePanel() {
     if (document.querySelector(".exupdate-panel")) return;
-    var currentVer = (typeof P !== "undefined" && P) ? P : "2026.09.14.03";
+    var currentVer = (typeof P !== "undefined" && P) ? P : "2026.09.14.04";
     var p = document.createElement("div");
     p.className = "exupdate-panel miuix-modal";
     p.innerHTML = `
-        <div class="exupdate-panel__body">
-            <div class="exupdate-section">
-                <div class="exupdate-section__tag">新增功能·</div>
-                <ul class="exupdate-list">
-                    <li>① 二级 Dock 视觉与交互全面升级：尺寸等比放大 150%（高度 76px、按键 56px），移除 800ms 强制隐藏机制，改为常驻保活与点击锁定</li>
-                    <li>② 三级控制台物理脱离与零阻碍居中锚定：面板彻底脱离聊天区包含块直接挂载至主视口，实现触发按钮 0px 像素级精准水平居中</li>
-                    <li>③ 隐形热区连桥 (Hover Bridge)：Dock 按键上方延伸 18px 物理感应区，配合 400ms 黄金防抖，划过即触即开且杜绝误关闭</li>
-                    <li>④ 版本更新三级模态化与智能生命周期系统：版本更新按钮全面 MIUIX 模态化，集成【我已收到 ➔ 检查更新】动态双态按钮及 12 小时远端探测雷达</li>
-                </ul>
+        <div class="exupdate-panel__card">
+            <div class="exupdate-panel__card-header">
+                <span class="exupdate-panel__card-title">新增功能·</span>
             </div>
-            <div class="exupdate-section">
-                <div class="exupdate-section__tag">优化与修复·</div>
-                <ul class="exupdate-list">
-                    <li>① UI 界面全面 MIUIX 美学质感重构：全量落地 36px 拟态磨砂毛玻璃与 22px 连续物理圆角，触感高级极简，彻底告别土味与塑料电竞风</li>
-                    <li>② 击穿 display:none 死锁：重构模态激活管线，彻底消除悬浮面板虚无隐形 Bug，配合 0.18s 物理弹簧上浮动效</li>
-                    <li>③ 样式作用域强隔离：给所有表单控件追加严格容器命名空间，彻底根除污染斗鱼原生播放器（线路/画质框）的恶性 Bug</li>
-                    <li>④ 吸顶 Header 左右贴合：消除滚动条出现时顶栏右侧漏缝与下边圆角异化问题，平滑滚动阻断率归零 (0%)</li>
-                    <li>⑤ 跨域 Cookie 安全沙盒防御：重构 x() 存储读取增加异常隔离降级，杜绝无痕或第三方 Cookie 受限模式下的崩溃死锁</li>
-                </ul>
-            </div>
-            <div class="exupdate-section">
-                <div class="exupdate-section__tag">其它·</div>
-                <ul class="exupdate-list">
-                    <li>① 核心画质拦截层 100% 守恒：src/core/ 黄金拦截逻辑严格 0 修改，首流极清秒开无二次切流</li>
-                    <li>② 移除 404 盲轮询定时器，构建编译集成 V8 AST 原生语法核验机制 (耗时 13ms)</li>
-                </ul>
-            </div>
+            <ul class="exupdate-list">
+                <li>① 二级 Dock 视觉与交互全面升级：尺寸等比放大 150%（高度 76px、按键 56px），移除 800ms 强制隐藏机制，改为常驻保活与点击锁定</li>
+                <li>② 三级控制台物理脱离与零阻碍居中锚定：面板彻底脱离聊天区包含块直接挂载至主视口，实现触发按钮 0px 像素级精准水平居中</li>
+                <li>③ 隐形热区连桥 (Hover Bridge)：Dock 按键上方延伸 18px 物理感应区，配合 400ms 黄金防抖，划过即触即开且杜绝误关闭</li>
+                <li>④ 版本更新三级模态化与智能生命周期系统：版本更新按钮全面 MIUIX 模态化，集成【我已收到 ➔ 检查更新 ➔ 已是最新 / 前往更新】多态交互状态机</li>
+                <li>⑤ 12 小时极轻量远端更新探测雷达 (Scheme B)：开播后极轻量嗅探 Greasy Fork 元数据（0 轮询）；发现新版联动二级 Dock 版本更新图标小红点常亮</li>
+            </ul>
         </div>
-        <div class="exupdate-panel__footer">
-            <button type="button" class="exupdate-state-btn" id="exupdate-action-btn">我已收到</button>
+        <div class="exupdate-panel__card">
+            <div class="exupdate-panel__card-header">
+                <span class="exupdate-panel__card-title">优化与修复·</span>
+            </div>
+            <ul class="exupdate-list">
+                <li>① UI 界面全面 MIUIX 美学质感重构：全量落地 36px 拟态磨砂毛玻璃与 22px 连续物理圆角，触感高级极简，彻底告别土味与塑料电竞风</li>
+                <li>② 击穿 display:none 死锁：重构模态激活管线，彻底消除悬浮面板虚无隐形 Bug，配合 0.18s 物理弹簧上浮动效</li>
+                <li>③ 样式作用域强隔离：给所有表单控件追加严格容器命名空间，彻底根除污染斗鱼原生播放器（线路/画质框）的恶性 Bug</li>
+                <li>④ 吸顶 Header 左右贴合：消除滚动条出现时顶栏右侧漏缝与下边圆角异化问题，平滑滚动阻断率归零 (0%)</li>
+                <li>⑤ 跨域 Cookie 安全沙盒防御：重构 x() 存储读取增加异常隔离降级，杜绝无痕或第三方 Cookie 受限模式下的崩溃死锁</li>
+                <li>⑥ 拔除 753 行旧版冲突监听器：消除点击二级图标误触发新开标签页跳转 Greasy Fork 的恶性行为，交互 100% 收敛至面板内部</li>
+                <li>⑦ 结构与动效细节深度打磨：版本更新面板全量接入三级模态标准四级卡片包裹；取消开播主动强弹窗口；按钮统一为同款主操作微质感键并沉入更新日志底端流式排列</li>
+            </ul>
+        </div>
+        <div class="exupdate-panel__card">
+            <div class="exupdate-panel__card-header">
+                <span class="exupdate-panel__card-title">其它·</span>
+            </div>
+            <ul class="exupdate-list">
+                <li>① 核心画质拦截层 100% 守恒：src/core/ 黄金拦截逻辑严格 0 修改，首流极清秒开无二次切流</li>
+                <li>② 移除 404 盲轮询定时器，构建编译集成 V8 AST 原生语法核验机制 (耗时 13ms)</li>
+            </ul>
+        </div>
+        <div class="exupdate-panel__action-wrap">
+            <button type="button" class="ex-btn-primary exupdate-panel__submit-btn" id="exupdate-action-btn">我已收到</button>
         </div>
     `;
     document.body.appendChild(p);
@@ -497,7 +503,7 @@ function createExUpdatePanel() {
 
     // 多态状态机初始化
     function setBtnState(state, text) {
-        btn.className = "exupdate-state-btn";
+        btn.className = "ex-btn-primary exupdate-panel__submit-btn";
         btn.dataset.state = state;
         btn.disabled = false;
         if (state === "ack") {
