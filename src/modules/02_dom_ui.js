@@ -612,7 +612,7 @@ function createPopupPlayerPanel() {
 }
 
 function createExUpdatePanel() {
-    var currentVer = (typeof P !== "undefined" && P) ? P : "2026.09.14.08";
+    var currentVer = (typeof P !== "undefined" && P) ? P : "2026.09.14.09";
     var existing = document.querySelector(".exupdate-panel");
     if (existing) {
         if (existing.dataset.version === currentVer) return;
@@ -627,10 +627,10 @@ function createExUpdatePanel() {
                 <span class="exupdate-panel__card-title">新增功能·</span>
             </div>
             <ul class="exupdate-list">
-                <li>① 任意礼物自由变形系统：彻底重构废弃已久的“荧光棒变超火”，升级为全动态“任意礼物变任意礼物”全自由变形，送礼弹幕广播、顶部跑道横幅与全屏豪华 SVGA 特效全链路视觉置换</li>
-                <li>② 5级模态选择器全域复用：将5级选择器深度复用至“背包送礼”与“打榜送礼”，告别手动输入礼物ID，触控胶囊即点即选即回填</li>
-                <li>③ 动态房间与背包礼物池：进房动态抓取房间专属在播礼物与用户真实背包资产，融合官方全量礼物池，零内置死重</li>
-                <li>④ 5级选择器遮罩与即时搜索：新增半透明磨砂遮罩（点击遮罩/Esc关闭）与即时模糊搜索框，毫秒级快速定位目标礼物</li>
+                <li>① 百变礼物自由变形系统全链路落地：彻底废弃原作者停更已久、资源严重失效的硬编码“荧光棒变超火”，升级为全动态“任意礼物变任意礼物”全自由变形体系。用户可在“扩展功能”控制台四级卡片中直观配置【源礼物 ➔ 目标礼物】映射，聊天送礼广播弹幕、顶部跑道横幅与全屏豪华 SVGA 特效动画全链路端到端本地视觉置换</li>
+                <li>② 5级模态选择器全域复用与背包送礼现代化：将 540×410px MIUIX 拟态大选择器全量复用至“背包送礼”与“打榜送礼”，彻底淘汰手动输入礼物 ID 的远古痛点，触控胶囊即点即选即回填</li>
+                <li>③ 动态房间与全量官方礼物池智能聚合：进房动态拉取当前房间专属在播礼物，同时无缝融合斗鱼官方全量礼物配置库（1500+ 款），支持按名称与 ID 毫秒级即时检索，彻底告别“暂无匹配礼物”</li>
+                <li>④ 5级选择器遮罩与即时模糊检索：新增高饱和毛玻璃半透明遮罩层（支持点击遮罩/Esc 快捷关闭）与即时模糊搜索框，丝滑流畅</li>
             </ul>
         </div>
         <div class="exupdate-panel__card">
@@ -638,10 +638,10 @@ function createExUpdatePanel() {
                 <span class="exupdate-panel__card-title">优化与修复·</span>
             </div>
             <ul class="exupdate-list">
-                <li>① 三级面板滚动条右侧缝隙消灭：为 Sticky 标题栏装载专属延伸装甲，彻底抹平 Windows 垂直滚动条引发的右侧漏缝，100% 紧密贴合右边框</li>
-                <li>② 房间礼物捕获与全量池聚合：无缝融合官方全量礼物池与房间定制礼物池，彻底消除“暂无匹配礼物”问题</li>
-                <li>③ 背包道具图片全量反查补齐：移除破坏性的 no-cors 限制，接入已知道具库与全量礼物字典双重映射，100% 确保背包礼物高清图标正确加载</li>
-                <li>④ 用户昵称探测与送礼拦截加固：优先提取 Cookie 与 DOM 自身信息，100% 确保送礼拦截置换生效</li>
+                <li>① 三级面板滚动条右侧缝隙彻底抹平：针对 Windows/Chromium 环境下带垂直滚动条的三级菜单顶栏右侧漏缝问题，为 Sticky Header 装载延伸装甲，100% 紧密贴合右侧物理边框，彻底消灭缝隙断层</li>
+                <li>② 粉丝荧光棒死链修复与旧缓存热修复：拔除原版 404 静态死链，全量替换为官方活跃高清动图，并在初始化时自动将历史旧缓存热升级</li>
+                <li>③ 背包道具图片全量反查补齐：移除导致请求被阻断的 no-cors 模式，接入已知道具库与全量礼物字典双重映射，100% 确保背包礼物高清图标正确加载</li>
+                <li>④ 用户自身昵称嗅探与拦截加固：优先提取 Cookie 中的 acf_nickname 与 DOM 自身信息，100% 确保送礼拦截置换生效</li>
             </ul>
         </div>
         <div class="exupdate-panel__card">
@@ -651,7 +651,7 @@ function createExUpdatePanel() {
             <ul class="exupdate-list">
                 <li>① 核心画质拦截层 100% 守恒：src/core/ 黄金拦截逻辑严格 0 修改，首流极清秒开无二次切流</li>
                 <li>② 全按钮严格遵循零 Emoji 工业契约与 MIUIX 流式拟态微质感</li>
-                <li>③ 构建编译集成 V8 AST 原生语法核验机制 (耗时 15ms)</li>
+                <li>③ 构建编译集成 V8 AST 原生语法核验机制 (耗时 16ms)</li>
             </ul>
         </div>
         <div class="exupdate-panel__action-wrap">
@@ -1582,7 +1582,7 @@ function d(){var i=document.createElement("div"),l=(i.className="ChatToolBar-Dan
 
     var defConfig = {
         enabled: false,
-        source: { id: "268", name: "粉丝荧光棒", priceText: "免费", icon: "https://gfs-op.douyucdn.cn/dygift/2018/06/07/9e92ad12330a5749ba38cb5bf36a43ff.png" },
+        source: { id: "268", name: "粉丝荧光棒", priceText: "免费", icon: "https://gfs-op.douyucdn.cn/dygift/2019/05/30/ed7b5926f169266173584bbd11139815.gif" },
         target: { id: "20005", name: "超级火箭", priceText: "2000 鱼翅", icon: "https://gfs-op.douyucdn.cn/dygift/2018/11/27/3adbb0c17d9886c1440d55c9711f4c79.gif", svga: "https://gfs-op.douyucdn.cn/dygift/2018/11/27/6c6349672e662750ad5c019b240d57f2.svga", stayTime: 4000 }
     };
 
@@ -1603,6 +1603,10 @@ function d(){var i=document.createElement("div"),l=(i.className="ChatToolBar-Dan
     }
 
     function syncTransformUI() {
+        if (currentConfig.source && currentConfig.source.icon && currentConfig.source.icon.includes("9e92ad12330a5749ba38cb5bf36a43ff")) {
+            currentConfig.source.icon = "https://gfs-op.douyucdn.cn/dygift/2019/05/30/ed7b5926f169266173584bbd11139815.gif";
+            localStorage.setItem("ExSave_GiftTransform", JSON.stringify(currentConfig));
+        }
         var toggle = document.getElementById("extool__gift_transform_toggle");
         if (toggle) toggle.checked = !!currentConfig.enabled;
 
@@ -1649,13 +1653,20 @@ function d(){var i=document.createElement("div"),l=(i.className="ChatToolBar-Dan
             if (!bt || !bt.observer) {
                 bt = new q(".BarrageBanner", true, wt);
             }
-            T("【礼物自由变形】已开启", "success");
+            if (typeof window.__giftDanmakuHook__ === "undefined" || !window.__giftDanmakuHook__) {
+                window.__giftDanmakuHook__ = new q(".Barrage-list", true, interceptBarrageListGift);
+            }
+            T("【百变礼物自由变形】已开启", "success");
         } else {
             if (bt && bt.closeHook) {
                 bt.closeHook();
                 bt = null;
             }
-            T("【礼物自由变形】已关闭", "info");
+            if (window.__giftDanmakuHook__ && window.__giftDanmakuHook__.closeHook) {
+                window.__giftDanmakuHook__.closeHook();
+                window.__giftDanmakuHook__ = null;
+            }
+            T("【百变礼物自由变形】已关闭", "info");
         }
     });
 
@@ -1664,6 +1675,9 @@ function d(){var i=document.createElement("div"),l=(i.className="ChatToolBar-Dan
             if (!gt) gt = await K();
             if (!bt || !bt.observer) {
                 bt = new q(".BarrageBanner", true, wt);
+            }
+            if (typeof window.__giftDanmakuHook__ === "undefined" || !window.__giftDanmakuHook__) {
+                window.__giftDanmakuHook__ = new q(".Barrage-list", true, interceptBarrageListGift);
             }
         })();
     }
@@ -1711,7 +1725,7 @@ var i = document.createElement("div"); i.className = "extool__redpacket_room"; i
             <span style="font-size: 11px; color: #94a3b8;">[速度适中, 间隔>0.1s]</span>
         </div>
         <div class="ex-gift-pick-trigger" id="extool__clearbag_trigger" title="点击展开5级菜单选择背包礼物">
-            <img class="ex-gift-pick-trigger__icon" id="extool__clearbag_icon" src="https://gfs-op.douyucdn.cn/dygift/2018/06/07/9e92ad12330a5749ba38cb5bf36a43ff.png" />
+            <img class="ex-gift-pick-trigger__icon" id="extool__clearbag_icon" src="https://gfs-op.douyucdn.cn/dygift/2019/05/30/ed7b5926f169266173584bbd11139815.gif" />
             <span class="ex-gift-pick-trigger__name" id="extool__clearbag_name">粉丝荧光棒</span>
             <span class="ex-gift-pick-trigger__tag" id="extool__clearbag_tag">点击选择</span>
             <span class="ex-gift-pick-trigger__arrow">▼</span>
