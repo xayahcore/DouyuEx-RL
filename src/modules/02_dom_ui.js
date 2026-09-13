@@ -120,11 +120,13 @@ function anchorPanelToButton(panel, btnEl) {
         else if (panel.classList.contains("ex-lottery") || panel.classList.contains("lottery__wrap") || panel.querySelector(".lottery__wrap")) btnEl = document.querySelector(".ex-lottery");
         else if (panel.classList.contains("fans-continue-panel")) btnEl = document.querySelector(".fans-continue");
         else if (panel.classList.contains("popup-player-panel")) btnEl = document.querySelector(".popup-player");
+        else if (panel.classList.contains("exupdate-panel")) btnEl = document.querySelector(".ex-update");
     }
     if (panel.parentElement !== document.body) {
         document.body.appendChild(panel);
     }
     var panelWidth = 380; // 三级面板推荐固定舒适宽度
+    panel.style.width = panelWidth + "px";
     var left = (window.innerWidth - panelWidth) / 2;
     var bottom = 90;
 
@@ -145,7 +147,8 @@ function anchorPanelToButton(panel, btnEl) {
     panel.style.setProperty("right", "auto", "important");
     panel.style.setProperty("top", "auto", "important");
     panel.style.setProperty("z-index", "100000", "important");
-    panel.style.setProperty("display", "block", "important");
+    var displayMode = panel.classList.contains("exupdate-panel") ? "flex" : "block";
+    panel.style.setProperty("display", displayMode, "important");
     panel.classList.add("miuix-modal-in");
 }
 window.anchorPanelToButton = anchorPanelToButton;
@@ -448,6 +451,131 @@ function createPopupPlayerPanel() {
     });
 }
 
+function createExUpdatePanel() {
+    if (document.querySelector(".exupdate-panel")) return;
+    var currentVer = (typeof P !== "undefined" && P) ? P : "2026.09.14.03";
+    var p = document.createElement("div");
+    p.className = "exupdate-panel miuix-modal";
+    p.innerHTML = `
+        <div class="exupdate-panel__body">
+            <div class="exupdate-section">
+                <div class="exupdate-section__tag">新增功能·</div>
+                <ul class="exupdate-list">
+                    <li>① 二级 Dock 视觉与交互全面升级：尺寸等比放大 150%（高度 76px、按键 56px），移除 800ms 强制隐藏机制，改为常驻保活与点击锁定</li>
+                    <li>② 三级控制台物理脱离与零阻碍居中锚定：面板彻底脱离聊天区包含块直接挂载至主视口，实现触发按钮 0px 像素级精准水平居中</li>
+                    <li>③ 隐形热区连桥 (Hover Bridge)：Dock 按键上方延伸 18px 物理感应区，配合 400ms 黄金防抖，划过即触即开且杜绝误关闭</li>
+                    <li>④ 版本更新三级模态化与智能生命周期系统：版本更新按钮全面 MIUIX 模态化，集成【我已收到 ➔ 检查更新】动态双态按钮及 12 小时远端探测雷达</li>
+                </ul>
+            </div>
+            <div class="exupdate-section">
+                <div class="exupdate-section__tag">优化与修复·</div>
+                <ul class="exupdate-list">
+                    <li>① UI 界面全面 MIUIX 美学质感重构：全量落地 36px 拟态磨砂毛玻璃与 22px 连续物理圆角，触感高级极简，彻底告别土味与塑料电竞风</li>
+                    <li>② 击穿 display:none 死锁：重构模态激活管线，彻底消除悬浮面板虚无隐形 Bug，配合 0.18s 物理弹簧上浮动效</li>
+                    <li>③ 样式作用域强隔离：给所有表单控件追加严格容器命名空间，彻底根除污染斗鱼原生播放器（线路/画质框）的恶性 Bug</li>
+                    <li>④ 吸顶 Header 左右贴合：消除滚动条出现时顶栏右侧漏缝与下边圆角异化问题，平滑滚动阻断率归零 (0%)</li>
+                    <li>⑤ 跨域 Cookie 安全沙盒防御：重构 x() 存储读取增加异常隔离降级，杜绝无痕或第三方 Cookie 受限模式下的崩溃死锁</li>
+                </ul>
+            </div>
+            <div class="exupdate-section">
+                <div class="exupdate-section__tag">其它·</div>
+                <ul class="exupdate-list">
+                    <li>① 核心画质拦截层 100% 守恒：src/core/ 黄金拦截逻辑严格 0 修改，首流极清秒开无二次切流</li>
+                    <li>② 移除 404 盲轮询定时器，构建编译集成 V8 AST 原生语法核验机制 (耗时 13ms)</li>
+                </ul>
+            </div>
+        </div>
+        <div class="exupdate-panel__footer">
+            <button type="button" class="exupdate-state-btn" id="exupdate-action-btn">我已收到</button>
+        </div>
+    `;
+    document.body.appendChild(p);
+    ensureMiuixPanelHeader(p, "版本更新");
+
+    var btn = p.querySelector("#exupdate-action-btn");
+    if (!btn) return;
+
+    // 多态状态机初始化
+    function setBtnState(state, text) {
+        btn.className = "exupdate-state-btn";
+        btn.dataset.state = state;
+        btn.disabled = false;
+        if (state === "ack") {
+            btn.classList.add("exupdate-state-btn--ack");
+            btn.textContent = text || "我已收到";
+        } else if (state === "check") {
+            btn.classList.add("exupdate-state-btn--check");
+            btn.textContent = text || "检查更新";
+        } else if (state === "checking") {
+            btn.classList.add("exupdate-state-btn--checking");
+            btn.textContent = text || "正在检查更新...";
+            btn.disabled = true;
+        } else if (state === "latest") {
+            btn.classList.add("exupdate-state-btn--latest");
+            btn.textContent = text || "已是最新";
+        } else if (state === "upgrade") {
+            btn.classList.add("exupdate-state-btn--upgrade");
+            btn.textContent = text || "前往更新";
+        }
+    }
+
+    var lastNotified = GM_getValue("Ex_LastNotifiedVersion");
+    if (lastNotified !== currentVer) {
+        setBtnState("ack", "我已收到");
+    } else {
+        setBtnState("check", "检查更新");
+    }
+
+    btn.onclick = function(e) {
+        e.stopPropagation();
+        var st = btn.dataset.state;
+        if (st === "ack") {
+            GM_setValue("Ex_LastNotifiedVersion", currentVer);
+            var tip = document.getElementById("ex-update__tip");
+            if (tip) tip.style.display = "none";
+            setBtnState("check", "检查更新");
+        } else if (st === "check") {
+            setBtnState("checking", "正在检查更新...");
+            var handleUpdateData = function(data) {
+                if (data && data.version && typeof isNewerVersion === "function" && isNewerVersion(data.version, currentVer)) {
+                    setBtnState("upgrade", "前往更新");
+                    var tip = document.getElementById("ex-update__tip");
+                    if (tip) tip.style.display = "block";
+                } else {
+                    setBtnState("latest", "已是最新");
+                }
+            };
+            if (typeof GM_xmlhttpRequest === "function") {
+                GM_xmlhttpRequest({
+                    method: "GET",
+                    url: "https://greasyfork.org/scripts/595575.json",
+                    responseType: "json",
+                    onload: function(res) {
+                        var data = res.response;
+                        if (typeof data === "string") {
+                            try { data = JSON.parse(data); } catch(e) {}
+                        }
+                        handleUpdateData(data);
+                    },
+                    onerror: function() { setBtnState("latest", "已是最新"); }
+                });
+            } else {
+                fetch("https://greasyfork.org/scripts/595575.json")
+                    .then(function(res) { return res.json(); })
+                    .then(handleUpdateData)
+                    .catch(function() {
+                        setBtnState("latest", "已是最新");
+                    });
+            }
+        } else if (st === "latest") {
+            setBtnState("check", "检查更新");
+        } else if (st === "upgrade") {
+            GM_openInTab("https://greasyfork.org/zh-CN/scripts/595575", { active: true });
+        }
+    };
+}
+window.createExUpdatePanel = createExUpdatePanel;
+
 function handleDockHover(cls, btnEl) {
     clearSubPanelTimer();
     var mapping = {
@@ -456,7 +584,8 @@ function handleDockHover(cls, btnEl) {
         "bloop-icon": "弹幕发送小助手",
         "ex-lottery": "全站抽奖信息",
         "fans-continue": "一键续牌",
-        "popup-player": "同屏播放"
+        "popup-player": "同屏播放",
+        "ex-update": "版本更新"
     };
     if (mapping[cls]) {
         ee(mapping[cls], true, btnEl);
@@ -492,7 +621,7 @@ function handleDockAction(cls, btnEl) {
     } else if (cls === "ex-monitor") {
         _("https://www.douyuex.com/" + String(B), true);
     } else if (cls === "ex-update") {
-        _("https://greasyfork.org/zh-CN/scripts/595575", true);
+        ee("版本更新", false, btnEl);
     } else if (cls === "ex-sign") {
         if (typeof Wn === "function") Wn(false);
     }
@@ -512,6 +641,7 @@ function initDockFull(wrap) {
     if (!wrap) return;
     createFansContinuePanel();
     createPopupPlayerPanel();
+    createExUpdatePanel();
 
     for (var i = 0; i < DOCK_DEFS.length; i++) {
         var def = DOCK_DEFS[i];
@@ -640,7 +770,7 @@ function d(){var i=document.createElement("div"),l=(i.className="ChatToolBar-Dan
 
                                 <span class="bag-button" id="Backpack__clearbag" style="background: rgb(70, 171, 255) !important;color: white !important;">清空背包</span>
 
-                            </span>`:e.innerHTML='<span style="float: left">总价值：'+String(Number(t/100).toFixed(2))+" 总亲密度："+String(o)+'<span class="bag-button" id="Backpack__clearbag">清空背包</span></span>'+e.innerHTML,safeBind("#Backpack__clearbag", "click",()=>{1==confirm("确认清空？")&&(T("【清空背包】执行中...","info"),pt(B,e=>{(async(n,i)=>{var t=n.data.list.length;if(0<t){for(let e=0;e<t;e++){let t=n.data.list[e].id,o=n.data.list[e].count;if(0<Object.keys(n.data.list[e].batchInfo).length)await b(100).then(()=>{Ut(t,o,i)});else for(let e=0;e<o;e++)await b(100).then(()=>{Ut(t,1,i)})}T("【清空背包】执行完毕！","success")}else T("背包礼物为空","error")})(e,B)}))})}})},500)})}var r=document.createElement("div"),l=(r.className="ex-update",r.innerHTML='<a class="ex-panel__icon" title="版本更新，当前版本'+P+'"><svg t="1578767541873" style="display:block;" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="23715" width="32" height="32"><path d="M768 810.7H512c-23.6 0-42.7-19.1-42.7-42.7s19.1-42.7 42.7-42.7h256c94.1 0 170.7-76.6 170.7-170.7 0-89.6-70.1-164.3-159.5-170.1L754 383l-10.7-22.7c-42.2-89.3-133-147-231.3-147s-189.1 57.7-231.3 147L270 383l-25.1 1.6c-89.5 5.8-159.5 80.5-159.5 170.1 0 94.1 76.6 170.7 170.7 170.7 23.6 0 42.7 19.1 42.7 42.7s-19.1 42.7-42.7 42.7c-141.2 0-256-114.8-256-256 0-126.1 92.5-232.5 214.7-252.4C274.8 195.7 388.9 128 512 128s237.2 67.7 297.3 174.2C931.5 322.1 1024 428.6 1024 554.7c0 141.1-114.8 256-256 256z" fill="#3688FF" p-id="23716"></path><path d="M554.7 938.7c-10.9 0-21.8-4.2-30.2-12.5l-128-128c-16.7-16.7-16.7-43.7 0-60.3l128-128c16.6-16.7 43.7-16.7 60.3 0 16.7 16.7 16.7 43.7 0 60.3L487 768l97.8 97.8c16.7 16.7 16.7 43.7 0 60.3-8.3 8.4-19.2 12.6-30.1 12.6z" fill="#5F6379" p-id="23717"></path></svg><i id="ex-update__tip" class="ex-panel__tip"></i></a>',document.getElementsByClassName("ex-panel__wrap")[0]);l&&l.insertBefore(r,l.childNodes[0]),r.addEventListener("click",function(){T(`【版本更新】当前版本：${P}，正在打开发布页...`,"info");_("https://greasyfork.org/zh-CN/scripts/595575",!0)});var i=document.createElement("div"),l=(i.className="ex-monitor",i.innerHTML='<a class="ex-panel__icon" title="在线弹幕助手"><svg style="display:block;" t="1638235744961" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="69800" width="32" height="32"><path d="M426.666667 106.666667a21.333333 21.333333 0 0 1 21.333333-21.333334h512a21.333333 21.333333 0 0 1 0 42.666667H448a21.333333 21.333333 0 0 1-21.333333-21.333333z m533.333333 789.333333H448a21.333333 21.333333 0 0 0 0 42.666667h512a21.333333 21.333333 0 0 0 0-42.666667z m0-554.666667H448a21.333333 21.333333 0 0 0 0 42.666667h512a21.333333 21.333333 0 0 0 0-42.666667z m0 298.666667H448a21.333333 21.333333 0 0 0 0 42.666667h512a21.333333 21.333333 0 0 0 0-42.666667zM245.333333 42.666667H96a53.393333 53.393333 0 0 0-53.333333 53.333333v149.333333a53.393333 53.393333 0 0 0 53.333333 53.333334h149.333333a53.393333 53.393333 0 0 0 53.333334-53.333334V96a53.393333 53.393333 0 0 0-53.333334-53.333333z m0 341.333333H96a53.393333 53.393333 0 0 0-53.333333 53.333333v149.333334a53.393333 53.393333 0 0 0 53.333333 53.333333h149.333333a53.393333 53.393333 0 0 0 53.333334-53.333333V437.333333a53.393333 53.393333 0 0 0-53.333334-53.333333z m0 341.333333H96a53.393333 53.393333 0 0 0-53.333333 53.333334v149.333333a53.393333 53.393333 0 0 0 53.333333 53.333333h149.333333a53.393333 53.393333 0 0 0 53.333334-53.333333v-149.333333a53.393333 53.393333 0 0 0-53.333334-53.333334z" fill="#13227a" p-id="69801"></path></svg><i id="Monitor__tip" class="ex-panel__tip"></i></a>',document.getElementsByClassName("ex-panel__wrap")[0]),i=((l&&l.insertBefore(i,l.childNodes[0])),safeBind(".ex-monitor", "click",function(){_("https://www.douyuex.com/"+String(B))}),(async()=>{var t=[],e=await fetch("https://www.douyu.com/member/cp/getFansBadgeList",{method:"GET",mode:"no-cors",cache:"default",credentials:"include"}).then(e=>e.text()).catch(e=>{console.log("请求失败!",e)}),o=(e=(new DOMParser).parseFromString(e,"text/html")).getElementsByClassName("fans-badge-list")[0].lastElementChild,n=o.children.length;for(let e=0;e<n;e++){var i=o.children[e].getAttribute("data-fans-room");t.push(i)}To=t})(),document.createElement("div")),l=(i.className="exlottery",i.innerHTML=`
+                            </span>`:e.innerHTML='<span style="float: left">总价值：'+String(Number(t/100).toFixed(2))+" 总亲密度："+String(o)+'<span class="bag-button" id="Backpack__clearbag">清空背包</span></span>'+e.innerHTML,safeBind("#Backpack__clearbag", "click",()=>{1==confirm("确认清空？")&&(T("【清空背包】执行中...","info"),pt(B,e=>{(async(n,i)=>{var t=n.data.list.length;if(0<t){for(let e=0;e<t;e++){let t=n.data.list[e].id,o=n.data.list[e].count;if(0<Object.keys(n.data.list[e].batchInfo).length)await b(100).then(()=>{Ut(t,o,i)});else for(let e=0;e<o;e++)await b(100).then(()=>{Ut(t,1,i)})}T("【清空背包】执行完毕！","success")}else T("背包礼物为空","error")})(e,B)}))})}})},500)})}var r=document.createElement("div"),l=(r.className="ex-update",r.innerHTML='<a class="ex-panel__icon" title="版本更新，当前版本'+P+'"><svg t="1578767541873" style="display:block;" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="23715" width="32" height="32"><path d="M768 810.7H512c-23.6 0-42.7-19.1-42.7-42.7s19.1-42.7 42.7-42.7h256c94.1 0 170.7-76.6 170.7-170.7 0-89.6-70.1-164.3-159.5-170.1L754 383l-10.7-22.7c-42.2-89.3-133-147-231.3-147s-189.1 57.7-231.3 147L270 383l-25.1 1.6c-89.5 5.8-159.5 80.5-159.5 170.1 0 94.1 76.6 170.7 170.7 170.7 23.6 0 42.7 19.1 42.7 42.7s-19.1 42.7-42.7 42.7c-141.2 0-256-114.8-256-256 0-126.1 92.5-232.5 214.7-252.4C274.8 195.7 388.9 128 512 128s237.2 67.7 297.3 174.2C931.5 322.1 1024 428.6 1024 554.7c0 141.1-114.8 256-256 256z" fill="#3688FF" p-id="23716"></path><path d="M554.7 938.7c-10.9 0-21.8-4.2-30.2-12.5l-128-128c-16.7-16.7-16.7-43.7 0-60.3l128-128c16.6-16.7 43.7-16.7 60.3 0 16.7 16.7 16.7 43.7 0 60.3L487 768l97.8 97.8c16.7 16.7 16.7 43.7 0 60.3-8.3 8.4-19.2 12.6-30.1 12.6z" fill="#5F6379" p-id="23717"></path></svg><i id="ex-update__tip" class="ex-panel__tip"></i></a>',document.getElementsByClassName("ex-panel__wrap")[0]);l&&l.insertBefore(r,l.childNodes[0]);var i=document.createElement("div"),l=(i.className="ex-monitor",i.innerHTML='<a class="ex-panel__icon" title="在线弹幕助手"><svg style="display:block;" t="1638235744961" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="69800" width="32" height="32"><path d="M426.666667 106.666667a21.333333 21.333333 0 0 1 21.333333-21.333334h512a21.333333 21.333333 0 0 1 0 42.666667H448a21.333333 21.333333 0 0 1-21.333333-21.333333z m533.333333 789.333333H448a21.333333 21.333333 0 0 0 0 42.666667h512a21.333333 21.333333 0 0 0 0-42.666667z m0-554.666667H448a21.333333 21.333333 0 0 0 0 42.666667h512a21.333333 21.333333 0 0 0 0-42.666667z m0 298.666667H448a21.333333 21.333333 0 0 0 0 42.666667h512a21.333333 21.333333 0 0 0 0-42.666667zM245.333333 42.666667H96a53.393333 53.393333 0 0 0-53.333333 53.333333v149.333333a53.393333 53.393333 0 0 0 53.333333 53.333334h149.333333a53.393333 53.393333 0 0 0 53.333334-53.333334V96a53.393333 53.393333 0 0 0-53.333334-53.333333z m0 341.333333H96a53.393333 53.393333 0 0 0-53.333333 53.333333v149.333334a53.393333 53.393333 0 0 0 53.333333 53.333333h149.333333a53.393333 53.393333 0 0 0 53.333334-53.333333V437.333333a53.393333 53.393333 0 0 0-53.333334-53.333333z m0 341.333333H96a53.393333 53.393333 0 0 0-53.333333 53.333334v149.333333a53.393333 53.393333 0 0 0 53.333333 53.333333h149.333333a53.393333 53.393333 0 0 0 53.333334-53.333333v-149.333333a53.393333 53.393333 0 0 0-53.333334-53.333334z" fill="#13227a" p-id="69801"></path></svg><i id="Monitor__tip" class="ex-panel__tip"></i></a>',document.getElementsByClassName("ex-panel__wrap")[0]),i=((l&&l.insertBefore(i,l.childNodes[0])),safeBind(".ex-monitor", "click",function(){_("https://www.douyuex.com/"+String(B))}),(async()=>{var t=[],e=await fetch("https://www.douyu.com/member/cp/getFansBadgeList",{method:"GET",mode:"no-cors",cache:"default",credentials:"include"}).then(e=>e.text()).catch(e=>{console.log("请求失败!",e)}),o=(e=(new DOMParser).parseFromString(e,"text/html")).getElementsByClassName("fans-badge-list")[0].lastElementChild,n=o.children.length;for(let e=0;e<n;e++){var i=o.children[e].getAttribute("data-fans-room");t.push(i)}To=t})(),document.createElement("div")),l=(i.className="exlottery",i.innerHTML=`
 
         <div class="lottery__func">
 

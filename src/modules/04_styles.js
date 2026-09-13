@@ -765,11 +765,13 @@ function y(){var e=document.createElement("style");e.appendChild(document.create
 }
 
 /* 2. Level 3 模态控制台 (370px 齐平三维铁壁 - 扁平自然滚动) */
-.miuix-modal:not(.vote__result), .extool, .livetool, .bloop, .exlottery, .ChatToolBar-DanmakuTail-Panel, .fans-continue-panel, .popup-player-panel {
+.miuix-modal:not(.vote__result), .extool, .livetool, .bloop, .exlottery, .ChatToolBar-DanmakuTail-Panel, .fans-continue-panel, .popup-player-panel, .exupdate-panel {
+    position: fixed !important;
+    width: 380px !important; max-width: calc(100vw - 24px) !important;
     height: 370px !important; max-height: 370px !important; min-height: 370px !important;
     box-sizing: border-box !important; padding: 0 0 16px 0 !important;
     overflow-y: auto !important; overflow-y: overlay !important; overflow-x: hidden !important;
-    display: none; z-index: 1428 !important; border-radius: 22px !important; background: rgba(255, 255, 255, 0.76) !important;
+    display: none; z-index: 1428 !important; border-radius: 22px !important; background: rgba(255, 255, 255, 0.78) !important;
     backdrop-filter: blur(36px) saturate(220%) !important; -webkit-backdrop-filter: blur(36px) saturate(220%) !important;
     border: 1px solid rgba(255, 255, 255, 0.95) !important;
     box-shadow: inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.98), 0 16px 40px rgba(15, 23, 42, 0.16), 0 2px 8px rgba(15, 23, 42, 0.08) !important;
@@ -783,7 +785,7 @@ function y(){var e=document.createElement("style");e.appendChild(document.create
 }
 
 /* 划过瞬间淡入 + 微上浮优雅动画与强制呈现 */
-.miuix-modal.miuix-modal-in,
+.miuix-modal:not(.exupdate-panel).miuix-modal-in,
 .extool.miuix-modal-in,
 .livetool.miuix-modal-in,
 .bloop.miuix-modal-in,
@@ -791,8 +793,8 @@ function y(){var e=document.createElement("style");e.appendChild(document.create
 .ChatToolBar-DanmakuTail-Panel.miuix-modal-in,
 .fans-continue-panel.miuix-modal-in,
 .popup-player-panel.miuix-modal-in,
-.miuix-modal[style*="display: block"], .miuix-modal[style*="display:block"],
-.miuix-modal[style*="display: flex"], .miuix-modal[style*="display:flex"],
+.miuix-modal:not(.exupdate-panel)[style*="display: block"], .miuix-modal:not(.exupdate-panel)[style*="display:block"],
+.miuix-modal:not(.exupdate-panel)[style*="display: flex"], .miuix-modal:not(.exupdate-panel)[style*="display:flex"],
 .extool[style*="display: block"], .extool[style*="display:block"],
 .extool[style*="display: flex"], .extool[style*="display:flex"],
 .livetool[style*="display: block"], .livetool[style*="display:block"],
@@ -808,6 +810,17 @@ function y(){var e=document.createElement("style");e.appendChild(document.create
 .popup-player-panel[style*="display: block"], .popup-player-panel[style*="display:block"],
 .popup-player-panel[style*="display: flex"], .popup-player-panel[style*="display:flex"] {
     display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+    animation: miuix-modal-in 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+}
+
+.exupdate-panel.miuix-modal-in,
+.exupdate-panel[style*="display: block"], .exupdate-panel[style*="display:block"],
+.exupdate-panel[style*="display: flex"], .exupdate-panel[style*="display:flex"] {
+    display: flex !important;
+    flex-direction: column !important;
     opacity: 1 !important;
     visibility: visible !important;
     pointer-events: auto !important;
@@ -841,12 +854,130 @@ function y(){var e=document.createElement("style");e.appendChild(document.create
     border-bottom-right-radius: 0 !important;
 }
 
-.miuix-modal::-webkit-scrollbar, .extool::-webkit-scrollbar, .livetool::-webkit-scrollbar, .bloop::-webkit-scrollbar, .exlottery::-webkit-scrollbar, .ChatToolBar-DanmakuTail-Panel::-webkit-scrollbar, .fans-continue-panel::-webkit-scrollbar, .popup-player-panel::-webkit-scrollbar { width: 4px !important; }
-.miuix-modal::-webkit-scrollbar-thumb, .extool::-webkit-scrollbar-thumb, .livetool::-webkit-scrollbar-thumb, .bloop::-webkit-scrollbar-thumb, .exlottery::-webkit-scrollbar-thumb, .ChatToolBar-DanmakuTail-Panel::-webkit-scrollbar-thumb, .fans-continue-panel::-webkit-scrollbar-thumb, .popup-player-panel::-webkit-scrollbar-thumb {
+.miuix-modal::-webkit-scrollbar, .extool::-webkit-scrollbar, .livetool::-webkit-scrollbar, .bloop::-webkit-scrollbar, .exlottery::-webkit-scrollbar, .ChatToolBar-DanmakuTail-Panel::-webkit-scrollbar, .fans-continue-panel::-webkit-scrollbar, .popup-player-panel::-webkit-scrollbar, .exupdate-panel::-webkit-scrollbar { width: 4px !important; }
+.miuix-modal::-webkit-scrollbar-thumb, .extool::-webkit-scrollbar-thumb, .livetool::-webkit-scrollbar-thumb, .bloop::-webkit-scrollbar-thumb, .exlottery::-webkit-scrollbar-thumb, .ChatToolBar-DanmakuTail-Panel::-webkit-scrollbar-thumb, .fans-continue-panel::-webkit-scrollbar-thumb, .popup-player-panel::-webkit-scrollbar-thumb, .exupdate-panel::-webkit-scrollbar-thumb {
     background: rgba(0, 0, 0, 0.18) !important; border-radius: 4px !important;
 }
-.miuix-modal::-webkit-scrollbar-track, .extool::-webkit-scrollbar-track, .livetool::-webkit-scrollbar-track, .bloop::-webkit-scrollbar-track, .exlottery::-webkit-scrollbar-track, .ChatToolBar-DanmakuTail-Panel::-webkit-scrollbar-track, .fans-continue-panel::-webkit-scrollbar-track, .popup-player-panel::-webkit-scrollbar-track {
+.miuix-modal::-webkit-scrollbar-track, .extool::-webkit-scrollbar-track, .livetool::-webkit-scrollbar-track, .bloop::-webkit-scrollbar-track, .exlottery::-webkit-scrollbar-track, .ChatToolBar-DanmakuTail-Panel::-webkit-scrollbar-track, .fans-continue-panel::-webkit-scrollbar-track, .popup-player-panel::-webkit-scrollbar-track, .exupdate-panel::-webkit-scrollbar-track {
     background: transparent !important;
+}
+
+/* 版本更新面板 (.exupdate-panel) 三段式结构与多态按钮样式 */
+.exupdate-panel {
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+}
+.exupdate-panel__body {
+    flex: 1 1 auto !important;
+    overflow-y: auto !important;
+    overflow-y: overlay !important;
+    padding: 12px 16px !important;
+    box-sizing: border-box !important;
+}
+.exupdate-panel__body::-webkit-scrollbar { width: 4px !important; }
+.exupdate-panel__body::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.18) !important;
+    border-radius: 4px !important;
+}
+.exupdate-section {
+    margin-bottom: 12px !important;
+}
+.exupdate-section__tag {
+    display: inline-block !important;
+    padding: 2px 8px !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    color: #007aff !important;
+    background: rgba(0, 122, 255, 0.1) !important;
+    border-radius: 6px !important;
+    margin-bottom: 6px !important;
+}
+.exupdate-list {
+    margin: 0 !important;
+    padding: 0 !important;
+    list-style: none !important;
+    font-size: 12px !important;
+    line-height: 19px !important;
+    color: #334155 !important;
+}
+.exupdate-list li {
+    margin-bottom: 6px !important;
+    word-break: break-word !important;
+}
+.exupdate-panel__footer {
+    flex: 0 0 auto !important;
+    padding: 10px 16px 12px 16px !important;
+    box-sizing: border-box !important;
+    background: rgba(255, 255, 255, 0.65) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border-top: 1px solid rgba(0, 0, 0, 0.05) !important;
+}
+.exupdate-state-btn {
+    width: 100% !important;
+    height: 38px !important;
+    line-height: 38px !important;
+    border-radius: 10px !important;
+    font-size: 13.5px !important;
+    font-weight: 600 !important;
+    text-align: center !important;
+    cursor: pointer !important;
+    outline: none !important;
+    box-sizing: border-box !important;
+    border: none !important;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+.exupdate-state-btn:active {
+    transform: scale(0.96) !important;
+}
+/* 状态 1: 【我已收到】 */
+.exupdate-state-btn--ack {
+    background: #007aff !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 14px rgba(0, 122, 255, 0.35) !important;
+}
+.exupdate-state-btn--ack:hover {
+    background: #0062cc !important;
+    box-shadow: 0 6px 18px rgba(0, 122, 255, 0.45) !important;
+    transform: translateY(-1px) !important;
+}
+/* 状态 2: 【检查更新】 */
+.exupdate-state-btn--check {
+    background: rgba(0, 122, 255, 0.08) !important;
+    color: #007aff !important;
+    border: 1px solid rgba(0, 122, 255, 0.2) !important;
+}
+.exupdate-state-btn--check:hover {
+    background: rgba(0, 122, 255, 0.15) !important;
+    border-color: rgba(0, 122, 255, 0.35) !important;
+}
+/* 状态 3: 【检查中...】 */
+.exupdate-state-btn--checking {
+    background: rgba(0, 0, 0, 0.06) !important;
+    color: #64748b !important;
+    cursor: wait !important;
+}
+/* 状态 4A: 【已是最新】 */
+.exupdate-state-btn--latest {
+    background: rgba(16, 185, 129, 0.12) !important;
+    color: #059669 !important;
+    border: 1px solid rgba(16, 185, 129, 0.25) !important;
+}
+.exupdate-state-btn--latest:hover {
+    background: rgba(16, 185, 129, 0.2) !important;
+}
+/* 状态 4B: 【前往更新】 */
+.exupdate-state-btn--upgrade {
+    background: linear-gradient(135deg, #ff6a00, #ee5a24) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 14px rgba(238, 90, 36, 0.38) !important;
+}
+.exupdate-state-btn--upgrade:hover {
+    background: linear-gradient(135deg, #ff791a, #f36838) !important;
+    box-shadow: 0 6px 18px rgba(238, 90, 36, 0.48) !important;
+    transform: translateY(-1px) !important;
 }
 
 /* 一键续牌与同屏播放专属卡片布局 */
@@ -1110,118 +1241,6 @@ function y(){var e=document.createElement("style");e.appendChild(document.create
 .livetool input[type="text"]:focus, .livetool textarea:focus, .livetool select:focus,
 .bloop input[type="text"]:focus, .bloop textarea:focus, .bloop select:focus {
     border-color: var(--miuix-blue) !important; box-shadow: 0 0 0 3px var(--miuix-blue-glow) !important;
-}
-
-/* ==================== MIUIX 全量版本更新公告模态弹窗 ==================== */
-.miuix-update-modal {
-    position: fixed !important;
-    width: 440px !important;
-    max-width: 92vw !important;
-    height: 480px !important;
-    max-height: 85vh !important;
-    box-sizing: border-box !important;
-    display: flex !important;
-    flex-direction: column !important;
-    z-index: 200000 !important;
-    border-radius: 22px !important;
-    background: rgba(255, 255, 255, 0.88) !important;
-    backdrop-filter: blur(36px) saturate(220%) !important;
-    -webkit-backdrop-filter: blur(36px) saturate(220%) !important;
-    border: 1px solid rgba(255, 255, 255, 0.95) !important;
-    box-shadow: inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.98), 0 20px 50px rgba(15, 23, 42, 0.22), 0 4px 12px rgba(15, 23, 42, 0.08) !important;
-    color: #0f172a !important;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif !important;
-    overflow: hidden !important;
-    animation: miuix-modal-in 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
-}
-
-.miuix-modal__ver-badge {
-    margin-left: 8px !important;
-    padding: 2px 8px !important;
-    font-size: 11px !important;
-    font-weight: 700 !important;
-    color: #007aff !important;
-    background: rgba(0, 122, 255, 0.1) !important;
-    border-radius: 10px !important;
-    display: inline-block !important;
-}
-
-.miuix-update-modal__body {
-    flex: 1 1 auto !important;
-    overflow-y: auto !important;
-    padding: 16px 20px !important;
-    box-sizing: border-box !important;
-}
-.miuix-update-modal__body::-webkit-scrollbar { width: 4px !important; }
-.miuix-update-modal__body::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0.18) !important;
-    border-radius: 4px !important;
-}
-
-.miuix-update-section {
-    margin-bottom: 14px !important;
-}
-.miuix-update-tag {
-    display: inline-block !important;
-    padding: 3px 8px !important;
-    font-size: 11px !important;
-    font-weight: 700 !important;
-    color: #007aff !important;
-    background: rgba(0, 122, 255, 0.1) !important;
-    border-radius: 6px !important;
-    margin-bottom: 8px !important;
-}
-.miuix-update-list {
-    margin: 0 !important;
-    padding: 0 0 0 16px !important;
-    list-style: disc !important;
-    font-size: 12.5px !important;
-    line-height: 20px !important;
-    color: #334155 !important;
-}
-.miuix-update-list li {
-    margin-bottom: 6px !important;
-}
-.miuix-update-list b {
-    color: #0f172a !important;
-}
-
-.miuix-update-modal__footer {
-    flex: 0 0 auto !important;
-    padding: 12px 18px !important;
-    box-sizing: border-box !important;
-    background: rgba(255, 255, 255, 0.5) !important;
-    backdrop-filter: blur(20px) !important;
-    -webkit-backdrop-filter: blur(20px) !important;
-    border-top: 1px solid rgba(0, 0, 0, 0.06) !important;
-    display: flex !important;
-    justify-content: stretch !important;
-}
-
-.miuix-update-confirm-btn {
-    width: 100% !important;
-    height: 42px !important;
-    line-height: 42px !important;
-    border: none !important;
-    border-radius: 12px !important;
-    background: #007aff !important;
-    color: #ffffff !important;
-    font-size: 14px !important;
-    font-weight: 600 !important;
-    text-align: center !important;
-    cursor: pointer !important;
-    box-shadow: 0 4px 14px rgba(0, 122, 255, 0.35) !important;
-    transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
-    outline: none !important;
-}
-.miuix-update-confirm-btn:hover {
-    background: #0062cc !important;
-    transform: translateY(-1px) scale(1.01) !important;
-    box-shadow: 0 6px 18px rgba(0, 122, 255, 0.45) !important;
-}
-.miuix-update-confirm-btn:active {
-    background: #0051a8 !important;
-    transform: translateY(1px) scale(0.98) !important;
 }
 
 `)),document.head.appendChild(e)}
