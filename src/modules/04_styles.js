@@ -1112,4 +1112,116 @@ function y(){var e=document.createElement("style");e.appendChild(document.create
     border-color: var(--miuix-blue) !important; box-shadow: 0 0 0 3px var(--miuix-blue-glow) !important;
 }
 
+/* ==================== MIUIX 全量版本更新公告模态弹窗 ==================== */
+.miuix-update-modal {
+    position: fixed !important;
+    width: 440px !important;
+    max-width: 92vw !important;
+    height: 480px !important;
+    max-height: 85vh !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    flex-direction: column !important;
+    z-index: 200000 !important;
+    border-radius: 22px !important;
+    background: rgba(255, 255, 255, 0.88) !important;
+    backdrop-filter: blur(36px) saturate(220%) !important;
+    -webkit-backdrop-filter: blur(36px) saturate(220%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.95) !important;
+    box-shadow: inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.98), 0 20px 50px rgba(15, 23, 42, 0.22), 0 4px 12px rgba(15, 23, 42, 0.08) !important;
+    color: #0f172a !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif !important;
+    overflow: hidden !important;
+    animation: miuix-modal-in 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+}
+
+.miuix-modal__ver-badge {
+    margin-left: 8px !important;
+    padding: 2px 8px !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    color: #007aff !important;
+    background: rgba(0, 122, 255, 0.1) !important;
+    border-radius: 10px !important;
+    display: inline-block !important;
+}
+
+.miuix-update-modal__body {
+    flex: 1 1 auto !important;
+    overflow-y: auto !important;
+    padding: 16px 20px !important;
+    box-sizing: border-box !important;
+}
+.miuix-update-modal__body::-webkit-scrollbar { width: 4px !important; }
+.miuix-update-modal__body::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.18) !important;
+    border-radius: 4px !important;
+}
+
+.miuix-update-section {
+    margin-bottom: 14px !important;
+}
+.miuix-update-tag {
+    display: inline-block !important;
+    padding: 3px 8px !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    color: #007aff !important;
+    background: rgba(0, 122, 255, 0.1) !important;
+    border-radius: 6px !important;
+    margin-bottom: 8px !important;
+}
+.miuix-update-list {
+    margin: 0 !important;
+    padding: 0 0 0 16px !important;
+    list-style: disc !important;
+    font-size: 12.5px !important;
+    line-height: 20px !important;
+    color: #334155 !important;
+}
+.miuix-update-list li {
+    margin-bottom: 6px !important;
+}
+.miuix-update-list b {
+    color: #0f172a !important;
+}
+
+.miuix-update-modal__footer {
+    flex: 0 0 auto !important;
+    padding: 12px 18px !important;
+    box-sizing: border-box !important;
+    background: rgba(255, 255, 255, 0.5) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border-top: 1px solid rgba(0, 0, 0, 0.06) !important;
+    display: flex !important;
+    justify-content: stretch !important;
+}
+
+.miuix-update-confirm-btn {
+    width: 100% !important;
+    height: 42px !important;
+    line-height: 42px !important;
+    border: none !important;
+    border-radius: 12px !important;
+    background: #007aff !important;
+    color: #ffffff !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    text-align: center !important;
+    cursor: pointer !important;
+    box-shadow: 0 4px 14px rgba(0, 122, 255, 0.35) !important;
+    transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    outline: none !important;
+}
+.miuix-update-confirm-btn:hover {
+    background: #0062cc !important;
+    transform: translateY(-1px) scale(1.01) !important;
+    box-shadow: 0 6px 18px rgba(0, 122, 255, 0.45) !important;
+}
+.miuix-update-confirm-btn:active {
+    background: #0051a8 !important;
+    transform: translateY(1px) scale(0.98) !important;
+}
+
 `)),document.head.appendChild(e)}
