@@ -238,489 +238,384 @@ function l(e,t,o="download.xlsx"){if("undefined"==typeof XLSX)return void ExLoad
     </g>
 
 </svg>`;let tt=[],ot=null,nt=0,it=!1,at=0;async function rt(){let o=await new Promise(t=>{fetch("https://www.douyu.com/japi/revenuenc/web/actfans/fishing/reelIn",{method:"POST",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:`ctn=${w()}&rid=`+B}).then(e=>e.json()).then(e=>{t(e)}).catch(e=>{console.log("请求失败!",e)})});if(0!==o.error)console.log(o,"收杆失败"),0==(await ct()).data.fishing.stat&&(it=!1,nt=0);else{let t="【自动钓鱼】";var n=tt.find(e=>e.fishId==o.data.fish.id);if(n&&(t+=`获得${n.name}${o.data.fish.wei}斤`),o.data.awards&&0<o.data.awards.length)for(let e=0;e<o.data.awards.length;e++){var i=o.data.awards[e];t+=`${n?"，":""}获得${i.awardName}x`+i.awardNum}"【自动钓鱼】"!==t&&T(t,"success"),it=!1}}function lt(){let t;try{t=JSON.parse(localStorage.getItem("ExSave_AutoFish"))}catch(e){t=null}return t&&"object"==typeof t||(t={}),Array.isArray(t.rids)||(t.rids=[]),t.modes&&"object"==typeof t.modes||(t.modes={}),t}function st(t){document.querySelectorAll('input[name="autofish_mode"]').forEach(e=>e.disabled=t)}function dt(){var e,t=document.getElementById("extool__autofish_start"),o=document.querySelector('input[name="autofish_mode"]:checked');t&&o&&(t=t.checked,o=o.value,e=lt(),t?(e.rids.includes(B)||e.rids.push(B),e.modes[B]=o):(e.rids=e.rids.filter(e=>e!==B),delete e.modes[B]),localStorage.setItem("ExSave_AutoFish",JSON.stringify(e)))}function ct(){return new Promise(t=>{fetch(`https://www.douyu.com/japi/revenuenc/web/actfans/fishing/homePage?rid=${B}&opt=1`,{method:"GET",mode:"no-cors",cache:"default",credentials:"include"}).then(e=>e.json()).then(e=>{t(e)}).catch(e=>{console.log("请求失败!",e)})})}function pt(e,t){fetch("https://www.douyu.com/japi/prop/backpack/web/v5?rid="+e,{method:"GET",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"}}).then(e=>e.json()).then(e=>{t(e)}).catch(e=>{console.log("请求失败!",e)})}function mt(){return document.getElementById("extool__fullscreen").checked}function ut(){return document.getElementById("extool__highestvideoquality").checked}let gt,ht=0,ft,yt,bt;function vt(e){if(0!=e.length&&0!=e[0].addedNodes.length){let i=e[0].addedNodes[0],a=i.lastElementChild;if(null!=a&&-1!=a.innerHTML.indexOf("is-self")){let n=setTimeout(()=>{i.className="Barrage-listItem js-noblefloating-barrage",a.className="js-noblefloating-barragecont Barrage-notice--noble",a.setAttribute("style","background-color: #fff3df");a.getElementsByClassName("Barrage-nickName")[0].setAttribute("class","Barrage-nickName is-self js-nick");var e,t=a.querySelector(".UserLevel"),t=(null!=t&&(t.className="UserLevel UserLevel--150",t.setAttribute("title","用户等级：150")),a.querySelector(".RoomLevel")),t=(null!=t&&(t.className="RoomLevel RoomLevel--18",t.setAttribute("title","房间等级：18")),i.querySelector(".FansMedal")),t=(null!=t&&(t.style="display:none;"),document.getElementsByClassName("FansMedal-name")[0]),o=(document.getElementsByClassName("DiamondsFansRankList-item DiamondsFansRankList-item--top")[0],t?(o=document.createElement("div"),e=document.createElement("span"),o.className="FansMedal level-50 js-fans-dysclick Barrage-icon",e.className="FansMedal-name js-fans-dysclick",e.innerHTML=t.innerText,o.appendChild(e),a.insertBefore(o,a.querySelector(".UserLevel"))):((t=document.createElement("div")).className="FansMedal level-50 js-fans-dysclick Barrage-icon",t.setAttribute("data-rid","4042402"),(e=document.createElement("span")).className="FansMedal-name js-fans-dysclick",e.setAttribute("data-rid",String(B)),e.innerHTML=(localStorage.getItem("ExSave_GoldBadgeName")||"幻神"),t.appendChild(e),a.insertBefore(t,a.querySelector(".UserLevel"))),i.querySelector(".Barrage-nobleImg"));null!=o?(o.src="//res.douyucdn.cn/resource/2019/08/15/common/4e85776071ffbae2867bb9d116e9a43c.gif",o.title="幻神"):(e=document.createElement("span"),t=document.createElement("img"),e.className="Barrage-icon Barrage-noble",t.className="Barrage-nobleImg",t.setAttribute("src","//res.douyucdn.cn/resource/2019/08/15/common/4e85776071ffbae2867bb9d116e9a43c.gif"),t.setAttribute("title","幻神"),e.appendChild(t),a.insertBefore(e,a.firstElementChild)),clearTimeout(n)},100)}}}function xt(t){if(0!=t.length&&0!=t[0].addedNodes.length){t=t[0].addedNodes[0];if(-1==t.className.indexOf("noble-d35c82")&&-1!=t.innerHTML.indexOf("border: 2px solid rgb(2, 255, 255)")){t.style.zIndex="30",t.className="danmuItem-f8e204 noble-d35c82";var o=document.createElement("img"),o=(o.className="super-noble-icon-54c62c",o.setAttribute("src","https://shark2.douyucdn.cn/front-publish/live_player-master/assets/images/h1_dcd226.png"),o.setAttribute("style","margin-left: -57px; margin-top: -4px;"),t.insertBefore(o,t.firstElementChild),document.createElement("img"));o.className="super-user-icon-253711";let e=document.getElementsByClassName("Avatar is-circle")[0];null!=e&&(e=e.getElementsByTagName("img")[0].getAttribute("src"),o.setAttribute("src",e.replace(new RegExp("_middle"),"_small"))),t.insertBefore(o,t.firstElementChild);t.getElementsByClassName("afterpic-f864c2")[0].remove();var o=t.getElementsByClassName("text-edf4e7")[0],n=(o.className="super-text-188279",o.setAttribute("style","font: bold 23px SimHei, 'Microsoft JhengHei', Arial, Helvetica, sans-serif; color: rgb(255, 255, 255); background: url('https://shark2.douyucdn.cn/front-publish/live_player-master/assets/images/h2_8e5e64.png'); height: 44px;"),document.createElement("div")),o=(n.setAttribute("class","afterpic-f864c2"),n.setAttribute("style","margin-top: 7px; margin-left: -1px;"),o.appendChild(n),document.createElement("img"));o.className="super-tail-6a0446",o.setAttribute("src","https://shark2.douyucdn.cn/front-publish/live_player-master/assets/images/h3_fd2e5b.png"),t.appendChild(o),console.log(o)}}}// 全量礼物配置缓存与快速检索字典
-var _allGiftsCache = null;
-var _allGiftsMapByName = {};
-var _allGiftsMapById = {};
-
-var KNOWN_BACKPACK_ICONS = {
-    "268": "https://gfs-op.douyucdn.cn/dygift/2019/05/30/ed7b5926f169266173584bbd11139815.gif",
-    "20422": "https://gfs-op.douyucdn.cn/dygift/2019/05/30/ed7b5926f169266173584bbd11139815.gif",
-    "1838": "https://gfs-op.douyucdn.cn/dygift/1807/262fe1d8cea33e192c81adadc251d1c4.gif",
-    "824": "https://gfs-op.douyucdn.cn/dygift/1705/92c614debee11c3db11f853f3c02ed91.gif"
-};
-
-function fetchAllGiftsConfig(callback) {
-    if (_allGiftsCache && _allGiftsCache.length > 0) {
-        return callback(_allGiftsCache);
-    }
-
+// 获取纯数字真实房间号 (归一化提取，杜绝别名导致的 403)
+function getNumericRoomId() {
     try {
-        var localCached = GM_getValue("Ex_AllGiftsConfig", null);
-        if (localCached && typeof localCached === "string") {
-            var parsed = JSON.parse(localCached);
-            if (parsed && parsed.list && parsed.list.length > 0 && (Date.now() - (parsed.time || 0) < 86400000)) {
-                _allGiftsCache = parsed.list;
-                buildGiftMaps(_allGiftsCache);
-                return callback(_allGiftsCache);
+        if (typeof unsafeWindow !== "undefined") {
+            if (unsafeWindow.room_id && !isNaN(Number(unsafeWindow.room_id))) return String(unsafeWindow.room_id);
+            if (unsafeWindow.rid && !isNaN(Number(unsafeWindow.rid))) return String(unsafeWindow.rid);
+            if (unsafeWindow.$DATA && unsafeWindow.$DATA.ROOM && unsafeWindow.$DATA.ROOM.room_id) {
+                return String(unsafeWindow.$DATA.ROOM.room_id);
             }
         }
     } catch(e) {}
-
-    var url = "https://webconf.douyucdn.cn/resource/common/prop_gift_list/prop_gift_config.json";
-    var doFetch = function() {
-        if (typeof GM_xmlhttpRequest === "function") {
-            GM_xmlhttpRequest({
-                method: "GET",
-                url: url,
-                responseType: "text",
-                onload: function(res) {
-                    handleJsonp(res.responseText || res.response);
-                },
-                onerror: function() { callback([]); }
-            });
-        } else {
-            fetch(url).then(r => r.text()).then(handleJsonp).catch(function() { callback([]); });
+    try {
+        if (typeof window !== "undefined") {
+            if (window.room_id && !isNaN(Number(window.room_id))) return String(window.room_id);
+            if (window.rid && !isNaN(Number(window.rid))) return String(window.rid);
         }
-    };
-
-    function handleJsonp(text) {
-        if (!text) return callback([]);
-        var rawText = String(text).trim();
-        if (rawText.startsWith("DYConfigCallback(")) {
-            rawText = rawText.substring("DYConfigCallback(".length);
-            var lastIdx = rawText.lastIndexOf(")");
-            if (lastIdx !== -1) rawText = rawText.substring(0, lastIdx);
-        }
-        try {
-            var json = JSON.parse(rawText);
-            var dataObj = (json && json.data) ? json.data : {};
-            var list = [];
-            for (var gid in dataObj) {
-                if (!dataObj.hasOwnProperty(gid)) continue;
-                var it = dataObj[gid];
-                var icon = it.himg || it.cimg || it.bimg || it.pc_icon || it.gif_icon || "";
-                if (icon && !icon.startsWith("http")) {
-                    icon = "https://gfs-op.douyucdn.cn/dygift/" + icon;
-                }
-                var svga = it.effect_icon || (it.effect && it.effect.effect_icon) || "";
-                if (svga && !svga.startsWith("http")) {
-                    svga = "https://gfs-op.douyucdn.cn/dygift/" + svga;
-                }
-                var priceYc = Number(it.pc || it.price || 0) / 100;
-                list.push({
-                    id: String(gid),
-                    name: it.name || "未知礼物",
-                    priceText: priceYc > 0 ? (priceYc + " 鱼翅") : "免费",
-                    icon: icon,
-                    svga: svga,
-                    stayTime: Number(it.stay_time || 4000)
-                });
-            }
-            _allGiftsCache = list;
-            buildGiftMaps(_allGiftsCache);
-            try {
-                GM_setValue("Ex_AllGiftsConfig", JSON.stringify({ time: Date.now(), list: list }));
-            } catch(e) {}
-            callback(_allGiftsCache);
-        } catch(err) {
-            callback([]);
-        }
-    }
-
-    doFetch();
+    } catch(e) {}
+    if (typeof B !== "undefined" && B && !isNaN(Number(B))) return String(B);
+    try {
+        var html = document.documentElement.innerHTML;
+        var m = html.match(/["']room_id["']\s*:\s*(\d+)/) || html.match(/roomID:\s*(\d+)/);
+        if (m && m[1]) return m[1];
+    } catch(e) {}
+    return "";
 }
 
-function buildGiftMaps(list) {
-    if (!list) return;
-    for (var i = 0; i < list.length; i++) {
-        var g = list[i];
-        if (g.name) _allGiftsMapByName[g.name] = g;
-        if (g.id) _allGiftsMapById[g.id] = g;
-    }
-}
-
+// 模块 A：恢复原设计意图 —— 仅获取当前房间专属在播礼物 (0 全网死重)
 function fetchCurrentRoomGifts(rid, callback) {
-    var actualRid = String(rid || B || "");
-    if (!actualRid && typeof location !== "undefined") {
-        actualRid = location.pathname.replace(/\//g, "").trim();
-    }
-
-    // 1. 提取当前房间在播礼物池
-    var roomGiftList = [];
+    var numRid = getNumericRoomId() || String(rid || "");
+    
+    // 优先层：直接读取页面现存内存中的房间在播礼物数据
     try {
-        var winData = (typeof unsafeWindow !== "undefined" && unsafeWindow.$DATA) ? unsafeWindow.$DATA : window.$DATA;
+        var winData = (typeof unsafeWindow !== "undefined" && unsafeWindow.$DATA) ? unsafeWindow.$DATA : (typeof window !== "undefined" && window.$DATA ? window.$DATA : null);
         if (winData && winData.room_gift && winData.room_gift.gift) {
-            roomGiftList = parseRoomGiftDict(winData.room_gift.gift);
-        }
-    } catch(e) {}
-
-    // 2. 无论房间礼物数量多寡，无缝聚合全量官方礼物池（房间独占置顶，全量紧随其后）
-    fetchAllGiftsConfig(function(allGifts) {
-        var combined = [];
-        var seenIds = {};
-
-        // 优先将房间定制礼物放入
-        for (var i = 0; i < roomGiftList.length; i++) {
-            var rg = roomGiftList[i];
-            if (!seenIds[rg.id]) {
-                seenIds[rg.id] = true;
-                combined.push(rg);
-            }
-        }
-
-        // 补入全量通用官方礼物
-        for (var j = 0; j < allGifts.length; j++) {
-            var ag = allGifts[j];
-            if (!seenIds[ag.id]) {
-                seenIds[ag.id] = true;
-                combined.push(ag);
-            }
-        }
-
-        callback(combined);
-    });
-}
-
-function parseRoomGiftDict(rawDict) {
-    var result = [];
-    if (!rawDict) return result;
-    for (var gid in rawDict) {
-        if (!rawDict.hasOwnProperty(gid)) continue;
-        var g = rawDict[gid];
-        var iconPath = g.pc_icon || g.gif_icon || g.chat_icon || g.himg || g.cimg || g.bimg || "";
-        if (iconPath && !iconPath.startsWith("http")) {
-            iconPath = "https://gfs-op.douyucdn.cn/dygift/" + iconPath;
-        }
-        var svgaPath = (g.effect && g.effect.effect_icon) ? g.effect.effect_icon : "";
-        if (svgaPath && !svgaPath.startsWith("http")) {
-            svgaPath = "https://gfs-op.douyucdn.cn/dygift/" + svgaPath;
-        }
-        var priceYc = Number(g.price || g.pc || 0) / 100;
-        result.push({
-            id: String(g.id || gid),
-            name: g.name || "未知礼物",
-            priceText: priceYc > 0 ? (priceYc + " 鱼翅") : "免费",
-            icon: iconPath,
-            svga: svgaPath,
-            stayTime: Number(g.stay_time || 4000)
-        });
-    }
-    return result;
-}
-
-function fetchUserBackpackGifts(rid, callback) {
-    var gifts = [];
-    var seenNames = {};
-
-    // 第一层：优先直接探测页面已渲染的原生背包 DOM 节点 (0毫秒响应，真实可见)
-    try {
-        var domItems = document.querySelectorAll(".ToolbarBackpack-giftItem, .Backpack-prop, .BackpackExpandPanel-giftItem, [class*=\"Backpack-prop\"]");
-        if (domItems && domItems.length > 0) {
-            for (var i = 0; i < domItems.length; i++) {
-                var el = domItems[i];
-                var imgEl = el.querySelector("img");
-                var iconSrc = imgEl ? (imgEl.src || imgEl.getAttribute("data-src") || "") : "";
-                if (iconSrc && iconSrc.startsWith("//")) iconSrc = "https:" + iconSrc;
-
-                var name = el.getAttribute("title") || (imgEl ? (imgEl.getAttribute("title") || imgEl.getAttribute("alt")) : "") || "";
-                if (!name) {
-                    var nameEl = el.querySelector(".prop-name, .name, .ToolbarBackpack-giftName");
-                    if (nameEl) name = nameEl.textContent.trim();
-                }
-                if (!name) name = el.innerText.split(/[\r\n\s×x]+/)[0].trim();
-                if (!name || name === "清空背包" || name.includes("开播")) continue;
-
-                var count = 1;
-                var countEl = el.querySelector(".count, .num, .prop-count, .ToolbarBackpack-giftCount, .bag-info");
-                if (countEl) {
-                    var parsedCount = parseInt(countEl.textContent.replace(/[^0-9]/g, ""));
-                    if (!isNaN(parsedCount) && parsedCount > 0) count = parsedCount;
-                }
-
-                var propId = el.getAttribute("data-id") || el.getAttribute("data-prop-id") || el.getAttribute("data-gfid") || "";
-                if (!propId && typeof KNOWN_BACKPACK_ICONS !== "undefined") {
-                    for (var kid in KNOWN_BACKPACK_ICONS) {
-                        if (name.includes("荧光棒") && kid === "268") { propId = "268"; break; }
-                        if (name.includes("办卡") && kid === "20422") { propId = "20422"; break; }
-                    }
-                }
-                if (!propId && _allGiftsMapByName[name]) {
-                    propId = _allGiftsMapByName[name].id;
-                }
-                if (!propId) propId = String(20000 + i);
-
-                if (!iconSrc) {
-                    if (typeof KNOWN_BACKPACK_ICONS !== "undefined" && KNOWN_BACKPACK_ICONS[propId]) {
-                        iconSrc = KNOWN_BACKPACK_ICONS[propId];
-                    } else if (_allGiftsMapByName[name]) {
-                        iconSrc = _allGiftsMapByName[name].icon;
-                    }
-                }
-
-                if (!seenNames[name]) {
-                    seenNames[name] = true;
-                    gifts.push({
-                        id: String(propId),
-                        name: name,
-                        priceText: "拥有 ×" + String(count),
-                        icon: iconSrc || "https://gfs-op.douyucdn.cn/dygift/2019/05/30/ed7b5926f169266173584bbd11139815.gif",
-                        count: count
-                    });
-                }
-            }
-
+            var gifts = parseRoomGiftMap(winData.room_gift.gift);
             if (gifts.length > 0) {
                 return callback(gifts);
             }
         }
-    } catch (e) {
-        console.warn("[DouyuEx] DOM背包探测异常:", e);
-    }
+    } catch(e) {}
 
-    // 第二层：若 DOM 尚未展开，尝试读取 unsafeWindow 页面内存
-    try {
-        var winData = (typeof unsafeWindow !== "undefined" && unsafeWindow.$DATA) ? unsafeWindow.$DATA : (typeof window !== "undefined" && window.$DATA ? window.$DATA : null);
-        if (winData && winData.user_backpack && Array.isArray(winData.user_backpack)) {
-            var mList = winData.user_backpack.map(function(item) {
-                var icon = item.pic || item.icon || (typeof KNOWN_BACKPACK_ICONS !== "undefined" && KNOWN_BACKPACK_ICONS[String(item.id)]) || (_allGiftsMapById[String(item.id)] && _allGiftsMapById[String(item.id)].icon) || "";
-                return {
-                    id: String(item.id),
-                    name: item.name || "背包道具",
-                    priceText: "拥有 ×" + String(item.count || 1),
-                    icon: icon,
-                    count: Number(item.count || 1)
-                };
-            });
-            if (mList.length > 0) return callback(mList);
+    // 第二层：发起 betard 请求拉取当前房间官方礼物配置
+    var betardUrl = "https://www.douyu.com/betard/" + numRid;
+    var handleResponse = function(json) {
+        if (json && json.room_gift && json.room_gift.gift) {
+            var parsed = parseRoomGiftMap(json.room_gift.gift);
+            return callback(parsed);
         }
-    } catch (e) {}
+        callback([]);
+    };
 
-    // 第三层：沙箱特权接口拉取作为兜底
-    var actualRid = String(rid || B || "");
-    if (!actualRid && typeof location !== "undefined") {
-        actualRid = location.pathname.replace(/\//g, "").trim();
+    if (typeof GM_xmlhttpRequest === "function") {
+        GM_xmlhttpRequest({
+            method: "GET",
+            url: betardUrl,
+            responseType: "json",
+            headers: {
+                "Referer": "https://www.douyu.com/" + numRid,
+                "User-Agent": navigator.userAgent
+            },
+            onload: function(res) {
+                handleResponse(res.response || {});
+            },
+            onerror: function() { callback([]); }
+        });
+    } else {
+        fetch(betardUrl, { credentials: "include" })
+            .then(function(r) { return r.json(); })
+            .then(handleResponse)
+            .catch(function() { callback([]); });
     }
+}
 
-    var bpUrl = "https://www.douyu.com/japi/prop/backpack/web/v5?rid=" + actualRid;
+function parseRoomGiftMap(giftDict) {
+    var result = [];
+    if (!giftDict) return result;
+    for (var gid in giftDict) {
+        if (!giftDict.hasOwnProperty(gid)) continue;
+        var g = giftDict[gid];
+        var icon = g.pc_icon || g.gif_icon || g.himg || g.cimg || g.bimg || "";
+        if (icon && !icon.startsWith("http")) {
+            icon = "https://gfs-op.douyucdn.cn/dygift/" + icon;
+        }
+        var priceVal = Number(g.price || g.pc || 0);
+        var priceYc = priceVal / 100;
+        result.push({
+            id: String(g.id || gid),
+            name: g.name || "未知礼物",
+            priceText: priceYc > 0 ? (priceYc + " 鱼翅") : "免费",
+            icon: icon || "https://gfs-op.douyucdn.cn/dygift/2019/05/30/ed7b5926f169266173584bbd11139815.gif",
+            price: priceVal,
+            stayTime: Number(g.stay_time || 4000)
+        });
+    }
+    // 按价值从高到低排序，呈现清晰的高级感
+    result.sort(function(a, b) { return b.price - a.price; });
+    return result;
+}
 
-    function parseBackpackJson(json) {
-        var list = (json && json.data && Array.isArray(json.data.list)) ? json.data.list : (json && Array.isArray(json.data) ? json.data : []);
-        var result = list.map(function(item) {
-            var iconPath = item.pic || item.icon || item.prop_pic || item.prop_icon || item.himg || item.cimg || item.bimg || item.small_pic || "";
-            if (iconPath && !iconPath.startsWith("http")) {
-                iconPath = "https://gfs-op.douyucdn.cn/dygift/" + iconPath;
+// 模块 A：恢复原设计意图 —— 获取当前用户真实的背包礼物资产
+function fetchUserBackpackGifts(rid, callback) {
+    var numRid = getNumericRoomId() || String(rid || "");
+    var bpUrl = "https://www.douyu.com/japi/prop/backpack/web/v5?rid=" + numRid;
+
+    function parseBackpackList(list) {
+        if (!Array.isArray(list)) list = [];
+        return list.map(function(item) {
+            var icon = item.pic || item.icon || item.small_pic || item.himg || "";
+            if (icon && !icon.startsWith("http")) {
+                icon = "https://gfs-op.douyucdn.cn/dygift/" + icon;
             }
-
-            if (!iconPath && typeof KNOWN_BACKPACK_ICONS !== "undefined" && KNOWN_BACKPACK_ICONS[String(item.id)]) {
-                iconPath = KNOWN_BACKPACK_ICONS[String(item.id)];
-            }
-
-            if (!iconPath) {
-                var found = _allGiftsMapById[String(item.id)] || _allGiftsMapByName[item.name];
-                if (found && found.icon) {
-                    iconPath = found.icon;
+            if (!icon) {
+                if (String(item.id) === "268" || (item.name && item.name.includes("荧光棒"))) {
+                    icon = "https://gfs-op.douyucdn.cn/dygift/2019/05/30/ed7b5926f169266173584bbd11139815.gif";
+                } else if (String(item.id) === "20422" || (item.name && item.name.includes("办卡"))) {
+                    icon = "https://gfs-op.douyucdn.cn/dygift/1704/655e318cd934a0a9d20f86c5fa92cdf8.png";
+                } else {
+                    icon = "https://gfs-op.douyucdn.cn/dygift/2019/05/30/ed7b5926f169266173584bbd11139815.gif";
                 }
             }
-
-            if (!iconPath) {
-                iconPath = "https://gfs-op.douyucdn.cn/dygift/2019/05/30/ed7b5926f169266173584bbd11139815.gif";
-            }
-
             return {
                 id: String(item.id),
                 name: item.name || "背包道具",
                 priceText: "拥有 ×" + String(item.count || 1),
-                icon: iconPath,
+                icon: icon,
                 count: Number(item.count || 1)
             };
         });
-        callback(result);
     }
 
+    // 优先调用带 Referer 校验的油猴特权接口，保证 100% 鉴权成功
     if (typeof GM_xmlhttpRequest === "function") {
         GM_xmlhttpRequest({
             method: "GET",
             url: bpUrl,
             responseType: "json",
-            onload: function(e) {
-                parseBackpackJson(e.response || {});
+            headers: {
+                "Referer": "https://www.douyu.com/" + numRid,
+                "User-Agent": navigator.userAgent
+            },
+            onload: function(res) {
+                var json = res.response || {};
+                var rawList = (json.data && Array.isArray(json.data.list)) ? json.data.list : (Array.isArray(json.data) ? json.data : []);
+                if (rawList.length > 0) {
+                    return callback(parseBackpackList(rawList));
+                }
+                fallbackDomCheck();
             },
             onerror: function() {
-                tryFetch();
+                fallbackDomCheck();
             }
         });
     } else {
-        tryFetch();
+        fallbackDomCheck();
     }
 
-    function tryFetch() {
-        if (typeof fetch === "function") {
-            fetch(bpUrl, { credentials: "include" })
-                .then(function(res) { return res.json(); })
-                .then(parseBackpackJson)
-                .catch(function() { callback([]); });
-        } else {
-            callback([]);
-        }
-    }
-}
-
-// 主动注入斗鱼官方原生跑道大横幅 (Banner4gift)，完全复用斗鱼原生样式表
-var _lastBannerTime = 0;
-function createActiveGiftBanner(target, myName) {
-    if (!target) return;
-    var now = Date.now();
-    if (now - _lastBannerTime < 3000) return;
-    _lastBannerTime = now;
-
-    var container = document.querySelector(".BarrageBanner");
-    if (!container) {
-        var parent = document.getElementById("js-player-dialog") || document.querySelector(".room-Player-Box") || document.querySelector(".layout-Player-videoEntity") || document.body;
-        if (parent) {
-            container = document.createElement("div");
-            container.className = "BarrageBanner";
-            parent.appendChild(container);
-        }
-    }
-    if (!container) return;
-
-    var banner = document.createElement("div");
-    banner.className = "Banner4gift Banner4gift--size2";
-    var sender = myName || "我";
-    var giftName = target.name || "宇宙飞船";
-    var giftIcon = target.icon || "https://gfs-op.douyucdn.cn/dygift/2019/07/01/4fe2abb15429d6add34aae18bc70eec5.svga";
-
-    banner.innerHTML = `
-        <img class="Banner4gift-bg" src="https://gfs-op.douyucdn.cn/dygift/2019/03/15/6651f2de52dd359c7b553a77b9d00020.png">
-        <span class="Banner4gift-senderName" title="${sender}">${sender}</span>
-        <span class="Banner4gift-objectName" title="${giftName}">${giftName}</span>
-        <img class="Banner4gift-headerImg" src="${giftIcon}">
-    `;
-
-    container.appendChild(banner);
-    setTimeout(function() {
+    function fallbackDomCheck() {
+        // DOM 现场探针：如果底栏已经展开过背包，直接读取真实渲染的道具节点
         try {
-            if (banner.parentNode) banner.parentNode.removeChild(banner);
+            var domCards = document.querySelectorAll(".ToolBarBackpack .ToolbarGiftCard, .ToolbarGiftArea-backpack .ToolbarGiftCard, .ToolBarBackpack-giftList .ToolbarGiftCard");
+            if (domCards && domCards.length > 0) {
+                var domList = [];
+                for (var i = 0; i < domCards.length; i++) {
+                    var card = domCards[i];
+                    var img = card.querySelector(".ToolbarGiftCard-img, img");
+                    var nameEl = card.querySelector(".ToolbarGiftCard-name");
+                    var priceEl = card.querySelector(".ToolbarGiftCard-price");
+                    var name = nameEl ? nameEl.textContent.trim() : (card.getAttribute("title") || "");
+                    var iconSrc = img ? (img.src || img.getAttribute("data-src") || "") : "";
+                    var count = priceEl ? parseInt(priceEl.textContent.replace(/[^0-9]/g, "")) || 1 : 1;
+                    var propId = card.getAttribute("data-id") || card.getAttribute("data-prop-id") || String(20000 + i);
+                    if (name) {
+                        domList.push({
+                            id: String(propId),
+                            name: name,
+                            priceText: "拥有 ×" + String(count),
+                            icon: iconSrc || "https://gfs-op.douyucdn.cn/dygift/2019/05/30/ed7b5926f169266173584bbd11139815.gif",
+                            count: count
+                        });
+                    }
+                }
+                if (domList.length > 0) {
+                    return callback(domList);
+                }
+            }
         } catch(e) {}
-    }, 4500);
+        callback([]);
+    }
 }
 
-// 全屏 SVGA 豪华动效播放引擎 (强行挂载至播放器内部顶级可视沙盒)
-var _lastGiftAnimTime = 0;
-function triggerGiftAnimation(target) {
-    if (!target) return;
-    var now = Date.now();
-    if (now - _lastGiftAnimTime < 3000) return;
-    _lastGiftAnimTime = now;
+// ============================================================================
+// 模块 B：逆向底层 WebSocket 协议包，Hook 篡改礼物 ID (0 自建 UI，原生全权接管)
+// ============================================================================
 
-    var svgaUrl = target.svga || "";
-    if (!svgaUrl) {
-        if (target.name && (target.name.includes("飞船") || target.name.includes("宇宙"))) {
-            svgaUrl = "https://gfs-op.douyucdn.cn/dygift/2019/07/01/4fe2abb15429d6add34aae18bc70eec5.svga";
-        } else {
-            svgaUrl = "https://gfs-op.douyucdn.cn/dygift/2018/11/27/6c6349672e662750ad5c019b240d57f2.svga";
-        }
-    }
-    if (!svgaUrl) return;
+function encodeSTTPacket(sttStr) {
+    var encoder = new TextEncoder();
+    var bodyBytes = encoder.encode(sttStr + "\0");
+    var totalLen = bodyBytes.length + 8; // length = len_dup(4) + magic(2) + enc(1) + res(1) + payload
+    var buffer = new ArrayBuffer(bodyBytes.length + 12);
+    var view = new DataView(buffer);
+    view.setUint32(0, totalLen, true);
+    view.setUint32(4, totalLen, true);
+    view.setUint16(8, 689, true); // 斗鱼通信魔数 689
+    view.setUint8(10, 0);
+    view.setUint8(11, 0);
+    new Uint8Array(buffer, 12).set(bodyBytes);
+    return buffer;
+}
 
-    function doPlay() {
-        ht++;
-        var host = document.getElementById("js-player-dialog") || document.querySelector(".room-Player-Box") || document.querySelector(".layout-Player-videoEntity") || document.body;
-        var animContainer = host.querySelector(".ex_giftAnimation");
-        if (!animContainer) {
-            animContainer = document.createElement("div");
-            animContainer.className = "ex_giftAnimation";
-            animContainer.style.cssText = "position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100002; overflow: hidden;";
-            host.appendChild(animContainer);
-        }
+function processSTTData(data, onProcessed) {
+    if (!data) return onProcessed(data);
 
-        var animDiv = document.createElement("div");
-        var animId = "ex_giftAnimation_" + String(ht);
-        animDiv.id = animId;
-        animDiv.className = "ex_giftAnimation_exist";
-        animDiv.style.cssText = "position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100003;";
-        animContainer.appendChild(animDiv);
+    function handleBuffer(ab) {
+        if (!ab || ab.byteLength < 12) return onProcessed(ab);
+        var view = new DataView(ab);
+        if (view.getUint16(8, true) !== 689) return onProcessed(ab);
 
+        var tfConfig = null;
         try {
-            var player = new SVGA.Player("#" + animId);
-            var parser = new SVGA.Parser("#" + animId);
-            var stayTime = Number(target.stayTime) || 4500;
-            parser.load(svgaUrl, function(videoItem) {
-                player.setVideoItem(videoItem);
-                player.startAnimation();
-                setTimeout(function() {
-                    try {
-                        player = null;
-                        parser = null;
-                        if (animDiv.parentNode) animDiv.parentNode.removeChild(animDiv);
-                    } catch(e) {}
-                }, stayTime);
-            });
-        } catch(err) {
-            console.error("[DouyuEx] SVGA播放器调用异常:", err);
+            tfConfig = JSON.parse(localStorage.getItem("ExSave_GiftTransform"));
+        } catch(e) {}
+        if (!tfConfig || !tfConfig.enabled || !tfConfig.target || !tfConfig.source) {
+            return onProcessed(ab);
         }
+
+        var decoder = new TextDecoder("utf-8");
+        var payloadText = decoder.decode(new Uint8Array(ab, 12)).replace(/\0+$/, "");
+
+        // 仅拦截送礼广播封包
+        if (!payloadText.startsWith("type@=dgb/")) {
+            return onProcessed(ab);
+        }
+
+        var myUid = (typeof I !== "undefined" && I) ? String(I) : (x("acf_uid") || "");
+        var myNick = (typeof gt !== "undefined" && gt) ? String(gt).trim() : (x("acf_nickname") || "");
+        var sourceId = String(tfConfig.source.id || "268");
+        var targetId = String(tfConfig.target.id || "1005");
+
+        var isMatchSelf = false;
+        if (myUid && payloadText.includes("uid@=" + myUid + "/")) isMatchSelf = true;
+        if (!isMatchSelf && myNick && payloadText.includes("nn@=" + myNick + "/")) isMatchSelf = true;
+
+        if (isMatchSelf && payloadText.includes("gfid@=" + sourceId + "/")) {
+            // 核心协议 Hook 篡改：直接将底层源礼物 ID 替换为目标礼物 ID
+            var modifiedText = payloadText.replace("gfid@=" + sourceId + "/", "gfid@=" + targetId + "/");
+            var newAb = encodeSTTPacket(modifiedText);
+            return onProcessed(newAb);
+        }
+
+        return onProcessed(ab);
     }
 
-    if (typeof SVGA !== "undefined" && SVGA.Player) {
-        doPlay();
-    } else if (typeof ExLoadLib === "function") {
-        ExLoadLib(EXURL.svga, doPlay, function() {
-            ExLoadLib("https://unpkg.com/svgaplayerweb@2.3.1/build/svga.min.js", doPlay);
+    if (data instanceof ArrayBuffer) {
+        handleBuffer(data);
+    } else if (data && typeof data.arrayBuffer === "function") {
+        data.arrayBuffer().then(function(ab) {
+            handleBuffer(ab);
+        }).catch(function() {
+            onProcessed(data);
         });
+    } else {
+        onProcessed(data);
     }
 }
 
-// 跑道横幅送礼拦截管线 (被动监听备用)
-function wt(e){
-    if (!e || 0 === e.length || !e[0].addedNodes || 0 === e[0].addedNodes.length) return;
-    var node = e[0].addedNodes[0];
-    if (!node || !node.getElementsByClassName) return;
+// 安装底层 WebSocket 拦截钩子 (零自建，让官方前端自动按目标礼物进行完整渲染)
+(function installGiftTransformWsHook() {
+    var targets = [];
+    if (typeof unsafeWindow !== "undefined" && unsafeWindow.WebSocket) targets.push(unsafeWindow.WebSocket);
+    if (typeof window !== "undefined" && window.WebSocket && !targets.includes(window.WebSocket)) targets.push(window.WebSocket);
 
-    var tfConfig = null;
-    try {
-        tfConfig = JSON.parse(localStorage.getItem("ExSave_GiftTransform"));
-    } catch (err) {}
-    if (!tfConfig || !tfConfig.enabled || !tfConfig.target) return;
+    targets.forEach(function(WS) {
+        if (WS.__giftHookInstalled__) return;
+        WS.__giftHookInstalled__ = true;
 
-    var senderEl = node.getElementsByClassName("Banner4gift-senderName")[0];
-    var sName = senderEl ? (senderEl.title || senderEl.innerText || senderEl.textContent || "").trim() : "";
-    var myName = (typeof gt !== "undefined" && gt) ? String(gt).trim() : "";
-    if (myName && sName && sName !== myName && sName.indexOf(myName) === -1) return;
+        var origAdd = WS.prototype.addEventListener;
+        WS.prototype.addEventListener = function(type, listener, options) {
+            if (type === "message" && typeof listener === "function") {
+                var wrappedListener = function(evt) {
+                    var self = this;
+                    processSTTData(evt.data, function(finalData) {
+                        if (finalData === evt.data) {
+                            listener.call(self, evt);
+                        } else {
+                            var newEvt;
+                            try {
+                                newEvt = new MessageEvent("message", {
+                                    data: finalData,
+                                    origin: evt.origin,
+                                    lastEventId: evt.lastEventId,
+                                    source: evt.source,
+                                    ports: evt.ports
+                                });
+                            } catch(err) {
+                                newEvt = Object.create(evt);
+                                Object.defineProperty(newEvt, "data", { value: finalData, configurable: true });
+                            }
+                            listener.call(self, newEvt);
+                        }
+                    });
+                };
+                listener._exWrapped = wrappedListener;
+                return origAdd.call(this, type, wrappedListener, options);
+            }
+            return origAdd.call(this, type, listener, options);
+        };
 
-    var objEl = node.getElementsByClassName("Banner4gift-objectName")[0];
-    if (!objEl) return;
-    var giftName = (objEl.title || objEl.innerText || objEl.textContent || "").trim();
-    var targetName = tfConfig.target.name || "宇宙飞船";
-    var sourceName = (tfConfig.source && tfConfig.source.name) ? tfConfig.source.name.trim() : "粉丝荧光棒";
+        var origRemove = WS.prototype.removeEventListener;
+        WS.prototype.removeEventListener = function(type, listener, options) {
+            if (type === "message" && listener && listener._exWrapped) {
+                return origRemove.call(this, type, listener._exWrapped, options);
+            }
+            return origRemove.call(this, type, listener, options);
+        };
 
-    if (giftName === sourceName || (sourceName && giftName.indexOf(sourceName) !== -1)) {
-        node.className = "Banner4gift Banner4gift--size2";
-        var bgEl = node.getElementsByClassName("Banner4gift-bg")[0];
-        if (bgEl) bgEl.src = "https://gfs-op.douyucdn.cn/dygift/2019/03/15/6651f2de52dd359c7b553a77b9d00020.png";
-        objEl.title = targetName;
-        objEl.innerText = targetName;
-        var headerImg = node.getElementsByClassName("Banner4gift-headerImg")[0];
-        if (headerImg && tfConfig.target.icon) {
-            headerImg.src = tfConfig.target.icon;
-        }
+        var origOnmessageDesc = Object.getOwnPropertyDescriptor(WS.prototype, "onmessage");
+        Object.defineProperty(WS.prototype, "onmessage", {
+            get: function() {
+                return this._exCustomOnmessage || (origOnmessageDesc && origOnmessageDesc.get ? origOnmessageDesc.get.call(this) : null);
+            },
+            set: function(fn) {
+                if (typeof fn !== "function") {
+                    this._exCustomOnmessage = null;
+                    if (origOnmessageDesc && origOnmessageDesc.set) {
+                        origOnmessageDesc.set.call(this, fn);
+                    } else {
+                        this._onmessage = fn;
+                    }
+                    return;
+                }
+                var self = this;
+                this._exCustomOnmessage = fn;
+                var wrapped = function(evt) {
+                    processSTTData(evt.data, function(finalData) {
+                        if (finalData === evt.data) {
+                            fn.call(self, evt);
+                        } else {
+                            var newEvt;
+                            try {
+                                newEvt = new MessageEvent("message", {
+                                    data: finalData,
+                                    origin: evt.origin,
+                                    lastEventId: evt.lastEventId,
+                                    source: evt.source,
+                                    ports: evt.ports
+                                });
+                            } catch(err) {
+                                newEvt = Object.create(evt);
+                                Object.defineProperty(newEvt, "data", { value: finalData, configurable: true });
+                            }
+                            fn.call(self, newEvt);
+                        }
+                    });
+                };
+                if (origOnmessageDesc && origOnmessageDesc.set) {
+                    origOnmessageDesc.set.call(this, wrapped);
+                } else {
+                    this._onmessage = wrapped;
+                }
+            },
+            configurable: true
+        });
+    });
+})();
 
-        triggerGiftAnimation(tfConfig.target);
-    }
-}
-
-// 弹幕列表聊天送礼拦截管线 (必定触发，双链路驱动大横幅与全屏动效)
+// 轻量 DOM 弹幕保底 (仅针对本地乐观回显做微调，不包含任何自建挂载 UI)
 function interceptBarrageListGift(mutations) {
     if (!mutations || mutations.length === 0) return;
     var tfConfig = null;
     try {
         tfConfig = JSON.parse(localStorage.getItem("ExSave_GiftTransform"));
     } catch (err) {}
-    if (!tfConfig || !tfConfig.enabled || !tfConfig.target) return;
+    if (!tfConfig || !tfConfig.enabled || !tfConfig.target || !tfConfig.source) return;
 
-    var sourceName = (tfConfig.source && tfConfig.source.name) ? tfConfig.source.name.trim() : "粉丝荧光棒";
-    var targetName = tfConfig.target.name || "宇宙飞船";
+    var sourceName = (tfConfig.source.name || "粉丝荧光棒").trim();
+    var targetName = (tfConfig.target.name || "宇宙飞船").trim();
     var targetIcon = tfConfig.target.icon || "";
-    var myName = (typeof gt !== "undefined" && gt) ? String(gt).trim() : "";
+    var myName = (typeof gt !== "undefined" && gt) ? String(gt).trim() : (x("acf_nickname") || "");
 
     for (var m = 0; m < mutations.length; m++) {
         var added = mutations[m].addedNodes;
@@ -737,29 +632,23 @@ function interceptBarrageListGift(mutations) {
 
                 var contentEl = node.querySelector(".Barrage-content, .Barrage-text, .js-noblefloating-barragecont") || node;
                 if (contentEl) {
-                    var replacedHtml = contentEl.innerHTML.split(sourceName).join(`<span style="color: #ff5d23; font-weight: bold;">${targetName}</span>`);
-                    if (targetIcon && !replacedHtml.includes(targetIcon)) {
-                        replacedHtml = replacedHtml + `<img class="Barrage-giftIcon" src="${targetIcon}" style="width: 26px; height: 26px; vertical-align: middle; margin-left: 4px; display: inline-block;">`;
-                    }
-                    contentEl.innerHTML = replacedHtml;
+                    contentEl.innerHTML = contentEl.innerHTML.split(sourceName).join(`<span style="color: #ff5d23; font-weight: bold;">${targetName}</span>`);
                 }
 
-                var giftImgs = node.querySelectorAll('img[src*="dygift"], .Barrage-giftIcon');
-                giftImgs.forEach(function(img) {
-                    if (targetIcon) {
+                if (targetIcon) {
+                    var giftImgs = node.querySelectorAll('img[src*="dygift"], .Barrage-giftIcon');
+                    giftImgs.forEach(function(img) {
                         img.src = targetIcon;
-                        img.style.transform = "scale(1.2)";
                         img.style.verticalAlign = "middle";
-                    }
-                });
-
-                // 联动触发顶部官方跑道大横幅与全屏豪华 SVGA 动效
-                createActiveGiftBanner(tfConfig.target, myName);
-                triggerGiftAnimation(tfConfig.target);
+                    });
+                }
             }
         }
     }
 }
+
+// 废弃旧版 wt 监听
+function wt(e) {}
 
 function _t(){return document.getElementById("extool__p2p").checked}let kt=[],Et;function Bt(t){fetch("https://www.douyu.com/japi/interactnc/web/propredpacket/grab_prp",{method:"POST",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:"activityid="+t+"&ctn="+w()}).then(e=>e.json()).then(e=>{2==e.data.isSuc&&Bt(t)})}function It(){try{var e=localStorage.getItem("ExSave_TabSwitch");if(null!=e)return!!JSON.parse(e).isEnableTabSwitch}catch(e){}e=document.getElementById("extool__tabSwitch");return!!e&&e.checked}function Tt(e){localStorage.setItem("ExSave_TabSwitch",JSON.stringify({isEnableTabSwitch:!!e}));var t=document.getElementById("extool__tabSwitch");t&&(t.checked=!!e),e&&Ct()}function Ct(){Object.defineProperty(document,"hidden",{value:!1,writable:!1}),Object.defineProperty(document,"visibilityState",{value:"visible",writable:!1}),Object.defineProperty(document,"webkitVisibilityState",{value:"visible",writable:!1}),document.dispatchEvent(new Event("visibilitychange")),document.hasFocus=function(){return!0},document.addEventListener("visibilitychange",function(e){e.stopImmediatePropagation()},!0,!0)}var St=!1;function Mt(){var e=document.getElementById("extool__treasure_delay").value;return Number(e)}let Nt=null,Lt=null;function At(){return document.querySelector(".PlayerToolbar-ContentCell .PlayerToolbar-Wealth")||document.querySelector(".PlayerToolbar-ContentRow")}function Dt(){var e=document.getElementsByClassName("PlayerToolbar-ContentRow")[0];return e&&"hidden"===e.style.visibility}function jt(){return document.getElementById("js-player-dialog")||document.getElementsByClassName("room-Player-Box")[0]||document.body}function Pt(e){Nt||(Nt=e.parentNode,Lt=e.nextSibling)}function zt(){var e,t,o,n=document.querySelector(".ex-panel.ex-panel--floating");n&&(e=document.getElementById("js-player-toolbar"),o=document.getElementById("ex-vtoolbar-menu"),e?(e=e.getBoundingClientRect(),n.style.position="fixed",n.style.bottom=window.innerHeight-e.top+8+"px",n.style.top="auto",o?(o=o.getBoundingClientRect(),t=n.offsetWidth||n.scrollWidth||320,o=o.left+o.width/2-t/2,o=Math.max(8,Math.min(o,window.innerWidth-t-8)),n.style.left=o+"px"):(t=n.offsetWidth||n.scrollWidth||320,o=e.left+e.width/2-t/2,o=Math.max(8,Math.min(o,window.innerWidth-t-8)),n.style.left=o+"px"),n.style.right="auto"):(n.style.bottom="72px",n.style.right="12px",n.style.left=""))}function Ot(){var e=document.querySelector(".ex-panel");e&&!e.classList.contains("ex-panel--floating")&&(Pt(e),jt().appendChild(e),e.classList.add("ex-panel--floating")),zt()}function Rt(){var e=document.querySelector(".ex-panel"),t=At();e&&t&&e.classList.contains("ex-panel--floating")&&(Lt&&Lt.parentNode===t?t.insertBefore(e,Lt):t.insertBefore(e,t.childNodes[0]),e.classList.remove("ex-panel--floating"))}function Ft(){var e=document.querySelector(".ex-panel");e&&"block"===e.style.display&&(Ot(),zt())}function Ht(){Rt()}function Gt(){var e=document.querySelector(".ex-panel");e&&(clearTimeout(Y),Y=null,e.style.display="none")}function Vt(){Gt()}function qt(){var e=document.getElementsByClassName("ex-panel")[0];e&&((Dt()?Ot:Rt)(),"block"!==e.style.display?(e.style.display="block",clearTimeout(Y),e.classList.contains("ex-panel--floating")&&zt()):(e.style.display="none",clearTimeout(Y)))}async function Ut(e,t,o){return(await fetch("https://www.douyu.com/japi/prop/donate/mainsite/v1",{method:"POST",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:"propId="+e+"&propCount="+t+"&roomId="+o+"&bizExt=%7B%22yzxq%22%3A%7B%7D%7D"})).json()}let Wt;function Yt(e){var t=document.getElementsByClassName("Header-follow-tab is-active")[0].innerText;"特别关注"!==t&&"视频动态"!==t&&0!=(t=document.getElementsByClassName("Header-follow-listWrap")).length&&(document.getElementsByClassName("Header-follow-listBox")[0].style.display="none",(async e=>{var i=await GM_getValue("Ex_LoadInCurrentPage",!1),a=await new Promise(t=>{fetch("https://www.douyu.com/wgapi/livenc/liveweb/follow/list?sort=1&cid1=0",{method:"GET",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"}}).then(e=>e.json()).then(e=>{t(e)})});if("0"==a.error){let t=0,o=`
 
@@ -1165,7 +1054,7 @@ function _t(){return document.getElementById("extool__p2p").checked}let kt=[],Et
 
     }
 
-    `);let e=setInterval(()=>{document.querySelector(".danmu-fbb2a3")&&(clearInterval(e),On=On||setInterval(Gn,2e4),Rn=new q(".danmu-fbb2a3",!1,i=>{if(!(i.length<=0)&&Mn)if(i[0].addedNodes.length<=0&&0<i[0].removedNodes.length){var n=i[0].removedNodes[0];let e=n.comment.uuid;var a=n.comment.startTime+n.comment.duration;let t=Date.now();if(t>a)return;Dn[e]=t+1e3*Nn;let o=n.textContent?n.textContent.trim():"";void(o&&jn[o]===n&&(delete jn[o],delete Pn[o],delete An[o]))}else if(!(i[0].addedNodes.length<=0)){a=i[0].addedNodes[0];if(a){let e=Date.now(),t=a.comment.uuid;n=Dn[t];if(!(n&&e<=n)){let n=a.textContent?a.textContent.trim():"";if(n&&0!==n.length){i=An[n];if(i&&e<=i){if(a.className+=" repeated-danmaku",Pn[n]=(Pn[n]||1)+1,Ln){let o=jn[n];o&&o.parentNode?requestAnimationFrame(()=>{var e,t;o.parentNode&&(zn.has(o)||(t=window.getComputedStyle(o),zn.set(o,t.fontSize)),t=zn.get(o),t=parseFloat(t)||20,e=Pn[n],t=Math.min(t+2*(e-1),40),o.style.fontSize=t+"px",o.setAttribute("data-repeat-count",e),o.classList.remove("danmaku-combo-animation"),requestAnimationFrame(()=>{o.parentNode&&o.classList.add("danmaku-combo-animation")}))}):o&&o.parentNode||(delete jn[n],delete Pn[n])}}else An[n]=e+1e3*Nn,jn[n]=a,Pn[n]=1}}}}}))},1e3)}function Gn(){var e,t,o=Date.now();for([e,t]of Object.entries(An))t<=o&&(delete An[e],delete jn[e],delete Pn[e]);for(let[e,t]of Object.entries(Dn))t<=o&&delete Dn[e]}function Vn(){On&&(clearInterval(On),On=null),An={},Dn={},jn={},Pn={}}function qn(){Fn(),Sn(),In()}function Un(e){return-1===e.indexOf("player_barrage")?e:e.replace(/player_barrage\\":0/g,'player_barrage\\":1').replace(/"player_barrage":0/g,'"player_barrage":1')}function Wn(e){(async()=>{let t=[],o=await ai(1),n=(t=t.concat(o.list),Number(o.count_page)-1);if(1<=n)for(let e=0;e<n;e++){var i=2+e;o=await ai(i),t=t.concat(o.list)}ti=t.length,GM_xmlhttpRequest({method:"POST",url:"https://mapi-yuba.douyu.com/wb/v3/fastSign",responseType:"json",headers:{"Content-Type":"application/x-www-form-urlencoded",client:"android",token:m},onload:function(e){""==e.response.message&&0!=e.response.data||e.response.data}});for(let e=0;e<t.length;e++)!async function t(o,n){GM_xmlhttpRequest({method:"POST",url:"https://yuba.douyu.com/ybapi/topic/sign",data:"group_id="+o,responseType:"json",headers:{"Content-Type":"application/x-www-form-urlencoded","dy-client":"pc","dy-token":n,Referer:"https://yuba.douyu.com/group/"+o},onload:async function(e){10<=ni[o]||("签到失败"==e.response.message?(await b(2e3),t(o,n)):(ni[o]?ni[o]++:ni[o]=1,oi++,""==e.response.message&&ei++,ii(o),oi==ti&&(0<ei?ti-ei==0?T("【鱼吧】"+String(ei)+"个鱼吧签到完成","success"):T("【鱼吧】"+String(ei)+"个鱼吧签到完成，"+String(ti-ei)+"个鱼吧已签到","success"):T("【鱼吧】"+String(ti)+"个鱼吧已签到","warning"),ei=null,ti=null,oi=null)))}})}(t[e].group_id,m)})(),GM_xmlhttpRequest({method:"POST",url:"https://apiv2.douyucdn.cn/h5nc/sign/sendSign",data:"token="+m,responseType:"json",headers:{"Content-Type":"application/x-www-form-urlencoded"},onload:function(e){var o=e.response;if(0==o.data.length)T("【客户端】今日已签到","warning");else if(0!=o.data.sign_pl.length){let t="";for(let e=0;e<o.data.sign_pl.length;e++)t=t+o.data.sign_pl[e].cnt+"个"+o.data.sign_pl[e].name+",";T("【客户端】签到成功! 获得物品:"+t,"success")}else T("【客户端】签到成功! 可惜没有获得东西","success")}}),e=e;{var r=e;let t=0,i=0,a=0;fetch("https://www.douyu.com/wgapi/livenc/liveweb/follow/list?page=1428",{method:"GET",mode:"no-cors",cache:"default",credentials:"include"}).then(e=>e.json()).then(e=>{t=Number(e.data.pageCount);for(let e=1;e<=t;e++)fetch("https://www.douyu.com/wgapi/livenc/liveweb/follow/list?page="+String(e),{method:"GET",mode:"no-cors",cache:"default",credentials:"include"}).then(e=>e.json()).then(t=>{var o,n=Number(t.data.list.length);for(let e=0;e<n;e++)(0!=r||"1"==t.data.list[e].show_status)&&($n(t.data.list[e].room_id),i++),++a==t.data.total&&e==n-1&&(o=Number(t.data.total)-i,T("【房间签到】"+String(i)+"个房间签到已完成，"+String(o)+"个房间未签到","success"))}).catch(e=>{console.log("请求失败!",e)});T("【房间签到】"+e.data.total+"个房间正在签到中...","info")}).catch(e=>{console.log("请求失败!",e)})}(async()=>{if("data"in Yn!=0)for(let e=0;e<Yn.data.length;e++){var o=Yn.data[e],n=o.name;for(let e=0;e<o.script.length;e++){var i,a=o.script[e],r=a.value;let t;switch(a.name){case"signAct":"0"==(t=await(e=>new Promise(t=>{fetch("https://www.douyu.com/japi/carnival/nc/signAct/signIn",{method:"POST",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:"token="+m+"&signAlias="+e}).then(e=>e.json()).then(e=>{t(e)})}))(r)).error?T(`【${n}】签到完毕`,"success"):T(`【${n}】`+t.msg,"error");break;case"userStatus":if(0==(t=await(e=>new Promise(t=>{fetch("https://www.douyu.com/japi/carnival/nc/actTask/userStatus",{method:"POST",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:`tasks=${e}&token=`+m}).then(e=>e.json()).then(e=>{t(e)}).catch(e=>{console.log("请求失败!",e)})}))(r)).error)for(var l in t.data){var s=t.data[l],d=s.curCompleteNum-s.curDeliverNum,c=n+"-"+s.taskName;for(let e=0;e<d;e++){var p=await(e=>new Promise(t=>{fetch("https://www.douyu.com/japi/carnival/nc/actTask/takePrize",{method:"POST",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:`token=${m}&aid=android&taskAlias=`+e}).then(e=>e.json()).then(e=>{t(e)}).catch(e=>{console.log("请求失败!",e)})}))(l);"0"==p.error?T(`【${c}】获得`+p.data.sendRes.items[0].prizeName+"*"+p.data.sendRes.items[0].prizeNum,"success"):T(`【${c}】`+p.msg,"error")}}break;case"addFollowRoom":await Mr(r);break;case"removeFollowRoom":await Nr(r);break;case"shareAct":await(e=>new Promise(t=>{fetch("https://www.douyu.com/japi/carnival/common/share",{method:"POST",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:`actAlias=${e}&token=`+m}).then(e=>e.json()).then(e=>{t(e)}).catch(e=>{console.log("请求失败!",e)})}))(r);break;case"doSign":await(e=>new Promise(t=>{fetch("https://www.douyu.com/japi/carnival/nc/hostSnowSign/doSign",{method:"POST",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:`actAlias=${e}&token=${m}&ctn=`+w()}).then(e=>e.json()).then(e=>{t(e)}).catch(e=>{console.log("请求失败!",e)})}))(r);break;case"getActRemaining":if("0"==(t=await(e=>new Promise(t=>{fetch("https://www.douyu.com/japi/carnival/nc/lottery/remaining?activityId="+e,{method:"GET",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/json;charset=UTF-8"}}).then(e=>e.json()).then(e=>{t(e)})}))(r)).error)for(let e=0;e<t.data.freeCount;e++)"0"==(i=await(e=>new Promise(t=>{fetch("https://www.douyu.com/japi/carnival/nc/lottery/jackpot",{method:"POST",headers:{"Content-Type":"application/json;charset=UTF-8"},body:`{"activityId":"${e}","token":"${m}"}`}).then(e=>e.json()).then(e=>{t(e)})}))(r)).error&&T(`【${n}】礼盒开启：`+i.data.giftName,"success")}}}})(),(async()=>{for(let e=0;e<To.length;e++){var t=To[e],o=await(e=>new Promise((t,o)=>{fetch("https://www.douyu.com/japi/interactnc/web/fanshome/sign",{method:"POST",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:`ctn=${w()}&rid=`+e}).then(e=>e.json()).then(e=>{t(e)}).catch(e=>{console.log("请求失败!",e),o(e)})}))(t);0!==o.error?T("【粉丝家园】"+t+o.msg,"error"):T(`【粉丝家园】${t}签到成功！`,"success")}})(),(async()=>{for(let e=0;e<To.length;e++){var t=To[e];0===(await(e=>new Promise((t,o)=>{fetch("https://www.douyu.com/japi/interactnc/web/dfansact/userSign",{method:"POST",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:`ctn=${w()}&rid=`+e}).then(e=>e.json()).then(e=>{t(e)}).catch(e=>{console.log("请求失败!",e),o(e)})}))(t)).error&&T(`【钻粉联赛签到】${t}签到成功！`,"success")}})(),(async()=>{var e;0==(e=await(e=>new Promise((t,o)=>{fetch("https://www.douyu.com/japi/carnivalApi/sign/doSign",{method:"POST",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:`csrfToken=${e}&signAlias=20250521OPFOY_qd2&useJiYan=false`}).then(e=>e.json()).then(e=>{t(e)}).catch(e=>{console.log("请求失败!",e),o(e)})}))(e=await new Promise(i=>{GM_xmlhttpRequest({method:"POST",url:"https://www.douyu.com/japi/carnival/nc/common/generateCsrf",headers:{"Content-Type":"application/json",Cookie:document.cookie},anonymous:!1,withCredentials:!0,onload:function(e){var t;let o="";for(t of e.responseHeaders.match(/set-cookie:[^\n\r]+/gi)){var n=t.match(/cvl_csrf_token=([^;]+)/);if(n){o=n[1];break}}i(o)},onerror:function(e){i("")}})}))).error||31200==e.error?T("【积分任务】"+e.msg,"success"):T("【积分任务】"+e.msg,"error")})(),(async()=>{var t=(await new Promise((t,o)=>{fetch(`https://www.douyu.com/japi/livebiznc/web/anchorstardiscover/rank/info?rid=${B}&type=5&track=3`,{method:"GET",mode:"no-cors",credentials:"include"}).then(e=>e.json()).then(e=>{t(e)}).catch(e=>{console.log("请求失败!",e),o(e)})}).catch(()=>{})).data.rankItemList;if(t&&0!=t.length){for(let e=0;e<3;e++){var o=t[e].rid;o&&(await(e=>new Promise((t,o)=>{fetch("https://www.douyu.com/japi/livebiznc/web/anchorstardiscover/user/task/report",{method:"POST",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:`ctn=${w()}&type=5&rid=`+e}).then(e=>e.json()).then(e=>{t(e)}).catch(e=>{console.log("请求失败!",e),o(e)})}))(o),await b(500))}T("【星推】签到任务完成","success");for(let e=0;e<5;e++){var n,i=t[e].rid;i&&(n=await Mr(i),await b(500),1==n.error?(await Nr(i),await b(500),await Mr(i)):await Nr(i),await b(500))}T("【星推】关注任务完成","success")}})()}Mn&&Hn();let Yn={};function Qn(e){return new Promise(o=>{fetch(`https://webconf.douyucdn.cn/resource/common/activity/actqzs${e}_w.json`).then(e=>e.text()).then(e=>{let t=e.substring(String("DYConfigCallback(").length,e.length);t=t.substring(0,t.lastIndexOf(")"));try{t=JSON.parse(t),o(t.data.activity_setting.activity_id)}catch(e){o(null)}}).catch(e=>{o(null)})})}function Jn(e){return new Promise(o=>{fetch(`https://webconf.douyucdn.cn/resource/common/activity/cardArena${e}_w.json`).then(e=>e.text()).then(e=>{let t=e.substring(String("DYConfigCallback(").length,e.length);t=t.substring(0,t.lastIndexOf(")"));try{t=JSON.parse(t),o(t.data.activity_setting.activity_id)}catch(e){o(null)}}).catch(e=>{o(null)})})}function Zn(t){let o="";var n=document.cookie.split("; ");for(let e=0;e<n.length;e++){var i=n[e].split("=");t==i[0]&&(o=i[1])}return""==o&&(o=Math.random().toString(36).substr(2),document.cookie="post-csrfToken="+escape(o)+";path=/"),o}async function Xn(){var e,o,n,t=await new Promise(t=>{GM_xmlhttpRequest({method:"GET",url:"https://msg.douyu.com/v3/login/getusersig?t="+String((new Date).getTime())+"&timestamp="+Math.random().toFixed(17),data:'{"State":"Online"}',responseType:"json",headers:{"dy-device-id":"-","dy-client":"web","dy-csrf-token":Zn("post-csrfToken"),"Content-Type":"application/x-www-form-urlencoded"},onload:function(e){t(e.response)}})}),i=await((e,t)=>{let o="https://webim.tim.qq.com/v4/openim/login?identifier="+e+"&usersig="+t+"&contenttype=json&sdkappid=1400029396";return new Promise(t=>{GM_xmlhttpRequest({method:"POST",url:o,data:'{"State":"Online"}',responseType:"json",headers:{"Content-Type":"application/x-www-form-urlencoded; charset=UTF-8"},onload:function(e){t(e.response)}})})})(t.data.uid,t.data.sig);e=i.TinyId,o=i.A2Key,n=t.data.uid;let a=await new Promise(t=>{GM_xmlhttpRequest({method:"POST",url:"https://webim.tim.qq.com/v4/group_open_http_svc/get_joined_group_list?tinyid="+e+"&a2="+o+"&contenttype=json&sdkappid=1400029396",data:'{"Member_Account":"'+n+'"}',responseType:"json",headers:{"Content-Type":"application/x-www-form-urlencoded"},onload:function(e){e.response.GroupIdList&&0<e.response.GroupIdList.length?t(e.response.GroupIdList[0].GroupId):t("")}})});a&&""!=a?(console.log("mid是：",a),a=encodeURIComponent(a),GM_xmlhttpRequest({method:"GET",url:"https://msg.douyu.com/v3/motorcade/signs/weekly?mid="+a+"&timestamp="+Math.random().toFixed(17),responseType:"json",headers:{"dy-device-id":"-","dy-client":"web","dy-csrf-token":Zn("post-csrfToken"),"Content-Type":"application/x-www-form-urlencoded"},onload:function(e){e=e.response;console.log("weekly:",e),"1"==e.data.is_sign?r():GM_xmlhttpRequest({method:"POST",url:"https://msg.douyu.com/v3/msign/add?timestamp="+Math.random().toFixed(17),data:"to_mid="+a+"&expression="+String(Number(e.data.total)+1),responseType:"json",headers:{"dy-device-id":"-","dy-client":"web","dy-csrf-token":Zn("post-csrfToken"),"Content-Type":"application/x-www-form-urlencoded"},onload:function(e){2==Math.floor(e.response.status_code/100)?console.log("【车队】签到成功"):console.log(e.response.message),r()}})}})):r()}function $n(e){GM_xmlhttpRequest({method:"POST",url:"https://apiv2.douyucdn.cn/japi/roomuserlevel/apinc/checkIn?client_sys=android",data:"rid="+e,responseType:"json",headers:{"Content-Type":"application/x-www-form-urlencoded",token:m,aid:"android1"},onload:function(e){}})}let ei=0,ti=0,oi=0,ni={};async function ii(t){var o=await ri(t);for(let e=0;e<o.data.supplementary_cards;e++)await ri(t)}function ai(e){return new Promise(t=>{GM_xmlhttpRequest({method:"GET",url:"https://yuba.douyu.com/wbapi/web/group/myFollow?page="+String(e)+"&limit=30",responseType:"json",headers:{"Content-Type":"application/x-www-form-urlencoded","dy-client":"pc","dy-token":m},onload:function(e){t(e.response.data)}})})}function ri(e){return new Promise(t=>{GM_xmlhttpRequest({method:"POST",url:"https://mapi-yuba.douyu.com/wb/v3/supplement",responseType:"json",headers:{"Content-Type":"application/x-www-form-urlencoded",client:"android",token:m},data:"group_id="+e,onload:function(e){t(e.response)}})})}var P = "2026.09.14.10";let ui=0,gi=null,hi=null,fi=null,yi=0,bi="";function vi(){var e=(()=>{try{var e=document.getElementsByTagName("demand-video-toolbar")[0].shadowRoot.querySelector("share-hover").getAttribute("hashid");if(e)return e}catch(e){}return(e=String(window.location.pathname).split("/"))[e.length-1]})();if(e){let t=bi=e;fetch("https://v.douyu.com/video/video/getVideoUrl?vid="+e,{method:"GET",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"}}).then(e=>e.json()).then(e=>{t===bi&&(e=v(e.data.viewthumb[0].url,"--","/"),ui=new Date(e.replace(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/,"$1-$2-$3 $4:$5:$6")).getTime())}).catch(e=>{console.log("请求失败!",e)})}}function xi(){var e=document.getElementsByTagName("demand-video")[0].shadowRoot.getElementById("demandcontroller-bar").shadowRoot.querySelector("demand-video-controller-progress").shadowRoot.querySelector("demand-video-controller-preview").getAttribute("showtime");return Number(e).toFixed(0)}function wi(e){var t=document.getElementsByTagName("demand-video")[0].shadowRoot.getElementById("demandcontroller-bar").shadowRoot.querySelector("demand-video-controller-progress").shadowRoot.querySelector("demand-video-controller-preview").shadowRoot.querySelector(".Preview label");t&&(t.style.position="relative",t.style.bottom="60px",t.style.backgroundColor="rgba(0,0,0,0.4)",t.innerHTML=e)}var _i,z,ki,Ei,Bi,o="/* [DouyuEx-Lite] GIF Worker已剥离 */",Ii=URL.createObjectURL(new Blob([o],{type:"application/javascript"}));let Ti=83;function Ci(e,t,o,n){t.getContext("2d").drawImage(e,0,0,t.width,t.height),o.addFrame(t,{copy:!0,delay:n})}function Si(){var e=localStorage.getItem("ExSave_Camera_Hidden");if(e)return e=parseInt(e),Date.now()<e}function Mi(){let o=setInterval(()=>{if(null!=(V=document.getElementsByTagName("demand-video")[0].shadowRoot.getElementById("__video"))&&V.videoWidth){clearInterval(o),Bi=document.getElementsByTagName("demand-video-anchor")[0].shadowRoot.querySelector(".anchor-name").innerText,ki=.25*V.videoWidth,Ei=.25*V.videoHeight,(_i=document.createElement("canvas")).width=ki,_i.height=Ei,(z=document.createElement("canvas")).width=V.videoWidth,z.height=V.videoHeight;var e=document.createElement("div"),t=(e.id="ex-camera",e.title="单击截图 长按录制gif",e.innerHTML=`
+    `);let e=setInterval(()=>{document.querySelector(".danmu-fbb2a3")&&(clearInterval(e),On=On||setInterval(Gn,2e4),Rn=new q(".danmu-fbb2a3",!1,i=>{if(!(i.length<=0)&&Mn)if(i[0].addedNodes.length<=0&&0<i[0].removedNodes.length){var n=i[0].removedNodes[0];let e=n.comment.uuid;var a=n.comment.startTime+n.comment.duration;let t=Date.now();if(t>a)return;Dn[e]=t+1e3*Nn;let o=n.textContent?n.textContent.trim():"";void(o&&jn[o]===n&&(delete jn[o],delete Pn[o],delete An[o]))}else if(!(i[0].addedNodes.length<=0)){a=i[0].addedNodes[0];if(a){let e=Date.now(),t=a.comment.uuid;n=Dn[t];if(!(n&&e<=n)){let n=a.textContent?a.textContent.trim():"";if(n&&0!==n.length){i=An[n];if(i&&e<=i){if(a.className+=" repeated-danmaku",Pn[n]=(Pn[n]||1)+1,Ln){let o=jn[n];o&&o.parentNode?requestAnimationFrame(()=>{var e,t;o.parentNode&&(zn.has(o)||(t=window.getComputedStyle(o),zn.set(o,t.fontSize)),t=zn.get(o),t=parseFloat(t)||20,e=Pn[n],t=Math.min(t+2*(e-1),40),o.style.fontSize=t+"px",o.setAttribute("data-repeat-count",e),o.classList.remove("danmaku-combo-animation"),requestAnimationFrame(()=>{o.parentNode&&o.classList.add("danmaku-combo-animation")}))}):o&&o.parentNode||(delete jn[n],delete Pn[n])}}else An[n]=e+1e3*Nn,jn[n]=a,Pn[n]=1}}}}}))},1e3)}function Gn(){var e,t,o=Date.now();for([e,t]of Object.entries(An))t<=o&&(delete An[e],delete jn[e],delete Pn[e]);for(let[e,t]of Object.entries(Dn))t<=o&&delete Dn[e]}function Vn(){On&&(clearInterval(On),On=null),An={},Dn={},jn={},Pn={}}function qn(){Fn(),Sn(),In()}function Un(e){return-1===e.indexOf("player_barrage")?e:e.replace(/player_barrage\\":0/g,'player_barrage\\":1').replace(/"player_barrage":0/g,'"player_barrage":1')}function Wn(e){(async()=>{let t=[],o=await ai(1),n=(t=t.concat(o.list),Number(o.count_page)-1);if(1<=n)for(let e=0;e<n;e++){var i=2+e;o=await ai(i),t=t.concat(o.list)}ti=t.length,GM_xmlhttpRequest({method:"POST",url:"https://mapi-yuba.douyu.com/wb/v3/fastSign",responseType:"json",headers:{"Content-Type":"application/x-www-form-urlencoded",client:"android",token:m},onload:function(e){""==e.response.message&&0!=e.response.data||e.response.data}});for(let e=0;e<t.length;e++)!async function t(o,n){GM_xmlhttpRequest({method:"POST",url:"https://yuba.douyu.com/ybapi/topic/sign",data:"group_id="+o,responseType:"json",headers:{"Content-Type":"application/x-www-form-urlencoded","dy-client":"pc","dy-token":n,Referer:"https://yuba.douyu.com/group/"+o},onload:async function(e){10<=ni[o]||("签到失败"==e.response.message?(await b(2e3),t(o,n)):(ni[o]?ni[o]++:ni[o]=1,oi++,""==e.response.message&&ei++,ii(o),oi==ti&&(0<ei?ti-ei==0?T("【鱼吧】"+String(ei)+"个鱼吧签到完成","success"):T("【鱼吧】"+String(ei)+"个鱼吧签到完成，"+String(ti-ei)+"个鱼吧已签到","success"):T("【鱼吧】"+String(ti)+"个鱼吧已签到","warning"),ei=null,ti=null,oi=null)))}})}(t[e].group_id,m)})(),GM_xmlhttpRequest({method:"POST",url:"https://apiv2.douyucdn.cn/h5nc/sign/sendSign",data:"token="+m,responseType:"json",headers:{"Content-Type":"application/x-www-form-urlencoded"},onload:function(e){var o=e.response;if(0==o.data.length)T("【客户端】今日已签到","warning");else if(0!=o.data.sign_pl.length){let t="";for(let e=0;e<o.data.sign_pl.length;e++)t=t+o.data.sign_pl[e].cnt+"个"+o.data.sign_pl[e].name+",";T("【客户端】签到成功! 获得物品:"+t,"success")}else T("【客户端】签到成功! 可惜没有获得东西","success")}}),e=e;{var r=e;let t=0,i=0,a=0;fetch("https://www.douyu.com/wgapi/livenc/liveweb/follow/list?page=1428",{method:"GET",mode:"no-cors",cache:"default",credentials:"include"}).then(e=>e.json()).then(e=>{t=Number(e.data.pageCount);for(let e=1;e<=t;e++)fetch("https://www.douyu.com/wgapi/livenc/liveweb/follow/list?page="+String(e),{method:"GET",mode:"no-cors",cache:"default",credentials:"include"}).then(e=>e.json()).then(t=>{var o,n=Number(t.data.list.length);for(let e=0;e<n;e++)(0!=r||"1"==t.data.list[e].show_status)&&($n(t.data.list[e].room_id),i++),++a==t.data.total&&e==n-1&&(o=Number(t.data.total)-i,T("【房间签到】"+String(i)+"个房间签到已完成，"+String(o)+"个房间未签到","success"))}).catch(e=>{console.log("请求失败!",e)});T("【房间签到】"+e.data.total+"个房间正在签到中...","info")}).catch(e=>{console.log("请求失败!",e)})}(async()=>{if("data"in Yn!=0)for(let e=0;e<Yn.data.length;e++){var o=Yn.data[e],n=o.name;for(let e=0;e<o.script.length;e++){var i,a=o.script[e],r=a.value;let t;switch(a.name){case"signAct":"0"==(t=await(e=>new Promise(t=>{fetch("https://www.douyu.com/japi/carnival/nc/signAct/signIn",{method:"POST",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:"token="+m+"&signAlias="+e}).then(e=>e.json()).then(e=>{t(e)})}))(r)).error?T(`【${n}】签到完毕`,"success"):T(`【${n}】`+t.msg,"error");break;case"userStatus":if(0==(t=await(e=>new Promise(t=>{fetch("https://www.douyu.com/japi/carnival/nc/actTask/userStatus",{method:"POST",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:`tasks=${e}&token=`+m}).then(e=>e.json()).then(e=>{t(e)}).catch(e=>{console.log("请求失败!",e)})}))(r)).error)for(var l in t.data){var s=t.data[l],d=s.curCompleteNum-s.curDeliverNum,c=n+"-"+s.taskName;for(let e=0;e<d;e++){var p=await(e=>new Promise(t=>{fetch("https://www.douyu.com/japi/carnival/nc/actTask/takePrize",{method:"POST",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:`token=${m}&aid=android&taskAlias=`+e}).then(e=>e.json()).then(e=>{t(e)}).catch(e=>{console.log("请求失败!",e)})}))(l);"0"==p.error?T(`【${c}】获得`+p.data.sendRes.items[0].prizeName+"*"+p.data.sendRes.items[0].prizeNum,"success"):T(`【${c}】`+p.msg,"error")}}break;case"addFollowRoom":await Mr(r);break;case"removeFollowRoom":await Nr(r);break;case"shareAct":await(e=>new Promise(t=>{fetch("https://www.douyu.com/japi/carnival/common/share",{method:"POST",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:`actAlias=${e}&token=`+m}).then(e=>e.json()).then(e=>{t(e)}).catch(e=>{console.log("请求失败!",e)})}))(r);break;case"doSign":await(e=>new Promise(t=>{fetch("https://www.douyu.com/japi/carnival/nc/hostSnowSign/doSign",{method:"POST",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:`actAlias=${e}&token=${m}&ctn=`+w()}).then(e=>e.json()).then(e=>{t(e)}).catch(e=>{console.log("请求失败!",e)})}))(r);break;case"getActRemaining":if("0"==(t=await(e=>new Promise(t=>{fetch("https://www.douyu.com/japi/carnival/nc/lottery/remaining?activityId="+e,{method:"GET",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/json;charset=UTF-8"}}).then(e=>e.json()).then(e=>{t(e)})}))(r)).error)for(let e=0;e<t.data.freeCount;e++)"0"==(i=await(e=>new Promise(t=>{fetch("https://www.douyu.com/japi/carnival/nc/lottery/jackpot",{method:"POST",headers:{"Content-Type":"application/json;charset=UTF-8"},body:`{"activityId":"${e}","token":"${m}"}`}).then(e=>e.json()).then(e=>{t(e)})}))(r)).error&&T(`【${n}】礼盒开启：`+i.data.giftName,"success")}}}})(),(async()=>{for(let e=0;e<To.length;e++){var t=To[e],o=await(e=>new Promise((t,o)=>{fetch("https://www.douyu.com/japi/interactnc/web/fanshome/sign",{method:"POST",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:`ctn=${w()}&rid=`+e}).then(e=>e.json()).then(e=>{t(e)}).catch(e=>{console.log("请求失败!",e),o(e)})}))(t);0!==o.error?T("【粉丝家园】"+t+o.msg,"error"):T(`【粉丝家园】${t}签到成功！`,"success")}})(),(async()=>{for(let e=0;e<To.length;e++){var t=To[e];0===(await(e=>new Promise((t,o)=>{fetch("https://www.douyu.com/japi/interactnc/web/dfansact/userSign",{method:"POST",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:`ctn=${w()}&rid=`+e}).then(e=>e.json()).then(e=>{t(e)}).catch(e=>{console.log("请求失败!",e),o(e)})}))(t)).error&&T(`【钻粉联赛签到】${t}签到成功！`,"success")}})(),(async()=>{var e;0==(e=await(e=>new Promise((t,o)=>{fetch("https://www.douyu.com/japi/carnivalApi/sign/doSign",{method:"POST",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:`csrfToken=${e}&signAlias=20250521OPFOY_qd2&useJiYan=false`}).then(e=>e.json()).then(e=>{t(e)}).catch(e=>{console.log("请求失败!",e),o(e)})}))(e=await new Promise(i=>{GM_xmlhttpRequest({method:"POST",url:"https://www.douyu.com/japi/carnival/nc/common/generateCsrf",headers:{"Content-Type":"application/json",Cookie:document.cookie},anonymous:!1,withCredentials:!0,onload:function(e){var t;let o="";for(t of e.responseHeaders.match(/set-cookie:[^\n\r]+/gi)){var n=t.match(/cvl_csrf_token=([^;]+)/);if(n){o=n[1];break}}i(o)},onerror:function(e){i("")}})}))).error||31200==e.error?T("【积分任务】"+e.msg,"success"):T("【积分任务】"+e.msg,"error")})(),(async()=>{var t=(await new Promise((t,o)=>{fetch(`https://www.douyu.com/japi/livebiznc/web/anchorstardiscover/rank/info?rid=${B}&type=5&track=3`,{method:"GET",mode:"no-cors",credentials:"include"}).then(e=>e.json()).then(e=>{t(e)}).catch(e=>{console.log("请求失败!",e),o(e)})}).catch(()=>{})).data.rankItemList;if(t&&0!=t.length){for(let e=0;e<3;e++){var o=t[e].rid;o&&(await(e=>new Promise((t,o)=>{fetch("https://www.douyu.com/japi/livebiznc/web/anchorstardiscover/user/task/report",{method:"POST",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:`ctn=${w()}&type=5&rid=`+e}).then(e=>e.json()).then(e=>{t(e)}).catch(e=>{console.log("请求失败!",e),o(e)})}))(o),await b(500))}T("【星推】签到任务完成","success");for(let e=0;e<5;e++){var n,i=t[e].rid;i&&(n=await Mr(i),await b(500),1==n.error?(await Nr(i),await b(500),await Mr(i)):await Nr(i),await b(500))}T("【星推】关注任务完成","success")}})()}Mn&&Hn();let Yn={};function Qn(e){return new Promise(o=>{fetch(`https://webconf.douyucdn.cn/resource/common/activity/actqzs${e}_w.json`).then(e=>e.text()).then(e=>{let t=e.substring(String("DYConfigCallback(").length,e.length);t=t.substring(0,t.lastIndexOf(")"));try{t=JSON.parse(t),o(t.data.activity_setting.activity_id)}catch(e){o(null)}}).catch(e=>{o(null)})})}function Jn(e){return new Promise(o=>{fetch(`https://webconf.douyucdn.cn/resource/common/activity/cardArena${e}_w.json`).then(e=>e.text()).then(e=>{let t=e.substring(String("DYConfigCallback(").length,e.length);t=t.substring(0,t.lastIndexOf(")"));try{t=JSON.parse(t),o(t.data.activity_setting.activity_id)}catch(e){o(null)}}).catch(e=>{o(null)})})}function Zn(t){let o="";var n=document.cookie.split("; ");for(let e=0;e<n.length;e++){var i=n[e].split("=");t==i[0]&&(o=i[1])}return""==o&&(o=Math.random().toString(36).substr(2),document.cookie="post-csrfToken="+escape(o)+";path=/"),o}async function Xn(){var e,o,n,t=await new Promise(t=>{GM_xmlhttpRequest({method:"GET",url:"https://msg.douyu.com/v3/login/getusersig?t="+String((new Date).getTime())+"&timestamp="+Math.random().toFixed(17),data:'{"State":"Online"}',responseType:"json",headers:{"dy-device-id":"-","dy-client":"web","dy-csrf-token":Zn("post-csrfToken"),"Content-Type":"application/x-www-form-urlencoded"},onload:function(e){t(e.response)}})}),i=await((e,t)=>{let o="https://webim.tim.qq.com/v4/openim/login?identifier="+e+"&usersig="+t+"&contenttype=json&sdkappid=1400029396";return new Promise(t=>{GM_xmlhttpRequest({method:"POST",url:o,data:'{"State":"Online"}',responseType:"json",headers:{"Content-Type":"application/x-www-form-urlencoded; charset=UTF-8"},onload:function(e){t(e.response)}})})})(t.data.uid,t.data.sig);e=i.TinyId,o=i.A2Key,n=t.data.uid;let a=await new Promise(t=>{GM_xmlhttpRequest({method:"POST",url:"https://webim.tim.qq.com/v4/group_open_http_svc/get_joined_group_list?tinyid="+e+"&a2="+o+"&contenttype=json&sdkappid=1400029396",data:'{"Member_Account":"'+n+'"}',responseType:"json",headers:{"Content-Type":"application/x-www-form-urlencoded"},onload:function(e){e.response.GroupIdList&&0<e.response.GroupIdList.length?t(e.response.GroupIdList[0].GroupId):t("")}})});a&&""!=a?(console.log("mid是：",a),a=encodeURIComponent(a),GM_xmlhttpRequest({method:"GET",url:"https://msg.douyu.com/v3/motorcade/signs/weekly?mid="+a+"&timestamp="+Math.random().toFixed(17),responseType:"json",headers:{"dy-device-id":"-","dy-client":"web","dy-csrf-token":Zn("post-csrfToken"),"Content-Type":"application/x-www-form-urlencoded"},onload:function(e){e=e.response;console.log("weekly:",e),"1"==e.data.is_sign?r():GM_xmlhttpRequest({method:"POST",url:"https://msg.douyu.com/v3/msign/add?timestamp="+Math.random().toFixed(17),data:"to_mid="+a+"&expression="+String(Number(e.data.total)+1),responseType:"json",headers:{"dy-device-id":"-","dy-client":"web","dy-csrf-token":Zn("post-csrfToken"),"Content-Type":"application/x-www-form-urlencoded"},onload:function(e){2==Math.floor(e.response.status_code/100)?console.log("【车队】签到成功"):console.log(e.response.message),r()}})}})):r()}function $n(e){GM_xmlhttpRequest({method:"POST",url:"https://apiv2.douyucdn.cn/japi/roomuserlevel/apinc/checkIn?client_sys=android",data:"rid="+e,responseType:"json",headers:{"Content-Type":"application/x-www-form-urlencoded",token:m,aid:"android1"},onload:function(e){}})}let ei=0,ti=0,oi=0,ni={};async function ii(t){var o=await ri(t);for(let e=0;e<o.data.supplementary_cards;e++)await ri(t)}function ai(e){return new Promise(t=>{GM_xmlhttpRequest({method:"GET",url:"https://yuba.douyu.com/wbapi/web/group/myFollow?page="+String(e)+"&limit=30",responseType:"json",headers:{"Content-Type":"application/x-www-form-urlencoded","dy-client":"pc","dy-token":m},onload:function(e){t(e.response.data)}})})}function ri(e){return new Promise(t=>{GM_xmlhttpRequest({method:"POST",url:"https://mapi-yuba.douyu.com/wb/v3/supplement",responseType:"json",headers:{"Content-Type":"application/x-www-form-urlencoded",client:"android",token:m},data:"group_id="+e,onload:function(e){t(e.response)}})})}var P = "2026.09.14.11";let ui=0,gi=null,hi=null,fi=null,yi=0,bi="";function vi(){var e=(()=>{try{var e=document.getElementsByTagName("demand-video-toolbar")[0].shadowRoot.querySelector("share-hover").getAttribute("hashid");if(e)return e}catch(e){}return(e=String(window.location.pathname).split("/"))[e.length-1]})();if(e){let t=bi=e;fetch("https://v.douyu.com/video/video/getVideoUrl?vid="+e,{method:"GET",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"}}).then(e=>e.json()).then(e=>{t===bi&&(e=v(e.data.viewthumb[0].url,"--","/"),ui=new Date(e.replace(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/,"$1-$2-$3 $4:$5:$6")).getTime())}).catch(e=>{console.log("请求失败!",e)})}}function xi(){var e=document.getElementsByTagName("demand-video")[0].shadowRoot.getElementById("demandcontroller-bar").shadowRoot.querySelector("demand-video-controller-progress").shadowRoot.querySelector("demand-video-controller-preview").getAttribute("showtime");return Number(e).toFixed(0)}function wi(e){var t=document.getElementsByTagName("demand-video")[0].shadowRoot.getElementById("demandcontroller-bar").shadowRoot.querySelector("demand-video-controller-progress").shadowRoot.querySelector("demand-video-controller-preview").shadowRoot.querySelector(".Preview label");t&&(t.style.position="relative",t.style.bottom="60px",t.style.backgroundColor="rgba(0,0,0,0.4)",t.innerHTML=e)}var _i,z,ki,Ei,Bi,o="/* [DouyuEx-Lite] GIF Worker已剥离 */",Ii=URL.createObjectURL(new Blob([o],{type:"application/javascript"}));let Ti=83;function Ci(e,t,o,n){t.getContext("2d").drawImage(e,0,0,t.width,t.height),o.addFrame(t,{copy:!0,delay:n})}function Si(){var e=localStorage.getItem("ExSave_Camera_Hidden");if(e)return e=parseInt(e),Date.now()<e}function Mi(){let o=setInterval(()=>{if(null!=(V=document.getElementsByTagName("demand-video")[0].shadowRoot.getElementById("__video"))&&V.videoWidth){clearInterval(o),Bi=document.getElementsByTagName("demand-video-anchor")[0].shadowRoot.querySelector(".anchor-name").innerText,ki=.25*V.videoWidth,Ei=.25*V.videoHeight,(_i=document.createElement("canvas")).width=ki,_i.height=Ei,(z=document.createElement("canvas")).width=V.videoWidth,z.height=V.videoHeight;var e=document.createElement("div"),t=(e.id="ex-camera",e.title="单击截图 长按录制gif",e.innerHTML=`
 
     <svg t="1620266708389" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2080" width="38" height="38"><path d="M512 337.371136c-119.543808 0-216.800256 97.255424-216.800256 216.798208 0 119.543808 97.256448 216.800256 216.800256 216.800256s216.800256-97.256448 216.800256-216.800256C728.800256 434.625536 631.543808 337.371136 512 337.371136zM680.479744 554.16832c0 92.911616-75.579392 168.501248-168.479744 168.501248-92.900352 0-168.480768-75.589632-168.480768-168.501248 0-92.923904 75.579392-168.521728 168.480768-168.521728C604.899328 385.646592 680.479744 461.24544 680.479744 554.16832z" p-id="2081" fill="#ffffff"></path><path d="M831.209472 337.349632l-47.167488 0c-13.647872 0-24.751104 11.083776-24.751104 24.707072 0 13.635584 11.103232 24.7296 24.751104 24.7296l47.167488 0c13.646848 0 24.75008-11.094016 24.75008-24.7296C855.959552 348.433408 844.85632 337.349632 831.209472 337.349632z" p-id="2082" fill="#ffffff"></path><path d="M700.505088 171.497472c4.235264 0 6.403072 0.405504 7.232512 0.612352 1.47968 1.514496 4.790272 6.218752 11.717632 20.685824 2.83648 5.910528 8.6272 18.86208 15.888384 35.533824l11.788288 27.063296 29.518848 0 96.535552 0c35.122176 0 63.695872 28.535808 63.695872 63.609856l0 469.933056c0 35.05152-28.573696 63.567872-63.695872 63.567872L150.811648 852.503552c-35.121152 0-63.694848-28.516352-63.694848-63.567872L87.1168 319.0016c0-35.062784 28.573696-63.589376 63.694848-63.589376l99.35872 0 29.110272 0 11.964416-26.537984c4.698112-10.421248 8.416256-19.063808 11.058176-25.70752 9.86112-24.829952 15.207424-30.125056 16.239616-30.974976 0.52736-0.161792 2.64192-0.695296 7.673856-0.695296L700.505088 171.496448M700.505088 126.441472 326.216704 126.441472c-32.519168 0-47.275008 13.479936-65.787904 60.096512-3.180544 7.999488-7.689216 18.122752-10.257408 23.819264l-99.35872 0c-59.96544 0-108.750848 48.738304-108.750848 108.645376l0 469.933056c0 59.894784 48.785408 108.623872 108.750848 108.623872l722.37568 0c59.96544 0 108.751872-48.729088 108.751872-108.623872L981.940224 319.0016c0-59.91936-48.786432-108.665856-108.751872-108.665856l-96.535552 0c-4.458496-10.236928-12.420096-28.372992-16.574464-37.031936C744.823808 141.448192 733.973504 126.441472 700.505088 126.441472L700.505088 126.441472z" p-id="2083" fill="#ffffff"></path></svg>
 
