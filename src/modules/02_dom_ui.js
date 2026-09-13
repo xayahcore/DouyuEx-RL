@@ -568,6 +568,10 @@ function initDockFull(wrap) {
     safeBind(".ex-monitor", "click", function(e) { e.stopPropagation(); handleDockAction("ex-monitor"); });
     safeBind(".ex-update", "click", function(e) { e.stopPropagation(); handleDockAction("ex-update"); });
     safeBind(".fans-continue", "click", function(e) { e.stopPropagation(); handleDockAction("fans-continue"); });
+    
+    if (typeof initVersionLifecycleNotice === "function") {
+        initVersionLifecycleNotice();
+    }
 }
 
 

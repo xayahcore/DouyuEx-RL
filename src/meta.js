@@ -98,5 +98,7 @@
 
 // @connect      fastly.jsdelivr.net
 
+// @connect      greasyfork.org
+
 // @license        MIT
 // ==/UserScript==
