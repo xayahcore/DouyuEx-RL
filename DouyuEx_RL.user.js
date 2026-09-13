@@ -8,7 +8,7 @@
 
 // @icon         data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyB3aWR0aD0iMTA4cHgiIGhlaWdodD0iMTA4cHgiIHZpZXdCb3g9IjAgMCAxMDggMTA4IiB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiPgogICAgPHRpdGxlPueyvueBteeQgzwvdGl0bGU+CiAgICA8ZyBpZD0i6aG16Z2iLTEiIHN0cm9rZT0ibm9uZSIgc3Ryb2tlLXdpZHRoPSIxIiBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPgogICAgICAgIDxnIGlkPSLnsr7ngbXnkIMiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDAuODMwNzY5LCAwLjgzMDc2OSkiIGZpbGwtcnVsZT0ibm9uemVybyI+CiAgICAgICAgICAgIDxwYXRoIGQ9Ik01My4xNjkyMzA3LDEwNi4zMzg0NjEgQzIzLjgyNzY5MjIsMTA2LjMzODQ2MSAwLDgyLjUxMDc2OTIgMCw1My4xNjkyMzA3IEMwLDUxLjAwMzA3NjkgMS43NzIzMDc3NSw0OS4yMzA3NjkyIDMuOTM4NDYxNSw0OS4yMzA3NjkyIEwzMy40NzY5MjMsNDkuMjMwNzY5MiBDMzUuNjQzMDc2OSw0OS4yMzA3NjkyIDM3LjQxNTM4NDUsNTEuMDAzMDc3IDM3LjQxNTM4NDYsNTMuMTY5MjMwNyBDMzcuNDE1Mzg0Niw2MS44MzM4NDYxIDQ0LjUwNDYxNTQsNjguOTIzMDc2OSA1My4xNjkyMzA3LDY4LjkyMzA3NjkgQzYxLjgzMzg0NjEsNjguOTIzMDc2OSA2OC45MjMwNzY5LDYxLjgzMzg0NjEgNjguOTIzMDc2OSw1My4xNjkyMzA3IEM2OC45MjMwNzY5LDUxLjAwMzA3NjkgNzAuNjk1Mzg0Niw0OS4yMzA3NjkyIDcyLjg2MTUzODUsNDkuMjMwNzY5MiBMMTAyLjQsNDkuMjMwNzY5MiBDMTA0LjU2NjE1NCw0OS4yMzA3NjkyIDEwNi4zMzg0NjEsNTEuMDAzMDc3IDEwNi4zMzg0NjEsNTMuMTY5MjMwNyBDMTA2LjMzODQ2MSw4Mi41MTA3NjkyIDgyLjUxMDc2OTIsMTA2LjMzODQ2MSA1My4xNjkyMzA3LDEwNi4zMzg0NjEgWiIgaWQ9Iui3r+W+hCIgZmlsbD0iIzMzMzYzQSI+PC9wYXRoPgogICAgICAgICAgICA8cGF0aCBkPSJNOC4wNzM4NDYxMiw1Ny4xMDc2OTIyIEMxMC4wNDMwNzY5LDgwLjI0NjE1MzcgMjkuNTM4NDYxNSw5OC40NjE1Mzg1IDUzLjE2OTIzMDcsOTguNDYxNTM4NSBDNzYuOCw5OC40NjE1Mzg1IDk2LjI5NTM4NDYsODAuMjQ2MTUzOSA5OC4yNjQ2MTU0LDU3LjEwNzY5MjIgTDc2LjUwNDYxNTQsNTcuMTA3NjkyMiBDNzQuNjMzODQ2MSw2OC4yMzM4NDYxIDY0Ljg4NjE1MzksNzYuOCA1My4xNjkyMzA3LDc2LjggQzQxLjQ1MjMwNzYsNzYuOCAzMS43MDQ2MTU0LDY4LjIzMzg0NjEgMjkuODMzODQ2MSw1Ny4xMDc2OTIyIEw4LjA3Mzg0NjEyLDU3LjEwNzY5MjIgWiIgaWQ9Iui3r+W+hCIgZmlsbD0iI0ZGRkZGRiI+PC9wYXRoPgogICAgICAgICAgICA8cGF0aCBkPSJNNTMuMTY5MjMwOCwzLjkzODQ2MTUgQzI1Ljk5Mzg0NjEsMy45Mzg0NjE1IDMuOTM4NDYxNSwyNS45OTM4NDYxIDMuOTM4NDYxNSw1My4xNjkyMzA3IEwzMy40NzY5MjMsNTMuMTY5MjMwNyBDMzMuNDc2OTIzLDQyLjMzODQ2MTUgNDIuMzM4NDYxNSwzMy40NzY5MjMgNTMuMTY5MjMwOCwzMy40NzY5MjMgQzY0LDMzLjQ3NjkyMyA3Mi44NjE1Mzg1LDQyLjMzODQ2MTUgNzIuODYxNTM4NSw1My4xNjkyMzA3IEwxMDIuNCw1My4xNjkyMzA3IEMxMDIuNCwyNS45OTM4NDYxIDgwLjM0NDYxNTQsMy45Mzg0NjE1IDUzLjE2OTIzMDgsMy45Mzg0NjE1IFoiIGlkPSLot6/lvoQiIGZpbGw9IiNENjA5MDkiPjwvcGF0aD4KICAgICAgICAgICAgPHBhdGggZD0iTTEwMi40LDU3LjEwNzY5MjIgTDcyLjg2MTUzODUsNTcuMTA3NjkyMiBDNzAuNjk1Mzg0Niw1Ny4xMDc2OTIyIDY4LjkyMzA3Nyw1NS4zMzUzODQ1IDY4LjkyMzA3NjksNTMuMTY5MjMwNyBDNjguOTIzMDc2OSw0NC41MDQ2MTU0IDYxLjgzMzg0NjEsMzcuNDE1Mzg0NiA1My4xNjkyMzA3LDM3LjQxNTM4NDYgQzQ0LjUwNDYxNTQsMzcuNDE1Mzg0NiAzNy40MTUzODQ2LDQ0LjUwNDYxNTQgMzcuNDE1Mzg0Niw1My4xNjkyMzA3IEMzNy40MTUzODQ2LDU1LjMzNTM4NDYgMzUuNjQzMDc2OSw1Ny4xMDc2OTIyIDMzLjQ3NjkyMyw1Ny4xMDc2OTIyIEwzLjkzODQ2MTUsNTcuMTA3NjkyMiBDMS43NzIzMDc2Miw1Ny4xMDc2OTIyIDAsNTUuMzM1Mzg0NSAwLDUzLjE2OTIzMDcgQzAsMjMuODI3NjkyMiAyMy44Mjc2OTIzLDAgNTMuMTY5MjMwNywwIEM4Mi41MTA3NjkyLDAgMTA2LjMzODQ2MSwyMy44Mjc2OTIyIDEwNi4zMzg0NjEsNTMuMTY5MjMwNyBDMTA2LjMzODQ2MSw1NS4zMzUzODQ2IDEwNC41NjYxNTQsNTcuMTA3NjkyMiAxMDIuNCw1Ny4xMDc2OTIyIFoiIGlkPSLot6/lvoQiIGZpbGw9IiMzMzM2M0EiPjwvcGF0aD4KICAgICAgICAgICAgPHBhdGggZD0iTTc2LjUwNDYxNTQsNDkuMjMwNzY5MyBMOTguMzYzMDc2OSw0OS4yMzA3NjkzIEM5Ni4yOTUzODQ2LDI2LjA5MjMwNzYgNzYuOCw3Ljg3NjkyMyA1My4xNjkyMzA3LDcuODc2OTIzIEMyOS41Mzg0NjE1LDcuODc2OTIzIDEwLjA0MzA3NjksMjYuMDkyMzA3NiA4LjA3Mzg0NjEyLDQ5LjIzMDc2OTMgTDI5LjkzMjMwNzYsNDkuMjMwNzY5MyBDMzEuNzA0NjE1NCwzOC4xMDQ2MTU0IDQxLjQ1MjMwNzYsMjkuNTM4NDYxNSA1My4xNjkyMzA3LDI5LjUzODQ2MTUgQzY0Ljg4NjE1MzksMjkuNTM4NDYxNSA3NC42MzM4NDYxLDM4LjEwNDYxNTQgNzYuNTA0NjE1NCw0OS4yMzA3NjkzIEw3Ni41MDQ2MTU0LDQ5LjIzMDc2OTMgWiIgaWQ9Iui3r+W+hCIgZmlsbD0iI0Q2MDkwOSI+PC9wYXRoPgogICAgICAgICAgICA8cGF0aCBkPSJNNTMuMTY5MjMwNyw3Ni44IEM0MC4xNzIzMDc2LDc2LjggMjkuNTM4NDYxNSw2Ni4xNjYxNTM5IDI5LjUzODQ2MTUsNTMuMTY5MjMwNyBDMjkuNTM4NDYxNSw0MC4xNzIzMDc2IDQwLjE3MjMwNzYsMjkuNTM4NDYxNSA1My4xNjkyMzA3LDI5LjUzODQ2MTUgQzY2LjE2NjE1MzksMjkuNTM4NDYxNSA3Ni44LDQwLjE3MjMwNzYgNzYuOCw1My4xNjkyMzA3IEM3Ni44LDY2LjE2NjE1MzkgNjYuMTY2MTUzOSw3Ni44IDUzLjE2OTIzMDcsNzYuOCBaIiBpZD0i6Lev5b6EIiBmaWxsPSIjMzMzNjNBIj48L3BhdGg+CiAgICAgICAgICAgIDxwYXRoIGQ9Ik01My4xNjkyMzA3LDM3LjQxNTM4NDYgQzQ0LjUwNDYxNTQsMzcuNDE1Mzg0NiAzNy40MTUzODQ2LDQ0LjUwNDYxNTQgMzcuNDE1Mzg0Niw1My4xNjkyMzA3IEMzNy40MTUzODQ2LDYxLjgzMzg0NjEgNDQuNTA0NjE1NCw2OC45MjMwNzY5IDUzLjE2OTIzMDcsNjguOTIzMDc2OSBDNjEuODMzODQ2MSw2OC45MjMwNzY5IDY4LjkyMzA3NjksNjEuODMzODQ2MSA2OC45MjMwNzY5LDUzLjE2OTIzMDcgQzY4LjkyMzA3NjksNDQuNTA0NjE1NCA2MS44MzM4NDYxLDM3LjQxNTM4NDYgNTMuMTY5MjMwNywzNy40MTUzODQ2IEw1My4xNjkyMzA3LDM3LjQxNTM4NDYgWiIgaWQ9Iui3r+W+hCIgZmlsbD0iI0ZGRkZGRiI+PC9wYXRoPgogICAgICAgICAgICA8cGF0aCBkPSJNNDMuMzIzMDc2OSw1My4xNjkyMzA3IEM0My4zMjMwNzY5LDU4LjYwNzExMTQgNDcuNzMxMzUwMSw2My4wMTUzODQ2IDUzLjE2OTIzMDcsNjMuMDE1Mzg0NiBDNTguNjA3MTExNCw2My4wMTUzODQ2IDYzLjAxNTM4NDYsNTguNjA3MTExNCA2My4wMTUzODQ2LDUzLjE2OTIzMDcgQzYzLjAxNTM4NDYsNDcuNzMxMzUwMSA1OC42MDcxMTE0LDQzLjMyMzA3NjkgNTMuMTY5MjMwNyw0My4zMjMwNzY5IEM0Ny43MzEzNTAxLDQzLjMyMzA3NjkgNDMuMzIzMDc2OSw0Ny43MzEzNTAxIDQzLjMyMzA3NjksNTMuMTY5MjMwNyBaIiBpZD0i6Lev5b6EIiBmaWxsPSIjMzMzNjNBIj48L3BhdGg+CiAgICAgICAgPC9nPgogICAgPC9nPgo8L3N2Zz4=
 
-// @version      2026.09.14.05
+// @version      2026.09.14.07
 
 // @description  DouyuEx 纯净重构版：源头全链路无缝最高画质（彻底告别开播二次切流卡顿）/ 活跃榜贡献值原生极速注入 / 物理单例长连接多路复用 / 优雅阻断P2P上传 / 彻底去除弹窗广告 / 剥离历史冗余死重
 
@@ -1633,6 +1633,167 @@ function safeBind(target, ev, fn) {
 
 
 
+function openGiftPicker(type, onSelect) {
+    var oldModal = document.querySelector(".ex-gift-picker-modal");
+    if (oldModal) oldModal.remove();
+    var oldMask = document.querySelector(".ex-gift-picker-mask");
+    if (oldMask) oldMask.remove();
+
+    var mask = document.createElement("div");
+    mask.className = "ex-gift-picker-mask";
+    document.body.appendChild(mask);
+
+    var modal = document.createElement("div");
+    modal.className = "ex-gift-picker-modal miuix-modal-in";
+    modal.innerHTML = `
+        <div class="ex-gift-picker__header">
+            <div class="ex-gift-picker__tabs">
+                <button type="button" class="ex-gift-picker__tab" id="tab-room-gifts">全部礼物</button>
+                <button type="button" class="ex-gift-picker__tab" id="tab-bag-gifts">背包礼物</button>
+            </div>
+            <input type="text" class="ex-gift-picker__search" id="ex-gift-picker-search" placeholder="搜索礼物名称..." />
+            <button type="button" class="ex-gift-picker__close" title="关闭">×</button>
+        </div>
+        <div class="ex-gift-picker__body">
+            <div class="ex-gift-grid" id="ex-gift-grid">
+                <div style="grid-column: 1 / -1; text-align: center; color: #94a3b8; padding: 40px 0; font-size: 13px;">正在加载礼物池...</div>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    var grid = modal.querySelector("#ex-gift-grid");
+    var tabRoom = modal.querySelector("#tab-room-gifts");
+    var tabBag = modal.querySelector("#tab-bag-gifts");
+    var searchInput = modal.querySelector("#ex-gift-picker-search");
+    var closeBtn = modal.querySelector(".ex-gift-picker__close");
+
+    var currentPool = [];
+
+    function closeModal() {
+        document.removeEventListener("keydown", onKeyDown);
+        modal.classList.remove("miuix-modal-in");
+        modal.classList.add("miuix-modal-out");
+        mask.style.opacity = "0";
+        setTimeout(function() {
+            if (modal.parentNode) modal.parentNode.removeChild(modal);
+            if (mask.parentNode) mask.parentNode.removeChild(mask);
+        }, 160);
+    }
+
+    function onKeyDown(e) {
+        if (e.key === "Escape") {
+            closeModal();
+        }
+    }
+    document.addEventListener("keydown", onKeyDown);
+
+    closeBtn.addEventListener("click", function(e) {
+        e.stopPropagation();
+        closeModal();
+    });
+    mask.addEventListener("click", function(e) {
+        e.stopPropagation();
+        closeModal();
+    });
+
+    function renderGifts(gifts) {
+        if (!grid) return;
+        grid.innerHTML = "";
+        if (!gifts || gifts.length === 0) {
+            grid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: #94a3b8; padding: 40px 0; font-size: 13px;">暂无匹配礼物</div>';
+            return;
+        }
+        var frag = document.createDocumentFragment();
+        gifts.forEach(function(g) {
+            var cell = document.createElement("div");
+            cell.className = "ex-gift-cell";
+            cell.setAttribute("data-gid", g.id);
+            cell.title = (g.name || "") + " (" + (g.priceText || "") + ")";
+            cell.innerHTML = `
+                <img class="ex-gift-cell__img" src="${g.icon || ''}" loading="lazy" onerror="this.style.opacity='0.2'" />
+                <div class="ex-gift-cell__name">${g.name || '未知礼物'}</div>
+                <div class="ex-gift-cell__price">${g.priceText || ''}</div>
+            `;
+            cell.addEventListener("click", function(e) {
+                e.stopPropagation();
+                closeModal();
+                if (typeof onSelect === "function") {
+                    onSelect(g);
+                }
+            });
+            frag.appendChild(cell);
+        });
+        grid.appendChild(frag);
+    }
+
+    function filterAndRender() {
+        var kw = (searchInput && searchInput.value) ? searchInput.value.trim().toLowerCase() : "";
+        if (!kw) {
+            renderGifts(currentPool);
+        } else {
+            var filtered = currentPool.filter(function(g) {
+                return (g.name && g.name.toLowerCase().indexOf(kw) !== -1) ||
+                       (g.id && String(g.id).indexOf(kw) !== -1);
+            });
+            renderGifts(filtered);
+        }
+    }
+
+    if (searchInput) {
+        searchInput.addEventListener("input", filterAndRender);
+    }
+
+    function loadRoomGifts() {
+        if (!grid) return;
+        grid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: #94a3b8; padding: 40px 0; font-size: 13px;">正在加载房间官方礼物...</div>';
+        if (searchInput) searchInput.value = "";
+        fetchCurrentRoomGifts(B, function(gifts) {
+            currentPool = gifts || [];
+            filterAndRender();
+        });
+    }
+
+    function loadBackpackGifts() {
+        if (!grid) return;
+        grid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: #94a3b8; padding: 40px 0; font-size: 13px;">正在加载背包资产礼物...</div>';
+        if (searchInput) searchInput.value = "";
+        fetchUserBackpackGifts(B, function(gifts) {
+            currentPool = gifts || [];
+            filterAndRender();
+        });
+    }
+
+    tabRoom.addEventListener("click", function(e) {
+        e.stopPropagation();
+        if (tabRoom.classList.contains("is-active")) return;
+        tabRoom.classList.add("is-active");
+        tabBag.classList.remove("is-active");
+        loadRoomGifts();
+    });
+
+    tabBag.addEventListener("click", function(e) {
+        e.stopPropagation();
+        if (tabBag.classList.contains("is-active")) return;
+        tabBag.classList.add("is-active");
+        tabRoom.classList.remove("is-active");
+        loadBackpackGifts();
+    });
+
+    if (type === "backpack") {
+        tabBag.classList.add("is-active");
+        tabRoom.classList.remove("is-active");
+        loadBackpackGifts();
+    } else {
+        tabRoom.classList.add("is-active");
+        tabBag.classList.remove("is-active");
+        loadRoomGifts();
+    }
+}
+window.openGiftPicker = openGiftPicker;
+
+
 /* ==================== DouyuEx-RL 3级控制台右上角吸顶顶栏 ==================== */
 function ensureMiuixPanelHeader(el, title) {
     if (!el) return;
@@ -2071,7 +2232,7 @@ function createPopupPlayerPanel() {
 }
 
 function createExUpdatePanel() {
-    var currentVer = (typeof P !== "undefined" && P) ? P : "2026.09.14.05";
+    var currentVer = (typeof P !== "undefined" && P) ? P : "2026.09.14.07";
     var existing = document.querySelector(".exupdate-panel");
     if (existing) {
         if (existing.dataset.version === currentVer) return;
@@ -2086,10 +2247,10 @@ function createExUpdatePanel() {
                 <span class="exupdate-panel__card-title">新增功能·</span>
             </div>
             <ul class="exupdate-list">
-                <li>① 三级模态标准四级卡片重构：版本更新日志三大模块（新增功能、优化与修复、其它）全面接入标准 .exupdate-panel__card 拟态磨砂卡片包裹，与一键续牌/同屏播放结构完全对齐</li>
-                <li>② 吸顶 Header 沉浸式动态遮盖：顶部标题栏固定吸顶（position: sticky; top: 0; z-index: 50），滑动日志时下方更新内容平滑滑入磨砂遮罩之下，质感纯正自然</li>
-                <li>③ 按钮流式沉底与底栏轻量化：移除底部固定白条底栏，操作按键统一为同款主操作微质感键 (ex-btn-primary)，自然沉入更新日志最底端，不占固定视口空间</li>
-                <li>④ 开播零打扰静默体验：彻底取消升级后首次开播自动唤起面板与强弹卡片的机制，全量收敛至二级 Dock 图标静默红点与划过唤醒</li>
+                <li>① 5级模态选择器全域复用：深度复用至4级“背包送礼”与“打榜送礼”，彻底告别手动输入礼物ID，触控胶囊即点即选即回填</li>
+                <li>② 动态房间与背包礼物池：进房动态探测当前房间可用全部官方礼物及用户真实背包资产，零硬编码零内置死重</li>
+                <li>③ 5级选择器遮罩与即时搜索：新增半透明磨砂遮罩（点击遮罩/Esc关闭）与即时模糊搜索框，毫秒级快速定位目标礼物</li>
+                <li>④ 礼物自由变形全链路闭环：送礼弹幕广播文本、顶部跑道横幅与全屏豪华 SVGA 特效实时视觉置换</li>
             </ul>
         </div>
         <div class="exupdate-panel__card">
@@ -2097,9 +2258,9 @@ function createExUpdatePanel() {
                 <span class="exupdate-panel__card-title">优化与修复·</span>
             </div>
             <ul class="exupdate-list">
-                <li>① 面板更新日志动态版本热载入：重构面板生命周期守卫，版本升级后自动刷新更新日志内容，彻底杜绝老旧版本内容缓存滞留</li>
-                <li>② 击穿布局冲突与恢复统一 Block 激活流：移除与 Flex 容器相冲突的冗余规则，统一所有三级面板的激活与物理弹簧动效管线</li>
-                <li>③ 状态机无缝衔接：【我已收到 ➔ 检查更新 ➔ 已是最新 / 前往更新】多态切换完美继承至新版流式操作按钮，按压与悬浮微交互 100% 保持</li>
+                <li>① 用户昵称探测与送礼拦截加固：修复 K() 跨域获取昵称隐患，优先提取 Cookie 与 DOM 自身信息，100% 确保送礼拦截生效</li>
+                <li>② 5级选择器作用域解耦：提升至顶层模块作用域并挂载全局，解除对特定 DOM 定时器的脆弱依赖</li>
+                <li>③ 智能初始 Tab 路由：根据触发入口（背包送礼/打榜送礼/自由变形）自动切换默认激活 Tab 与礼物池</li>
             </ul>
         </div>
         <div class="exupdate-panel__card">
@@ -2108,7 +2269,8 @@ function createExUpdatePanel() {
             </div>
             <ul class="exupdate-list">
                 <li>① 核心画质拦截层 100% 守恒：src/core/ 黄金拦截逻辑严格 0 修改，首流极清秒开无二次切流</li>
-                <li>② 构建编译集成 V8 AST 原生语法核验机制 (耗时 13ms)</li>
+                <li>② 全按钮严格遵循零 Emoji 工业契约与 MIUIX 流式拟态微质感</li>
+                <li>③ 构建编译集成 V8 AST 原生语法核验机制 (耗时 14ms)</li>
             </ul>
         </div>
         <div class="exupdate-panel__action-wrap">
@@ -2994,7 +3156,300 @@ function d(){var i=document.createElement("div"),l=(i.className="ChatToolBar-Dan
 
     </ul>
 
-    `,(e=document.getElementsByClassName("menu-da2a9e")[0]).insertBefore(t,e.childNodes[1]))}),o.attachMediaElement(t),o.load()}}})};})(),wa(),ua(),Zi||(Zi=!0,document.addEventListener("fullscreenchange",ka,!0),document.addEventListener("webkitfullscreenchange",ka,!0),document.addEventListener("mozfullscreenchange",ka,!0),document.addEventListener("MSFullscreenChange",ka,!0)),ca(),va(),o=()=>{gr()},safeBind("#js-player-toolbar", "mouseover",o),safeBind("#js-player-asideMain", "mouseover",o),E([".inputView-2a65aa",".inputView-620ab7"]).addEventListener("focus",()=>{_r=!0}),E([".inputView-2a65aa",".inputView-620ab7"]).addEventListener("blur",()=>{_r=!1}),new q(".app-f0f9c7",!1,e=>{0<e.length&&(0<e[0].addedNodes.length?_r=!0:0<e[0].removedNodes.length&&(_r=!1))})}100<=++kr&&clearInterval(s)},1500)}l=document.createElement("div"),l.className="extool",l.innerHTML='<div class="extool__close" title="关闭">×</div>',i=(document.getElementsByClassName("layout-Player-chat")[0]||document.body),i.insertBefore(l,i.childNodes[0]),l=document.createElement("div"),l.className="extool-icon",l.innerHTML='<a class="ex-panel__icon" title="扩展功能"><svg t="1590294700144" style="display:block;" class="icon" viewBox="0 0 1077 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="11915" width="30" height="30"><path d="M152.770257 11.469971l213.048618 206.378138-37.094375 36.931681 159.440737 158.545917-76.95456 73.782015-159.440737-158.545917-38.47728 36.931681L0.244042 159.115348 152.770257 11.469971z" p-id="11916" fill="#d81e06"></path><path d="M1077.851922 217.848109h-105.751509L929.393073 260.311408l-31.644106 31.400063-33.02701 32.538926L776.866857 300.985065l-23.428026-87.204321 33.027009-32.538926 33.02701-32.538926L862.281538 105.751509V0.569431h-8.134732a244.041945 244.041945 0 0 0-178.964092 68.331745 234.768351 234.768351 0 0 0-68.738481 147.645376 250.712425 250.712425 0 0 0 10.981887 95.664443v2.765808a34.165872 34.165872 0 0 1-9.598983 36.931681c-17.896409 16.269463-525.096918 497.520178-525.096918 497.520178-42.625993 35.548777-38.47728 102.497617 0 142.113759 39.860184 38.233238 105.751509 40.673657 142.927233 0 0 0 478.322212-504.353352 498.984429-524.852875A33.677788 33.677788 0 0 1 754.821735 455.544963c5.531617 1.382904 10.981888 4.067366 16.269463 5.450271a242.170956 242.170956 0 0 0 87.936447 9.598983 237.290118 237.290118 0 0 0 148.45885-68.331745 231.677153 231.677153 0 0 0 68.738481-177.662536 14.805211 14.805211 0 0 0 1.626946-6.751827zM178.964093 943.628853a33.352399 33.352399 0 0 1-48.076263 0 32.538926 32.538926 0 0 1 0-47.832221 33.352399 33.352399 0 0 1 48.076263 0 35.467429 35.467429 0 0 1 0 47.832221z" p-id="11917" fill="#d81e06"></path><path d="M981.618049 785.082936L747.988561 567.804258S617.344773 601.97013 526.642517 753.682873c5.531617 1.382904 241.926915 239.161106 241.926914 239.161105a109.98157 109.98157 0 0 0 152.607563 0l60.441055-58.732761a102.823006 102.823006 0 0 0 0-149.028281zM854.146806 951.763584a29.366381 29.366381 0 0 1-38.477279 0l-195.233556-189.94598-1.382905-1.382904a25.543057 25.543057 0 0 1 1.382905-35.548777 29.366381 29.366381 0 0 1 38.47728 0l196.535113 189.94598A28.796949 28.796949 0 0 1 854.146806 951.763584z m86.634891-83.380997a29.366381 29.366381 0 0 1-38.47728 0L705.362568 678.436606l-1.382905-1.382904a25.543057 25.543057 0 0 1 1.382905-35.548777 29.366381 29.366381 0 0 1 38.477279 0l196.535113 189.945981a24.404194 24.404194 0 0 1 0 37.013028z" p-id="11918" fill="#d81e06"></path></svg><i id="extool__tip" class="ex-panel__tip"></i></a>',i=document.getElementsByClassName("ex-panel__wrap")[0],(i&&i.insertBefore(l,i.childNodes[0])),safeBind(".extool-icon", "click",function(){ee("扩展功能")}),l=document.getElementsByClassName("extool__close")[0],l&&l.addEventListener("click",e=>{e.stopPropagation();e=document.getElementsByClassName("extool")[0];e&&(e.style.display="none")}),i="",i+='<label><input style="margin-top:5px" id="extool__treasure_start" type="checkbox">半自动抢宝箱</label>',(i=document.createElement("div")).className="extool__treasure",i.innerHTML='<label><input style="margin-top:5px" id="extool__treasure_start" type="checkbox">半自动抢宝箱</label><label style="margin-left:10px;">延迟(抢得过快请调高)：</label><input id="extool__treasure_delay" type="text" style="width:50px;text-align:center;" value="3200" />ms<div class="extool__hint">说明：遇到验证码会自动弹出验证框，需要手动完成后才能领取。</div>',l=document.getElementsByClassName("extool")[0];l&&l.insertBefore(i,l.childNodes[0]),safeBind("#extool__treasure_start", "click",function(){(1==document.getElementById("extool__treasure_start").checked?(St=!0,unsafeWindow.socketProxy.socketStream.subscribe("tslist",i=>{if(null!=i)for(let n=0;n<i.list.length-1;n++){var a=i.list[n];let e=a.rpid;a=a.ot;let t=x("dy_did");var a=Number(a)-Math.floor(Date.now()/1e3),r=document.createElement("div");let o="Ex_Geetest_no"+String(fo);r.id=o,document.getElementById("Ex_Geetest").appendChild(r),0<=a?(a=1e3*a+Mt(),fo++,setTimeout(()=>{yo(B,e,t,o)},a)):yo(B,e,t,o)}})):St=!1,St=document.getElementById("extool__treasure_start").checked,e=safeEl("extool__treasure_delay").value,e={isGetTreasure:St,treasureDelay:e},localStorage.setItem("ExSave_Treasure",JSON.stringify(e)))});null!=(i=localStorage.getItem("ExSave_Treasure"))&&("treasureDelay"in(i=JSON.parse(i))==1?safeEl("extool__treasure_delay").value=i.treasureDelay:safeEl("extool__treasure_delay").value="3200",1==i.isGetTreasure)&&document.getElementById("extool__treasure_start").click();l=document.createElement("div"),l.className="extool__gold",l.innerHTML='<label><input id="extool__gold_start" type="checkbox">幻神模式</label><label><input id="extool__goldGift_start" type="checkbox">荧光棒变超火</label>',i=document.getElementsByClassName("extool")[0],i&&i.insertBefore(l,i.childNodes[0]),l=document.createElement("div"),l.className="ex_giftAnimation",i=document.getElementsByClassName("Barrage-main")[0],i&&i.insertBefore(l,i.childNodes[0]),safeBind("#extool__gold_start", "click",async function(){var e;1==document.getElementById("extool__gold_start").checked?(ft=new q(".danmu-e7f029",!0,xt),yt=new q(".Barrage-list",!0,vt),document.getElementsByClassName("FansMedalEnter-enterContent")[0].setAttribute("data-medal-level","50")):(ft.closeHook(),yt.closeHook()),e={isGold:e=document.getElementById("extool__gold_start").checked},localStorage.setItem("ExSave_Gold",JSON.stringify(e))}),safeBind("#extool__goldGift_start", "click",async function(){var e;gt=await K(),1==document.getElementById("extool__goldGift_start").checked?bt=new q(".BarrageBanner",!0,wt):bt.closeHook(),e={isGoldGift:e=document.getElementById("extool__goldGift_start").checked},localStorage.setItem("ExSave_GoldGift",JSON.stringify(e))}),l=localStorage.getItem("ExSave_Gold"),null!=l&&1==JSON.parse(l).isGold&&document.getElementById("extool__gold_start").click(),null!=(l=localStorage.getItem("ExSave_GoldGift"))&&1==JSON.parse(l).isGoldGift&&document.getElementById("extool__goldGift_start").click(),i=document.createElement("div"),i.className="extool__redpacket_room",i.innerHTML='<label><input id="extool__redpacekt_room_start" type="checkbox">自动抢礼物红包</label>',l=document.getElementsByClassName("extool")[0],l&&l.insertBefore(i,l.childNodes[0]),safeBind("#extool__redpacekt_room_start", "click",function(){(1==document.getElementById("extool__redpacekt_room_start").checked?Et=setInterval(()=>{fetch("https://www.douyu.com/japi/interactnc/web/propredpacket/getPrpList?type_id=1&room_id="+B,{method:"GET",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"}}).then(e=>e.json()).then(o=>{if(0<o.data.list.length)for(let t=0;t<o.data.list.length;t++){let e=o.data.list[t].activityid;var n=kt.indexOf(e),i=o.data.list[t].startTime,i=1e3*(Number(i)-Math.round((new Date).getTime()/1e3))-2e3;-1==n&&(kt.push(o.data.list[t].activityid),0<i?setTimeout(()=>{Bt(e),Bt(e),Bt(e),T("【礼物红包】抢红包执行完毕！","success")},i):(Bt(e),Bt(e),Bt(e),T("【礼物红包】抢红包执行完毕！","success")))}}).catch(e=>{console.log("请求失败!",e)})},6e4):clearInterval(Et),e={isGetRedPacket:e=document.getElementById("extool__redpacekt_room_start").checked},localStorage.setItem("ExSave_RedPacket_Room",JSON.stringify(e)))}),i=localStorage.getItem("ExSave_RedPacket_Room"),null!=i&&1==JSON.parse(i).isGetRedPacket&&document.getElementById("extool__redpacekt_room_start").click(),l="",l+='<label><input id="extool__autofish_start" type="checkbox">自动钓鱼</label><br>',(l=document.createElement("div")).className="extool__autofish",l.innerHTML='<label><input id="extool__autofish_start" type="checkbox">自动钓鱼</label><br><label><input name="autofish_mode" type="radio" value="all" checked>全天</label><label style="margin-left:5px;"><input name="autofish_mode" type="radio" value="contest">钓鱼大赛</label>',i=document.getElementsByClassName("extool")[0],i&&i.insertBefore(l,i.childNodes[0]),document.querySelectorAll('input[name="autofish_mode"]').forEach(e=>{e.addEventListener("change",dt)}),safeBind("#extool__autofish_start", "click",async()=>{dt();var e,t=safeEl("extool__autofish_start").checked;if(st(t),t)return T("【自动钓鱼】开始自动钓鱼","info"),tt=await new Promise(t=>{fetch(`https://www.douyu.com/japi/revenuenc/web/actfans/achieve/accList?rid=${B}&type=1&period=1`,{method:"GET",mode:"no-cors",cache:"default",credentials:"include"}).then(e=>e.json()).then(e=>{e.data?t(e.data.accList):t([])}).catch(e=>{console.log("请求失败!",e)})}),(t=await ct()).data?(e=t.data.baits.find(e=>e.inUse))?(ot=e.id,t.data.myCh?(dt(),0==t.data.fishing.stat&&(it=!1,nt=0),1==t.data.fishing.stat&&(it=!0,nt=t.data.fishing.fishEtMs),2==t.data.fishing.stat&&(await rt(),await b(1e3)),void(at=setInterval(async()=>{var e;(()=>{var e,t=(t=document.querySelector('input[name="autofish_mode"]:checked'))?t.value:"all";return"all"===t||(e=(t=new Date).getHours(),t=t.getMinutes(),12<=e&&t<30)||0===e&&t<30})()&&(it?(new Date).getTime()<=nt||await rt():0!==(e=await new Promise(t=>{fetch("https://www.douyu.com/japi/revenuenc/web/actfans/fishing/fishing",{method:"POST",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:`ctn=${w()}&rid=${B}&baitId=${ot}&ver=1.1`}).then(e=>e.json()).then(e=>{t(e)}).catch(e=>{console.log("请求失败!",e)})})).error?(T("【自动钓鱼】"+e.msg,"error"),console.log(e,"钓鱼失败"),1001007==e.error&&await rt(),1005003==e.error&&clearInterval(at)):(it=!0,nt=e.data.fishing.fishEtMs))},1500))):(st(safeEl("extool__autofish_start").checked=!1),T("【自动钓鱼】请设置形象","error"))):(st(safeEl("extool__autofish_start").checked=!1),T("【自动钓鱼】请设置鱼饵","error")):(st(safeEl("extool__autofish_start").checked=!1),T("【自动钓鱼】未能获取活动信息","error"));clearInterval(at)}),l=lt(),l.rids.includes(B)&&(l=l.modes&&l.modes[B]?l.modes[B]:"all",document.querySelector(`input[name="autofish_mode"][value="${l}"]`).checked=!0,document.getElementById("extool__autofish_start").click()),i=document.createElement("div"),i.className="extool__clearbag",i.innerHTML='<label>背包送礼：[速度并不快,间隔>0.1s]</label><a id="extool__clearbag_showid" style="margin-left:10px;color:blue;" href="javascript:void(0);">礼物id示例</a><br /><label>礼物ID：</label><input id="extool__clearbag_id" type="text" style="width:50px;text-align:center;margin-right:10px;" value="268" /><label>数量：</label><input id="extool__clearbag_cnt" type="text" style="width:30px;text-align:center;" value="1" /><input style="margin-left:10px;" type="button" id="extool__clearbag_sendbtn" value="送出" />',l=document.getElementsByClassName("extool")[0],l&&l.insertBefore(i,l.childNodes[0]),safeBind("#extool__clearbag_sendbtn", "click",async function(){if(1==confirm("确认送出？")){let t=document.getElementById("extool__clearbag_id").value;var o=Number(document.getElementById("extool__clearbag_cnt").value);T("【背包送礼】执行中...","info");for(let e=0;e<o;e++)await b(100).then(()=>{Ut(t,1,B).then(e=>{"success"!=e.msg&&(T("【背包送礼】"+B+"赠送失败 "+e.msg,"error"),console.log(B,e))}).catch(e=>{T("【背包送礼】"+B+"赠送失败","error"),console.log(B,e)})});T("【背包送礼】执行完毕！","success")}}),safeBind("#extool__clearbag_showid", "click",function(){pt(B,t=>{var o=t.data.list.length;if(0<o){for(let e=0;e<o;e++){var n=t.data.list[e].id,i=t.data.list[e].name;console.log("【"+i+"】 id:"+n)}T("请按F12到控制台(console)查看背包礼物id","success")}else T("背包礼物为空","error")})}),i="",i=(i=(i+='<label>送礼：[用于打榜,例如送出999个飞机]</label><a style="margin-left:10px;color:blue;" href="http://open.douyucdn.cn/api/RoomApi/room/'+B+'" target="_blank">礼物id示例</a><br />')+'<label>礼物ID：</label><input id="extool__sendgift_id" type="text" style="width:50px;text-align:center;margin-right:10px;" value="20000" /><label>数量：</label><input id="extool__sendgift_cnt" type="text" style="width:30px;text-align:center;margin-right:10px;" value="1" />')+'<br/><label>间隔ms：</label><input id="extool__sendgift_delay" type="text" style="width:30px;text-align:center;" value="0" /><input style="margin-left:10px;" type="button" id="extool__sendgift_btn" value="送出" />',l=document.createElement("div"),l.className="extool__sendgift",l.innerHTML=i,(i=document.getElementsByClassName("extool")[0]).insertBefore(l,i.childNodes[0]),safeBind("#extool__sendgift_btn", "click",async()=>{if(1==confirm("确认送出？")){let o=document.getElementById("extool__sendgift_id").value,n=document.getElementById("extool__sendgift_cnt").value;var e,r=Number(document.getElementById("extool__sendgift_delay").value);let i=0,a=0;for(let t=0;t<Number(n);t++)e=o,fetch("https://www.douyu.com/japi/gift/donate/mainsite/v1",{method:"POST",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:"giftId="+e+"&giftCount="+1+"&roomId="+B+"&bizExt=%7B%22yzxq%22%3A%7B%7D%7D"}).then(e=>e.json()).then(e=>{null!=e.data&&"鱼翅不足"!=e.msg?(i+=1,a+=Number(e.data.priceType)):console.log("【送礼】"+o+e.msg),t==Number(n)-1&&(T("【送礼】赠送完毕！详细信息可以在F12控制台查看","success"),console.log("【送礼】赠送完毕！详细信息可以在F12控制台查看"))}).catch(e=>{console.log("请求失败!",e)}),0<r&&await b(r);T("【送礼】执行中...","info")}}),localStorage.setItem("freetimed","1");
+    `,(e=document.getElementsByClassName("menu-da2a9e")[0]).insertBefore(t,e.childNodes[1]))}),o.attachMediaElement(t),o.load()}}})};})(),wa(),ua(),Zi||(Zi=!0,document.addEventListener("fullscreenchange",ka,!0),document.addEventListener("webkitfullscreenchange",ka,!0),document.addEventListener("mozfullscreenchange",ka,!0),document.addEventListener("MSFullscreenChange",ka,!0)),ca(),va(),o=()=>{gr()},safeBind("#js-player-toolbar", "mouseover",o),safeBind("#js-player-asideMain", "mouseover",o),E([".inputView-2a65aa",".inputView-620ab7"]).addEventListener("focus",()=>{_r=!0}),E([".inputView-2a65aa",".inputView-620ab7"]).addEventListener("blur",()=>{_r=!1}),new q(".app-f0f9c7",!1,e=>{0<e.length&&(0<e[0].addedNodes.length?_r=!0:0<e[0].removedNodes.length&&(_r=!1))})}100<=++kr&&clearInterval(s)},1500)}l=document.createElement("div"),l.className="extool",l.innerHTML='<div class="extool__close" title="关闭">×</div>',i=(document.getElementsByClassName("layout-Player-chat")[0]||document.body),i.insertBefore(l,i.childNodes[0]),l=document.createElement("div"),l.className="extool-icon",l.innerHTML='<a class="ex-panel__icon" title="扩展功能"><svg t="1590294700144" style="display:block;" class="icon" viewBox="0 0 1077 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="11915" width="30" height="30"><path d="M152.770257 11.469971l213.048618 206.378138-37.094375 36.931681 159.440737 158.545917-76.95456 73.782015-159.440737-158.545917-38.47728 36.931681L0.244042 159.115348 152.770257 11.469971z" p-id="11916" fill="#d81e06"></path><path d="M1077.851922 217.848109h-105.751509L929.393073 260.311408l-31.644106 31.400063-33.02701 32.538926L776.866857 300.985065l-23.428026-87.204321 33.027009-32.538926 33.02701-32.538926L862.281538 105.751509V0.569431h-8.134732a244.041945 244.041945 0 0 0-178.964092 68.331745 234.768351 234.768351 0 0 0-68.738481 147.645376 250.712425 250.712425 0 0 0 10.981887 95.664443v2.765808a34.165872 34.165872 0 0 1-9.598983 36.931681c-17.896409 16.269463-525.096918 497.520178-525.096918 497.520178-42.625993 35.548777-38.47728 102.497617 0 142.113759 39.860184 38.233238 105.751509 40.673657 142.927233 0 0 0 478.322212-504.353352 498.984429-524.852875A33.677788 33.677788 0 0 1 754.821735 455.544963c5.531617 1.382904 10.981888 4.067366 16.269463 5.450271a242.170956 242.170956 0 0 0 87.936447 9.598983 237.290118 237.290118 0 0 0 148.45885-68.331745 231.677153 231.677153 0 0 0 68.738481-177.662536 14.805211 14.805211 0 0 0 1.626946-6.751827zM178.964093 943.628853a33.352399 33.352399 0 0 1-48.076263 0 32.538926 32.538926 0 0 1 0-47.832221 33.352399 33.352399 0 0 1 48.076263 0 35.467429 35.467429 0 0 1 0 47.832221z" p-id="11917" fill="#d81e06"></path><path d="M981.618049 785.082936L747.988561 567.804258S617.344773 601.97013 526.642517 753.682873c5.531617 1.382904 241.926915 239.161106 241.926914 239.161105a109.98157 109.98157 0 0 0 152.607563 0l60.441055-58.732761a102.823006 102.823006 0 0 0 0-149.028281zM854.146806 951.763584a29.366381 29.366381 0 0 1-38.477279 0l-195.233556-189.94598-1.382905-1.382904a25.543057 25.543057 0 0 1 1.382905-35.548777 29.366381 29.366381 0 0 1 38.47728 0l196.535113 189.94598A28.796949 28.796949 0 0 1 854.146806 951.763584z m86.634891-83.380997a29.366381 29.366381 0 0 1-38.47728 0L705.362568 678.436606l-1.382905-1.382904a25.543057 25.543057 0 0 1 1.382905-35.548777 29.366381 29.366381 0 0 1 38.477279 0l196.535113 189.945981a24.404194 24.404194 0 0 1 0 37.013028z" p-id="11918" fill="#d81e06"></path></svg><i id="extool__tip" class="ex-panel__tip"></i></a>',i=document.getElementsByClassName("ex-panel__wrap")[0],(i&&i.insertBefore(l,i.childNodes[0])),safeBind(".extool-icon", "click",function(){ee("扩展功能")}),l=document.getElementsByClassName("extool__close")[0],l&&l.addEventListener("click",e=>{e.stopPropagation();e=document.getElementsByClassName("extool")[0];e&&(e.style.display="none")}),i="",i+='<label><input style="margin-top:5px" id="extool__treasure_start" type="checkbox">半自动抢宝箱</label>',(i=document.createElement("div")).className="extool__treasure",i.innerHTML='<label><input style="margin-top:5px" id="extool__treasure_start" type="checkbox">半自动抢宝箱</label><label style="margin-left:10px;">延迟(抢得过快请调高)：</label><input id="extool__treasure_delay" type="text" style="width:50px;text-align:center;" value="3200" />ms<div class="extool__hint">说明：遇到验证码会自动弹出验证框，需要手动完成后才能领取。</div>',l=document.getElementsByClassName("extool")[0];l&&l.insertBefore(i,l.childNodes[0]),safeBind("#extool__treasure_start", "click",function(){(1==document.getElementById("extool__treasure_start").checked?(St=!0,unsafeWindow.socketProxy.socketStream.subscribe("tslist",i=>{if(null!=i)for(let n=0;n<i.list.length-1;n++){var a=i.list[n];let e=a.rpid;a=a.ot;let t=x("dy_did");var a=Number(a)-Math.floor(Date.now()/1e3),r=document.createElement("div");let o="Ex_Geetest_no"+String(fo);r.id=o,document.getElementById("Ex_Geetest").appendChild(r),0<=a?(a=1e3*a+Mt(),fo++,setTimeout(()=>{yo(B,e,t,o)},a)):yo(B,e,t,o)}})):St=!1,St=document.getElementById("extool__treasure_start").checked,e=safeEl("extool__treasure_delay").value,e={isGetTreasure:St,treasureDelay:e},localStorage.setItem("ExSave_Treasure",JSON.stringify(e)))});null!=(i=localStorage.getItem("ExSave_Treasure"))&&("treasureDelay"in(i=JSON.parse(i))==1?safeEl("extool__treasure_delay").value=i.treasureDelay:safeEl("extool__treasure_delay").value="3200",1==i.isGetTreasure)&&document.getElementById("extool__treasure_start").click();l=document.createElement("div"),l.className="extool__gold",l.innerHTML='<label><input id="extool__gold_start" type="checkbox">幻神模式</label>',i=document.getElementsByClassName("extool")[0],i&&i.insertBefore(l,i.childNodes[0]),l=document.createElement("div"),l.className="ex_giftAnimation",i=document.getElementsByClassName("Barrage-main")[0],i&&i.insertBefore(l,i.childNodes[0]),safeBind("#extool__gold_start", "click",async function(){var e;1==document.getElementById("extool__gold_start").checked?(ft=new q(".danmu-e7f029",!0,xt),yt=new q(".Barrage-list",!0,vt),document.getElementsByClassName("FansMedalEnter-enterContent")[0].setAttribute("data-medal-level","50")):(ft.closeHook(),yt.closeHook()),e={isGold:e=document.getElementById("extool__gold_start").checked},localStorage.setItem("ExSave_Gold",JSON.stringify(e))}),l=localStorage.getItem("ExSave_Gold"),null!=l&&1==JSON.parse(l).isGold&&document.getElementById("extool__gold_start").click();
+
+
+
+(function() {
+    var _extool = document.querySelector(".extool");
+    if (!_extool) return;
+
+    var transformCard = document.createElement("div");
+    transformCard.className = "fans-panel__card extool__gift_transform";
+    transformCard.innerHTML = `
+        <div class="fans-panel__card-header">
+            <span class="fans-panel__card-title">礼物自由变形</span>
+            <div class="onoffswitch">
+                <input type="checkbox" id="extool__gift_transform_toggle" class="onoffswitch-checkbox">
+                <label class="onoffswitch-label" for="extool__gift_transform_toggle"></label>
+            </div>
+        </div>
+        <div class="ex-gift-flow">
+            <div class="ex-gift-box" id="ex-gift-box-source" title="点击选择源礼物">
+                <img class="ex-gift-box__icon" id="ex-gift-source-icon" src="" />
+                <div class="ex-gift-box__name" id="ex-gift-source-name">选择源礼物</div>
+                <div class="ex-gift-box__sub" id="ex-gift-source-sub">背包/现有</div>
+            </div>
+            <div class="ex-gift-flow__arrow">➔</div>
+            <div class="ex-gift-box" id="ex-gift-box-target" title="点击选择目标礼物">
+                <img class="ex-gift-box__icon" id="ex-gift-target-icon" src="" />
+                <div class="ex-gift-box__name" id="ex-gift-target-name">选择目标礼物</div>
+                <div class="ex-gift-box__sub" id="ex-gift-target-sub">房间官方礼物</div>
+            </div>
+        </div>
+        <div style="font-size: 11px; color: #64748b; margin-top: 6px;">
+            送出源礼物时本地自动伪装为目标礼物（替换广播、横幅与全屏动画）。
+        </div>
+    `;
+
+    var goldEl = document.querySelector(".extool__gold");
+    if (goldEl && goldEl.parentNode === _extool) {
+        _extool.insertBefore(transformCard, goldEl.nextSibling);
+    } else {
+        _extool.insertBefore(transformCard, _extool.childNodes[0]);
+    }
+
+    var defConfig = {
+        enabled: false,
+        source: { id: "268", name: "粉丝荧光棒", priceText: "免费", icon: "https://gfs-op.douyucdn.cn/dygift/2018/06/07/9e92ad12330a5749ba38cb5bf36a43ff.png" },
+        target: { id: "20005", name: "超级火箭", priceText: "2000 鱼翅", icon: "https://gfs-op.douyucdn.cn/dygift/2018/11/27/3adbb0c17d9886c1440d55c9711f4c79.gif", svga: "https://gfs-op.douyucdn.cn/dygift/2018/11/27/6c6349672e662750ad5c019b240d57f2.svga", stayTime: 4000 }
+    };
+
+    var currentConfig = null;
+    try {
+        currentConfig = JSON.parse(localStorage.getItem("ExSave_GiftTransform"));
+    } catch(e) {}
+
+    if (!currentConfig) {
+        try {
+            var legacy = JSON.parse(localStorage.getItem("ExSave_GoldGift"));
+            if (legacy && legacy.isGoldGift) {
+                defConfig.enabled = true;
+            }
+        } catch(e) {}
+        currentConfig = defConfig;
+        localStorage.setItem("ExSave_GiftTransform", JSON.stringify(currentConfig));
+    }
+
+    function syncTransformUI() {
+        var toggle = document.getElementById("extool__gift_transform_toggle");
+        if (toggle) toggle.checked = !!currentConfig.enabled;
+
+        var srcIcon = document.getElementById("ex-gift-source-icon");
+        var srcName = document.getElementById("ex-gift-source-name");
+        var srcSub = document.getElementById("ex-gift-source-sub");
+        if (currentConfig.source && currentConfig.source.name) {
+            if (srcName) srcName.innerText = currentConfig.source.name;
+            if (srcSub) srcSub.innerText = currentConfig.source.priceText || "背包/现有";
+            if (srcIcon) {
+                if (currentConfig.source.icon) {
+                    srcIcon.src = currentConfig.source.icon;
+                    srcIcon.style.display = "block";
+                } else {
+                    srcIcon.style.display = "none";
+                }
+            }
+        }
+
+        var tgtIcon = document.getElementById("ex-gift-target-icon");
+        var tgtName = document.getElementById("ex-gift-target-name");
+        var tgtSub = document.getElementById("ex-gift-target-sub");
+        if (currentConfig.target && currentConfig.target.name) {
+            if (tgtName) tgtName.innerText = currentConfig.target.name;
+            if (tgtSub) tgtSub.innerText = currentConfig.target.priceText || "房间官方礼物";
+            if (tgtIcon) {
+                if (currentConfig.target.icon) {
+                    tgtIcon.src = currentConfig.target.icon;
+                    tgtIcon.style.display = "block";
+                } else {
+                    tgtIcon.style.display = "none";
+                }
+            }
+        }
+    }
+
+    syncTransformUI();
+
+    safeBind("#extool__gift_transform_toggle", "change", async function() {
+        currentConfig.enabled = this.checked;
+        localStorage.setItem("ExSave_GiftTransform", JSON.stringify(currentConfig));
+        if (currentConfig.enabled) {
+            if (!gt) gt = await K();
+            if (!bt || !bt.observer) {
+                bt = new q(".BarrageBanner", true, wt);
+            }
+            T("【礼物自由变形】已开启", "success");
+        } else {
+            if (bt && bt.closeHook) {
+                bt.closeHook();
+                bt = null;
+            }
+            T("【礼物自由变形】已关闭", "info");
+        }
+    });
+
+    if (currentConfig.enabled) {
+        (async function() {
+            if (!gt) gt = await K();
+            if (!bt || !bt.observer) {
+                bt = new q(".BarrageBanner", true, wt);
+            }
+        })();
+    }
+
+    safeBind("#ex-gift-box-source", "click", function() {
+        openGiftPicker("source", function(selectedGift) {
+            currentConfig.source = {
+                id: selectedGift.id,
+                name: selectedGift.name,
+                priceText: selectedGift.priceText,
+                icon: selectedGift.icon
+            };
+            localStorage.setItem("ExSave_GiftTransform", JSON.stringify(currentConfig));
+            syncTransformUI();
+            T("已选择源礼物：" + selectedGift.name, "success");
+        });
+    });
+
+    safeBind("#ex-gift-box-target", "click", function() {
+        openGiftPicker("target", function(selectedGift) {
+            currentConfig.target = {
+                id: selectedGift.id,
+                name: selectedGift.name,
+                priceText: selectedGift.priceText,
+                icon: selectedGift.icon,
+                svga: selectedGift.svga || "",
+                stayTime: selectedGift.stayTime || 4000
+            };
+            localStorage.setItem("ExSave_GiftTransform", JSON.stringify(currentConfig));
+            syncTransformUI();
+            T("已选择目标礼物：" + selectedGift.name, "success");
+        });
+    });
+})();
+var i = document.createElement("div"); i.className = "extool__redpacket_room"; i.innerHTML = '<label><input id="extool__redpacekt_room_start" type="checkbox">自动抢礼物红包</label>'; var l = document.getElementsByClassName("extool")[0]; if (l) l.insertBefore(i,l.childNodes[0]); safeBind("#extool__redpacekt_room_start", "click",function(){(1==document.getElementById("extool__redpacekt_room_start").checked?Et=setInterval(()=>{fetch("https://www.douyu.com/japi/interactnc/web/propredpacket/getPrpList?type_id=1&room_id="+B,{method:"GET",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"}}).then(e=>e.json()).then(o=>{if(0<o.data.list.length)for(let t=0;t<o.data.list.length;t++){let e=o.data.list[t].activityid;var n=kt.indexOf(e),i=o.data.list[t].startTime,i=1e3*(Number(i)-Math.round((new Date).getTime()/1e3))-2e3;-1==n&&(kt.push(o.data.list[t].activityid),0<i?setTimeout(()=>{Bt(e),Bt(e),Bt(e),T("【礼物红包】抢红包执行完毕！","success")},i):(Bt(e),Bt(e),Bt(e),T("【礼物红包】抢红包执行完毕！","success")))}}).catch(e=>{console.log("请求失败!",e)})},6e4):clearInterval(Et),e={isGetRedPacket:e=document.getElementById("extool__redpacekt_room_start").checked},localStorage.setItem("ExSave_RedPacket_Room",JSON.stringify(e)))}),i=localStorage.getItem("ExSave_RedPacket_Room"),null!=i&&1==JSON.parse(i).isGetRedPacket&&document.getElementById("extool__redpacekt_room_start").click(),l="",l+='<label><input id="extool__autofish_start" type="checkbox">自动钓鱼</label><br>',(l=document.createElement("div")).className="extool__autofish",l.innerHTML='<label><input id="extool__autofish_start" type="checkbox">自动钓鱼</label><br><label><input name="autofish_mode" type="radio" value="all" checked>全天</label><label style="margin-left:5px;"><input name="autofish_mode" type="radio" value="contest">钓鱼大赛</label>',i=document.getElementsByClassName("extool")[0],i&&i.insertBefore(l,i.childNodes[0]),document.querySelectorAll('input[name="autofish_mode"]').forEach(e=>{e.addEventListener("change",dt)}),safeBind("#extool__autofish_start", "click",async()=>{dt();var e,t=safeEl("extool__autofish_start").checked;if(st(t),t)return T("【自动钓鱼】开始自动钓鱼","info"),tt=await new Promise(t=>{fetch(`https://www.douyu.com/japi/revenuenc/web/actfans/achieve/accList?rid=${B}&type=1&period=1`,{method:"GET",mode:"no-cors",cache:"default",credentials:"include"}).then(e=>e.json()).then(e=>{e.data?t(e.data.accList):t([])}).catch(e=>{console.log("请求失败!",e)})}),(t=await ct()).data?(e=t.data.baits.find(e=>e.inUse))?(ot=e.id,t.data.myCh?(dt(),0==t.data.fishing.stat&&(it=!1,nt=0),1==t.data.fishing.stat&&(it=!0,nt=t.data.fishing.fishEtMs),2==t.data.fishing.stat&&(await rt(),await b(1e3)),void(at=setInterval(async()=>{var e;(()=>{var e,t=(t=document.querySelector('input[name="autofish_mode"]:checked'))?t.value:"all";return"all"===t||(e=(t=new Date).getHours(),t=t.getMinutes(),12<=e&&t<30)||0===e&&t<30})()&&(it?(new Date).getTime()<=nt||await rt():0!==(e=await new Promise(t=>{fetch("https://www.douyu.com/japi/revenuenc/web/actfans/fishing/fishing",{method:"POST",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:`ctn=${w()}&rid=${B}&baitId=${ot}&ver=1.1`}).then(e=>e.json()).then(e=>{t(e)}).catch(e=>{console.log("请求失败!",e)})})).error?(T("【自动钓鱼】"+e.msg,"error"),console.log(e,"钓鱼失败"),1001007==e.error&&await rt(),1005003==e.error&&clearInterval(at)):(it=!0,nt=e.data.fishing.fishEtMs))},1500))):(st(safeEl("extool__autofish_start").checked=!1),T("【自动钓鱼】请设置形象","error"))):(st(safeEl("extool__autofish_start").checked=!1),T("【自动钓鱼】请设置鱼饵","error")):(st(safeEl("extool__autofish_start").checked=!1),T("【自动钓鱼】未能获取活动信息","error"));clearInterval(at)}),l=lt(),l.rids.includes(B)&&(l=l.modes&&l.modes[B]?l.modes[B]:"all",document.querySelector(`input[name="autofish_mode"][value="${l}"]`).checked=!0,document.getElementById("extool__autofish_start").click()),// 1. 背包送礼四级卡片
+(function() {
+    var _extool = document.getElementsByClassName("extool")[0];
+    if (!_extool) return;
+
+    var clearbagCard = document.createElement("div");
+    clearbagCard.className = "fans-panel__card extool__clearbag";
+    clearbagCard.innerHTML = `
+        <div class="fans-panel__card-header">
+            <span class="fans-panel__card-title">背包送礼</span>
+            <span style="font-size: 11px; color: #94a3b8;">[速度适中, 间隔>0.1s]</span>
+        </div>
+        <div class="ex-gift-pick-trigger" id="extool__clearbag_trigger" title="点击展开5级菜单选择背包礼物">
+            <img class="ex-gift-pick-trigger__icon" id="extool__clearbag_icon" src="https://gfs-op.douyucdn.cn/dygift/2018/06/07/9e92ad12330a5749ba38cb5bf36a43ff.png" />
+            <span class="ex-gift-pick-trigger__name" id="extool__clearbag_name">粉丝荧光棒</span>
+            <span class="ex-gift-pick-trigger__tag" id="extool__clearbag_tag">点击选择</span>
+            <span class="ex-gift-pick-trigger__arrow">▼</span>
+            <input id="extool__clearbag_id" type="hidden" value="268" />
+        </div>
+        <div class="ex-gift-row">
+            <label class="ex-gift-label">数量：<input id="extool__clearbag_cnt" type="number" min="1" class="ex-num-input" style="width: 55px;" value="1" /></label>
+            <button type="button" id="extool__clearbag_sendbtn" class="ex-btn-primary" style="padding: 4px 16px; font-size: 12px;">送出</button>
+        </div>
+    `;
+    _extool.insertBefore(clearbagCard, _extool.childNodes[0]);
+
+    safeBind("#extool__clearbag_trigger", "click", function() {
+        openGiftPicker("backpack", function(selectedGift) {
+            var idEl = document.getElementById("extool__clearbag_id");
+            var nameEl = document.getElementById("extool__clearbag_name");
+            var tagEl = document.getElementById("extool__clearbag_tag");
+            var iconEl = document.getElementById("extool__clearbag_icon");
+            if (idEl) idEl.value = selectedGift.id;
+            if (nameEl) nameEl.innerText = selectedGift.name;
+            if (tagEl) tagEl.innerText = selectedGift.priceText || "已选";
+            if (iconEl && selectedGift.icon) iconEl.src = selectedGift.icon;
+            T("已选择背包礼物：" + selectedGift.name, "success");
+        });
+    });
+
+    safeBind("#extool__clearbag_sendbtn", "click", async function() {
+        var giftId = document.getElementById("extool__clearbag_id").value;
+        var cnt = Number(document.getElementById("extool__clearbag_cnt").value) || 1;
+        if (!giftId) return T("请先点击上方选择要送出的礼物", "warning");
+        if (confirm("确认送出 " + cnt + " 个背包礼物？")) {
+            T("【背包送礼】执行中...", "info");
+            for (var e = 0; e < cnt; e++) {
+                await b(100).then(() => {
+                    Ut(giftId, 1, B).then(res => {
+                        if ("success" != res.msg) {
+                            T("【背包送礼】" + B + " 赠送失败 " + res.msg, "error");
+                            console.log(B, res);
+                        }
+                    }).catch(err => {
+                        T("【背包送礼】" + B + " 赠送失败", "error");
+                        console.log(B, err);
+                    });
+                });
+            }
+            T("【背包送礼】执行完毕！", "success");
+        }
+    });
+
+    // 2. 打榜送礼四级卡片
+    var sendgiftCard = document.createElement("div");
+    sendgiftCard.className = "fans-panel__card extool__sendgift";
+    sendgiftCard.innerHTML = `
+        <div class="fans-panel__card-header">
+            <span class="fans-panel__card-title">打榜送礼</span>
+            <span style="font-size: 11px; color: #94a3b8;">[批量打榜, 任意礼物]</span>
+        </div>
+        <div class="ex-gift-pick-trigger" id="extool__sendgift_trigger" title="点击展开5级菜单选择房间礼物">
+            <img class="ex-gift-pick-trigger__icon" id="extool__sendgift_icon" src="https://gfs-op.douyucdn.cn/dygift/2018/11/27/3adbb0c17d9886c1440d55c9711f4c79.gif" />
+            <span class="ex-gift-pick-trigger__name" id="extool__sendgift_name">超级火箭</span>
+            <span class="ex-gift-pick-trigger__tag" id="extool__sendgift_tag">2000 鱼翅</span>
+            <span class="ex-gift-pick-trigger__arrow">▼</span>
+            <input id="extool__sendgift_id" type="hidden" value="20005" />
+        </div>
+        <div class="ex-gift-row">
+            <label class="ex-gift-label">数量：<input id="extool__sendgift_cnt" type="number" min="1" class="ex-num-input" style="width: 50px;" value="1" /></label>
+            <label class="ex-gift-label">间隔：<input id="extool__sendgift_delay" type="number" min="0" class="ex-num-input" style="width: 50px;" value="0" /> ms</label>
+            <button type="button" id="extool__sendgift_btn" class="ex-btn-primary" style="padding: 4px 16px; font-size: 12px;">送出</button>
+        </div>
+    `;
+    _extool.insertBefore(sendgiftCard, _extool.childNodes[0]);
+
+    safeBind("#extool__sendgift_trigger", "click", function() {
+        openGiftPicker("room", function(selectedGift) {
+            var idEl = document.getElementById("extool__sendgift_id");
+            var nameEl = document.getElementById("extool__sendgift_name");
+            var tagEl = document.getElementById("extool__sendgift_tag");
+            var iconEl = document.getElementById("extool__sendgift_icon");
+            if (idEl) idEl.value = selectedGift.id;
+            if (nameEl) nameEl.innerText = selectedGift.name;
+            if (tagEl) tagEl.innerText = selectedGift.priceText || "已选";
+            if (iconEl && selectedGift.icon) iconEl.src = selectedGift.icon;
+            T("已选择送礼礼物：" + selectedGift.name, "success");
+        });
+    });
+
+    safeBind("#extool__sendgift_btn", "click", async () => {
+        var giftId = document.getElementById("extool__sendgift_id").value;
+        var cnt = Number(document.getElementById("extool__sendgift_cnt").value) || 1;
+        var delay = Number(document.getElementById("extool__sendgift_delay").value) || 0;
+        if (!giftId) return T("请先点击上方选择要送出的礼物", "warning");
+        if (confirm("确认送出 " + cnt + " 个礼物？")) {
+            T("【送礼】执行中...", "info");
+            var sucCount = 0, totalCost = 0;
+            for (var t = 0; t < cnt; t++) {
+                fetch("https://www.douyu.com/japi/gift/donate/mainsite/v1", {
+                    method: "POST",
+                    mode: "no-cors",
+                    credentials: "include",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: "giftId=" + giftId + "&giftCount=1&roomId=" + B + "&bizExt=%7B%22yzxq%22%3A%7B%7D%7D"
+                }).then(e => e.json()).then(e => {
+                    if (null != e.data && "鱼翅不足" != e.msg) {
+                        sucCount++;
+                        totalCost += Number(e.data.priceType || 0);
+                    } else {
+                        console.log("【送礼】" + giftId + " " + e.msg);
+                    }
+                }).catch(e => {
+                    console.log("请求失败!", e);
+                });
+                if (delay > 0) await b(delay);
+            }
+            T("【送礼】已提交赠送请求，详细信息可按F12查看控制台", "success");
+        }
+    });
+
+    localStorage.setItem("freetimed", "1");
+})();
 // 构造并在送礼上方插入［播放与性能］2x2网格卡片
 (function() {
     var _extool = document.querySelector(".extool");
@@ -4481,10 +4936,312 @@ function y(){var e=document.createElement("style");e.appendChild(document.create
     border-color: var(--miuix-blue) !important; box-shadow: 0 0 0 3px var(--miuix-blue-glow) !important;
 }
 
+/* ==================== 5级模态选择器与4级自由变形卡片 ==================== */
+/* 5级模态遮罩层 */
+.ex-gift-picker-mask {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    background: rgba(15, 23, 42, 0.45) !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+    z-index: 100049 !important;
+    animation: miuix-fade-in 0.2s ease forwards !important;
+}
+
+/* 5级模态容器 */
+.ex-gift-picker-modal {
+    position: fixed !important;
+    width: 540px !important;
+    max-width: 92vw !important;
+    height: 410px !important;
+    max-height: 85vh !important;
+    left: 50% !important;
+    top: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    flex-direction: column !important;
+    z-index: 100050 !important;
+    border-radius: 22px !important;
+    background: rgba(255, 255, 255, 0.88) !important;
+    backdrop-filter: blur(36px) saturate(220%) !important;
+    -webkit-backdrop-filter: blur(36px) saturate(220%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.95) !important;
+    box-shadow: inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.98), 0 24px 60px rgba(15, 23, 42, 0.25) !important;
+    overflow: hidden !important;
+    animation: miuix-modal-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+}
+
+/* 吸顶 Tab 顶栏 */
+.ex-gift-picker__header {
+    flex: 0 0 auto !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 10px !important;
+    padding: 12px 16px !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
+    background: rgba(255, 255, 255, 0.55) !important;
+}
+.ex-gift-picker__tabs {
+    display: flex !important;
+    gap: 6px !important;
+    background: rgba(0, 0, 0, 0.05) !important;
+    padding: 3px !important;
+    border-radius: 10px !important;
+    flex: 0 0 auto !important;
+}
+.ex-gift-picker__tab {
+    border: none !important;
+    background: transparent !important;
+    padding: 5px 14px !important;
+    border-radius: 8px !important;
+    font-size: 12.5px !important;
+    font-weight: 600 !important;
+    color: #64748b !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+}
+.ex-gift-picker__tab.is-active {
+    background: #ffffff !important;
+    color: #007aff !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08) !important;
+}
+.ex-gift-picker__search {
+    flex: 1 1 auto !important;
+    max-width: 170px !important;
+    height: 28px !important;
+    padding: 0 10px !important;
+    box-sizing: border-box !important;
+    border-radius: 8px !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    background: rgba(255, 255, 255, 0.75) !important;
+    font-size: 12px !important;
+    color: #0f172a !important;
+    outline: none !important;
+    transition: all 0.2s ease !important;
+}
+.ex-gift-picker__search:focus {
+    background: #ffffff !important;
+    border-color: #007aff !important;
+    box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.18) !important;
+}
+.ex-gift-picker__close {
+    width: 28px !important;
+    height: 28px !important;
+    border-radius: 8px !important;
+    background: rgba(0, 0, 0, 0.06) !important;
+    border: none !important;
+    color: #475569 !important;
+    font-size: 18px !important;
+    font-weight: bold !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: all 0.18s ease !important;
+    flex: 0 0 auto !important;
+}
+.ex-gift-picker__close:hover {
+    background: #ef4444 !important;
+    color: #ffffff !important;
+    transform: scale(1.08) rotate(90deg) !important;
+}
+
+/* 4 列礼物网格 */
+.ex-gift-picker__body {
+    flex: 1 1 auto !important;
+    overflow-y: auto !important;
+    padding: 12px 16px !important;
+}
+.ex-gift-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 10px !important;
+}
+.ex-gift-cell {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 10px 6px !important;
+    box-sizing: border-box !important;
+    border-radius: 12px !important;
+    background: rgba(255, 255, 255, 0.5) !important;
+    border: 1px solid rgba(255, 255, 255, 0.8) !important;
+    cursor: pointer !important;
+    transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+.ex-gift-cell:hover {
+    background: #ffffff !important;
+    box-shadow: 0 4px 14px rgba(0, 122, 255, 0.15) !important;
+    border-color: rgba(0, 122, 255, 0.3) !important;
+    transform: translateY(-2px) !important;
+}
+.ex-gift-cell:active {
+    transform: scale(0.96) !important;
+}
+.ex-gift-cell__img {
+    width: 44px !important;
+    height: 44px !important;
+    object-fit: contain !important;
+    margin-bottom: 6px !important;
+}
+.ex-gift-cell__name {
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    color: #0f172a !important;
+    text-align: center !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 95% !important;
+}
+.ex-gift-cell__price {
+    font-size: 11px !important;
+    color: #64748b !important;
+    margin-top: 2px !important;
+}
+
+/* 四级卡片与触发触控盒 */
+.ex-gift-flow {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 10px !important;
+    margin: 10px 0 !important;
+}
+.ex-gift-box {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    padding: 8px 10px !important;
+    border-radius: 10px !important;
+    background: rgba(255, 255, 255, 0.6) !important;
+    border: 1px dashed rgba(0, 122, 255, 0.4) !important;
+    cursor: pointer !important;
+    transition: all 0.18s ease !important;
+}
+.ex-gift-box:hover {
+    background: #ffffff !important;
+    border-style: solid !important;
+    box-shadow: 0 2px 8px rgba(0, 122, 255, 0.2) !important;
+}
+.ex-gift-box__icon {
+    width: 36px !important;
+    height: 36px !important;
+    object-fit: contain !important;
+    margin-bottom: 4px !important;
+}
+.ex-gift-box__name {
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    color: #0f172a !important;
+}
+.ex-gift-box__sub {
+    font-size: 10.5px !important;
+    color: #64748b !important;
+}
+.ex-gift-flow__arrow {
+    font-size: 18px !important;
+    color: #007aff !important;
+    font-weight: bold !important;
+    flex: 0 0 auto !important;
+}
+
+/* 4级菜单礼物触控触发胶囊 */
+.ex-gift-pick-trigger {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    padding: 6px 12px !important;
+    box-sizing: border-box !important;
+    border-radius: 10px !important;
+    background: rgba(255, 255, 255, 0.65) !important;
+    border: 1px solid rgba(0, 122, 255, 0.3) !important;
+    cursor: pointer !important;
+    transition: all 0.18s ease !important;
+    margin-bottom: 8px !important;
+}
+.ex-gift-pick-trigger:hover {
+    background: #ffffff !important;
+    border-color: #007aff !important;
+    box-shadow: 0 2px 8px rgba(0, 122, 255, 0.18) !important;
+    transform: translateY(-1px) !important;
+}
+.ex-gift-pick-trigger__icon {
+    width: 28px !important;
+    height: 28px !important;
+    object-fit: contain !important;
+    flex: 0 0 auto !important;
+}
+.ex-gift-pick-trigger__name {
+    font-size: 12.5px !important;
+    font-weight: 600 !important;
+    color: #0f172a !important;
+    flex: 1 1 auto !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+.ex-gift-pick-trigger__tag {
+    font-size: 11px !important;
+    color: #007aff !important;
+    background: rgba(0, 122, 255, 0.08) !important;
+    padding: 2px 8px !important;
+    border-radius: 6px !important;
+    font-weight: 500 !important;
+    flex: 0 0 auto !important;
+}
+.ex-gift-pick-trigger__arrow {
+    font-size: 11px !important;
+    color: #94a3b8 !important;
+    flex: 0 0 auto !important;
+}
+
+/* 4级控制栏微排版与输入框 */
+.ex-gift-row {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+    margin-top: 4px !important;
+}
+.ex-gift-label {
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    font-size: 12px !important;
+    color: #475569 !important;
+}
+.ex-num-input {
+    height: 26px !important;
+    border-radius: 6px !important;
+    border: 1px solid rgba(0, 0, 0, 0.12) !important;
+    background: rgba(255, 255, 255, 0.8) !important;
+    text-align: center !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    color: #0f172a !important;
+    outline: none !important;
+    box-sizing: border-box !important;
+    transition: all 0.18s ease !important;
+}
+.ex-num-input:focus {
+    background: #ffffff !important;
+    border-color: #007aff !important;
+    box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.18) !important;
+}
+
+
 `)),document.head.appendChild(e)}
 
 /* --- module: 05_services.js --- */
-var o=document.getElementsByTagName("html")[0].innerHTML,n="$ROOM.room_id =".length,t=o.indexOf("$ROOM.room_id ="),B="",I=(0<t?B=(B=o.substring(t+n,o.indexOf(";",t+n)))&&B.trim():(B=v(o,"roomID:",","))?B=B.trim():(t=document.querySelector('link[rel="canonical"]'))&&(B=t.getAttribute("href").split("/").pop().trim()),o=null,x("acf_uid")),W="",m=x("acf_uid")+"_"+x("acf_biz")+"_"+x("acf_stk")+"_"+x("acf_ct")+"_"+x("acf_ltkid"),Y=null;function b(t){return new Promise(e=>setTimeout(e,t))}function Q(e){let t=parseInt(e),o=0,n=0,i=(60<t&&(o=parseInt(t/60),t=parseInt(t%60),60<o)&&(n=parseInt(o/60),o=parseInt(o%60)),parseInt(t)+"秒");return 0<o&&(i=parseInt(o)+"分"+i),i=0<n?parseInt(n)+"小时"+i:i}function J(e){var t=0,o=0;return 60<(e=parseInt(e))&&(t=parseInt(e/60),e=parseInt(e%60),60<t)&&(o=parseInt(t/60),t=parseInt(t%60)),e=""+(parseInt(e)<10?"0"+parseInt(e):parseInt(e)),e=(parseInt(t)<10?"0"+parseInt(t):parseInt(t))+":"+e,e=(parseInt(o)<10?"0"+parseInt(o):parseInt(o))+":"+e}async function Z(){return!0}function v(e,t,o){e=e.match(new RegExp(t+"(.*?)"+o));return!!e&&e[1]}function x(e){try{var t=new RegExp("(^| )"+e+"=([^;]*)(;|$)"),n=document.cookie.match(t);return n?unescape(n[2]):null}catch(err){return null}}function w(){let e=x("acf_ccn");var t,o,n;return null==e&&(t="acf_ccn",o="1",(n=new Date).setTime(n.getTime()+108e5),document.cookie=t+"="+escape(o)+"; path=/; expires="+n.toGMTString(),e="1"),e}function T(e,t="success",o){e={text:e,type:t,position:"bottomLeft",...o};new NoticeJs(e).show()}function _(e,t=!0){GM_openInTab(e,{active:t})}function r(){-1!=navigator.userAgent.indexOf("Firefox")||-1!=navigator.userAgent.indexOf("Chrome")?window.location.href="about:blank":(window.opener=null,window.open("","_self")),window.close()}function k(e,t){var o,n={"M+":t.getMonth()+1,"d+":t.getDate(),"h+":t.getHours(),"m+":t.getMinutes(),"s+":t.getSeconds(),"q+":Math.floor((t.getMonth()+3)/3),S:t.getMilliseconds()};for(o in/(y+)/.test(e)&&(e=e.replace(RegExp.$1,(t.getFullYear()+"").substr(4-RegExp.$1.length))),n)new RegExp("("+o+")").test(e)&&(e=e.replace(RegExp.$1,1==RegExp.$1.length?n[o]:("00"+n[o]).substr((""+n[o]).length)));return e}function a(e,t){return Math.floor(Math.random()*(t-e)+e)}function X(t,o,n){window.Notification&&"denied"!==Notification.permission&&Notification.requestPermission(function(e){new Notification(t,{body:o}).onclick=function(){n()}})}function K(){return new Promise(t=>{fetch("https://www.douyu.com/member/cp",{method:"GET",mode:"no-cors",credentials:"include"}).then(e=>e.text()).then(e=>{e=(e=(new DOMParser).parseFromString(e,"text/html")).getElementsByClassName("uname_con")[0].title;t(e)}).catch(e=>{console.error("请求失败",e)})})}function $(e){if("TEXTAREA"===e.tagName)return e.selectionStart;let t=0;var o,n,i;return document.selection?(n=document.selection.createRange(),(o=(i=e.createTextRange()).duplicate()).moveToBookmark(n.getBookmark()),o.setEndPoint("EndToEnd",i),t=o.text.length):window.getSelection&&0<(n=window.getSelection()).rangeCount&&((i=n.getRangeAt(0).cloneRange()).selectNodeContents(e),i.setEnd(0<n.rangeCount?n.getRangeAt(0).endContainer:e,0<n.rangeCount?n.getRangeAt(0).endOffset:0),t=i.toString().length),t}function ee(t, forceShow, btnEl) {
+var o=document.getElementsByTagName("html")[0].innerHTML,n="$ROOM.room_id =".length,t=o.indexOf("$ROOM.room_id ="),B="",I=(0<t?B=(B=o.substring(t+n,o.indexOf(";",t+n)))&&B.trim():(B=v(o,"roomID:",","))?B=B.trim():(t=document.querySelector('link[rel="canonical"]'))&&(B=t.getAttribute("href").split("/").pop().trim()),o=null,x("acf_uid")),W="",m=x("acf_uid")+"_"+x("acf_biz")+"_"+x("acf_stk")+"_"+x("acf_ct")+"_"+x("acf_ltkid"),Y=null;function b(t){return new Promise(e=>setTimeout(e,t))}function Q(e){let t=parseInt(e),o=0,n=0,i=(60<t&&(o=parseInt(t/60),t=parseInt(t%60),60<o)&&(n=parseInt(o/60),o=parseInt(o%60)),parseInt(t)+"秒");return 0<o&&(i=parseInt(o)+"分"+i),i=0<n?parseInt(n)+"小时"+i:i}function J(e){var t=0,o=0;return 60<(e=parseInt(e))&&(t=parseInt(e/60),e=parseInt(e%60),60<t)&&(o=parseInt(t/60),t=parseInt(t%60)),e=""+(parseInt(e)<10?"0"+parseInt(e):parseInt(e)),e=(parseInt(t)<10?"0"+parseInt(t):parseInt(t))+":"+e,e=(parseInt(o)<10?"0"+parseInt(o):parseInt(o))+":"+e}async function Z(){return!0}function v(e,t,o){e=e.match(new RegExp(t+"(.*?)"+o));return!!e&&e[1]}function x(e){try{var t=new RegExp("(^| )"+e+"=([^;]*)(;|$)"),n=document.cookie.match(t);return n?unescape(n[2]):null}catch(err){return null}}function w(){let e=x("acf_ccn");var t,o,n;return null==e&&(t="acf_ccn",o="1",(n=new Date).setTime(n.getTime()+108e5),document.cookie=t+"="+escape(o)+"; path=/; expires="+n.toGMTString(),e="1"),e}function T(e,t="success",o){e={text:e,type:t,position:"bottomLeft",...o};new NoticeJs(e).show()}function _(e,t=!0){GM_openInTab(e,{active:t})}function r(){-1!=navigator.userAgent.indexOf("Firefox")||-1!=navigator.userAgent.indexOf("Chrome")?window.location.href="about:blank":(window.opener=null,window.open("","_self")),window.close()}function k(e,t){var o,n={"M+":t.getMonth()+1,"d+":t.getDate(),"h+":t.getHours(),"m+":t.getMinutes(),"s+":t.getSeconds(),"q+":Math.floor((t.getMonth()+3)/3),S:t.getMilliseconds()};for(o in/(y+)/.test(e)&&(e=e.replace(RegExp.$1,(t.getFullYear()+"").substr(4-RegExp.$1.length))),n)new RegExp("("+o+")").test(e)&&(e=e.replace(RegExp.$1,1==RegExp.$1.length?n[o]:("00"+n[o]).substr((""+n[o]).length)));return e}function a(e,t){return Math.floor(Math.random()*(t-e)+e)}function X(t,o,n){window.Notification&&"denied"!==Notification.permission&&Notification.requestPermission(function(e){new Notification(t,{body:o}).onclick=function(){n()}})}function K(){return new Promise(t=>{var n=x("acf_nickname");if(n)return t(decodeURIComponent(n));try{var e=document.querySelector(".Barrage-nickName.is-self, .Header-login-avatar img, .UserInfo-nickname");if(e){var o=e.innerText||e.title||e.alt;if(o)return t(o.trim())}}catch(e){}fetch("https://www.douyu.com/member/cp",{method:"GET",credentials:"include"}).then(e=>e.text()).then(e=>{var o=(new DOMParser).parseFromString(e,"text/html").getElementsByClassName("uname_con")[0];t(o?o.title:"")}).catch(e=>{t("")})})}function $(e){if("TEXTAREA"===e.tagName)return e.selectionStart;let t=0;var o,n,i;return document.selection?(n=document.selection.createRange(),(o=(i=e.createTextRange()).duplicate()).moveToBookmark(n.getBookmark()),o.setEndPoint("EndToEnd",i),t=o.text.length):window.getSelection&&0<(n=window.getSelection()).rangeCount&&((i=n.getRangeAt(0).cloneRange()).selectNodeContents(e),i.setEnd(0<n.rangeCount?n.getRangeAt(0).endContainer:e,0<n.rangeCount?n.getRangeAt(0).endOffset:0),t=i.toString().length),t}function ee(t, forceShow, btnEl) {
     var o = [
         { name: "弹幕发送小助手", className: "bloop", title: "弹幕小助手", dockCls: "bloop-icon" },
         { name: "扩展功能", className: "extool", title: "扩展功能", dockCls: "extool-icon" },
@@ -4723,7 +5480,152 @@ function l(e,t,o="download.xlsx"){if("undefined"==typeof XLSX)return void ExLoad
 
     </g>
 
-</svg>`;let tt=[],ot=null,nt=0,it=!1,at=0;async function rt(){let o=await new Promise(t=>{fetch("https://www.douyu.com/japi/revenuenc/web/actfans/fishing/reelIn",{method:"POST",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:`ctn=${w()}&rid=`+B}).then(e=>e.json()).then(e=>{t(e)}).catch(e=>{console.log("请求失败!",e)})});if(0!==o.error)console.log(o,"收杆失败"),0==(await ct()).data.fishing.stat&&(it=!1,nt=0);else{let t="【自动钓鱼】";var n=tt.find(e=>e.fishId==o.data.fish.id);if(n&&(t+=`获得${n.name}${o.data.fish.wei}斤`),o.data.awards&&0<o.data.awards.length)for(let e=0;e<o.data.awards.length;e++){var i=o.data.awards[e];t+=`${n?"，":""}获得${i.awardName}x`+i.awardNum}"【自动钓鱼】"!==t&&T(t,"success"),it=!1}}function lt(){let t;try{t=JSON.parse(localStorage.getItem("ExSave_AutoFish"))}catch(e){t=null}return t&&"object"==typeof t||(t={}),Array.isArray(t.rids)||(t.rids=[]),t.modes&&"object"==typeof t.modes||(t.modes={}),t}function st(t){document.querySelectorAll('input[name="autofish_mode"]').forEach(e=>e.disabled=t)}function dt(){var e,t=document.getElementById("extool__autofish_start"),o=document.querySelector('input[name="autofish_mode"]:checked');t&&o&&(t=t.checked,o=o.value,e=lt(),t?(e.rids.includes(B)||e.rids.push(B),e.modes[B]=o):(e.rids=e.rids.filter(e=>e!==B),delete e.modes[B]),localStorage.setItem("ExSave_AutoFish",JSON.stringify(e)))}function ct(){return new Promise(t=>{fetch(`https://www.douyu.com/japi/revenuenc/web/actfans/fishing/homePage?rid=${B}&opt=1`,{method:"GET",mode:"no-cors",cache:"default",credentials:"include"}).then(e=>e.json()).then(e=>{t(e)}).catch(e=>{console.log("请求失败!",e)})})}function pt(e,t){fetch("https://www.douyu.com/japi/prop/backpack/web/v5?rid="+e,{method:"GET",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"}}).then(e=>e.json()).then(e=>{t(e)}).catch(e=>{console.log("请求失败!",e)})}function mt(){return document.getElementById("extool__fullscreen").checked}function ut(){return document.getElementById("extool__highestvideoquality").checked}let gt,ht=0,ft,yt,bt;function vt(e){if(0!=e.length&&0!=e[0].addedNodes.length){let i=e[0].addedNodes[0],a=i.lastElementChild;if(null!=a&&-1!=a.innerHTML.indexOf("is-self")){let n=setTimeout(()=>{i.className="Barrage-listItem js-noblefloating-barrage",a.className="js-noblefloating-barragecont Barrage-notice--noble",a.setAttribute("style","background-color: #fff3df");a.getElementsByClassName("Barrage-nickName")[0].setAttribute("class","Barrage-nickName is-self js-nick");var e,t=a.querySelector(".UserLevel"),t=(null!=t&&(t.className="UserLevel UserLevel--150",t.setAttribute("title","用户等级：150")),a.querySelector(".RoomLevel")),t=(null!=t&&(t.className="RoomLevel RoomLevel--18",t.setAttribute("title","房间等级：18")),i.querySelector(".FansMedal")),t=(null!=t&&(t.style="display:none;"),document.getElementsByClassName("FansMedal-name")[0]),o=(document.getElementsByClassName("DiamondsFansRankList-item DiamondsFansRankList-item--top")[0],t?(o=document.createElement("div"),e=document.createElement("span"),o.className="FansMedal level-50 js-fans-dysclick Barrage-icon",e.className="FansMedal-name js-fans-dysclick",e.innerHTML=t.innerText,o.appendChild(e),a.insertBefore(o,a.querySelector(".UserLevel"))):((t=document.createElement("div")).className="FansMedal level-50 js-fans-dysclick Barrage-icon",t.setAttribute("data-rid","4042402"),(e=document.createElement("span")).className="FansMedal-name js-fans-dysclick",e.setAttribute("data-rid",String(B)),e.innerHTML=(localStorage.getItem("ExSave_GoldBadgeName")||"幻神"),t.appendChild(e),a.insertBefore(t,a.querySelector(".UserLevel"))),i.querySelector(".Barrage-nobleImg"));null!=o?(o.src="//res.douyucdn.cn/resource/2019/08/15/common/4e85776071ffbae2867bb9d116e9a43c.gif",o.title="幻神"):(e=document.createElement("span"),t=document.createElement("img"),e.className="Barrage-icon Barrage-noble",t.className="Barrage-nobleImg",t.setAttribute("src","//res.douyucdn.cn/resource/2019/08/15/common/4e85776071ffbae2867bb9d116e9a43c.gif"),t.setAttribute("title","幻神"),e.appendChild(t),a.insertBefore(e,a.firstElementChild)),clearTimeout(n)},100)}}}function xt(t){if(0!=t.length&&0!=t[0].addedNodes.length){t=t[0].addedNodes[0];if(-1==t.className.indexOf("noble-d35c82")&&-1!=t.innerHTML.indexOf("border: 2px solid rgb(2, 255, 255)")){t.style.zIndex="30",t.className="danmuItem-f8e204 noble-d35c82";var o=document.createElement("img"),o=(o.className="super-noble-icon-54c62c",o.setAttribute("src","https://shark2.douyucdn.cn/front-publish/live_player-master/assets/images/h1_dcd226.png"),o.setAttribute("style","margin-left: -57px; margin-top: -4px;"),t.insertBefore(o,t.firstElementChild),document.createElement("img"));o.className="super-user-icon-253711";let e=document.getElementsByClassName("Avatar is-circle")[0];null!=e&&(e=e.getElementsByTagName("img")[0].getAttribute("src"),o.setAttribute("src",e.replace(new RegExp("_middle"),"_small"))),t.insertBefore(o,t.firstElementChild);t.getElementsByClassName("afterpic-f864c2")[0].remove();var o=t.getElementsByClassName("text-edf4e7")[0],n=(o.className="super-text-188279",o.setAttribute("style","font: bold 23px SimHei, 'Microsoft JhengHei', Arial, Helvetica, sans-serif; color: rgb(255, 255, 255); background: url('https://shark2.douyucdn.cn/front-publish/live_player-master/assets/images/h2_8e5e64.png'); height: 44px;"),document.createElement("div")),o=(n.setAttribute("class","afterpic-f864c2"),n.setAttribute("style","margin-top: 7px; margin-left: -1px;"),o.appendChild(n),document.createElement("img"));o.className="super-tail-6a0446",o.setAttribute("src","https://shark2.douyucdn.cn/front-publish/live_player-master/assets/images/h3_fd2e5b.png"),t.appendChild(o),console.log(o)}}}function wt(e){if(0!=e.length&&0!=e[0].addedNodes.length){e=e[0].addedNodes[0];if(e.getElementsByClassName("Banner4gift-senderName")[0].title==gt){var i=e.getElementsByClassName("Banner4gift-objectName")[0].title;if("粉丝荧光棒"==i&&(e.className="Banner4gift Banner4gift--size2",e.getElementsByClassName("Banner4gift-bg")[0].src="https://gfs-op.douyucdn.cn/dygift/2019/03/15/6651f2de52dd359c7b553a77b9d00020.png",e.getElementsByClassName("Banner4gift-objectName")[0].title="超级火箭",e.getElementsByClassName("Banner4gift-objectName")[0].innerText="超级火箭",e.getElementsByClassName("Banner4gift-headerImg")[0].src="https://gfs-op.douyucdn.cn/dygift/2018/11/27/3adbb0c17d9886c1440d55c9711f4c79.gif",("undefined"!=typeof SVGA||ExLoadLib(EXURL.svga))&&!(0<document.getElementsByClassName("ex_giftAnimation_exist").length))){ht++;i=document.createElement("div");let t="ex_giftAnimation_"+String(ht),o=(i.id=t,i.className="ex_giftAnimation_exist",document.getElementsByClassName("ex_giftAnimation")[0].appendChild(i),new SVGA.Player("#"+t)),n=new SVGA.Parser("#"+t);n.load("https://gfs-op.douyucdn.cn/dygift/2018/11/27/6c6349672e662750ad5c019b240d57f2.svga",e=>{o.setVideoItem(e),o.startAnimation(),setTimeout(()=>{o=null,n=null,document.getElementById(t).remove()},4e3)})}}}}function _t(){return document.getElementById("extool__p2p").checked}let kt=[],Et;function Bt(t){fetch("https://www.douyu.com/japi/interactnc/web/propredpacket/grab_prp",{method:"POST",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:"activityid="+t+"&ctn="+w()}).then(e=>e.json()).then(e=>{2==e.data.isSuc&&Bt(t)})}function It(){try{var e=localStorage.getItem("ExSave_TabSwitch");if(null!=e)return!!JSON.parse(e).isEnableTabSwitch}catch(e){}e=document.getElementById("extool__tabSwitch");return!!e&&e.checked}function Tt(e){localStorage.setItem("ExSave_TabSwitch",JSON.stringify({isEnableTabSwitch:!!e}));var t=document.getElementById("extool__tabSwitch");t&&(t.checked=!!e),e&&Ct()}function Ct(){Object.defineProperty(document,"hidden",{value:!1,writable:!1}),Object.defineProperty(document,"visibilityState",{value:"visible",writable:!1}),Object.defineProperty(document,"webkitVisibilityState",{value:"visible",writable:!1}),document.dispatchEvent(new Event("visibilitychange")),document.hasFocus=function(){return!0},document.addEventListener("visibilitychange",function(e){e.stopImmediatePropagation()},!0,!0)}var St=!1;function Mt(){var e=document.getElementById("extool__treasure_delay").value;return Number(e)}let Nt=null,Lt=null;function At(){return document.querySelector(".PlayerToolbar-ContentCell .PlayerToolbar-Wealth")||document.querySelector(".PlayerToolbar-ContentRow")}function Dt(){var e=document.getElementsByClassName("PlayerToolbar-ContentRow")[0];return e&&"hidden"===e.style.visibility}function jt(){return document.getElementById("js-player-dialog")||document.getElementsByClassName("room-Player-Box")[0]||document.body}function Pt(e){Nt||(Nt=e.parentNode,Lt=e.nextSibling)}function zt(){var e,t,o,n=document.querySelector(".ex-panel.ex-panel--floating");n&&(e=document.getElementById("js-player-toolbar"),o=document.getElementById("ex-vtoolbar-menu"),e?(e=e.getBoundingClientRect(),n.style.position="fixed",n.style.bottom=window.innerHeight-e.top+8+"px",n.style.top="auto",o?(o=o.getBoundingClientRect(),t=n.offsetWidth||n.scrollWidth||320,o=o.left+o.width/2-t/2,o=Math.max(8,Math.min(o,window.innerWidth-t-8)),n.style.left=o+"px"):(t=n.offsetWidth||n.scrollWidth||320,o=e.left+e.width/2-t/2,o=Math.max(8,Math.min(o,window.innerWidth-t-8)),n.style.left=o+"px"),n.style.right="auto"):(n.style.bottom="72px",n.style.right="12px",n.style.left=""))}function Ot(){var e=document.querySelector(".ex-panel");e&&!e.classList.contains("ex-panel--floating")&&(Pt(e),jt().appendChild(e),e.classList.add("ex-panel--floating")),zt()}function Rt(){var e=document.querySelector(".ex-panel"),t=At();e&&t&&e.classList.contains("ex-panel--floating")&&(Lt&&Lt.parentNode===t?t.insertBefore(e,Lt):t.insertBefore(e,t.childNodes[0]),e.classList.remove("ex-panel--floating"))}function Ft(){var e=document.querySelector(".ex-panel");e&&"block"===e.style.display&&(Ot(),zt())}function Ht(){Rt()}function Gt(){var e=document.querySelector(".ex-panel");e&&(clearTimeout(Y),Y=null,e.style.display="none")}function Vt(){Gt()}function qt(){var e=document.getElementsByClassName("ex-panel")[0];e&&((Dt()?Ot:Rt)(),"block"!==e.style.display?(e.style.display="block",clearTimeout(Y),e.classList.contains("ex-panel--floating")&&zt()):(e.style.display="none",clearTimeout(Y)))}async function Ut(e,t,o){return(await fetch("https://www.douyu.com/japi/prop/donate/mainsite/v1",{method:"POST",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:"propId="+e+"&propCount="+t+"&roomId="+o+"&bizExt=%7B%22yzxq%22%3A%7B%7D%7D"})).json()}let Wt;function Yt(e){var t=document.getElementsByClassName("Header-follow-tab is-active")[0].innerText;"特别关注"!==t&&"视频动态"!==t&&0!=(t=document.getElementsByClassName("Header-follow-listWrap")).length&&(document.getElementsByClassName("Header-follow-listBox")[0].style.display="none",(async e=>{var i=await GM_getValue("Ex_LoadInCurrentPage",!1),a=await new Promise(t=>{fetch("https://www.douyu.com/wgapi/livenc/liveweb/follow/list?sort=1&cid1=0",{method:"GET",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"}}).then(e=>e.json()).then(e=>{t(e)})});if("0"==a.error){let t=0,o=`
+</svg>`;let tt=[],ot=null,nt=0,it=!1,at=0;async function rt(){let o=await new Promise(t=>{fetch("https://www.douyu.com/japi/revenuenc/web/actfans/fishing/reelIn",{method:"POST",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:`ctn=${w()}&rid=`+B}).then(e=>e.json()).then(e=>{t(e)}).catch(e=>{console.log("请求失败!",e)})});if(0!==o.error)console.log(o,"收杆失败"),0==(await ct()).data.fishing.stat&&(it=!1,nt=0);else{let t="【自动钓鱼】";var n=tt.find(e=>e.fishId==o.data.fish.id);if(n&&(t+=`获得${n.name}${o.data.fish.wei}斤`),o.data.awards&&0<o.data.awards.length)for(let e=0;e<o.data.awards.length;e++){var i=o.data.awards[e];t+=`${n?"，":""}获得${i.awardName}x`+i.awardNum}"【自动钓鱼】"!==t&&T(t,"success"),it=!1}}function lt(){let t;try{t=JSON.parse(localStorage.getItem("ExSave_AutoFish"))}catch(e){t=null}return t&&"object"==typeof t||(t={}),Array.isArray(t.rids)||(t.rids=[]),t.modes&&"object"==typeof t.modes||(t.modes={}),t}function st(t){document.querySelectorAll('input[name="autofish_mode"]').forEach(e=>e.disabled=t)}function dt(){var e,t=document.getElementById("extool__autofish_start"),o=document.querySelector('input[name="autofish_mode"]:checked');t&&o&&(t=t.checked,o=o.value,e=lt(),t?(e.rids.includes(B)||e.rids.push(B),e.modes[B]=o):(e.rids=e.rids.filter(e=>e!==B),delete e.modes[B]),localStorage.setItem("ExSave_AutoFish",JSON.stringify(e)))}function ct(){return new Promise(t=>{fetch(`https://www.douyu.com/japi/revenuenc/web/actfans/fishing/homePage?rid=${B}&opt=1`,{method:"GET",mode:"no-cors",cache:"default",credentials:"include"}).then(e=>e.json()).then(e=>{t(e)}).catch(e=>{console.log("请求失败!",e)})})}function pt(e,t){fetch("https://www.douyu.com/japi/prop/backpack/web/v5?rid="+e,{method:"GET",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"}}).then(e=>e.json()).then(e=>{t(e)}).catch(e=>{console.log("请求失败!",e)})}function mt(){return document.getElementById("extool__fullscreen").checked}function ut(){return document.getElementById("extool__highestvideoquality").checked}let gt,ht=0,ft,yt,bt;function vt(e){if(0!=e.length&&0!=e[0].addedNodes.length){let i=e[0].addedNodes[0],a=i.lastElementChild;if(null!=a&&-1!=a.innerHTML.indexOf("is-self")){let n=setTimeout(()=>{i.className="Barrage-listItem js-noblefloating-barrage",a.className="js-noblefloating-barragecont Barrage-notice--noble",a.setAttribute("style","background-color: #fff3df");a.getElementsByClassName("Barrage-nickName")[0].setAttribute("class","Barrage-nickName is-self js-nick");var e,t=a.querySelector(".UserLevel"),t=(null!=t&&(t.className="UserLevel UserLevel--150",t.setAttribute("title","用户等级：150")),a.querySelector(".RoomLevel")),t=(null!=t&&(t.className="RoomLevel RoomLevel--18",t.setAttribute("title","房间等级：18")),i.querySelector(".FansMedal")),t=(null!=t&&(t.style="display:none;"),document.getElementsByClassName("FansMedal-name")[0]),o=(document.getElementsByClassName("DiamondsFansRankList-item DiamondsFansRankList-item--top")[0],t?(o=document.createElement("div"),e=document.createElement("span"),o.className="FansMedal level-50 js-fans-dysclick Barrage-icon",e.className="FansMedal-name js-fans-dysclick",e.innerHTML=t.innerText,o.appendChild(e),a.insertBefore(o,a.querySelector(".UserLevel"))):((t=document.createElement("div")).className="FansMedal level-50 js-fans-dysclick Barrage-icon",t.setAttribute("data-rid","4042402"),(e=document.createElement("span")).className="FansMedal-name js-fans-dysclick",e.setAttribute("data-rid",String(B)),e.innerHTML=(localStorage.getItem("ExSave_GoldBadgeName")||"幻神"),t.appendChild(e),a.insertBefore(t,a.querySelector(".UserLevel"))),i.querySelector(".Barrage-nobleImg"));null!=o?(o.src="//res.douyucdn.cn/resource/2019/08/15/common/4e85776071ffbae2867bb9d116e9a43c.gif",o.title="幻神"):(e=document.createElement("span"),t=document.createElement("img"),e.className="Barrage-icon Barrage-noble",t.className="Barrage-nobleImg",t.setAttribute("src","//res.douyucdn.cn/resource/2019/08/15/common/4e85776071ffbae2867bb9d116e9a43c.gif"),t.setAttribute("title","幻神"),e.appendChild(t),a.insertBefore(e,a.firstElementChild)),clearTimeout(n)},100)}}}function xt(t){if(0!=t.length&&0!=t[0].addedNodes.length){t=t[0].addedNodes[0];if(-1==t.className.indexOf("noble-d35c82")&&-1!=t.innerHTML.indexOf("border: 2px solid rgb(2, 255, 255)")){t.style.zIndex="30",t.className="danmuItem-f8e204 noble-d35c82";var o=document.createElement("img"),o=(o.className="super-noble-icon-54c62c",o.setAttribute("src","https://shark2.douyucdn.cn/front-publish/live_player-master/assets/images/h1_dcd226.png"),o.setAttribute("style","margin-left: -57px; margin-top: -4px;"),t.insertBefore(o,t.firstElementChild),document.createElement("img"));o.className="super-user-icon-253711";let e=document.getElementsByClassName("Avatar is-circle")[0];null!=e&&(e=e.getElementsByTagName("img")[0].getAttribute("src"),o.setAttribute("src",e.replace(new RegExp("_middle"),"_small"))),t.insertBefore(o,t.firstElementChild);t.getElementsByClassName("afterpic-f864c2")[0].remove();var o=t.getElementsByClassName("text-edf4e7")[0],n=(o.className="super-text-188279",o.setAttribute("style","font: bold 23px SimHei, 'Microsoft JhengHei', Arial, Helvetica, sans-serif; color: rgb(255, 255, 255); background: url('https://shark2.douyucdn.cn/front-publish/live_player-master/assets/images/h2_8e5e64.png'); height: 44px;"),document.createElement("div")),o=(n.setAttribute("class","afterpic-f864c2"),n.setAttribute("style","margin-top: 7px; margin-left: -1px;"),o.appendChild(n),document.createElement("img"));o.className="super-tail-6a0446",o.setAttribute("src","https://shark2.douyucdn.cn/front-publish/live_player-master/assets/images/h3_fd2e5b.png"),t.appendChild(o),console.log(o)}}}function fetchCurrentRoomGifts(rid, callback) {
+    try {
+        var winData = (typeof unsafeWindow !== "undefined" && unsafeWindow.$DATA) ? unsafeWindow.$DATA : window.$DATA;
+        if (winData && winData.room_gift && winData.room_gift.gift) {
+            return callback(parseRoomGiftDict(winData.room_gift.gift));
+        }
+    } catch(e) {}
+
+    fetch("https://www.douyu.com/betard/" + String(rid))
+        .then(function(res) { return res.json(); })
+        .then(function(json) {
+            var raw = (json && json.room_gift && json.room_gift.gift) ? json.room_gift.gift : {};
+            callback(parseRoomGiftDict(raw));
+        })
+        .catch(function() { callback([]); });
+}
+
+function parseRoomGiftDict(rawDict) {
+    var result = [];
+    for (var gid in rawDict) {
+        if (!rawDict.hasOwnProperty(gid)) continue;
+        var g = rawDict[gid];
+        var iconPath = g.pc_icon || g.gif_icon || g.chat_icon || "";
+        if (iconPath && !iconPath.startsWith("http")) {
+            iconPath = "https://gfs-op.douyucdn.cn/dygift/" + iconPath;
+        }
+        var svgaPath = (g.effect && g.effect.effect_icon) ? g.effect.effect_icon : "";
+        if (svgaPath && !svgaPath.startsWith("http")) {
+            svgaPath = "https://gfs-op.douyucdn.cn/dygift/" + svgaPath;
+        }
+        var priceYc = Number(g.price || 0) / 100;
+        result.push({
+            id: String(g.id || gid),
+            name: g.name || "未知礼物",
+            priceText: priceYc > 0 ? (priceYc + " 鱼翅") : "免费",
+            icon: iconPath,
+            svga: svgaPath,
+            stayTime: Number(g.stay_time || 4000)
+        });
+    }
+    return result;
+}
+
+function fetchUserBackpackGifts(rid, callback) {
+    fetch("https://www.douyu.com/japi/prop/backpack/web/v5?rid=" + String(rid), {
+        method: "GET",
+        mode: "no-cors",
+        credentials: "include"
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(json) {
+        var list = (json && json.data && Array.isArray(json.data.list)) ? json.data.list : [];
+        var result = list.map(function(item) {
+            var iconPath = item.pic || item.icon || "";
+            if (iconPath && !iconPath.startsWith("http")) {
+                iconPath = "https://gfs-op.douyucdn.cn/dygift/" + iconPath;
+            }
+            return {
+                id: String(item.id),
+                name: item.name,
+                priceText: "拥有 ×" + String(item.count || 1),
+                icon: iconPath,
+                count: Number(item.count || 1)
+            };
+        });
+        callback(result);
+    })
+    .catch(function() { callback([]); });
+}
+
+function wt(e){
+    if (!e || 0 === e.length || !e[0].addedNodes || 0 === e[0].addedNodes.length) return;
+    var node = e[0].addedNodes[0];
+    if (!node || !node.getElementsByClassName) return;
+    var senderEl = node.getElementsByClassName("Banner4gift-senderName")[0];
+    if (!senderEl || (gt && senderEl.title !== gt)) return;
+
+    var tfConfig = null;
+    try {
+        tfConfig = JSON.parse(localStorage.getItem("ExSave_GiftTransform"));
+    } catch (err) {}
+
+    if (!tfConfig) {
+        try {
+            var legacy = JSON.parse(localStorage.getItem("ExSave_GoldGift"));
+            if (legacy && legacy.isGoldGift) {
+                tfConfig = {
+                    enabled: true,
+                    source: { name: "粉丝荧光棒" },
+                    target: {
+                        name: "超级火箭",
+                        icon: "https://gfs-op.douyucdn.cn/dygift/2018/11/27/3adbb0c17d9886c1440d55c9711f4c79.gif",
+                        svga: "https://gfs-op.douyucdn.cn/dygift/2018/11/27/6c6349672e662750ad5c019b240d57f2.svga",
+                        stayTime: 4000
+                    }
+                };
+            }
+        } catch (err) {}
+    }
+
+    if (!tfConfig || !tfConfig.enabled || !tfConfig.source || !tfConfig.target) return;
+
+    var objEl = node.getElementsByClassName("Banner4gift-objectName")[0];
+    if (!objEl) return;
+    var giftName = objEl.title || objEl.innerText || "";
+    var targetName = tfConfig.target.name || "超级火箭";
+    var sourceName = tfConfig.source.name || "粉丝荧光棒";
+
+    if (giftName === sourceName || (sourceName && giftName.indexOf(sourceName) !== -1)) {
+        node.className = "Banner4gift Banner4gift--size2";
+        var bgEl = node.getElementsByClassName("Banner4gift-bg")[0];
+        if (bgEl) bgEl.src = "https://gfs-op.douyucdn.cn/dygift/2019/03/15/6651f2de52dd359c7b553a77b9d00020.png";
+        objEl.title = targetName;
+        objEl.innerText = targetName;
+        var headerImg = node.getElementsByClassName("Banner4gift-headerImg")[0];
+        if (headerImg && tfConfig.target.icon) {
+            headerImg.src = tfConfig.target.icon;
+        }
+
+        var svgaUrl = tfConfig.target.svga || "https://gfs-op.douyucdn.cn/dygift/2018/11/27/6c6349672e662750ad5c019b240d57f2.svga";
+        if (svgaUrl && ("undefined" != typeof SVGA || ExLoadLib(EXURL.svga)) && !(0 < document.getElementsByClassName("ex_giftAnimation_exist").length)) {
+            ht++;
+            var animContainer = document.getElementsByClassName("ex_giftAnimation")[0];
+            if (animContainer) {
+                var animDiv = document.createElement("div");
+                var animId = "ex_giftAnimation_" + String(ht);
+                animDiv.id = animId;
+                animDiv.className = "ex_giftAnimation_exist";
+                animContainer.appendChild(animDiv);
+                var player = new SVGA.Player("#" + animId);
+                var parser = new SVGA.Parser("#" + animId);
+                var stayTime = Number(tfConfig.target.stayTime) || 4000;
+                parser.load(svgaUrl, function(videoItem) {
+                    player.setVideoItem(videoItem);
+                    player.startAnimation();
+                    setTimeout(function() {
+                        player = null;
+                        parser = null;
+                        var el = document.getElementById(animId);
+                        if (el) el.remove();
+                    }, stayTime);
+                });
+            }
+        }
+    }
+}function _t(){return document.getElementById("extool__p2p").checked}let kt=[],Et;function Bt(t){fetch("https://www.douyu.com/japi/interactnc/web/propredpacket/grab_prp",{method:"POST",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:"activityid="+t+"&ctn="+w()}).then(e=>e.json()).then(e=>{2==e.data.isSuc&&Bt(t)})}function It(){try{var e=localStorage.getItem("ExSave_TabSwitch");if(null!=e)return!!JSON.parse(e).isEnableTabSwitch}catch(e){}e=document.getElementById("extool__tabSwitch");return!!e&&e.checked}function Tt(e){localStorage.setItem("ExSave_TabSwitch",JSON.stringify({isEnableTabSwitch:!!e}));var t=document.getElementById("extool__tabSwitch");t&&(t.checked=!!e),e&&Ct()}function Ct(){Object.defineProperty(document,"hidden",{value:!1,writable:!1}),Object.defineProperty(document,"visibilityState",{value:"visible",writable:!1}),Object.defineProperty(document,"webkitVisibilityState",{value:"visible",writable:!1}),document.dispatchEvent(new Event("visibilitychange")),document.hasFocus=function(){return!0},document.addEventListener("visibilitychange",function(e){e.stopImmediatePropagation()},!0,!0)}var St=!1;function Mt(){var e=document.getElementById("extool__treasure_delay").value;return Number(e)}let Nt=null,Lt=null;function At(){return document.querySelector(".PlayerToolbar-ContentCell .PlayerToolbar-Wealth")||document.querySelector(".PlayerToolbar-ContentRow")}function Dt(){var e=document.getElementsByClassName("PlayerToolbar-ContentRow")[0];return e&&"hidden"===e.style.visibility}function jt(){return document.getElementById("js-player-dialog")||document.getElementsByClassName("room-Player-Box")[0]||document.body}function Pt(e){Nt||(Nt=e.parentNode,Lt=e.nextSibling)}function zt(){var e,t,o,n=document.querySelector(".ex-panel.ex-panel--floating");n&&(e=document.getElementById("js-player-toolbar"),o=document.getElementById("ex-vtoolbar-menu"),e?(e=e.getBoundingClientRect(),n.style.position="fixed",n.style.bottom=window.innerHeight-e.top+8+"px",n.style.top="auto",o?(o=o.getBoundingClientRect(),t=n.offsetWidth||n.scrollWidth||320,o=o.left+o.width/2-t/2,o=Math.max(8,Math.min(o,window.innerWidth-t-8)),n.style.left=o+"px"):(t=n.offsetWidth||n.scrollWidth||320,o=e.left+e.width/2-t/2,o=Math.max(8,Math.min(o,window.innerWidth-t-8)),n.style.left=o+"px"),n.style.right="auto"):(n.style.bottom="72px",n.style.right="12px",n.style.left=""))}function Ot(){var e=document.querySelector(".ex-panel");e&&!e.classList.contains("ex-panel--floating")&&(Pt(e),jt().appendChild(e),e.classList.add("ex-panel--floating")),zt()}function Rt(){var e=document.querySelector(".ex-panel"),t=At();e&&t&&e.classList.contains("ex-panel--floating")&&(Lt&&Lt.parentNode===t?t.insertBefore(e,Lt):t.insertBefore(e,t.childNodes[0]),e.classList.remove("ex-panel--floating"))}function Ft(){var e=document.querySelector(".ex-panel");e&&"block"===e.style.display&&(Ot(),zt())}function Ht(){Rt()}function Gt(){var e=document.querySelector(".ex-panel");e&&(clearTimeout(Y),Y=null,e.style.display="none")}function Vt(){Gt()}function qt(){var e=document.getElementsByClassName("ex-panel")[0];e&&((Dt()?Ot:Rt)(),"block"!==e.style.display?(e.style.display="block",clearTimeout(Y),e.classList.contains("ex-panel--floating")&&zt()):(e.style.display="none",clearTimeout(Y)))}async function Ut(e,t,o){return(await fetch("https://www.douyu.com/japi/prop/donate/mainsite/v1",{method:"POST",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:"propId="+e+"&propCount="+t+"&roomId="+o+"&bizExt=%7B%22yzxq%22%3A%7B%7D%7D"})).json()}let Wt;function Yt(e){var t=document.getElementsByClassName("Header-follow-tab is-active")[0].innerText;"特别关注"!==t&&"视频动态"!==t&&0!=(t=document.getElementsByClassName("Header-follow-listWrap")).length&&(document.getElementsByClassName("Header-follow-listBox")[0].style.display="none",(async e=>{var i=await GM_getValue("Ex_LoadInCurrentPage",!1),a=await new Promise(t=>{fetch("https://www.douyu.com/wgapi/livenc/liveweb/follow/list?sort=1&cid1=0",{method:"GET",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"}}).then(e=>e.json()).then(e=>{t(e)})});if("0"==a.error){let t=0,o=`
 
         <div id="refreshFollowList" style="color: grey; position: absolute; top: 0px; cursor: default; display: flex; align-items: center; justify-content: space-between; width: calc(100% - 10px); padding: 0 5px;">
 
@@ -5127,7 +6029,7 @@ function l(e,t,o="download.xlsx"){if("undefined"==typeof XLSX)return void ExLoad
 
     }
 
-    `);let e=setInterval(()=>{document.querySelector(".danmu-fbb2a3")&&(clearInterval(e),On=On||setInterval(Gn,2e4),Rn=new q(".danmu-fbb2a3",!1,i=>{if(!(i.length<=0)&&Mn)if(i[0].addedNodes.length<=0&&0<i[0].removedNodes.length){var n=i[0].removedNodes[0];let e=n.comment.uuid;var a=n.comment.startTime+n.comment.duration;let t=Date.now();if(t>a)return;Dn[e]=t+1e3*Nn;let o=n.textContent?n.textContent.trim():"";void(o&&jn[o]===n&&(delete jn[o],delete Pn[o],delete An[o]))}else if(!(i[0].addedNodes.length<=0)){a=i[0].addedNodes[0];if(a){let e=Date.now(),t=a.comment.uuid;n=Dn[t];if(!(n&&e<=n)){let n=a.textContent?a.textContent.trim():"";if(n&&0!==n.length){i=An[n];if(i&&e<=i){if(a.className+=" repeated-danmaku",Pn[n]=(Pn[n]||1)+1,Ln){let o=jn[n];o&&o.parentNode?requestAnimationFrame(()=>{var e,t;o.parentNode&&(zn.has(o)||(t=window.getComputedStyle(o),zn.set(o,t.fontSize)),t=zn.get(o),t=parseFloat(t)||20,e=Pn[n],t=Math.min(t+2*(e-1),40),o.style.fontSize=t+"px",o.setAttribute("data-repeat-count",e),o.classList.remove("danmaku-combo-animation"),requestAnimationFrame(()=>{o.parentNode&&o.classList.add("danmaku-combo-animation")}))}):o&&o.parentNode||(delete jn[n],delete Pn[n])}}else An[n]=e+1e3*Nn,jn[n]=a,Pn[n]=1}}}}}))},1e3)}function Gn(){var e,t,o=Date.now();for([e,t]of Object.entries(An))t<=o&&(delete An[e],delete jn[e],delete Pn[e]);for(let[e,t]of Object.entries(Dn))t<=o&&delete Dn[e]}function Vn(){On&&(clearInterval(On),On=null),An={},Dn={},jn={},Pn={}}function qn(){Fn(),Sn(),In()}function Un(e){return-1===e.indexOf("player_barrage")?e:e.replace(/player_barrage\\":0/g,'player_barrage\\":1').replace(/"player_barrage":0/g,'"player_barrage":1')}function Wn(e){(async()=>{let t=[],o=await ai(1),n=(t=t.concat(o.list),Number(o.count_page)-1);if(1<=n)for(let e=0;e<n;e++){var i=2+e;o=await ai(i),t=t.concat(o.list)}ti=t.length,GM_xmlhttpRequest({method:"POST",url:"https://mapi-yuba.douyu.com/wb/v3/fastSign",responseType:"json",headers:{"Content-Type":"application/x-www-form-urlencoded",client:"android",token:m},onload:function(e){""==e.response.message&&0!=e.response.data||e.response.data}});for(let e=0;e<t.length;e++)!async function t(o,n){GM_xmlhttpRequest({method:"POST",url:"https://yuba.douyu.com/ybapi/topic/sign",data:"group_id="+o,responseType:"json",headers:{"Content-Type":"application/x-www-form-urlencoded","dy-client":"pc","dy-token":n,Referer:"https://yuba.douyu.com/group/"+o},onload:async function(e){10<=ni[o]||("签到失败"==e.response.message?(await b(2e3),t(o,n)):(ni[o]?ni[o]++:ni[o]=1,oi++,""==e.response.message&&ei++,ii(o),oi==ti&&(0<ei?ti-ei==0?T("【鱼吧】"+String(ei)+"个鱼吧签到完成","success"):T("【鱼吧】"+String(ei)+"个鱼吧签到完成，"+String(ti-ei)+"个鱼吧已签到","success"):T("【鱼吧】"+String(ti)+"个鱼吧已签到","warning"),ei=null,ti=null,oi=null)))}})}(t[e].group_id,m)})(),GM_xmlhttpRequest({method:"POST",url:"https://apiv2.douyucdn.cn/h5nc/sign/sendSign",data:"token="+m,responseType:"json",headers:{"Content-Type":"application/x-www-form-urlencoded"},onload:function(e){var o=e.response;if(0==o.data.length)T("【客户端】今日已签到","warning");else if(0!=o.data.sign_pl.length){let t="";for(let e=0;e<o.data.sign_pl.length;e++)t=t+o.data.sign_pl[e].cnt+"个"+o.data.sign_pl[e].name+",";T("【客户端】签到成功! 获得物品:"+t,"success")}else T("【客户端】签到成功! 可惜没有获得东西","success")}}),e=e;{var r=e;let t=0,i=0,a=0;fetch("https://www.douyu.com/wgapi/livenc/liveweb/follow/list?page=1428",{method:"GET",mode:"no-cors",cache:"default",credentials:"include"}).then(e=>e.json()).then(e=>{t=Number(e.data.pageCount);for(let e=1;e<=t;e++)fetch("https://www.douyu.com/wgapi/livenc/liveweb/follow/list?page="+String(e),{method:"GET",mode:"no-cors",cache:"default",credentials:"include"}).then(e=>e.json()).then(t=>{var o,n=Number(t.data.list.length);for(let e=0;e<n;e++)(0!=r||"1"==t.data.list[e].show_status)&&($n(t.data.list[e].room_id),i++),++a==t.data.total&&e==n-1&&(o=Number(t.data.total)-i,T("【房间签到】"+String(i)+"个房间签到已完成，"+String(o)+"个房间未签到","success"))}).catch(e=>{console.log("请求失败!",e)});T("【房间签到】"+e.data.total+"个房间正在签到中...","info")}).catch(e=>{console.log("请求失败!",e)})}(async()=>{if("data"in Yn!=0)for(let e=0;e<Yn.data.length;e++){var o=Yn.data[e],n=o.name;for(let e=0;e<o.script.length;e++){var i,a=o.script[e],r=a.value;let t;switch(a.name){case"signAct":"0"==(t=await(e=>new Promise(t=>{fetch("https://www.douyu.com/japi/carnival/nc/signAct/signIn",{method:"POST",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:"token="+m+"&signAlias="+e}).then(e=>e.json()).then(e=>{t(e)})}))(r)).error?T(`【${n}】签到完毕`,"success"):T(`【${n}】`+t.msg,"error");break;case"userStatus":if(0==(t=await(e=>new Promise(t=>{fetch("https://www.douyu.com/japi/carnival/nc/actTask/userStatus",{method:"POST",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:`tasks=${e}&token=`+m}).then(e=>e.json()).then(e=>{t(e)}).catch(e=>{console.log("请求失败!",e)})}))(r)).error)for(var l in t.data){var s=t.data[l],d=s.curCompleteNum-s.curDeliverNum,c=n+"-"+s.taskName;for(let e=0;e<d;e++){var p=await(e=>new Promise(t=>{fetch("https://www.douyu.com/japi/carnival/nc/actTask/takePrize",{method:"POST",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:`token=${m}&aid=android&taskAlias=`+e}).then(e=>e.json()).then(e=>{t(e)}).catch(e=>{console.log("请求失败!",e)})}))(l);"0"==p.error?T(`【${c}】获得`+p.data.sendRes.items[0].prizeName+"*"+p.data.sendRes.items[0].prizeNum,"success"):T(`【${c}】`+p.msg,"error")}}break;case"addFollowRoom":await Mr(r);break;case"removeFollowRoom":await Nr(r);break;case"shareAct":await(e=>new Promise(t=>{fetch("https://www.douyu.com/japi/carnival/common/share",{method:"POST",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:`actAlias=${e}&token=`+m}).then(e=>e.json()).then(e=>{t(e)}).catch(e=>{console.log("请求失败!",e)})}))(r);break;case"doSign":await(e=>new Promise(t=>{fetch("https://www.douyu.com/japi/carnival/nc/hostSnowSign/doSign",{method:"POST",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:`actAlias=${e}&token=${m}&ctn=`+w()}).then(e=>e.json()).then(e=>{t(e)}).catch(e=>{console.log("请求失败!",e)})}))(r);break;case"getActRemaining":if("0"==(t=await(e=>new Promise(t=>{fetch("https://www.douyu.com/japi/carnival/nc/lottery/remaining?activityId="+e,{method:"GET",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/json;charset=UTF-8"}}).then(e=>e.json()).then(e=>{t(e)})}))(r)).error)for(let e=0;e<t.data.freeCount;e++)"0"==(i=await(e=>new Promise(t=>{fetch("https://www.douyu.com/japi/carnival/nc/lottery/jackpot",{method:"POST",headers:{"Content-Type":"application/json;charset=UTF-8"},body:`{"activityId":"${e}","token":"${m}"}`}).then(e=>e.json()).then(e=>{t(e)})}))(r)).error&&T(`【${n}】礼盒开启：`+i.data.giftName,"success")}}}})(),(async()=>{for(let e=0;e<To.length;e++){var t=To[e],o=await(e=>new Promise((t,o)=>{fetch("https://www.douyu.com/japi/interactnc/web/fanshome/sign",{method:"POST",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:`ctn=${w()}&rid=`+e}).then(e=>e.json()).then(e=>{t(e)}).catch(e=>{console.log("请求失败!",e),o(e)})}))(t);0!==o.error?T("【粉丝家园】"+t+o.msg,"error"):T(`【粉丝家园】${t}签到成功！`,"success")}})(),(async()=>{for(let e=0;e<To.length;e++){var t=To[e];0===(await(e=>new Promise((t,o)=>{fetch("https://www.douyu.com/japi/interactnc/web/dfansact/userSign",{method:"POST",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:`ctn=${w()}&rid=`+e}).then(e=>e.json()).then(e=>{t(e)}).catch(e=>{console.log("请求失败!",e),o(e)})}))(t)).error&&T(`【钻粉联赛签到】${t}签到成功！`,"success")}})(),(async()=>{var e;0==(e=await(e=>new Promise((t,o)=>{fetch("https://www.douyu.com/japi/carnivalApi/sign/doSign",{method:"POST",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:`csrfToken=${e}&signAlias=20250521OPFOY_qd2&useJiYan=false`}).then(e=>e.json()).then(e=>{t(e)}).catch(e=>{console.log("请求失败!",e),o(e)})}))(e=await new Promise(i=>{GM_xmlhttpRequest({method:"POST",url:"https://www.douyu.com/japi/carnival/nc/common/generateCsrf",headers:{"Content-Type":"application/json",Cookie:document.cookie},anonymous:!1,withCredentials:!0,onload:function(e){var t;let o="";for(t of e.responseHeaders.match(/set-cookie:[^\n\r]+/gi)){var n=t.match(/cvl_csrf_token=([^;]+)/);if(n){o=n[1];break}}i(o)},onerror:function(e){i("")}})}))).error||31200==e.error?T("【积分任务】"+e.msg,"success"):T("【积分任务】"+e.msg,"error")})(),(async()=>{var t=(await new Promise((t,o)=>{fetch(`https://www.douyu.com/japi/livebiznc/web/anchorstardiscover/rank/info?rid=${B}&type=5&track=3`,{method:"GET",mode:"no-cors",credentials:"include"}).then(e=>e.json()).then(e=>{t(e)}).catch(e=>{console.log("请求失败!",e),o(e)})}).catch(()=>{})).data.rankItemList;if(t&&0!=t.length){for(let e=0;e<3;e++){var o=t[e].rid;o&&(await(e=>new Promise((t,o)=>{fetch("https://www.douyu.com/japi/livebiznc/web/anchorstardiscover/user/task/report",{method:"POST",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:`ctn=${w()}&type=5&rid=`+e}).then(e=>e.json()).then(e=>{t(e)}).catch(e=>{console.log("请求失败!",e),o(e)})}))(o),await b(500))}T("【星推】签到任务完成","success");for(let e=0;e<5;e++){var n,i=t[e].rid;i&&(n=await Mr(i),await b(500),1==n.error?(await Nr(i),await b(500),await Mr(i)):await Nr(i),await b(500))}T("【星推】关注任务完成","success")}})()}Mn&&Hn();let Yn={};function Qn(e){return new Promise(o=>{fetch(`https://webconf.douyucdn.cn/resource/common/activity/actqzs${e}_w.json`).then(e=>e.text()).then(e=>{let t=e.substring(String("DYConfigCallback(").length,e.length);t=t.substring(0,t.lastIndexOf(")"));try{t=JSON.parse(t),o(t.data.activity_setting.activity_id)}catch(e){o(null)}}).catch(e=>{o(null)})})}function Jn(e){return new Promise(o=>{fetch(`https://webconf.douyucdn.cn/resource/common/activity/cardArena${e}_w.json`).then(e=>e.text()).then(e=>{let t=e.substring(String("DYConfigCallback(").length,e.length);t=t.substring(0,t.lastIndexOf(")"));try{t=JSON.parse(t),o(t.data.activity_setting.activity_id)}catch(e){o(null)}}).catch(e=>{o(null)})})}function Zn(t){let o="";var n=document.cookie.split("; ");for(let e=0;e<n.length;e++){var i=n[e].split("=");t==i[0]&&(o=i[1])}return""==o&&(o=Math.random().toString(36).substr(2),document.cookie="post-csrfToken="+escape(o)+";path=/"),o}async function Xn(){var e,o,n,t=await new Promise(t=>{GM_xmlhttpRequest({method:"GET",url:"https://msg.douyu.com/v3/login/getusersig?t="+String((new Date).getTime())+"&timestamp="+Math.random().toFixed(17),data:'{"State":"Online"}',responseType:"json",headers:{"dy-device-id":"-","dy-client":"web","dy-csrf-token":Zn("post-csrfToken"),"Content-Type":"application/x-www-form-urlencoded"},onload:function(e){t(e.response)}})}),i=await((e,t)=>{let o="https://webim.tim.qq.com/v4/openim/login?identifier="+e+"&usersig="+t+"&contenttype=json&sdkappid=1400029396";return new Promise(t=>{GM_xmlhttpRequest({method:"POST",url:o,data:'{"State":"Online"}',responseType:"json",headers:{"Content-Type":"application/x-www-form-urlencoded; charset=UTF-8"},onload:function(e){t(e.response)}})})})(t.data.uid,t.data.sig);e=i.TinyId,o=i.A2Key,n=t.data.uid;let a=await new Promise(t=>{GM_xmlhttpRequest({method:"POST",url:"https://webim.tim.qq.com/v4/group_open_http_svc/get_joined_group_list?tinyid="+e+"&a2="+o+"&contenttype=json&sdkappid=1400029396",data:'{"Member_Account":"'+n+'"}',responseType:"json",headers:{"Content-Type":"application/x-www-form-urlencoded"},onload:function(e){e.response.GroupIdList&&0<e.response.GroupIdList.length?t(e.response.GroupIdList[0].GroupId):t("")}})});a&&""!=a?(console.log("mid是：",a),a=encodeURIComponent(a),GM_xmlhttpRequest({method:"GET",url:"https://msg.douyu.com/v3/motorcade/signs/weekly?mid="+a+"&timestamp="+Math.random().toFixed(17),responseType:"json",headers:{"dy-device-id":"-","dy-client":"web","dy-csrf-token":Zn("post-csrfToken"),"Content-Type":"application/x-www-form-urlencoded"},onload:function(e){e=e.response;console.log("weekly:",e),"1"==e.data.is_sign?r():GM_xmlhttpRequest({method:"POST",url:"https://msg.douyu.com/v3/msign/add?timestamp="+Math.random().toFixed(17),data:"to_mid="+a+"&expression="+String(Number(e.data.total)+1),responseType:"json",headers:{"dy-device-id":"-","dy-client":"web","dy-csrf-token":Zn("post-csrfToken"),"Content-Type":"application/x-www-form-urlencoded"},onload:function(e){2==Math.floor(e.response.status_code/100)?console.log("【车队】签到成功"):console.log(e.response.message),r()}})}})):r()}function $n(e){GM_xmlhttpRequest({method:"POST",url:"https://apiv2.douyucdn.cn/japi/roomuserlevel/apinc/checkIn?client_sys=android",data:"rid="+e,responseType:"json",headers:{"Content-Type":"application/x-www-form-urlencoded",token:m,aid:"android1"},onload:function(e){}})}let ei=0,ti=0,oi=0,ni={};async function ii(t){var o=await ri(t);for(let e=0;e<o.data.supplementary_cards;e++)await ri(t)}function ai(e){return new Promise(t=>{GM_xmlhttpRequest({method:"GET",url:"https://yuba.douyu.com/wbapi/web/group/myFollow?page="+String(e)+"&limit=30",responseType:"json",headers:{"Content-Type":"application/x-www-form-urlencoded","dy-client":"pc","dy-token":m},onload:function(e){t(e.response.data)}})})}function ri(e){return new Promise(t=>{GM_xmlhttpRequest({method:"POST",url:"https://mapi-yuba.douyu.com/wb/v3/supplement",responseType:"json",headers:{"Content-Type":"application/x-www-form-urlencoded",client:"android",token:m},data:"group_id="+e,onload:function(e){t(e.response)}})})}var P = "2026.09.14.05";let ui=0,gi=null,hi=null,fi=null,yi=0,bi="";function vi(){var e=(()=>{try{var e=document.getElementsByTagName("demand-video-toolbar")[0].shadowRoot.querySelector("share-hover").getAttribute("hashid");if(e)return e}catch(e){}return(e=String(window.location.pathname).split("/"))[e.length-1]})();if(e){let t=bi=e;fetch("https://v.douyu.com/video/video/getVideoUrl?vid="+e,{method:"GET",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"}}).then(e=>e.json()).then(e=>{t===bi&&(e=v(e.data.viewthumb[0].url,"--","/"),ui=new Date(e.replace(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/,"$1-$2-$3 $4:$5:$6")).getTime())}).catch(e=>{console.log("请求失败!",e)})}}function xi(){var e=document.getElementsByTagName("demand-video")[0].shadowRoot.getElementById("demandcontroller-bar").shadowRoot.querySelector("demand-video-controller-progress").shadowRoot.querySelector("demand-video-controller-preview").getAttribute("showtime");return Number(e).toFixed(0)}function wi(e){var t=document.getElementsByTagName("demand-video")[0].shadowRoot.getElementById("demandcontroller-bar").shadowRoot.querySelector("demand-video-controller-progress").shadowRoot.querySelector("demand-video-controller-preview").shadowRoot.querySelector(".Preview label");t&&(t.style.position="relative",t.style.bottom="60px",t.style.backgroundColor="rgba(0,0,0,0.4)",t.innerHTML=e)}var _i,z,ki,Ei,Bi,o="/* [DouyuEx-Lite] GIF Worker已剥离 */",Ii=URL.createObjectURL(new Blob([o],{type:"application/javascript"}));let Ti=83;function Ci(e,t,o,n){t.getContext("2d").drawImage(e,0,0,t.width,t.height),o.addFrame(t,{copy:!0,delay:n})}function Si(){var e=localStorage.getItem("ExSave_Camera_Hidden");if(e)return e=parseInt(e),Date.now()<e}function Mi(){let o=setInterval(()=>{if(null!=(V=document.getElementsByTagName("demand-video")[0].shadowRoot.getElementById("__video"))&&V.videoWidth){clearInterval(o),Bi=document.getElementsByTagName("demand-video-anchor")[0].shadowRoot.querySelector(".anchor-name").innerText,ki=.25*V.videoWidth,Ei=.25*V.videoHeight,(_i=document.createElement("canvas")).width=ki,_i.height=Ei,(z=document.createElement("canvas")).width=V.videoWidth,z.height=V.videoHeight;var e=document.createElement("div"),t=(e.id="ex-camera",e.title="单击截图 长按录制gif",e.innerHTML=`
+    `);let e=setInterval(()=>{document.querySelector(".danmu-fbb2a3")&&(clearInterval(e),On=On||setInterval(Gn,2e4),Rn=new q(".danmu-fbb2a3",!1,i=>{if(!(i.length<=0)&&Mn)if(i[0].addedNodes.length<=0&&0<i[0].removedNodes.length){var n=i[0].removedNodes[0];let e=n.comment.uuid;var a=n.comment.startTime+n.comment.duration;let t=Date.now();if(t>a)return;Dn[e]=t+1e3*Nn;let o=n.textContent?n.textContent.trim():"";void(o&&jn[o]===n&&(delete jn[o],delete Pn[o],delete An[o]))}else if(!(i[0].addedNodes.length<=0)){a=i[0].addedNodes[0];if(a){let e=Date.now(),t=a.comment.uuid;n=Dn[t];if(!(n&&e<=n)){let n=a.textContent?a.textContent.trim():"";if(n&&0!==n.length){i=An[n];if(i&&e<=i){if(a.className+=" repeated-danmaku",Pn[n]=(Pn[n]||1)+1,Ln){let o=jn[n];o&&o.parentNode?requestAnimationFrame(()=>{var e,t;o.parentNode&&(zn.has(o)||(t=window.getComputedStyle(o),zn.set(o,t.fontSize)),t=zn.get(o),t=parseFloat(t)||20,e=Pn[n],t=Math.min(t+2*(e-1),40),o.style.fontSize=t+"px",o.setAttribute("data-repeat-count",e),o.classList.remove("danmaku-combo-animation"),requestAnimationFrame(()=>{o.parentNode&&o.classList.add("danmaku-combo-animation")}))}):o&&o.parentNode||(delete jn[n],delete Pn[n])}}else An[n]=e+1e3*Nn,jn[n]=a,Pn[n]=1}}}}}))},1e3)}function Gn(){var e,t,o=Date.now();for([e,t]of Object.entries(An))t<=o&&(delete An[e],delete jn[e],delete Pn[e]);for(let[e,t]of Object.entries(Dn))t<=o&&delete Dn[e]}function Vn(){On&&(clearInterval(On),On=null),An={},Dn={},jn={},Pn={}}function qn(){Fn(),Sn(),In()}function Un(e){return-1===e.indexOf("player_barrage")?e:e.replace(/player_barrage\\":0/g,'player_barrage\\":1').replace(/"player_barrage":0/g,'"player_barrage":1')}function Wn(e){(async()=>{let t=[],o=await ai(1),n=(t=t.concat(o.list),Number(o.count_page)-1);if(1<=n)for(let e=0;e<n;e++){var i=2+e;o=await ai(i),t=t.concat(o.list)}ti=t.length,GM_xmlhttpRequest({method:"POST",url:"https://mapi-yuba.douyu.com/wb/v3/fastSign",responseType:"json",headers:{"Content-Type":"application/x-www-form-urlencoded",client:"android",token:m},onload:function(e){""==e.response.message&&0!=e.response.data||e.response.data}});for(let e=0;e<t.length;e++)!async function t(o,n){GM_xmlhttpRequest({method:"POST",url:"https://yuba.douyu.com/ybapi/topic/sign",data:"group_id="+o,responseType:"json",headers:{"Content-Type":"application/x-www-form-urlencoded","dy-client":"pc","dy-token":n,Referer:"https://yuba.douyu.com/group/"+o},onload:async function(e){10<=ni[o]||("签到失败"==e.response.message?(await b(2e3),t(o,n)):(ni[o]?ni[o]++:ni[o]=1,oi++,""==e.response.message&&ei++,ii(o),oi==ti&&(0<ei?ti-ei==0?T("【鱼吧】"+String(ei)+"个鱼吧签到完成","success"):T("【鱼吧】"+String(ei)+"个鱼吧签到完成，"+String(ti-ei)+"个鱼吧已签到","success"):T("【鱼吧】"+String(ti)+"个鱼吧已签到","warning"),ei=null,ti=null,oi=null)))}})}(t[e].group_id,m)})(),GM_xmlhttpRequest({method:"POST",url:"https://apiv2.douyucdn.cn/h5nc/sign/sendSign",data:"token="+m,responseType:"json",headers:{"Content-Type":"application/x-www-form-urlencoded"},onload:function(e){var o=e.response;if(0==o.data.length)T("【客户端】今日已签到","warning");else if(0!=o.data.sign_pl.length){let t="";for(let e=0;e<o.data.sign_pl.length;e++)t=t+o.data.sign_pl[e].cnt+"个"+o.data.sign_pl[e].name+",";T("【客户端】签到成功! 获得物品:"+t,"success")}else T("【客户端】签到成功! 可惜没有获得东西","success")}}),e=e;{var r=e;let t=0,i=0,a=0;fetch("https://www.douyu.com/wgapi/livenc/liveweb/follow/list?page=1428",{method:"GET",mode:"no-cors",cache:"default",credentials:"include"}).then(e=>e.json()).then(e=>{t=Number(e.data.pageCount);for(let e=1;e<=t;e++)fetch("https://www.douyu.com/wgapi/livenc/liveweb/follow/list?page="+String(e),{method:"GET",mode:"no-cors",cache:"default",credentials:"include"}).then(e=>e.json()).then(t=>{var o,n=Number(t.data.list.length);for(let e=0;e<n;e++)(0!=r||"1"==t.data.list[e].show_status)&&($n(t.data.list[e].room_id),i++),++a==t.data.total&&e==n-1&&(o=Number(t.data.total)-i,T("【房间签到】"+String(i)+"个房间签到已完成，"+String(o)+"个房间未签到","success"))}).catch(e=>{console.log("请求失败!",e)});T("【房间签到】"+e.data.total+"个房间正在签到中...","info")}).catch(e=>{console.log("请求失败!",e)})}(async()=>{if("data"in Yn!=0)for(let e=0;e<Yn.data.length;e++){var o=Yn.data[e],n=o.name;for(let e=0;e<o.script.length;e++){var i,a=o.script[e],r=a.value;let t;switch(a.name){case"signAct":"0"==(t=await(e=>new Promise(t=>{fetch("https://www.douyu.com/japi/carnival/nc/signAct/signIn",{method:"POST",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:"token="+m+"&signAlias="+e}).then(e=>e.json()).then(e=>{t(e)})}))(r)).error?T(`【${n}】签到完毕`,"success"):T(`【${n}】`+t.msg,"error");break;case"userStatus":if(0==(t=await(e=>new Promise(t=>{fetch("https://www.douyu.com/japi/carnival/nc/actTask/userStatus",{method:"POST",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:`tasks=${e}&token=`+m}).then(e=>e.json()).then(e=>{t(e)}).catch(e=>{console.log("请求失败!",e)})}))(r)).error)for(var l in t.data){var s=t.data[l],d=s.curCompleteNum-s.curDeliverNum,c=n+"-"+s.taskName;for(let e=0;e<d;e++){var p=await(e=>new Promise(t=>{fetch("https://www.douyu.com/japi/carnival/nc/actTask/takePrize",{method:"POST",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:`token=${m}&aid=android&taskAlias=`+e}).then(e=>e.json()).then(e=>{t(e)}).catch(e=>{console.log("请求失败!",e)})}))(l);"0"==p.error?T(`【${c}】获得`+p.data.sendRes.items[0].prizeName+"*"+p.data.sendRes.items[0].prizeNum,"success"):T(`【${c}】`+p.msg,"error")}}break;case"addFollowRoom":await Mr(r);break;case"removeFollowRoom":await Nr(r);break;case"shareAct":await(e=>new Promise(t=>{fetch("https://www.douyu.com/japi/carnival/common/share",{method:"POST",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:`actAlias=${e}&token=`+m}).then(e=>e.json()).then(e=>{t(e)}).catch(e=>{console.log("请求失败!",e)})}))(r);break;case"doSign":await(e=>new Promise(t=>{fetch("https://www.douyu.com/japi/carnival/nc/hostSnowSign/doSign",{method:"POST",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:`actAlias=${e}&token=${m}&ctn=`+w()}).then(e=>e.json()).then(e=>{t(e)}).catch(e=>{console.log("请求失败!",e)})}))(r);break;case"getActRemaining":if("0"==(t=await(e=>new Promise(t=>{fetch("https://www.douyu.com/japi/carnival/nc/lottery/remaining?activityId="+e,{method:"GET",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/json;charset=UTF-8"}}).then(e=>e.json()).then(e=>{t(e)})}))(r)).error)for(let e=0;e<t.data.freeCount;e++)"0"==(i=await(e=>new Promise(t=>{fetch("https://www.douyu.com/japi/carnival/nc/lottery/jackpot",{method:"POST",headers:{"Content-Type":"application/json;charset=UTF-8"},body:`{"activityId":"${e}","token":"${m}"}`}).then(e=>e.json()).then(e=>{t(e)})}))(r)).error&&T(`【${n}】礼盒开启：`+i.data.giftName,"success")}}}})(),(async()=>{for(let e=0;e<To.length;e++){var t=To[e],o=await(e=>new Promise((t,o)=>{fetch("https://www.douyu.com/japi/interactnc/web/fanshome/sign",{method:"POST",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:`ctn=${w()}&rid=`+e}).then(e=>e.json()).then(e=>{t(e)}).catch(e=>{console.log("请求失败!",e),o(e)})}))(t);0!==o.error?T("【粉丝家园】"+t+o.msg,"error"):T(`【粉丝家园】${t}签到成功！`,"success")}})(),(async()=>{for(let e=0;e<To.length;e++){var t=To[e];0===(await(e=>new Promise((t,o)=>{fetch("https://www.douyu.com/japi/interactnc/web/dfansact/userSign",{method:"POST",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:`ctn=${w()}&rid=`+e}).then(e=>e.json()).then(e=>{t(e)}).catch(e=>{console.log("请求失败!",e),o(e)})}))(t)).error&&T(`【钻粉联赛签到】${t}签到成功！`,"success")}})(),(async()=>{var e;0==(e=await(e=>new Promise((t,o)=>{fetch("https://www.douyu.com/japi/carnivalApi/sign/doSign",{method:"POST",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:`csrfToken=${e}&signAlias=20250521OPFOY_qd2&useJiYan=false`}).then(e=>e.json()).then(e=>{t(e)}).catch(e=>{console.log("请求失败!",e),o(e)})}))(e=await new Promise(i=>{GM_xmlhttpRequest({method:"POST",url:"https://www.douyu.com/japi/carnival/nc/common/generateCsrf",headers:{"Content-Type":"application/json",Cookie:document.cookie},anonymous:!1,withCredentials:!0,onload:function(e){var t;let o="";for(t of e.responseHeaders.match(/set-cookie:[^\n\r]+/gi)){var n=t.match(/cvl_csrf_token=([^;]+)/);if(n){o=n[1];break}}i(o)},onerror:function(e){i("")}})}))).error||31200==e.error?T("【积分任务】"+e.msg,"success"):T("【积分任务】"+e.msg,"error")})(),(async()=>{var t=(await new Promise((t,o)=>{fetch(`https://www.douyu.com/japi/livebiznc/web/anchorstardiscover/rank/info?rid=${B}&type=5&track=3`,{method:"GET",mode:"no-cors",credentials:"include"}).then(e=>e.json()).then(e=>{t(e)}).catch(e=>{console.log("请求失败!",e),o(e)})}).catch(()=>{})).data.rankItemList;if(t&&0!=t.length){for(let e=0;e<3;e++){var o=t[e].rid;o&&(await(e=>new Promise((t,o)=>{fetch("https://www.douyu.com/japi/livebiznc/web/anchorstardiscover/user/task/report",{method:"POST",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:`ctn=${w()}&type=5&rid=`+e}).then(e=>e.json()).then(e=>{t(e)}).catch(e=>{console.log("请求失败!",e),o(e)})}))(o),await b(500))}T("【星推】签到任务完成","success");for(let e=0;e<5;e++){var n,i=t[e].rid;i&&(n=await Mr(i),await b(500),1==n.error?(await Nr(i),await b(500),await Mr(i)):await Nr(i),await b(500))}T("【星推】关注任务完成","success")}})()}Mn&&Hn();let Yn={};function Qn(e){return new Promise(o=>{fetch(`https://webconf.douyucdn.cn/resource/common/activity/actqzs${e}_w.json`).then(e=>e.text()).then(e=>{let t=e.substring(String("DYConfigCallback(").length,e.length);t=t.substring(0,t.lastIndexOf(")"));try{t=JSON.parse(t),o(t.data.activity_setting.activity_id)}catch(e){o(null)}}).catch(e=>{o(null)})})}function Jn(e){return new Promise(o=>{fetch(`https://webconf.douyucdn.cn/resource/common/activity/cardArena${e}_w.json`).then(e=>e.text()).then(e=>{let t=e.substring(String("DYConfigCallback(").length,e.length);t=t.substring(0,t.lastIndexOf(")"));try{t=JSON.parse(t),o(t.data.activity_setting.activity_id)}catch(e){o(null)}}).catch(e=>{o(null)})})}function Zn(t){let o="";var n=document.cookie.split("; ");for(let e=0;e<n.length;e++){var i=n[e].split("=");t==i[0]&&(o=i[1])}return""==o&&(o=Math.random().toString(36).substr(2),document.cookie="post-csrfToken="+escape(o)+";path=/"),o}async function Xn(){var e,o,n,t=await new Promise(t=>{GM_xmlhttpRequest({method:"GET",url:"https://msg.douyu.com/v3/login/getusersig?t="+String((new Date).getTime())+"&timestamp="+Math.random().toFixed(17),data:'{"State":"Online"}',responseType:"json",headers:{"dy-device-id":"-","dy-client":"web","dy-csrf-token":Zn("post-csrfToken"),"Content-Type":"application/x-www-form-urlencoded"},onload:function(e){t(e.response)}})}),i=await((e,t)=>{let o="https://webim.tim.qq.com/v4/openim/login?identifier="+e+"&usersig="+t+"&contenttype=json&sdkappid=1400029396";return new Promise(t=>{GM_xmlhttpRequest({method:"POST",url:o,data:'{"State":"Online"}',responseType:"json",headers:{"Content-Type":"application/x-www-form-urlencoded; charset=UTF-8"},onload:function(e){t(e.response)}})})})(t.data.uid,t.data.sig);e=i.TinyId,o=i.A2Key,n=t.data.uid;let a=await new Promise(t=>{GM_xmlhttpRequest({method:"POST",url:"https://webim.tim.qq.com/v4/group_open_http_svc/get_joined_group_list?tinyid="+e+"&a2="+o+"&contenttype=json&sdkappid=1400029396",data:'{"Member_Account":"'+n+'"}',responseType:"json",headers:{"Content-Type":"application/x-www-form-urlencoded"},onload:function(e){e.response.GroupIdList&&0<e.response.GroupIdList.length?t(e.response.GroupIdList[0].GroupId):t("")}})});a&&""!=a?(console.log("mid是：",a),a=encodeURIComponent(a),GM_xmlhttpRequest({method:"GET",url:"https://msg.douyu.com/v3/motorcade/signs/weekly?mid="+a+"&timestamp="+Math.random().toFixed(17),responseType:"json",headers:{"dy-device-id":"-","dy-client":"web","dy-csrf-token":Zn("post-csrfToken"),"Content-Type":"application/x-www-form-urlencoded"},onload:function(e){e=e.response;console.log("weekly:",e),"1"==e.data.is_sign?r():GM_xmlhttpRequest({method:"POST",url:"https://msg.douyu.com/v3/msign/add?timestamp="+Math.random().toFixed(17),data:"to_mid="+a+"&expression="+String(Number(e.data.total)+1),responseType:"json",headers:{"dy-device-id":"-","dy-client":"web","dy-csrf-token":Zn("post-csrfToken"),"Content-Type":"application/x-www-form-urlencoded"},onload:function(e){2==Math.floor(e.response.status_code/100)?console.log("【车队】签到成功"):console.log(e.response.message),r()}})}})):r()}function $n(e){GM_xmlhttpRequest({method:"POST",url:"https://apiv2.douyucdn.cn/japi/roomuserlevel/apinc/checkIn?client_sys=android",data:"rid="+e,responseType:"json",headers:{"Content-Type":"application/x-www-form-urlencoded",token:m,aid:"android1"},onload:function(e){}})}let ei=0,ti=0,oi=0,ni={};async function ii(t){var o=await ri(t);for(let e=0;e<o.data.supplementary_cards;e++)await ri(t)}function ai(e){return new Promise(t=>{GM_xmlhttpRequest({method:"GET",url:"https://yuba.douyu.com/wbapi/web/group/myFollow?page="+String(e)+"&limit=30",responseType:"json",headers:{"Content-Type":"application/x-www-form-urlencoded","dy-client":"pc","dy-token":m},onload:function(e){t(e.response.data)}})})}function ri(e){return new Promise(t=>{GM_xmlhttpRequest({method:"POST",url:"https://mapi-yuba.douyu.com/wb/v3/supplement",responseType:"json",headers:{"Content-Type":"application/x-www-form-urlencoded",client:"android",token:m},data:"group_id="+e,onload:function(e){t(e.response)}})})}var P = "2026.09.14.07";let ui=0,gi=null,hi=null,fi=null,yi=0,bi="";function vi(){var e=(()=>{try{var e=document.getElementsByTagName("demand-video-toolbar")[0].shadowRoot.querySelector("share-hover").getAttribute("hashid");if(e)return e}catch(e){}return(e=String(window.location.pathname).split("/"))[e.length-1]})();if(e){let t=bi=e;fetch("https://v.douyu.com/video/video/getVideoUrl?vid="+e,{method:"GET",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"}}).then(e=>e.json()).then(e=>{t===bi&&(e=v(e.data.viewthumb[0].url,"--","/"),ui=new Date(e.replace(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/,"$1-$2-$3 $4:$5:$6")).getTime())}).catch(e=>{console.log("请求失败!",e)})}}function xi(){var e=document.getElementsByTagName("demand-video")[0].shadowRoot.getElementById("demandcontroller-bar").shadowRoot.querySelector("demand-video-controller-progress").shadowRoot.querySelector("demand-video-controller-preview").getAttribute("showtime");return Number(e).toFixed(0)}function wi(e){var t=document.getElementsByTagName("demand-video")[0].shadowRoot.getElementById("demandcontroller-bar").shadowRoot.querySelector("demand-video-controller-progress").shadowRoot.querySelector("demand-video-controller-preview").shadowRoot.querySelector(".Preview label");t&&(t.style.position="relative",t.style.bottom="60px",t.style.backgroundColor="rgba(0,0,0,0.4)",t.innerHTML=e)}var _i,z,ki,Ei,Bi,o="/* [DouyuEx-Lite] GIF Worker已剥离 */",Ii=URL.createObjectURL(new Blob([o],{type:"application/javascript"}));let Ti=83;function Ci(e,t,o,n){t.getContext("2d").drawImage(e,0,0,t.width,t.height),o.addFrame(t,{copy:!0,delay:n})}function Si(){var e=localStorage.getItem("ExSave_Camera_Hidden");if(e)return e=parseInt(e),Date.now()<e}function Mi(){let o=setInterval(()=>{if(null!=(V=document.getElementsByTagName("demand-video")[0].shadowRoot.getElementById("__video"))&&V.videoWidth){clearInterval(o),Bi=document.getElementsByTagName("demand-video-anchor")[0].shadowRoot.querySelector(".anchor-name").innerText,ki=.25*V.videoWidth,Ei=.25*V.videoHeight,(_i=document.createElement("canvas")).width=ki,_i.height=Ei,(z=document.createElement("canvas")).width=V.videoWidth,z.height=V.videoHeight;var e=document.createElement("div"),t=(e.id="ex-camera",e.title="单击截图 长按录制gif",e.innerHTML=`
 
     <svg t="1620266708389" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2080" width="38" height="38"><path d="M512 337.371136c-119.543808 0-216.800256 97.255424-216.800256 216.798208 0 119.543808 97.256448 216.800256 216.800256 216.800256s216.800256-97.256448 216.800256-216.800256C728.800256 434.625536 631.543808 337.371136 512 337.371136zM680.479744 554.16832c0 92.911616-75.579392 168.501248-168.479744 168.501248-92.900352 0-168.480768-75.589632-168.480768-168.501248 0-92.923904 75.579392-168.521728 168.480768-168.521728C604.899328 385.646592 680.479744 461.24544 680.479744 554.16832z" p-id="2081" fill="#ffffff"></path><path d="M831.209472 337.349632l-47.167488 0c-13.647872 0-24.751104 11.083776-24.751104 24.707072 0 13.635584 11.103232 24.7296 24.751104 24.7296l47.167488 0c13.646848 0 24.75008-11.094016 24.75008-24.7296C855.959552 348.433408 844.85632 337.349632 831.209472 337.349632z" p-id="2082" fill="#ffffff"></path><path d="M700.505088 171.497472c4.235264 0 6.403072 0.405504 7.232512 0.612352 1.47968 1.514496 4.790272 6.218752 11.717632 20.685824 2.83648 5.910528 8.6272 18.86208 15.888384 35.533824l11.788288 27.063296 29.518848 0 96.535552 0c35.122176 0 63.695872 28.535808 63.695872 63.609856l0 469.933056c0 35.05152-28.573696 63.567872-63.695872 63.567872L150.811648 852.503552c-35.121152 0-63.694848-28.516352-63.694848-63.567872L87.1168 319.0016c0-35.062784 28.573696-63.589376 63.694848-63.589376l99.35872 0 29.110272 0 11.964416-26.537984c4.698112-10.421248 8.416256-19.063808 11.058176-25.70752 9.86112-24.829952 15.207424-30.125056 16.239616-30.974976 0.52736-0.161792 2.64192-0.695296 7.673856-0.695296L700.505088 171.496448M700.505088 126.441472 326.216704 126.441472c-32.519168 0-47.275008 13.479936-65.787904 60.096512-3.180544 7.999488-7.689216 18.122752-10.257408 23.819264l-99.35872 0c-59.96544 0-108.750848 48.738304-108.750848 108.645376l0 469.933056c0 59.894784 48.785408 108.623872 108.750848 108.623872l722.37568 0c59.96544 0 108.751872-48.729088 108.751872-108.623872L981.940224 319.0016c0-59.91936-48.786432-108.665856-108.751872-108.665856l-96.535552 0c-4.458496-10.236928-12.420096-28.372992-16.574464-37.031936C744.823808 141.448192 733.973504 126.441472 700.505088 126.441472L700.505088 126.441472z" p-id="2083" fill="#ffffff"></path></svg>
 

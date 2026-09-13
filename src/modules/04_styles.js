@@ -1179,4 +1179,306 @@ function y(){var e=document.createElement("style");e.appendChild(document.create
     border-color: var(--miuix-blue) !important; box-shadow: 0 0 0 3px var(--miuix-blue-glow) !important;
 }
 
+/* ==================== 5级模态选择器与4级自由变形卡片 ==================== */
+/* 5级模态遮罩层 */
+.ex-gift-picker-mask {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    background: rgba(15, 23, 42, 0.45) !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+    z-index: 100049 !important;
+    animation: miuix-fade-in 0.2s ease forwards !important;
+}
+
+/* 5级模态容器 */
+.ex-gift-picker-modal {
+    position: fixed !important;
+    width: 540px !important;
+    max-width: 92vw !important;
+    height: 410px !important;
+    max-height: 85vh !important;
+    left: 50% !important;
+    top: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    flex-direction: column !important;
+    z-index: 100050 !important;
+    border-radius: 22px !important;
+    background: rgba(255, 255, 255, 0.88) !important;
+    backdrop-filter: blur(36px) saturate(220%) !important;
+    -webkit-backdrop-filter: blur(36px) saturate(220%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.95) !important;
+    box-shadow: inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.98), 0 24px 60px rgba(15, 23, 42, 0.25) !important;
+    overflow: hidden !important;
+    animation: miuix-modal-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+}
+
+/* 吸顶 Tab 顶栏 */
+.ex-gift-picker__header {
+    flex: 0 0 auto !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 10px !important;
+    padding: 12px 16px !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
+    background: rgba(255, 255, 255, 0.55) !important;
+}
+.ex-gift-picker__tabs {
+    display: flex !important;
+    gap: 6px !important;
+    background: rgba(0, 0, 0, 0.05) !important;
+    padding: 3px !important;
+    border-radius: 10px !important;
+    flex: 0 0 auto !important;
+}
+.ex-gift-picker__tab {
+    border: none !important;
+    background: transparent !important;
+    padding: 5px 14px !important;
+    border-radius: 8px !important;
+    font-size: 12.5px !important;
+    font-weight: 600 !important;
+    color: #64748b !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+}
+.ex-gift-picker__tab.is-active {
+    background: #ffffff !important;
+    color: #007aff !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08) !important;
+}
+.ex-gift-picker__search {
+    flex: 1 1 auto !important;
+    max-width: 170px !important;
+    height: 28px !important;
+    padding: 0 10px !important;
+    box-sizing: border-box !important;
+    border-radius: 8px !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    background: rgba(255, 255, 255, 0.75) !important;
+    font-size: 12px !important;
+    color: #0f172a !important;
+    outline: none !important;
+    transition: all 0.2s ease !important;
+}
+.ex-gift-picker__search:focus {
+    background: #ffffff !important;
+    border-color: #007aff !important;
+    box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.18) !important;
+}
+.ex-gift-picker__close {
+    width: 28px !important;
+    height: 28px !important;
+    border-radius: 8px !important;
+    background: rgba(0, 0, 0, 0.06) !important;
+    border: none !important;
+    color: #475569 !important;
+    font-size: 18px !important;
+    font-weight: bold !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: all 0.18s ease !important;
+    flex: 0 0 auto !important;
+}
+.ex-gift-picker__close:hover {
+    background: #ef4444 !important;
+    color: #ffffff !important;
+    transform: scale(1.08) rotate(90deg) !important;
+}
+
+/* 4 列礼物网格 */
+.ex-gift-picker__body {
+    flex: 1 1 auto !important;
+    overflow-y: auto !important;
+    padding: 12px 16px !important;
+}
+.ex-gift-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 10px !important;
+}
+.ex-gift-cell {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 10px 6px !important;
+    box-sizing: border-box !important;
+    border-radius: 12px !important;
+    background: rgba(255, 255, 255, 0.5) !important;
+    border: 1px solid rgba(255, 255, 255, 0.8) !important;
+    cursor: pointer !important;
+    transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+.ex-gift-cell:hover {
+    background: #ffffff !important;
+    box-shadow: 0 4px 14px rgba(0, 122, 255, 0.15) !important;
+    border-color: rgba(0, 122, 255, 0.3) !important;
+    transform: translateY(-2px) !important;
+}
+.ex-gift-cell:active {
+    transform: scale(0.96) !important;
+}
+.ex-gift-cell__img {
+    width: 44px !important;
+    height: 44px !important;
+    object-fit: contain !important;
+    margin-bottom: 6px !important;
+}
+.ex-gift-cell__name {
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    color: #0f172a !important;
+    text-align: center !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 95% !important;
+}
+.ex-gift-cell__price {
+    font-size: 11px !important;
+    color: #64748b !important;
+    margin-top: 2px !important;
+}
+
+/* 四级卡片与触发触控盒 */
+.ex-gift-flow {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 10px !important;
+    margin: 10px 0 !important;
+}
+.ex-gift-box {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    padding: 8px 10px !important;
+    border-radius: 10px !important;
+    background: rgba(255, 255, 255, 0.6) !important;
+    border: 1px dashed rgba(0, 122, 255, 0.4) !important;
+    cursor: pointer !important;
+    transition: all 0.18s ease !important;
+}
+.ex-gift-box:hover {
+    background: #ffffff !important;
+    border-style: solid !important;
+    box-shadow: 0 2px 8px rgba(0, 122, 255, 0.2) !important;
+}
+.ex-gift-box__icon {
+    width: 36px !important;
+    height: 36px !important;
+    object-fit: contain !important;
+    margin-bottom: 4px !important;
+}
+.ex-gift-box__name {
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    color: #0f172a !important;
+}
+.ex-gift-box__sub {
+    font-size: 10.5px !important;
+    color: #64748b !important;
+}
+.ex-gift-flow__arrow {
+    font-size: 18px !important;
+    color: #007aff !important;
+    font-weight: bold !important;
+    flex: 0 0 auto !important;
+}
+
+/* 4级菜单礼物触控触发胶囊 */
+.ex-gift-pick-trigger {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    padding: 6px 12px !important;
+    box-sizing: border-box !important;
+    border-radius: 10px !important;
+    background: rgba(255, 255, 255, 0.65) !important;
+    border: 1px solid rgba(0, 122, 255, 0.3) !important;
+    cursor: pointer !important;
+    transition: all 0.18s ease !important;
+    margin-bottom: 8px !important;
+}
+.ex-gift-pick-trigger:hover {
+    background: #ffffff !important;
+    border-color: #007aff !important;
+    box-shadow: 0 2px 8px rgba(0, 122, 255, 0.18) !important;
+    transform: translateY(-1px) !important;
+}
+.ex-gift-pick-trigger__icon {
+    width: 28px !important;
+    height: 28px !important;
+    object-fit: contain !important;
+    flex: 0 0 auto !important;
+}
+.ex-gift-pick-trigger__name {
+    font-size: 12.5px !important;
+    font-weight: 600 !important;
+    color: #0f172a !important;
+    flex: 1 1 auto !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+.ex-gift-pick-trigger__tag {
+    font-size: 11px !important;
+    color: #007aff !important;
+    background: rgba(0, 122, 255, 0.08) !important;
+    padding: 2px 8px !important;
+    border-radius: 6px !important;
+    font-weight: 500 !important;
+    flex: 0 0 auto !important;
+}
+.ex-gift-pick-trigger__arrow {
+    font-size: 11px !important;
+    color: #94a3b8 !important;
+    flex: 0 0 auto !important;
+}
+
+/* 4级控制栏微排版与输入框 */
+.ex-gift-row {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+    margin-top: 4px !important;
+}
+.ex-gift-label {
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+    font-size: 12px !important;
+    color: #475569 !important;
+}
+.ex-num-input {
+    height: 26px !important;
+    border-radius: 6px !important;
+    border: 1px solid rgba(0, 0, 0, 0.12) !important;
+    background: rgba(255, 255, 255, 0.8) !important;
+    text-align: center !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    color: #0f172a !important;
+    outline: none !important;
+    box-sizing: border-box !important;
+    transition: all 0.18s ease !important;
+}
+.ex-num-input:focus {
+    background: #ffffff !important;
+    border-color: #007aff !important;
+    box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.18) !important;
+}
+
+
 `)),document.head.appendChild(e)}
