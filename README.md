@@ -86,6 +86,9 @@ DouyuEx-RL/
 ```
 
 ### 🛠️ 本地构建与热重载
+
+> 📖 **完整底层架构细节、40+ 本地存储字典与排障规范**：请查阅官方核心维护文档 👉 [docs/MAINTENANCE.md](docs/MAINTENANCE.md)
+
 ```bash
 # 单次编译与语法核验
 npm run build
