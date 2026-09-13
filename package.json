@@ -1,0 +1,19 @@
+{
+  "name": "douyuex-rl",
+  "version": "2026.09.13.20",
+  "description": "DouyuEx-RL 斗鱼直播间增强插件 (Reborn Lite)",
+  "main": "DouyuEx_RL.user.js",
+  "scripts": {
+    "build": "node build.js",
+    "watch": "node build.js --watch"
+  },
+  "keywords": [
+    "douyu",
+    "tampermonkey",
+    "userscript",
+    "live",
+    "danmaku"
+  ],
+  "author": "xayahcore",
+  "license": "MIT"
+}
