@@ -327,7 +327,8 @@ function anchorPanelToButton(panel, btnEl) {
     panel.style.setProperty("right", "auto", "important");
     panel.style.setProperty("top", "auto", "important");
     panel.style.setProperty("z-index", "100000", "important");
-    panel.style.setProperty("display", "block", "important");
+    panel.style.setProperty("display", "flex", "important");
+    panel.style.setProperty("flex-direction", "column", "important");
     panel.classList.add("miuix-modal-in");
 }
 window.anchorPanelToButton = anchorPanelToButton;
@@ -631,7 +632,7 @@ function createPopupPlayerPanel() {
 }
 
 function createExUpdatePanel() {
-    var currentVer = (typeof P !== "undefined" && P) ? P : "2026.09.14.12";
+    var currentVer = (typeof P !== "undefined" && P) ? P : "2026.09.14.13";
     var existing = document.querySelector(".exupdate-panel");
     if (existing) {
         if (existing.dataset.version === currentVer) return;

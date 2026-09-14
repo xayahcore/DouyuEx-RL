@@ -44,40 +44,7 @@ function y(){var e=document.createElement("style");e.appendChild(document.create
 
 
 
-.extool[style*="display: block"],
-.extool[style*="display:block"] {
-
-	display: block !important;
-
-}
-
-
-
-.extool > div:not(.miuix-modal__header):not(.ex_giftAnimation):not(.extool__close) {
-
-	background: rgba(255,255,255,0.82);
-
-	border: 1px solid rgba(0,0,0,0.10);
-
-	border-radius: 10px;
-
-	padding: 10px 12px 12px;
-
-	box-sizing: border-box;
-
-	box-shadow: 0 2px 10px rgba(0,0,0,0.06);
-
-	display: flex;
-
-	flex-wrap: wrap;
-
-	gap: 6px 10px;
-
-	align-items: center;
-
-	min-width: 220px;
-
-}
+/* [DouyuEx-RL] 旧式 extool 容器硬编码已彻底拔除 */
 
 
 
@@ -850,7 +817,10 @@ function y(){var e=document.createElement("style");e.appendChild(document.create
 
 /* 4. 滚动条起始点统一为顶栏下方：内容承载容器 */
 .miuix-modal__body {
+    display: block !important;
     flex: 1 1 auto !important;
+    min-height: 0 !important;
+    max-height: calc(370px - 52px) !important;
     width: 100% !important;
     overflow-y: auto !important;
     overflow-y: overlay !important;
@@ -1007,31 +977,6 @@ function y(){var e=document.createElement("style");e.appendChild(document.create
 .popup-panel__seg-item input:checked + .popup-panel__seg-thumb {
     background: #fff !important; color: #0066ff !important; font-weight: 700 !important; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
 }
-.fans-panel__asset-value { font-size: 14px !important; font-weight: 700 !important; color: #0f172a !important; }
-.fans-panel__status--ok { color: #10b981 !important; }
-.fans-panel__input-group { display: flex !important; flex-direction: column !important; gap: 6px !important; }
-.fans-panel__input-label { font-size: 12px !important; color: #334155 !important; font-weight: 500 !important; }
-.fans-panel__input-box { display: flex !important; align-items: center !important; gap: 8px !important; }
-.fans-panel__input-box input { width: 80px !important; height: 32px !important; padding: 4px 8px !important; text-align: center !important; border-radius: 8px !important; }
-.fans-panel__input-hint { font-size: 11px !important; color: #64748b !important; }
-.fans-panel__action-wrap, .popup-panel__action-wrap { padding: 0 12px !important; margin-top: 10px !important; }
-.fans-panel__submit-btn, .popup-panel__submit-btn { width: 100% !important; height: 36px !important; border-radius: 10px !important; font-size: 14px !important; font-weight: 600 !important; }
-.popup-panel__input-box input { width: 100% !important; height: 34px !important; padding: 4px 10px !important; border-radius: 8px !important; box-sizing: border-box !important; }
-.popup-panel__paste-btn {
-    font-size: 11px !important; padding: 2px 8px !important; border-radius: 6px !important;
-    border: 1px solid rgba(0, 102, 255, 0.3) !important; background: rgba(0, 102, 255, 0.08) !important;
-    color: #0066ff !important; cursor: pointer !important;
-}
-.popup-panel__seg-switch { display: flex !important; gap: 8px !important; background: rgba(0, 0, 0, 0.04) !important; padding: 4px !important; border-radius: 10px !important; }
-.popup-panel__seg-item { flex: 1 !important; display: flex !important; align-items: center !important; justify-content: center !important; margin: 0 !important; cursor: pointer !important; }
-.popup-panel__seg-item input { display: none !important; }
-.popup-panel__seg-thumb {
-    width: 100% !important; text-align: center !important; padding: 6px 0 !important; font-size: 12px !important;
-    font-weight: 500 !important; border-radius: 8px !important; color: #64748b !important; transition: all 0.2s ease !important;
-}
-.popup-panel__seg-item input:checked + .popup-panel__seg-thumb {
-    background: #fff !important; color: #0066ff !important; font-weight: 700 !important; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
-}
 .miuix-modal__title-box { display: flex !important; align-items: center !important; }
 .miuix-modal__title { font-size: 14px !important; font-weight: 700 !important; color: #0f172a !important; letter-spacing: -0.2px !important; }
 .miuix-modal__close {
@@ -1049,7 +994,7 @@ function y(){var e=document.createElement("style");e.appendChild(document.create
 .miuix-modal__close:active { transform: scale(0.95) !important; }
 
 /* 4. 卡片合理宽度收敛 (左右严密留白 12px，彻底杜绝向右溢出) */
-.extool > div:not(.miuix-modal__header):not(.ex_giftAnimation):not(.extool__close),
+.extool > div:not(.miuix-modal__header):not(.miuix-modal__body):not(.ex_giftAnimation):not(.extool__close),
 .extool__player_perf, .extool__treasure, .extool__gold, .extool__redpacket_room, .extool__autofish, .extool__clearbag, .extool__sendgift,
 .livetool__cell, .lottery__item, .bloop > div:not(.miuix-modal__header), .DanmakuTail-option-label, .DanmakuTail-checkbox-label {
     width: auto !important; max-width: none !important; min-width: 0 !important;
@@ -1057,7 +1002,7 @@ function y(){var e=document.createElement("style");e.appendChild(document.create
     box-sizing: border-box !important; background: rgba(255, 255, 255, 0.55) !important; border: 1px solid rgba(255, 255, 255, 0.9) !important;
     border-radius: 14px !important; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03) !important; flex: none !important; float: none !important; display: block !important;
 }
-.extool[style*="display: block"], .extool[style*="display:block"] { display: block !important; box-sizing: border-box !important; }
+/* [DouyuEx-RL] extool display:block 覆盖已彻底拔除 */
 .extool label {
     display: inline-flex !important; align-items: center !important; gap: 4px !important; font-size: 12px !important; font-weight: 500 !important;
     color: #0f172a !important; margin-right: 10px !important; margin-bottom: 4px !important; line-height: 22px !important; white-space: nowrap !important; cursor: pointer !important;
