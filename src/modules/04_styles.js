@@ -769,13 +769,14 @@ function y(){var e=document.createElement("style");e.appendChild(document.create
     position: fixed !important;
     width: 380px !important; max-width: calc(100vw - 24px) !important;
     height: 370px !important; max-height: 370px !important; min-height: 370px !important;
-    box-sizing: border-box !important; padding: 0 0 16px 0 !important;
-    overflow-y: auto !important; overflow-y: overlay !important; overflow-x: hidden !important;
+    box-sizing: border-box !important; padding: 0 !important;
+    overflow: hidden !important;
     display: none; z-index: 1428 !important; border-radius: 22px !important; background: rgba(255, 255, 255, 0.78) !important;
     backdrop-filter: blur(36px) saturate(220%) !important; -webkit-backdrop-filter: blur(36px) saturate(220%) !important;
     border: 1px solid rgba(255, 255, 255, 0.95) !important;
     box-shadow: inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.98), 0 16px 40px rgba(15, 23, 42, 0.16), 0 2px 8px rgba(15, 23, 42, 0.08) !important;
     color: #0f172a !important; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif !important;
+    flex-direction: column !important;
 }
 
 /* 隐形热区连桥 (Hover Bridge)：在 Dock 按钮上方向上延伸 18px 透明热区，填补悬浮空隙 */
@@ -812,7 +813,8 @@ function y(){var e=document.createElement("style");e.appendChild(document.create
 .popup-player-panel[style*="display: flex"], .popup-player-panel[style*="display:flex"],
 .exupdate-panel[style*="display: block"], .exupdate-panel[style*="display:block"],
 .exupdate-panel[style*="display: flex"], .exupdate-panel[style*="display:flex"] {
-    display: block !important;
+    display: flex !important;
+    flex-direction: column !important;
     opacity: 1 !important;
     visibility: visible !important;
     pointer-events: auto !important;
@@ -832,10 +834,10 @@ function y(){var e=document.createElement("style");e.appendChild(document.create
 .vote__result.miuix-modal #vote__result-theme { display: none !important; }
 .vote__result.miuix-modal #vote__result-options { padding: 0 14px !important; }
 
-/* 3. Level 3 模态吸顶 Header (左右严密贴合，彻底消灭滚动条右侧漏缝) */
+/* 3. Level 3 模态吸顶 Header (顶栏平铺占满100%宽度，绝无漏缝) */
 .miuix-modal__header {
-    position: sticky !important; top: 0 !important; left: 0 !important; right: 0 !important;
-    width: 100% !important; margin: 0 0 12px 0 !important; padding: 12px 16px !important;
+    flex: 0 0 auto !important;
+    width: 100% !important; margin: 0 !important; padding: 12px 16px !important;
     box-sizing: border-box !important; display: flex !important; align-items: center !important; justify-content: space-between !important;
     background: rgba(255, 255, 255, 0.45) !important; backdrop-filter: blur(28px) saturate(190%) !important; -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
     border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important; box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.95), 0 2px 6px rgba(0, 0, 0, 0.03) !important;
@@ -845,26 +847,59 @@ function y(){var e=document.createElement("style");e.appendChild(document.create
     border-bottom-left-radius: 0 !important;
     border-bottom-right-radius: 0 !important;
 }
-.miuix-modal__header::after {
-    content: "" !important;
-    position: absolute !important;
-    top: 0 !important;
-    bottom: 0 !important;
-    left: 100% !important;
-    width: 30px !important;
-    background: inherit !important;
-    backdrop-filter: inherit !important;
-    -webkit-backdrop-filter: inherit !important;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
-    border-top-right-radius: 21px !important;
-    pointer-events: none !important;
+
+/* 4. 滚动条起始点统一为顶栏下方：内容承载容器 */
+.miuix-modal__body {
+    flex: 1 1 auto !important;
+    width: 100% !important;
+    overflow-y: auto !important;
+    overflow-y: overlay !important;
+    overflow-x: hidden !important;
+    box-sizing: border-box !important;
+    padding: 10px 0 16px 0 !important;
 }
 
-.miuix-modal::-webkit-scrollbar, .extool::-webkit-scrollbar, .livetool::-webkit-scrollbar, .bloop::-webkit-scrollbar, .exlottery::-webkit-scrollbar, .ChatToolBar-DanmakuTail-Panel::-webkit-scrollbar, .fans-continue-panel::-webkit-scrollbar, .popup-player-panel::-webkit-scrollbar, .exupdate-panel::-webkit-scrollbar { width: 4px !important; }
-.miuix-modal::-webkit-scrollbar-thumb, .extool::-webkit-scrollbar-thumb, .livetool::-webkit-scrollbar-thumb, .bloop::-webkit-scrollbar-thumb, .exlottery::-webkit-scrollbar-thumb, .ChatToolBar-DanmakuTail-Panel::-webkit-scrollbar-thumb, .fans-continue-panel::-webkit-scrollbar-thumb, .popup-player-panel::-webkit-scrollbar-thumb, .exupdate-panel::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0.18) !important; border-radius: 4px !important;
+/* 5. 统一滚动条规格：3级菜单 body 与 5级菜单 body 全量对齐极细 4px 美化 */
+.miuix-modal__body::-webkit-scrollbar,
+.ex-gift-picker__body::-webkit-scrollbar,
+.miuix-modal::-webkit-scrollbar,
+.extool::-webkit-scrollbar,
+.livetool::-webkit-scrollbar,
+.bloop::-webkit-scrollbar,
+.exlottery::-webkit-scrollbar,
+.ChatToolBar-DanmakuTail-Panel::-webkit-scrollbar,
+.fans-continue-panel::-webkit-scrollbar,
+.popup-player-panel::-webkit-scrollbar,
+.exupdate-panel::-webkit-scrollbar {
+    width: 4px !important;
 }
-.miuix-modal::-webkit-scrollbar-track, .extool::-webkit-scrollbar-track, .livetool::-webkit-scrollbar-track, .bloop::-webkit-scrollbar-track, .exlottery::-webkit-scrollbar-track, .ChatToolBar-DanmakuTail-Panel::-webkit-scrollbar-track, .fans-continue-panel::-webkit-scrollbar-track, .popup-player-panel::-webkit-scrollbar-track, .exupdate-panel::-webkit-scrollbar-track {
+
+.miuix-modal__body::-webkit-scrollbar-thumb,
+.ex-gift-picker__body::-webkit-scrollbar-thumb,
+.miuix-modal::-webkit-scrollbar-thumb,
+.extool::-webkit-scrollbar-thumb,
+.livetool::-webkit-scrollbar-thumb,
+.bloop::-webkit-scrollbar-thumb,
+.exlottery::-webkit-scrollbar-thumb,
+.ChatToolBar-DanmakuTail-Panel::-webkit-scrollbar-thumb,
+.fans-continue-panel::-webkit-scrollbar-thumb,
+.popup-player-panel::-webkit-scrollbar-thumb,
+.exupdate-panel::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.18) !important;
+    border-radius: 4px !important;
+}
+
+.miuix-modal__body::-webkit-scrollbar-track,
+.ex-gift-picker__body::-webkit-scrollbar-track,
+.miuix-modal::-webkit-scrollbar-track,
+.extool::-webkit-scrollbar-track,
+.livetool::-webkit-scrollbar-track,
+.bloop::-webkit-scrollbar-track,
+.exlottery::-webkit-scrollbar-track,
+.ChatToolBar-DanmakuTail-Panel::-webkit-scrollbar-track,
+.fans-continue-panel::-webkit-scrollbar-track,
+.popup-player-panel::-webkit-scrollbar-track,
+.exupdate-panel::-webkit-scrollbar-track {
     background: transparent !important;
 }
 

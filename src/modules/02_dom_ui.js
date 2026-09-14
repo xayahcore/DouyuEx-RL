@@ -220,6 +220,24 @@ function ensureMiuixPanelHeader(el, title) {
 
     
 
+    // 滚动条起始点统一规定在顶栏下方：将所有非 Header 内容封装进 .miuix-modal__body
+    var body = el.querySelector(":scope > .miuix-modal__body");
+    if (!body) {
+        body = document.createElement("div");
+        body.className = "miuix-modal__body";
+        el.appendChild(body);
+    }
+    var nodesToMove = [];
+    for (var i = 0; i < el.childNodes.length; i++) {
+        var node = el.childNodes[i];
+        if (node !== header && node !== body) {
+            nodesToMove.push(node);
+        }
+    }
+    nodesToMove.forEach(function(n) {
+        body.appendChild(n);
+    });
+
     // 悬浮连桥双向保护
     if (!el.dataset.hoverBridgeBound) {
         el.dataset.hoverBridgeBound = "1";
@@ -613,7 +631,7 @@ function createPopupPlayerPanel() {
 }
 
 function createExUpdatePanel() {
-    var currentVer = (typeof P !== "undefined" && P) ? P : "2026.09.14.11";
+    var currentVer = (typeof P !== "undefined" && P) ? P : "2026.09.14.12";
     var existing = document.querySelector(".exupdate-panel");
     if (existing) {
         if (existing.dataset.version === currentVer) return;
