@@ -277,6 +277,60 @@
 
 ---
 
+
+---
+
+## 🔍 深度专项审计：老脚本“套娃式”三级/四级面板与隐藏交互全量谱系
+
+老代码中存在大量**“折叠在父级面板内部、点击标题或按钮后二次滑出展开”的套娃子面板与独立悬浮模态窗**。此前粗略扫描极易将其误判为普通文本行，现全部地毯式起底并逐项建立重构档案：
+
+```text
+DouyuEx-RL 全量三级/四级与独立悬浮面板全景树
+├── 1. 底栏 Dock 常驻一级入口
+│   ├── ex-sign ➔ 【一键签到三级控制台】 (sign-panel, 5大任务可勾选+日志视窗)
+│   ├── fans-continue ➔ 【一键续牌三级面板】 (fans-continue-panel, 真实佩戴牌子检测+荧光棒打卡)
+│   ├── popup-player ➔ 【同屏播放器三级面板】 (popup-player-panel, 分屏联播/URL直接播放/iframe切换)
+│   ├── ex-lottery ➔ 【全站抽奖雷达三级面板】 (exlottery, 全站大奖/红包监控列表+开奖通知开关)
+│   ├── bloop-icon ➔ 【弹幕发送小助手三级面板】 (bloop, 循环弹幕列表+频率间隔+随机/顺序+文本框)
+│   ├── ex-update ➔ 【版本更新多态三级面板】 (exupdate-panel, 三段式更新日志+状态机按钮)
+│   ├── ChatToolBar-DanmakuTail ➔ 【弹幕小尾巴三级面板】 (ChatToolBar-DanmakuTail-Panel, 前缀/后缀+文本配置)
+│   ├── livetool-icon ➔ 【直播间工具三级面板】 (livetool, 内部嵌套 5 大折叠子面板 + 1 独立看板)
+│   │   ├── 4.1 弹幕投票子面板 (.vote__panel, 主题/选项/限时/增删) + 【独立悬浮大屏结果看板】 (.vote__result)
+│   │   ├── 4.2 进场欢迎子面板 (.enter__panel, 等级阈值/自定义词/增删 + 规则导入导出)
+│   │   ├── 4.3 关键词禁言子面板 (.mute__panel, 禁言时长/违规词/增删/禁言名单 + 规则导入导出)
+│   │   ├── 4.4 自动谢礼物子面板 (.gift__panel, 礼物名称/感谢模板/增删 + 规则导入导出)
+│   │   └── 4.5 关键词回复子面板 (.reply__panel, 关键词/回复语/CD时长/增删 + 规则导入导出)
+│   └── extool-icon ➔ 【扩展功能三级面板】 (extool, 内部嵌套 4 大配置卡片)
+│       ├── 5.1 背包送礼卡片 (extool__clearbag, 资产展示 + 联动 5 级模态大选择器)
+│       ├── 5.2 跨房打榜送礼卡片 (extool__sendgift, 房间专属/通用礼物 + 联动 5 级模态选择器 + 延迟)
+│       ├── 5.3 房间红包挂机卡片 (extool__redpacket_room, 开启开关 + 自动抢)
+│       ├── 5.4 房间宝箱拾取卡片 (extool__treasure, 拾取延迟配置 + 自动收)
+│       └── 5.5 播放器性能监控卡片 (extool__player_perf, 实时内存/GC/帧率微质感看板)
+│
+└── 2. 播放器内悬浮控制条 (vtoolbar-menu)
+    ├── 滤镜调整抽屉三级面板 (.filter__panel, 亮度/对比度/饱和度微调滑块)
+    ├── 播放器画质增强说明弹窗 (.enhance-modal__panel, 微光画质调节)
+    └── 增强画中画小窗 (DocumentPictureInPicture, 独立原生弹幕流与小窗输入框)
+```
+
+### 详细子面板交互与参数账本
+
+| 编号 | 面板名称与 DOM 标识 | 触发方式与交互形式 | 内部控件与核心参数 | 导入/导出与附加能力 |
+|:---|:---|:---|:---|:---|
+| **L3-01** | **弹幕投票配置面板**<br>`div.vote__panel` | 点击 `livetool` 中的 `#vote__title` 展开手风琴折叠层 | • 下拉主题列表 `#vote__select`<br>• 主题输入 `#vote__theme`<br>• 选项输入 `#vote__options`<br>• 限时秒数 `#vote__time`<br>• 重复投票开关 `#vote__repeat` | 联动点击 `#vote__show-result` 打开**独立悬浮大屏结果看板** (`div.vote__result`) |
+| **L3-02** | **进场欢迎配置面板**<br>`div.enter__panel` | 点击 `livetool` 中的 `#enter__title` 展开手风琴折叠层 | • 欢迎语选择 `#enter__select`<br>• 触发等级输入 `#enter__level`<br>• 欢迎语文本 `#enter__word`<br>• 房间启用范围开关 | 支持规则一键剪贴板导入 (`#enter__import`) 与导出 (`#enter__export`) |
+| **L3-03** | **关键词禁言配置面板**<br>`div.mute__panel` | 点击 `livetool` 中的 `#mute__title` 展开手风琴折叠层 | • 违规词选择 `#mute__select`<br>• 禁言时长下拉（1天/3天/7天/30天）<br>• 增删按钮 `#mute__add`, `#mute__del`<br>• 房间启用范围开关 | 支持禁言名单查询 (`#mute__idlist`) 以及规则导入导出 (`#mute__import/export`) |
+| **L3-04** | **自动谢礼物配置面板**<br>`div.gift__panel` | 点击 `livetool` 中的 `#gift__title` 展开手风琴折叠层 | • 礼物选择 `#gift__select`<br>• 感谢语文本输入 `#gift__content`<br>• 增删按钮 `#gift__add`, `#gift__del`<br>• 房间启用范围开关 | 支持礼物感谢词模板一键剪贴板导入与导出 (`#gift__import/export`) |
+| **L3-05** | **关键词回复配置面板**<br>`div.reply__panel` | 点击 `livetool` 中的 `#reply__title` 展开手风琴折叠层 | • 关键词选择 `#reply__select`<br>• 回复内容输入 `#reply__content`<br>• 冷却时间 CD 秒数 `#reply__time`<br>• 增删按钮 `#reply__add`, `#reply__del` | 支持自定义回复规则 JSON 剪贴板一键导入与导出 (`#reply__import/export`) |
+| **L3-06** | **弹幕发送小助手面板**<br>`div.bloop` | 点击 Dock `#bloop-icon` 弹出 370px 模态面板 | • 多行循环弹幕文本框<br>• 发送间隔秒数设置<br>• 随机发送 / 顺序轮播切换<br>• 快捷短语插入与状态保持 | 彻底淘汰旧版第三方彩虹屁外链，保留纯净本地预设短语库 |
+| **L3-07** | **跨房打榜送礼卡片**<br>`div.extool__sendgift` | 嵌入在 `extool` 扩展功能面板中 | • 礼物名称/图标/ID/标签实时回显<br>• 赠送数量输入 `#extool__sendgift_cnt`<br>• 延迟毫秒设置 `#extool__sendgift_delay`<br>• 开始送礼按钮 `#extool__sendgift_btn` | 点击触发胶囊弹出 **5 级拟态模态大选择器** (`openGiftPicker`) 直选在播礼物 |
+| **L3-08** | **背包送礼卡片**<br>`div.extool__clearbag` | 嵌入在 `extool` 扩展功能面板中 | • 动态读取用户背包资产与有效期限<br>• 赠送数量输入 `#extool__clearbag_cnt`<br>• 送出礼物按钮 `#extool__clearbag_sendbtn` | 点击触发胶囊弹出 **5 级拟态模态大选择器**，直选背包道具并回填 |
+| **L3-09** | **房间红包与宝箱卡片**<br>`extool__redpacket_room` / `extool__treasure` | 嵌入在 `extool` 扩展功能面板中 | • 房间红包自动抢开关 `#extool__redpacekt_room_start`<br>• 宝箱拾取开关 `#extool__treasure_start`<br>• 拾取延迟毫秒输入 `#extool__treasure_delay` | 后台静默守护并自动拾取房间内可领取的官方红包与宝箱 |
+| **L3-10** | **播放器性能监控看板**<br>`div.extool__player_perf` | 嵌入在 `extool` 扩展功能面板中 | • 实时内存监控 `extool__perf_item`<br>• 垃圾回收 GC 状态指示<br>• 拦截器响应延迟与首帧时间展示 | 纯客户端沙盒性能探针 |
+| **L3-11** | **播放器色彩滤镜抽屉**<br>`div.filter__panel` | 播放器悬浮条 `vtoolbar-menu` 点击【滤镜】滑出 | • 亮度调整滑块 `#bar__bright`<br>• 对比度调整滑块 `#bar__contrast`<br>• 饱和度调整滑块 `#bar__saturate`<br>• 快捷预设下拉框 `#filter__select` | 实时计算 CSS Filter 并注入播放器视频实体容器 |
+| **L3-12** | **画质增强微光弹窗**<br>`div.enhance-modal__panel` | 播放器悬浮条 `vtoolbar-menu` 触发 | • 微光增强开启开关 `#switch__enhance`<br>• 增强强度滑动条 `#slider__enhance`<br>• 效果图与原理说明容器 | 针对 Edge/Chromium 的原生超分辨率与锐化管线挂载 |
+
+
 ## 八、 已确认下线的远古失效活动代码清理清单 (Dead Code Ledger)
 
 以下内容已由真机与接口反查**确认永久失效关停**，NEXT 架构中**坚决予以物理清除，绝不让僵尸垃圾污染代码库**：
