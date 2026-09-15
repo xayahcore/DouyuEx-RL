@@ -778,7 +778,7 @@ function createPopupPlayerPanel() {
 }
 
 function createExUpdatePanel() {
-    var currentVer = (typeof P !== "undefined" && P) ? P : ((typeof GM_info !== "undefined" && GM_info.script && GM_info.script.version) ? GM_info.script.version : "2026.09.15.02-preview");
+    var currentVer = (typeof P !== "undefined" && P) ? P : ((typeof GM_info !== "undefined" && GM_info.script && GM_info.script.version) ? GM_info.script.version : "2026.09.15.03-preview");
     var existing = document.querySelector(".exupdate-panel");
     if (existing) {
         if (existing.dataset.version === currentVer) return;
