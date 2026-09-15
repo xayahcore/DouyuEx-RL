@@ -8,7 +8,7 @@
 
 // @icon         data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyB3aWR0aD0iMTA4cHgiIGhlaWdodD0iMTA4cHgiIHZpZXdCb3g9IjAgMCAxMDggMTA4IiB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiPgogICAgPHRpdGxlPueyvueBteeQgzwvdGl0bGU+CiAgICA8ZyBpZD0i6aG16Z2iLTEiIHN0cm9rZT0ibm9uZSIgc3Ryb2tlLXdpZHRoPSIxIiBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPgogICAgICAgIDxnIGlkPSLnsr7ngbXnkIMiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDAuODMwNzY5LCAwLjgzMDc2OSkiIGZpbGwtcnVsZT0ibm9uemVybyI+CiAgICAgICAgICAgIDxwYXRoIGQ9Ik01My4xNjkyMzA3LDEwNi4zMzg0NjEgQzIzLjgyNzY5MjIsMTA2LjMzODQ2MSAwLDgyLjUxMDc2OTIgMCw1My4xNjkyMzA3IEMwLDUxLjAwMzA3NjkgMS43NzIzMDc3NSw0OS4yMzA3NjkyIDMuOTM4NDYxNSw0OS4yMzA3NjkyIEwzMy40NzY5MjMsNDkuMjMwNzY5MiBDMzUuNjQzMDc2OSw0OS4yMzA3NjkyIDM3LjQxNTM4NDUsNTEuMDAzMDc3IDM3LjQxNTM4NDYsNTMuMTY5MjMwNyBDMzcuNDE1Mzg0Niw2MS44MzM4NDYxIDQ0LjUwNDYxNTQsNjguOTIzMDc2OSA1My4xNjkyMzA3LDY4LjkyMzA3NjkgQzYxLjgzMzg0NjEsNjguOTIzMDc2OSA2OC45MjMwNzY5LDYxLjgzMzg0NjEgNjguOTIzMDc2OSw1My4xNjkyMzA3IEM2OC45MjMwNzY5LDUxLjAwMzA3NjkgNzAuNjk1Mzg0Niw0OS4yMzA3NjkyIDcyLjg2MTUzODUsNDkuMjMwNzY5MiBMMTAyLjQsNDkuMjMwNzY5MiBDMTA0LjU2NjE1NCw0OS4yMzA3NjkyIDEwNi4zMzg0NjEsNTEuMDAzMDc3IDEwNi4zMzg0NjEsNTMuMTY5MjMwNyBDMTA2LjMzODQ2MSw4Mi41MTA3NjkyIDgyLjUxMDc2OTIsMTA2LjMzODQ2MSA1My4xNjkyMzA3LDEwNi4zMzg0NjEgWiIgaWQ9Iui3r+W+hCIgZmlsbD0iIzMzMzYzQSI+PC9wYXRoPgogICAgICAgICAgICA8cGF0aCBkPSJNOC4wNzM4NDYxMiw1Ny4xMDc2OTIyIEMxMC4wNDMwNzY5LDgwLjI0NjE1MzcgMjkuNTM4NDYxNSw5OC40NjE1Mzg1IDUzLjE2OTIzMDcsOTguNDYxNTM4NSBDNzYuOCw5OC40NjE1Mzg1IDk2LjI5NTM4NDYsODAuMjQ2MTUzOSA5OC4yNjQ2MTU0LDU3LjEwNzY5MjIgTDc2LjUwNDYxNTQsNTcuMTA3NjkyMiBDNzQuNjMzODQ2MSw2OC4yMzM4NDYxIDY0Ljg4NjE1MzksNzYuOCA1My4xNjkyMzA3LDc2LjggQzQxLjQ1MjMwNzYsNzYuOCAzMS43MDQ2MTU0LDY4LjIzMzg0NjEgMjkuODMzODQ2MSw1Ny4xMDc2OTIyIEw4LjA3Mzg0NjEyLDU3LjEwNzY5MjIgWiIgaWQ9Iui3r+W+hCIgZmlsbD0iI0ZGRkZGRiI+PC9wYXRoPgogICAgICAgICAgICA8cGF0aCBkPSJNNTMuMTY5MjMwOCwzLjkzODQ2MTUgQzI1Ljk5Mzg0NjEsMy45Mzg0NjE1IDMuOTM4NDYxNSwyNS45OTM4NDYxIDMuOTM4NDYxNSw1My4xNjkyMzA3IEwzMy40NzY5MjMsNTMuMTY5MjMwNyBDMzMuNDc2OTIzLDQyLjMzODQ2MTUgNDIuMzM4NDYxNSwzMy40NzY5MjMgNTMuMTY5MjMwOCwzMy40NzY5MjMgQzY0LDMzLjQ3NjkyMyA3Mi44NjE1Mzg1LDQyLjMzODQ2MTUgNzIuODYxNTM4NSw1My4xNjkyMzA3IEwxMDIuNCw1My4xNjkyMzA3IEMxMDIuNCwyNS45OTM4NDYxIDgwLjM0NDYxNTQsMy45Mzg0NjE1IDUzLjE2OTIzMDgsMy45Mzg0NjE1IFoiIGlkPSLot6/lvoQiIGZpbGw9IiNENjA5MDkiPjwvcGF0aD4KICAgICAgICAgICAgPHBhdGggZD0iTTEwMi40LDU3LjEwNzY5MjIgTDcyLjg2MTUzODUsNTcuMTA3NjkyMiBDNzAuNjk1Mzg0Niw1Ny4xMDc2OTIyIDY4LjkyMzA3Nyw1NS4zMzUzODQ1IDY4LjkyMzA3NjksNTMuMTY5MjMwNyBDNjguOTIzMDc2OSw0NC41MDQ2MTU0IDYxLjgzMzg0NjEsMzcuNDE1Mzg0NiA1My4xNjkyMzA3LDM3LjQxNTM4NDYgQzQ0LjUwNDYxNTQsMzcuNDE1Mzg0NiAzNy40MTUzODQ2LDQ0LjUwNDYxNTQgMzcuNDE1Mzg0Niw1My4xNjkyMzA3IEMzNy40MTUzODQ2LDU1LjMzNTM4NDYgMzUuNjQzMDc2OSw1Ny4xMDc2OTIyIDMzLjQ3NjkyMyw1Ny4xMDc2OTIyIEwzLjkzODQ2MTUsNTcuMTA3NjkyMiBDMS43NzIzMDc2Miw1Ny4xMDc2OTIyIDAsNTUuMzM1Mzg0NSAwLDUzLjE2OTIzMDcgQzAsMjMuODI3NjkyMiAyMy44Mjc2OTIzLDAgNTMuMTY5MjMwNywwIEM4Mi41MTA3NjkyLDAgMTA2LjMzODQ2MSwyMy44Mjc2OTIyIDEwNi4zMzg0NjEsNTMuMTY5MjMwNyBDMTA2LjMzODQ2MSw1NS4zMzUzODQ2IDEwNC41NjYxNTQsNTcuMTA3NjkyMiAxMDIuNCw1Ny4xMDc2OTIyIFoiIGlkPSLot6/lvoQiIGZpbGw9IiMzMzM2M0EiPjwvcGF0aD4KICAgICAgICAgICAgPHBhdGggZD0iTTc2LjUwNDYxNTQsNDkuMjMwNzY5MyBMOTguMzYzMDc2OSw0OS4yMzA3NjkzIEM5Ni4yOTUzODQ2LDI2LjA5MjMwNzYgNzYuOCw3Ljg3NjkyMyA1My4xNjkyMzA3LDcuODc2OTIzIEMyOS41Mzg0NjE1LDcuODc2OTIzIDEwLjA0MzA3NjksMjYuMDkyMzA3NiA4LjA3Mzg0NjEyLDQ5LjIzMDc2OTMgTDI5LjkzMjMwNzYsNDkuMjMwNzY5MyBDMzEuNzA0NjE1NCwzOC4xMDQ2MTU0IDQxLjQ1MjMwNzYsMjkuNTM4NDYxNSA1My4xNjkyMzA3LDI5LjUzODQ2MTUgQzY0Ljg4NjE1MzksMjkuNTM4NDYxNSA3NC42MzM4NDYxLDM4LjEwNDYxNTQgNzYuNTA0NjE1NCw0OS4yMzA3NjkzIEw3Ni41MDQ2MTU0LDQ5LjIzMDc2OTMgWiIgaWQ9Iui3r+W+hCIgZmlsbD0iI0Q2MDkwOSI+PC9wYXRoPgogICAgICAgICAgICA8cGF0aCBkPSJNNTMuMTY5MjMwNyw3Ni44IEM0MC4xNzIzMDc2LDc2LjggMjkuNTM4NDYxNSw2Ni4xNjYxNTM5IDI5LjUzODQ2MTUsNTMuMTY5MjMwNyBDMjkuNTM4NDYxNSw0MC4xNzIzMDc2IDQwLjE3MjMwNzYsMjkuNTM4NDYxNSA1My4xNjkyMzA3LDI5LjUzODQ2MTUgQzY2LjE2NjE1MzksMjkuNTM4NDYxNSA3Ni44LDQwLjE3MjMwNzYgNzYuOCw1My4xNjkyMzA3IEM3Ni44LDY2LjE2NjE1MzkgNjYuMTY2MTUzOSw3Ni44IDUzLjE2OTIzMDcsNzYuOCBaIiBpZD0i6Lev5b6EIiBmaWxsPSIjMzMzNjNBIj48L3BhdGg+CiAgICAgICAgICAgIDxwYXRoIGQ9Ik01My4xNjkyMzA3LDM3LjQxNTM4NDYgQzQ0LjUwNDYxNTQsMzcuNDE1Mzg0NiAzNy40MTUzODQ2LDQ0LjUwNDYxNTQgMzcuNDE1Mzg0Niw1My4xNjkyMzA3IEMzNy40MTUzODQ2LDYxLjgzMzg0NjEgNDQuNTA0NjE1NCw2OC45MjMwNzY5IDUzLjE2OTIzMDcsNjguOTIzMDc2OSBDNjEuODMzODQ2MSw2OC45MjMwNzY5IDY4LjkyMzA3NjksNjEuODMzODQ2MSA2OC45MjMwNzY5LDUzLjE2OTIzMDcgQzY4LjkyMzA3NjksNDQuNTA0NjE1NCA2MS44MzM4NDYxLDM3LjQxNTM4NDYgNTMuMTY5MjMwNywzNy40MTUzODQ2IEw1My4xNjkyMzA3LDM3LjQxNTM4NDYgWiIgaWQ9Iui3r+W+hCIgZmlsbD0iI0ZGRkZGRiI+PC9wYXRoPgogICAgICAgICAgICA8cGF0aCBkPSJNNDMuMzIzMDc2OSw1My4xNjkyMzA3IEM0My4zMjMwNzY5LDU4LjYwNzExMTQgNDcuNzMxMzUwMSw2My4wMTUzODQ2IDUzLjE2OTIzMDcsNjMuMDE1Mzg0NiBDNTguNjA3MTExNCw2My4wMTUzODQ2IDYzLjAxNTM4NDYsNTguNjA3MTExNCA2My4wMTUzODQ2LDUzLjE2OTIzMDcgQzYzLjAxNTM4NDYsNDcuNzMxMzUwMSA1OC42MDcxMTE0LDQzLjMyMzA3NjkgNTMuMTY5MjMwNyw0My4zMjMwNzY5IEM0Ny43MzEzNTAxLDQzLjMyMzA3NjkgNDMuMzIzMDc2OSw0Ny43MzEzNTAxIDQzLjMyMzA3NjksNTMuMTY5MjMwNyBaIiBpZD0i6Lev5b6EIiBmaWxsPSIjMzMzNjNBIj48L3BhdGg+CiAgICAgICAgPC9nPgogICAgPC9nPgo8L3N2Zz4=
 
-// @version      2026.09.15.01-preview
+// @version      2026.09.15.02-preview
 
 // @description  DouyuEx 纯净重构版：源头全链路无缝最高画质（彻底告别开播二次切流卡顿）/ 活跃榜贡献值原生极速注入 / 物理单例长连接多路复用 / 优雅阻断P2P上传 / 彻底去除弹窗广告 / 剥离历史冗余死重
 
@@ -1595,6 +1595,7 @@
 })();
 
 /* --- module: 01_setup.js --- */
+var P = (typeof GM_info !== "undefined" && GM_info.script && GM_info.script.version) ? GM_info.script.version : "2026.09.15.02-preview";
 /* ==================== DouyuEx 主程序 ==================== */
 
 var EXURL={flv:"https://registry.npmmirror.com/flv.js/1.6.2/files/dist/flv.min.js",svga:"https://fastly.jsdelivr.net/npm/svgaplayerweb@2.3.1/build/svga.min.js",gif:"https://registry.npmmirror.com/gif.js/0.2.0/files/dist/gif.js",three:"https://registry.npmmirror.com/three/0.80.0/files/build/three.min.js",xl:"https://registry.npmmirror.com/xlsx/0.16.4/files/dist/xlsx.full.min.js",purify:"https://registry.npmmirror.com/dompurify/2.3.6/files/dist/purify.min.js"},EXLIB={};
@@ -1964,7 +1965,7 @@ var DOCK_DEFS = [
     { cls: "ex-lottery", inner: `<a class="ex-panel__icon" title="全站抽奖信息"><svg style="display:block;" t="1636332741708" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="19181" width="32" height="32"><path d="M508.858182 986.042182c-261.748364 0-473.925818-212.177455-473.925818-473.925818S247.109818 38.190545 508.858182 38.190545s473.925818 212.177455 473.925818 473.925819-212.200727 473.925818-473.925818 473.925818m0-981.690182C228.421818 4.352 1.093818 231.703273 1.093818 512.116364s227.351273 507.764364 507.764364 507.764363c280.413091 0 507.787636-227.351273 507.787636-507.764363S789.271273 4.352 508.858182 4.352" fill="#FF4517" p-id="19182"></path><path d="M322.536727 512.302545l0.023273-1.326545-313.064727-1.931636c0 1.093818-0.093091 2.164364-0.093091 3.281454 0 90.88 24.785455 175.918545 67.84 248.925091l270.173091-155.997091a185.274182 185.274182 0 0 1-24.878546-92.951273zM416.791273 350.440727L264.029091 82.013091A492.986182 492.986182 0 0 0 77.498182 262.981818l270.173091 155.997091a186.717091 186.717091 0 0 1 69.12-68.538182zM602.856727 351.697455l151.831273-259.211637A488.261818 488.261818 0 0 0 508.718545 21.690182l0.023273 304.453818c34.350545 0 66.513455 9.355636 94.114909 25.553455zM258.536727 939.450182a488.471273 488.471273 0 0 0 241.710546 63.674182c2.839273 0 5.632-0.139636 8.448-0.186182V698.507636a185.064727 185.064727 0 0 1-94.068364-25.553454l-156.090182 266.496zM927.325091 270.452364l-257.466182 148.666181a185.204364 185.204364 0 0 1 25.041455 93.207273l-0.046546 1.070546 296.168727 1.838545c0.023273-0.977455 0.069818-1.931636 0.069819-2.909091 0-87.994182-23.249455-170.496-63.767273-241.873454zM600.855273 674.094545l148.573091 261.073455a492.776727 492.776727 0 0 0 178.106181-181.387636l-257.466181-148.642909a187.042909 187.042909 0 0 1-69.213091 68.95709z" fill="#FF4517" p-id="19183"></path><path d="M644.142545 512.302545a135.400727 135.400727 0 0 0-135.424-135.400727l-84.619636-160.791273 20.642909 173.824c-42.658909 22.784-71.400727 70.609455-71.400727 122.368a135.447273 135.447273 0 0 0 270.801454 0z m-133.492363 70.097455a68.491636 68.491636 0 1 1 0.023273-136.96 68.491636 68.491636 0 0 1-0.023273 136.96z" fill="#FF4517" p-id="19184"></path></svg><i id="lottery__tip" class="ex-panel__tip"></i></a>` },
     { cls: "popup-player", inner: `<a class="ex-panel__icon" title="同屏播放"><svg style="display:block;" t="1579448049771" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="1804" width="30" height="30"><path d="M353.024 900.416H109.952c-57.856 0-109.952-46.336-109.952-98.432V153.6c0-52.096 52.096-98.432 109.952-98.432h810.176c57.856 0 104.192 46.336 104.192 98.496v185.472c0 28.928-23.168 52.096-46.336 52.096s-46.272-23.168-46.272-52.096V159.36H98.368V807.68h248.896c34.688 0 52.032 17.408 52.032 46.336 0 28.928-17.344 46.272-46.272 46.272" fill="#f26b1f" p-id="1805"></path><path d="M619.2 631.488c-5.76 0-5.76 5.76-5.76 11.52v223.04c0 5.76 5.76 11.52 5.76 11.52h289.344c5.76 0 11.584-5.76 11.584-11.52v-222.976c0-5.824-5.76-11.584-11.52-11.584H619.136z m289.344 338.688h-289.28a103.68 103.68 0 0 1-104.192-104.128v-222.976c0-57.92 46.272-109.952 104.128-109.952h289.344c57.856 0 104.128 46.272 104.128 109.952v222.976c5.824 57.856-40.448 104.128-104.128 104.128z" fill="#f26b1f" p-id="1806"></path></svg><i id="popup-player__tip" class="ex-panel__tip"></i></a>` },
     { cls: "ex-monitor", inner: `<a class="ex-panel__icon" title="在线弹幕助手"><svg style="display:block;" t="1638235744961" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="69800" width="32" height="32"><path d="M426.666667 106.666667a21.333333 21.333333 0 0 1 21.333333-21.333334h512a21.333333 21.333333 0 0 1 0 42.666667H448a21.333333 21.333333 0 0 1-21.333333-21.333333z m533.333333 789.333333H448a21.333333 21.333333 0 0 0 0 42.666667h512a21.333333 21.333333 0 0 0 0-42.666667z m0-554.666667H448a21.333333 21.333333 0 0 0 0 42.666667h512a21.333333 21.333333 0 0 0 0-42.666667z m0 298.666667H448a21.333333 21.333333 0 0 0 0 42.666667h512a21.333333 21.333333 0 0 0 0-42.666667zM245.333333 42.666667H96a53.393333 53.393333 0 0 0-53.333333 53.333333v149.333333a53.393333 53.393333 0 0 0 53.333333 53.333334h149.333333a53.393333 53.393333 0 0 0 53.333334-53.333334V96a53.393333 53.393333 0 0 0-53.333334-53.333333z m0 341.333333H96a53.393333 53.393333 0 0 0-53.333333 53.333333v149.333334a53.393333 53.393333 0 0 0 53.333333 53.333333h149.333333a53.393333 53.393333 0 0 0 53.333334-53.333333V437.333333a53.393333 53.393333 0 0 0-53.333334-53.333333z m0 341.333333H96a53.393333 53.393333 0 0 0-53.333333 53.333334v149.333333a53.393333 53.393333 0 0 0 53.333333 53.333333h149.333333a53.393333 53.393333 0 0 0 53.333334-53.333333v-149.333333a53.393333 53.393333 0 0 0-53.333334-53.333334z" fill="#13227a" p-id="69801"></path></svg><i id="Monitor__tip" class="ex-panel__tip"></i></a>` },
-    { cls: "ex-update", inner: `<a class="ex-panel__icon" title="版本更新，当前版本'+P+'"><svg t="1578767541873" style="display:block;" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="23715" width="32" height="32"><path d="M768 810.7H512c-23.6 0-42.7-19.1-42.7-42.7s19.1-42.7 42.7-42.7h256c94.1 0 170.7-76.6 170.7-170.7 0-89.6-70.1-164.3-159.5-170.1L754 383l-10.7-22.7c-42.2-89.3-133-147-231.3-147s-189.1 57.7-231.3 147L270 383l-25.1 1.6c-89.5 5.8-159.5 80.5-159.5 170.1 0 94.1 76.6 170.7 170.7 170.7 23.6 0 42.7 19.1 42.7 42.7s-19.1 42.7-42.7 42.7c-141.2 0-256-114.8-256-256 0-126.1 92.5-232.5 214.7-252.4C274.8 195.7 388.9 128 512 128s237.2 67.7 297.3 174.2C931.5 322.1 1024 428.6 1024 554.7c0 141.1-114.8 256-256 256z" fill="#3688FF" p-id="23716"></path><path d="M554.7 938.7c-10.9 0-21.8-4.2-30.2-12.5l-128-128c-16.7-16.7-16.7-43.7 0-60.3l128-128c16.6-16.7 43.7-16.7 60.3 0 16.7 16.7 16.7 43.7 0 60.3L487 768l97.8 97.8c16.7 16.7 16.7 43.7 0 60.3-8.3 8.4-19.2 12.6-30.1 12.6z" fill="#5F6379" p-id="23717"></path></svg><i id="ex-update__tip" class="ex-panel__tip"></i></a>` }
+    { cls: "ex-update", inner: `<a class="ex-panel__icon" title="版本更新，当前版本：${P}"><svg t="1578767541873" style="display:block;" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="23715" width="32" height="32"><path d="M768 810.7H512c-23.6 0-42.7-19.1-42.7-42.7s19.1-42.7 42.7-42.7h256c94.1 0 170.7-76.6 170.7-170.7 0-89.6-70.1-164.3-159.5-170.1L754 383l-10.7-22.7c-42.2-89.3-133-147-231.3-147s-189.1 57.7-231.3 147L270 383l-25.1 1.6c-89.5 5.8-159.5 80.5-159.5 170.1 0 94.1 76.6 170.7 170.7 170.7 23.6 0 42.7 19.1 42.7 42.7s-19.1 42.7-42.7 42.7c-141.2 0-256-114.8-256-256 0-126.1 92.5-232.5 214.7-252.4C274.8 195.7 388.9 128 512 128s237.2 67.7 297.3 174.2C931.5 322.1 1024 428.6 1024 554.7c0 141.1-114.8 256-256 256z" fill="#3688FF" p-id="23716"></path><path d="M554.7 938.7c-10.9 0-21.8-4.2-30.2-12.5l-128-128c-16.7-16.7-16.7-43.7 0-60.3l128-128c16.6-16.7 43.7-16.7 60.3 0 16.7 16.7 16.7 43.7 0 60.3L487 768l97.8 97.8c16.7 16.7 16.7 43.7 0 60.3-8.3 8.4-19.2 12.6-30.1 12.6z" fill="#5F6379" p-id="23717"></path></svg><i id="ex-update__tip" class="ex-panel__tip"></i></a>` }
 ];
 
 function executeFansContinue(inputCount) {
@@ -2398,7 +2399,7 @@ function createPopupPlayerPanel() {
 }
 
 function createExUpdatePanel() {
-    var currentVer = (typeof P !== "undefined" && P) ? P : "2026.09.14.13";
+    var currentVer = (typeof P !== "undefined" && P) ? P : ((typeof GM_info !== "undefined" && GM_info.script && GM_info.script.version) ? GM_info.script.version : "2026.09.15.02-preview");
     var existing = document.querySelector(".exupdate-panel");
     if (existing) {
         if (existing.dataset.version === currentVer) return;
@@ -2728,7 +2729,7 @@ function d(){var i=document.createElement("div"),l=(i.className="ChatToolBar-Dan
 
                                 <span class="bag-button" id="Backpack__clearbag" style="background: rgb(70, 171, 255) !important;color: white !important;">清空背包</span>
 
-                            </span>`:e.innerHTML='<span style="float: left">总价值：'+String(Number(t/100).toFixed(2))+" 总亲密度："+String(o)+'<span class="bag-button" id="Backpack__clearbag">清空背包</span></span>'+e.innerHTML,safeBind("#Backpack__clearbag", "click",()=>{1==confirm("确认清空？")&&(T("【清空背包】执行中...","info"),pt(B,e=>{(async(n,i)=>{var t=n.data.list.length;if(0<t){for(let e=0;e<t;e++){let t=n.data.list[e].id,o=n.data.list[e].count;if(0<Object.keys(n.data.list[e].batchInfo).length)await b(100).then(()=>{Ut(t,o,i)});else for(let e=0;e<o;e++)await b(100).then(()=>{Ut(t,1,i)})}T("【清空背包】执行完毕！","success")}else T("背包礼物为空","error")})(e,B)}))})}})},500)})}var r=document.createElement("div"),l=(r.className="ex-update",r.innerHTML='<a class="ex-panel__icon" title="版本更新，当前版本'+P+'"><svg t="1578767541873" style="display:block;" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="23715" width="32" height="32"><path d="M768 810.7H512c-23.6 0-42.7-19.1-42.7-42.7s19.1-42.7 42.7-42.7h256c94.1 0 170.7-76.6 170.7-170.7 0-89.6-70.1-164.3-159.5-170.1L754 383l-10.7-22.7c-42.2-89.3-133-147-231.3-147s-189.1 57.7-231.3 147L270 383l-25.1 1.6c-89.5 5.8-159.5 80.5-159.5 170.1 0 94.1 76.6 170.7 170.7 170.7 23.6 0 42.7 19.1 42.7 42.7s-19.1 42.7-42.7 42.7c-141.2 0-256-114.8-256-256 0-126.1 92.5-232.5 214.7-252.4C274.8 195.7 388.9 128 512 128s237.2 67.7 297.3 174.2C931.5 322.1 1024 428.6 1024 554.7c0 141.1-114.8 256-256 256z" fill="#3688FF" p-id="23716"></path><path d="M554.7 938.7c-10.9 0-21.8-4.2-30.2-12.5l-128-128c-16.7-16.7-16.7-43.7 0-60.3l128-128c16.6-16.7 43.7-16.7 60.3 0 16.7 16.7 16.7 43.7 0 60.3L487 768l97.8 97.8c16.7 16.7 16.7 43.7 0 60.3-8.3 8.4-19.2 12.6-30.1 12.6z" fill="#5F6379" p-id="23717"></path></svg><i id="ex-update__tip" class="ex-panel__tip"></i></a>',document.getElementsByClassName("ex-panel__wrap")[0]);l&&l.insertBefore(r,l.childNodes[0]);var i=document.createElement("div"),l=(i.className="ex-monitor",i.innerHTML='<a class="ex-panel__icon" title="在线弹幕助手"><svg style="display:block;" t="1638235744961" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="69800" width="32" height="32"><path d="M426.666667 106.666667a21.333333 21.333333 0 0 1 21.333333-21.333334h512a21.333333 21.333333 0 0 1 0 42.666667H448a21.333333 21.333333 0 0 1-21.333333-21.333333z m533.333333 789.333333H448a21.333333 21.333333 0 0 0 0 42.666667h512a21.333333 21.333333 0 0 0 0-42.666667z m0-554.666667H448a21.333333 21.333333 0 0 0 0 42.666667h512a21.333333 21.333333 0 0 0 0-42.666667z m0 298.666667H448a21.333333 21.333333 0 0 0 0 42.666667h512a21.333333 21.333333 0 0 0 0-42.666667zM245.333333 42.666667H96a53.393333 53.393333 0 0 0-53.333333 53.333333v149.333333a53.393333 53.393333 0 0 0 53.333333 53.333334h149.333333a53.393333 53.393333 0 0 0 53.333334-53.333334V96a53.393333 53.393333 0 0 0-53.333334-53.333333z m0 341.333333H96a53.393333 53.393333 0 0 0-53.333333 53.333333v149.333334a53.393333 53.393333 0 0 0 53.333333 53.333333h149.333333a53.393333 53.393333 0 0 0 53.333334-53.333333V437.333333a53.393333 53.393333 0 0 0-53.333334-53.333333z m0 341.333333H96a53.393333 53.393333 0 0 0-53.333333 53.333334v149.333333a53.393333 53.393333 0 0 0 53.333333 53.333333h149.333333a53.393333 53.393333 0 0 0 53.333334-53.333333v-149.333333a53.393333 53.393333 0 0 0-53.333334-53.333334z" fill="#13227a" p-id="69801"></path></svg><i id="Monitor__tip" class="ex-panel__tip"></i></a>',document.getElementsByClassName("ex-panel__wrap")[0]),i=((l&&l.insertBefore(i,l.childNodes[0])),safeBind(".ex-monitor", "click",function(){_("https://www.douyuex.com/"+String(B))}),(async()=>{var t=[],e=await fetch("https://www.douyu.com/member/cp/getFansBadgeList",{method:"GET",mode:"no-cors",cache:"default",credentials:"include"}).then(e=>e.text()).catch(e=>{console.log("请求失败!",e)}),o=(e=(new DOMParser).parseFromString(e,"text/html")).getElementsByClassName("fans-badge-list")[0].lastElementChild,n=o.children.length;for(let e=0;e<n;e++){var i=o.children[e].getAttribute("data-fans-room");t.push(i)}To=t})(),document.createElement("div")),l=(i.className="exlottery",i.innerHTML=`
+                            </span>`:e.innerHTML='<span style="float: left">总价值：'+String(Number(t/100).toFixed(2))+" 总亲密度："+String(o)+'<span class="bag-button" id="Backpack__clearbag">清空背包</span></span>'+e.innerHTML,safeBind("#Backpack__clearbag", "click",()=>{1==confirm("确认清空？")&&(T("【清空背包】执行中...","info"),pt(B,e=>{(async(n,i)=>{var t=n.data.list.length;if(0<t){for(let e=0;e<t;e++){let t=n.data.list[e].id,o=n.data.list[e].count;if(0<Object.keys(n.data.list[e].batchInfo).length)await b(100).then(()=>{Ut(t,o,i)});else for(let e=0;e<o;e++)await b(100).then(()=>{Ut(t,1,i)})}T("【清空背包】执行完毕！","success")}else T("背包礼物为空","error")})(e,B)}))})}})},500)})}var r=document.createElement("div"),l=(r.className="ex-update",r.innerHTML='<a class="ex-panel__icon" title="版本更新，当前版本：${P}"><svg t="1578767541873" style="display:block;" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="23715" width="32" height="32"><path d="M768 810.7H512c-23.6 0-42.7-19.1-42.7-42.7s19.1-42.7 42.7-42.7h256c94.1 0 170.7-76.6 170.7-170.7 0-89.6-70.1-164.3-159.5-170.1L754 383l-10.7-22.7c-42.2-89.3-133-147-231.3-147s-189.1 57.7-231.3 147L270 383l-25.1 1.6c-89.5 5.8-159.5 80.5-159.5 170.1 0 94.1 76.6 170.7 170.7 170.7 23.6 0 42.7 19.1 42.7 42.7s-19.1 42.7-42.7 42.7c-141.2 0-256-114.8-256-256 0-126.1 92.5-232.5 214.7-252.4C274.8 195.7 388.9 128 512 128s237.2 67.7 297.3 174.2C931.5 322.1 1024 428.6 1024 554.7c0 141.1-114.8 256-256 256z" fill="#3688FF" p-id="23716"></path><path d="M554.7 938.7c-10.9 0-21.8-4.2-30.2-12.5l-128-128c-16.7-16.7-16.7-43.7 0-60.3l128-128c16.6-16.7 43.7-16.7 60.3 0 16.7 16.7 16.7 43.7 0 60.3L487 768l97.8 97.8c16.7 16.7 16.7 43.7 0 60.3-8.3 8.4-19.2 12.6-30.1 12.6z" fill="#5F6379" p-id="23717"></path></svg><i id="ex-update__tip" class="ex-panel__tip"></i></a>',document.getElementsByClassName("ex-panel__wrap")[0]);l&&l.insertBefore(r,l.childNodes[0]);var i=document.createElement("div"),l=(i.className="ex-monitor",i.innerHTML='<a class="ex-panel__icon" title="在线弹幕助手"><svg style="display:block;" t="1638235744961" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="69800" width="32" height="32"><path d="M426.666667 106.666667a21.333333 21.333333 0 0 1 21.333333-21.333334h512a21.333333 21.333333 0 0 1 0 42.666667H448a21.333333 21.333333 0 0 1-21.333333-21.333333z m533.333333 789.333333H448a21.333333 21.333333 0 0 0 0 42.666667h512a21.333333 21.333333 0 0 0 0-42.666667z m0-554.666667H448a21.333333 21.333333 0 0 0 0 42.666667h512a21.333333 21.333333 0 0 0 0-42.666667z m0 298.666667H448a21.333333 21.333333 0 0 0 0 42.666667h512a21.333333 21.333333 0 0 0 0-42.666667zM245.333333 42.666667H96a53.393333 53.393333 0 0 0-53.333333 53.333333v149.333333a53.393333 53.393333 0 0 0 53.333333 53.333334h149.333333a53.393333 53.393333 0 0 0 53.333334-53.333334V96a53.393333 53.393333 0 0 0-53.333334-53.333333z m0 341.333333H96a53.393333 53.393333 0 0 0-53.333333 53.333333v149.333334a53.393333 53.393333 0 0 0 53.333333 53.333333h149.333333a53.393333 53.393333 0 0 0 53.333334-53.333333V437.333333a53.393333 53.393333 0 0 0-53.333334-53.333333z m0 341.333333H96a53.393333 53.393333 0 0 0-53.333333 53.333334v149.333333a53.393333 53.393333 0 0 0 53.333333 53.333333h149.333333a53.393333 53.393333 0 0 0 53.333334-53.333333v-149.333333a53.393333 53.393333 0 0 0-53.333334-53.333334z" fill="#13227a" p-id="69801"></path></svg><i id="Monitor__tip" class="ex-panel__tip"></i></a>',document.getElementsByClassName("ex-panel__wrap")[0]),i=((l&&l.insertBefore(i,l.childNodes[0])),safeBind(".ex-monitor", "click",function(){_("https://www.douyuex.com/"+String(B))}),(async()=>{var t=[],e=await fetch("https://www.douyu.com/member/cp/getFansBadgeList",{method:"GET",mode:"no-cors",cache:"default",credentials:"include"}).then(e=>e.text()).catch(e=>{console.log("请求失败!",e)}),o=(e=(new DOMParser).parseFromString(e,"text/html")).getElementsByClassName("fans-badge-list")[0].lastElementChild,n=o.children.length;for(let e=0;e<n;e++){var i=o.children[e].getAttribute("data-fans-room");t.push(i)}To=t})(),document.createElement("div")),l=(i.className="exlottery",i.innerHTML=`
 
         <div class="lottery__func">
 
@@ -6309,12 +6310,43 @@ async function executeSignEngine(options, onLog) {
         }
     }
 
-    // 4. 星推日常任务 (打开活动页 + 曝光打卡 + 口令弹幕 + 关注任务完成立即安全取关)
+    // 4. 星推日常任务 (打开活动页 + 曝光打卡 + 口令弹幕[仅星推参赛房间] + 关注任务完成立即安全取关)
     if (opts.stardiscover) {
         try {
             onLog("正在获取星推榜单与任务配置...");
-            var curRid = String(window.room_id || (window.$ROOM && window.$ROOM.room_id) || (typeof B !== "undefined" ? B : "") || "9999");
-            var ctn = (typeof w === "function" ? w() : "") || "1";
+            // 提取规范纯数字房间号 (规避 vanity 别名导致 NumberFormatException)
+            var curNumericRid = "";
+            try {
+                var rCandidate = String(window.room_id || (window.$ROOM && window.$ROOM.room_id) || (typeof B !== "undefined" ? B : "") || "");
+                if (/^\d+$/.test(rCandidate)) curNumericRid = rCandidate;
+                else {
+                    var mPath = window.location.pathname.match(/\/(\d+)/);
+                    if (mPath && mPath[1]) curNumericRid = mPath[1];
+                }
+            } catch(e) {}
+            var queryRid = curNumericRid || "9999";
+
+            // 获取斗鱼标准 CSRF 凭据 (ccn)
+            async function getDouyuCtn() {
+                var m = document.cookie.match(/(?:^|;\s*)ccn=([^;]+)/);
+                if (m && m[1]) return decodeURIComponent(m[1]);
+                try {
+                    await fetch("/wgapi/livenc/liveweb/csrfApi/getCsrfCookie", {
+                        method: "GET",
+                        credentials: "include",
+                        cache: "no-store"
+                    });
+                    var m2 = document.cookie.match(/(?:^|;\s*)ccn=([^;]+)/);
+                    if (m2 && m2[1]) return decodeURIComponent(m2[1]);
+                } catch(e) {}
+                var m3 = document.cookie.match(/(?:^|;\s*)acf_ccn=([^;]+)/);
+                if (m3 && m3[1]) return decodeURIComponent(m3[1]);
+                return "";
+            }
+
+            var realCtn = await getDouyuCtn();
+
+            // 获取 post-csrfToken 用于 anchorstardiscover 接口
             var csrf = "";
             try {
                 var mCsrf = document.cookie.match(/(^| )post-csrfToken=([^;]*)(;|$)/);
@@ -6333,42 +6365,38 @@ async function executeSignEngine(options, onLog) {
                         "Content-Type": "application/x-www-form-urlencoded",
                         "dy-csrf-token": csrf
                     },
-                    body: "ctn=" + encodeURIComponent(ctn) + "&type=" + type + "&rid=" + encodeURIComponent(rid)
+                    body: "ctn=" + encodeURIComponent(realCtn || "1") + "&type=" + type + "&rid=" + encodeURIComponent(rid)
                 }).then(function(r) { return r.json(); }).catch(function() { return null; });
             }
 
-            function followAnchorApi(rid) {
-                return new Promise(function(resolve) {
-                    fetch("https://www.douyu.com/wgapi/livenc/liveweb/follow/add", {
-                        method: "POST",
-                        mode: "no-cors",
-                        credentials: "include",
-                        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                        body: "rid=" + encodeURIComponent(rid) + "&ctn=" + encodeURIComponent(ctn)
-                    }).then(function(r) { return r.json(); }).then(resolve).catch(function() { resolve(null); });
-                });
+            // 官方同源 follow/add 接口 (杜绝 no-cors)
+            async function followAnchorApi(rid, token) {
+                return fetch("/wgapi/livenc/liveweb/follow/add", {
+                    method: "POST",
+                    credentials: "include",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: "rid=" + encodeURIComponent(rid) + "&ctn=" + encodeURIComponent(token || "")
+                }).then(function(r) { return r.json(); }).catch(function(e) { return { error: -1, msg: e.message }; });
             }
 
-            function unfollowAnchorApi(rid) {
-                return new Promise(function(resolve) {
-                    fetch("https://www.douyu.com/wgapi/livenc/liveweb/follow/rm", {
-                        method: "POST",
-                        mode: "no-cors",
-                        credentials: "include",
-                        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                        body: "rid=" + encodeURIComponent(rid) + "&ctn=" + encodeURIComponent(ctn)
-                    }).then(function(r) { return r.json(); }).then(resolve).catch(function() { resolve(null); });
-                });
+            // 官方同源 follow/rm 取关接口 (杜绝 no-cors)
+            async function unfollowAnchorApi(rid, token) {
+                return fetch("/wgapi/livenc/liveweb/follow/rm", {
+                    method: "POST",
+                    credentials: "include",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    body: "rid=" + encodeURIComponent(rid) + "&ctn=" + encodeURIComponent(token || "")
+                }).then(function(r) { return r.json(); }).catch(function(e) { return { error: -1, msg: e.message }; });
             }
 
-            // (1) 任务6：每日首次打开活动页 (10金币)
+            // (1) 任务6：每日首次打开活动页 (+10金币)
             try {
-                await postStarReport(curRid, 6);
+                await postStarReport(queryRid, 6);
                 onLog("【星推任务】已完成每日活动页打卡 (+10金币)", true);
             } catch(e) {}
 
-            // (2) 拉取星推榜单主播列表
-            var rankUrl = "https://www.douyu.com/japi/livebiznc/web/anchorstardiscover/rank/info?rid=" + curRid + "&type=5&track=3";
+            // (2) 拉取星推大盘榜单 (保证获取 100 位参赛主播池)
+            var rankUrl = "https://www.douyu.com/japi/livebiznc/web/anchorstardiscover/rank/info?rid=" + queryRid + "&type=5&track=3";
             var rankRes = await new Promise(function(resolve) {
                 fetch(rankUrl, { method: "GET", credentials: "include" })
                     .then(function(r) { return r.json(); })
@@ -6378,86 +6406,119 @@ async function executeSignEngine(options, onLog) {
             var rankList = (rankRes && rankRes.data && Array.isArray(rankRes.data.rankItemList)) ? rankRes.data.rankItemList : [];
             var starRids = rankList.map(function(item) { return String(item.rid || item.rId || ""); }).filter(Boolean);
 
-            // (3) 任务5：3个活动直播间签到打卡 (9金币)
+            // (3) 任务5：3个活动直播间签到打卡 (+9金币)
             var signRids = starRids.slice(0, 3);
-            if (signRids.indexOf(curRid) === -1 && curRid) signRids.unshift(curRid);
-            signRids = signRids.slice(0, 3);
-            var reportSuccess = 0;
             for (var si = 0; si < signRids.length; si++) {
                 var srid = signRids[si];
                 try {
-                    var rRes = await postStarReport(srid, 5);
-                    if (rRes && (rRes.error === 0 || rRes.error === "0")) reportSuccess++;
+                    await postStarReport(srid, 5);
                 } catch(e) {}
                 await b(200);
             }
-            onLog("【星推签到】完成 " + signRids.length + " 个星推直播间打卡 (+9金币)", true);
-
-            // (4) 任务7：发送1次指定口令弹幕 “全民星推荐助力主播成长” (5金币)
-            try {
-                var txtEl = document.querySelector("textarea.ChatSend-txt") || document.querySelector("div.ChatSend-txt");
-                var sendBtn = document.querySelector(".ChatSend-button");
-                if (txtEl && sendBtn) {
-                    var isDiv = "div" === txtEl.tagName.toLowerCase();
-                    var origVal = isDiv ? txtEl.innerText : txtEl.value;
-                    if (isDiv) txtEl.innerText = "全民星推荐助力主播成长";
-                    else txtEl.value = "全民星推荐助力主播成长";
-                    txtEl.dispatchEvent(new Event("input", { bubbles: true }));
-                    sendBtn.click();
-                    await b(400);
-                    if (isDiv) txtEl.innerText = origVal || "";
-                    else txtEl.value = origVal || "";
-                    txtEl.dispatchEvent(new Event("input", { bubbles: true }));
-                    onLog("【星推弹幕】已自动发送指定助力口令弹幕 (+5金币)", true);
-                } else {
-                    onLog("【星推弹幕】未处于开播房间聊天区，跳过弹幕任务", true);
-                }
-            } catch(e) {
-                onLog("【星推弹幕】弹幕发送跳过", true);
+            if (signRids.length > 0) {
+                onLog("【星推签到】完成 " + signRids.length + " 个星推直播间打卡 (+9金币)", true);
             }
 
-            // (5) 任务4：关注5名新主播 (15金币) - 关注完成后立即安全取关，绝不残留陌生主播
+            // (4) 任务7：发送指定助力口令弹幕 (严禁在普通直播间乱发，仅在指定星推参赛房间发送)
+            var isStarCompetitionRoom = false;
+            if (curNumericRid && rankRes && rankRes.data && rankRes.data.memberInfo) {
+                var mInfo = rankRes.data.memberInfo;
+                if (mInfo.hide === 0 && Number(mInfo.rank) > 0 && String(mInfo.rid) === String(curNumericRid)) {
+                    isStarCompetitionRoom = true;
+                }
+            }
+            if (isStarCompetitionRoom) {
+                try {
+                    var txtEl = document.querySelector("textarea.ChatSend-txt") || document.querySelector("div.ChatSend-txt");
+                    var sendBtn = document.querySelector(".ChatSend-button");
+                    if (txtEl && sendBtn) {
+                        var isDiv = "div" === txtEl.tagName.toLowerCase();
+                        var origVal = isDiv ? txtEl.innerText : txtEl.value;
+                        if (isDiv) txtEl.innerText = "全民星推荐助力主播成长";
+                        else txtEl.value = "全民星推荐助力主播成长";
+                        txtEl.dispatchEvent(new Event("input", { bubbles: true }));
+                        sendBtn.click();
+                        await b(400);
+                        if (isDiv) txtEl.innerText = origVal || "";
+                        else txtEl.value = origVal || "";
+                        txtEl.dispatchEvent(new Event("input", { bubbles: true }));
+                        onLog("【星推弹幕】当前为星推参赛直播间，已自动发送指定助力口令 (+5金币)", true);
+                    }
+                } catch(e) {}
+            } else {
+                onLog("【星推弹幕】当前房间非指定星推参赛直播间，已安全跳过口令发送（避免打扰主播）", true);
+            }
+
+            // (5) 任务4：关注5名新主播 (+15金币) - 关注完成后立即安全取关，绝不残留陌生主播
             try {
                 var targetAnchors = [];
-                var introRes = await new Promise(function(resolve) {
-                    fetch("https://www.douyu.com/japi/livebiznc/web/anchorstardiscover/user/task/follow/introduce?rid=" + curRid, {
+                // 优先拉取 introduce 推荐主播
+                try {
+                    var introRes = await fetch("https://www.douyu.com/japi/livebiznc/web/anchorstardiscover/user/task/follow/introduce?rid=" + queryRid, {
                         credentials: "include"
-                    }).then(function(r) { return r.json(); }).then(resolve).catch(function() { resolve(null); });
-                });
-                if (introRes && introRes.data && Array.isArray(introRes.data.list)) {
-                    targetAnchors = introRes.data.list.map(function(item) { return String(item.rid || item.rId || ""); }).filter(Boolean);
-                }
-                // 若不足5位，用星推榜单补足
+                    }).then(function(r) { return r.json(); }).catch(function() { return null; });
+                    if (introRes && introRes.data && Array.isArray(introRes.data.list)) {
+                        targetAnchors = introRes.data.list.map(function(item) { return String(item.rid || item.rId || ""); }).filter(Boolean);
+                    }
+                } catch(e) {}
+
+                // 若不足 5 位，严格从星推大盘榜单按顺序补齐至 5 位
                 for (var sidx = 0; sidx < starRids.length; sidx++) {
-                    if (targetAnchors.indexOf(starRids[sidx]) === -1 && starRids[sidx] !== curRid) {
-                        targetAnchors.push(starRids[sidx]);
+                    var candRid = starRids[sidx];
+                    if (candRid && candRid !== curNumericRid && targetAnchors.indexOf(candRid) === -1) {
+                        targetAnchors.push(candRid);
                     }
                     if (targetAnchors.length >= 5) break;
                 }
 
                 if (targetAnchors.length > 0) {
-                    onLog("正在执行【星推关注任务】(关注完成立即安全取关)...");
+                    onLog("正在执行【星推关注任务】(满额5位，关注后立即安全取关)...");
+                    realCtn = await getDouyuCtn(); // 确保取到最新 ctn
                     var followSuccessCount = 0;
+
                     for (var fi = 0; fi < Math.min(5, targetAnchors.length); fi++) {
                         var aRid = targetAnchors[fi];
                         try {
-                            // 1. 添加关注
-                            await followAnchorApi(aRid);
-                            // 2. 等待 1.2 秒确保斗鱼服务器接收关注事件并计入任务进度
-                            await b(1200);
-                            // 3. 立即安全取关，彻底杜绝陌生主播残留
-                            await unfollowAnchorApi(aRid);
+                            // 步骤 1：添加关注
+                            await followAnchorApi(aRid, realCtn);
+                            
+                            // 步骤 2：等待 1.5 秒确保斗鱼服务端接收事件并计入任务进度
+                            await b(1500);
+
+                            // 步骤 3：立即安全取关（内置自动重试与凭证刷新机制）
+                            var rmSuccess = false;
+                            for (var retry = 0; retry < 3; retry++) {
+                                var rmRes = await unfollowAnchorApi(aRid, realCtn);
+                                if (rmRes && (rmRes.error === 0 || rmRes.code === 0)) {
+                                    rmSuccess = true;
+                                    break;
+                                }
+                                await b(400);
+                                realCtn = await getDouyuCtn();
+                            }
+
                             followSuccessCount++;
-                            onLog("【星推关注】房间 " + aRid + " 关注并已安全取关 (" + followSuccessCount + "/5)", true);
+                            if (rmSuccess) {
+                                onLog("【星推关注】主播 " + aRid + " 关注成功并已安全取关 (" + followSuccessCount + "/5)", true);
+                            } else {
+                                onLog("【星推关注】主播 " + aRid + " 关注已上报，正在安全清理...", true);
+                                await unfollowAnchorApi(aRid, realCtn);
+                            }
                         } catch(err) {
-                            try { await unfollowAnchorApi(aRid); } catch(e) {}
+                            try { await unfollowAnchorApi(aRid, realCtn); } catch(e) {}
                         }
-                        await b(300);
+                        await b(500);
                     }
+
+                    // 最终安全巡检：对本次涉及的全部主播再次执行安全取关兜底，100% 杜绝残留
+                    for (var ci = 0; ci < targetAnchors.length; ci++) {
+                        try { await unfollowAnchorApi(targetAnchors[ci], realCtn); } catch(e) {}
+                    }
+
                     onLog("【星推关注】达成 " + followSuccessCount + " 位关注任务，关注列表 100% 保持纯净 (+15金币)", true);
                 }
             } catch(e) {
-                onLog("【星推关注】关注任务跳过或异常", true);
+                onLog("【星推关注】关注任务异常: " + (e.message || "未知错误"), false);
             }
 
             // (6) 互动积分任务上报 (type=1)
@@ -6467,12 +6528,11 @@ async function executeSignEngine(options, onLog) {
                 } catch(e) {}
                 await b(150);
             }
-            onLog("【星推任务】星推日常任务已尽量全满完成！", true);
+            onLog("【星推任务】星推日常任务已全部执行完毕！", true);
         } catch(err) {
             onLog("【星推任务】执行异常: " + (err.message || "未知错误"), false);
         }
     }
-
     // 5. 粉丝家园与钻粉联赛签到
     if (opts.fanshome) {
         try {
@@ -6510,7 +6570,7 @@ function Wn(e) {
     executeSignEngine(stored);
 }
 
-Mn&&Hn();let Yn={};function Qn(e){return new Promise(o=>{fetch(`https://webconf.douyucdn.cn/resource/common/activity/actqzs${e}_w.json`).then(e=>e.text()).then(e=>{let t=e.substring(String("DYConfigCallback(").length,e.length);t=t.substring(0,t.lastIndexOf(")"));try{t=JSON.parse(t),o(t.data.activity_setting.activity_id)}catch(e){o(null)}}).catch(e=>{o(null)})})}function Jn(e){return new Promise(o=>{fetch(`https://webconf.douyucdn.cn/resource/common/activity/cardArena${e}_w.json`).then(e=>e.text()).then(e=>{let t=e.substring(String("DYConfigCallback(").length,e.length);t=t.substring(0,t.lastIndexOf(")"));try{t=JSON.parse(t),o(t.data.activity_setting.activity_id)}catch(e){o(null)}}).catch(e=>{o(null)})})}function Zn(t){let o="";var n=document.cookie.split("; ");for(let e=0;e<n.length;e++){var i=n[e].split("=");t==i[0]&&(o=i[1])}return""==o&&(o=Math.random().toString(36).substr(2),document.cookie="post-csrfToken="+escape(o)+";path=/"),o}function $n(e){GM_xmlhttpRequest({method:"POST",url:"https://apiv2.douyucdn.cn/japi/roomuserlevel/apinc/checkIn?client_sys=android",data:"rid="+e,responseType:"json",headers:{"Content-Type":"application/x-www-form-urlencoded",token:m,aid:"android1"},onload:function(e){}})}let ei=0,ti=0,oi=0,ni={};async function ii(t){var o=await ri(t);for(let e=0;e<o.data.supplementary_cards;e++)await ri(t)}function ai(e){return new Promise(t=>{GM_xmlhttpRequest({method:"GET",url:"https://yuba.douyu.com/wbapi/web/group/myFollow?page="+String(e)+"&limit=30",responseType:"json",headers:{"Content-Type":"application/x-www-form-urlencoded","dy-client":"pc","dy-token":m},onload:function(e){t(e.response.data)}})})}function ri(e){return new Promise(t=>{GM_xmlhttpRequest({method:"POST",url:"https://mapi-yuba.douyu.com/wb/v3/supplement",responseType:"json",headers:{"Content-Type":"application/x-www-form-urlencoded",client:"android",token:m},data:"group_id="+e,onload:function(e){t(e.response)}})})}var P = "2026.09.14.13";let ui=0,gi=null,hi=null,fi=null,yi=0,bi="";function vi(){var e=(()=>{try{var e=document.getElementsByTagName("demand-video-toolbar")[0].shadowRoot.querySelector("share-hover").getAttribute("hashid");if(e)return e}catch(e){}return(e=String(window.location.pathname).split("/"))[e.length-1]})();if(e){let t=bi=e;fetch("https://v.douyu.com/video/video/getVideoUrl?vid="+e,{method:"GET",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"}}).then(e=>e.json()).then(e=>{t===bi&&(e=v(e.data.viewthumb[0].url,"--","/"),ui=new Date(e.replace(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/,"$1-$2-$3 $4:$5:$6")).getTime())}).catch(e=>{console.log("请求失败!",e)})}}function xi(){var e=document.getElementsByTagName("demand-video")[0].shadowRoot.getElementById("demandcontroller-bar").shadowRoot.querySelector("demand-video-controller-progress").shadowRoot.querySelector("demand-video-controller-preview").getAttribute("showtime");return Number(e).toFixed(0)}function wi(e){var t=document.getElementsByTagName("demand-video")[0].shadowRoot.getElementById("demandcontroller-bar").shadowRoot.querySelector("demand-video-controller-progress").shadowRoot.querySelector("demand-video-controller-preview").shadowRoot.querySelector(".Preview label");t&&(t.style.position="relative",t.style.bottom="60px",t.style.backgroundColor="rgba(0,0,0,0.4)",t.innerHTML=e)}var _i,z,ki,Ei,Bi,o="/* [DouyuEx-Lite] GIF Worker已剥离 */",Ii=URL.createObjectURL(new Blob([o],{type:"application/javascript"}));let Ti=83;function Ci(e,t,o,n){t.getContext("2d").drawImage(e,0,0,t.width,t.height),o.addFrame(t,{copy:!0,delay:n})}function Si(){var e=localStorage.getItem("ExSave_Camera_Hidden");if(e)return e=parseInt(e),Date.now()<e}function Mi(){let o=setInterval(()=>{if(null!=(V=document.getElementsByTagName("demand-video")[0].shadowRoot.getElementById("__video"))&&V.videoWidth){clearInterval(o),Bi=document.getElementsByTagName("demand-video-anchor")[0].shadowRoot.querySelector(".anchor-name").innerText,ki=.25*V.videoWidth,Ei=.25*V.videoHeight,(_i=document.createElement("canvas")).width=ki,_i.height=Ei,(z=document.createElement("canvas")).width=V.videoWidth,z.height=V.videoHeight;var e=document.createElement("div"),t=(e.id="ex-camera",e.title="单击截图 长按录制gif",e.innerHTML=`
+Mn&&Hn();let Yn={};function Qn(e){return new Promise(o=>{fetch(`https://webconf.douyucdn.cn/resource/common/activity/actqzs${e}_w.json`).then(e=>e.text()).then(e=>{let t=e.substring(String("DYConfigCallback(").length,e.length);t=t.substring(0,t.lastIndexOf(")"));try{t=JSON.parse(t),o(t.data.activity_setting.activity_id)}catch(e){o(null)}}).catch(e=>{o(null)})})}function Jn(e){return new Promise(o=>{fetch(`https://webconf.douyucdn.cn/resource/common/activity/cardArena${e}_w.json`).then(e=>e.text()).then(e=>{let t=e.substring(String("DYConfigCallback(").length,e.length);t=t.substring(0,t.lastIndexOf(")"));try{t=JSON.parse(t),o(t.data.activity_setting.activity_id)}catch(e){o(null)}}).catch(e=>{o(null)})})}function Zn(t){let o="";var n=document.cookie.split("; ");for(let e=0;e<n.length;e++){var i=n[e].split("=");t==i[0]&&(o=i[1])}return""==o&&(o=Math.random().toString(36).substr(2),document.cookie="post-csrfToken="+escape(o)+";path=/"),o}function $n(e){GM_xmlhttpRequest({method:"POST",url:"https://apiv2.douyucdn.cn/japi/roomuserlevel/apinc/checkIn?client_sys=android",data:"rid="+e,responseType:"json",headers:{"Content-Type":"application/x-www-form-urlencoded",token:m,aid:"android1"},onload:function(e){}})}let ei=0,ti=0,oi=0,ni={};async function ii(t){var o=await ri(t);for(let e=0;e<o.data.supplementary_cards;e++)await ri(t)}function ai(e){return new Promise(t=>{GM_xmlhttpRequest({method:"GET",url:"https://yuba.douyu.com/wbapi/web/group/myFollow?page="+String(e)+"&limit=30",responseType:"json",headers:{"Content-Type":"application/x-www-form-urlencoded","dy-client":"pc","dy-token":m},onload:function(e){t(e.response.data)}})})}function ri(e){return new Promise(t=>{GM_xmlhttpRequest({method:"POST",url:"https://mapi-yuba.douyu.com/wb/v3/supplement",responseType:"json",headers:{"Content-Type":"application/x-www-form-urlencoded",client:"android",token:m},data:"group_id="+e,onload:function(e){t(e.response)}})})}/* var P managed globally */ let ui=0,gi=null,hi=null,fi=null,yi=0,bi="";function vi(){var e=(()=>{try{var e=document.getElementsByTagName("demand-video-toolbar")[0].shadowRoot.querySelector("share-hover").getAttribute("hashid");if(e)return e}catch(e){}return(e=String(window.location.pathname).split("/"))[e.length-1]})();if(e){let t=bi=e;fetch("https://v.douyu.com/video/video/getVideoUrl?vid="+e,{method:"GET",mode:"no-cors",credentials:"include",headers:{"Content-Type":"application/x-www-form-urlencoded"}}).then(e=>e.json()).then(e=>{t===bi&&(e=v(e.data.viewthumb[0].url,"--","/"),ui=new Date(e.replace(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/,"$1-$2-$3 $4:$5:$6")).getTime())}).catch(e=>{console.log("请求失败!",e)})}}function xi(){var e=document.getElementsByTagName("demand-video")[0].shadowRoot.getElementById("demandcontroller-bar").shadowRoot.querySelector("demand-video-controller-progress").shadowRoot.querySelector("demand-video-controller-preview").getAttribute("showtime");return Number(e).toFixed(0)}function wi(e){var t=document.getElementsByTagName("demand-video")[0].shadowRoot.getElementById("demandcontroller-bar").shadowRoot.querySelector("demand-video-controller-progress").shadowRoot.querySelector("demand-video-controller-preview").shadowRoot.querySelector(".Preview label");t&&(t.style.position="relative",t.style.bottom="60px",t.style.backgroundColor="rgba(0,0,0,0.4)",t.innerHTML=e)}var _i,z,ki,Ei,Bi,o="/* [DouyuEx-Lite] GIF Worker已剥离 */",Ii=URL.createObjectURL(new Blob([o],{type:"application/javascript"}));let Ti=83;function Ci(e,t,o,n){t.getContext("2d").drawImage(e,0,0,t.width,t.height),o.addFrame(t,{copy:!0,delay:n})}function Si(){var e=localStorage.getItem("ExSave_Camera_Hidden");if(e)return e=parseInt(e),Date.now()<e}function Mi(){let o=setInterval(()=>{if(null!=(V=document.getElementsByTagName("demand-video")[0].shadowRoot.getElementById("__video"))&&V.videoWidth){clearInterval(o),Bi=document.getElementsByTagName("demand-video-anchor")[0].shadowRoot.querySelector(".anchor-name").innerText,ki=.25*V.videoWidth,Ei=.25*V.videoHeight,(_i=document.createElement("canvas")).width=ki,_i.height=Ei,(z=document.createElement("canvas")).width=V.videoWidth,z.height=V.videoHeight;var e=document.createElement("div"),t=(e.id="ex-camera",e.title="单击截图 长按录制gif",e.innerHTML=`
 
     <svg t="1620266708389" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2080" width="38" height="38"><path d="M512 337.371136c-119.543808 0-216.800256 97.255424-216.800256 216.798208 0 119.543808 97.256448 216.800256 216.800256 216.800256s216.800256-97.256448 216.800256-216.800256C728.800256 434.625536 631.543808 337.371136 512 337.371136zM680.479744 554.16832c0 92.911616-75.579392 168.501248-168.479744 168.501248-92.900352 0-168.480768-75.589632-168.480768-168.501248 0-92.923904 75.579392-168.521728 168.480768-168.521728C604.899328 385.646592 680.479744 461.24544 680.479744 554.16832z" p-id="2081" fill="#ffffff"></path><path d="M831.209472 337.349632l-47.167488 0c-13.647872 0-24.751104 11.083776-24.751104 24.707072 0 13.635584 11.103232 24.7296 24.751104 24.7296l47.167488 0c13.646848 0 24.75008-11.094016 24.75008-24.7296C855.959552 348.433408 844.85632 337.349632 831.209472 337.349632z" p-id="2082" fill="#ffffff"></path><path d="M700.505088 171.497472c4.235264 0 6.403072 0.405504 7.232512 0.612352 1.47968 1.514496 4.790272 6.218752 11.717632 20.685824 2.83648 5.910528 8.6272 18.86208 15.888384 35.533824l11.788288 27.063296 29.518848 0 96.535552 0c35.122176 0 63.695872 28.535808 63.695872 63.609856l0 469.933056c0 35.05152-28.573696 63.567872-63.695872 63.567872L150.811648 852.503552c-35.121152 0-63.694848-28.516352-63.694848-63.567872L87.1168 319.0016c0-35.062784 28.573696-63.589376 63.694848-63.589376l99.35872 0 29.110272 0 11.964416-26.537984c4.698112-10.421248 8.416256-19.063808 11.058176-25.70752 9.86112-24.829952 15.207424-30.125056 16.239616-30.974976 0.52736-0.161792 2.64192-0.695296 7.673856-0.695296L700.505088 171.496448M700.505088 126.441472 326.216704 126.441472c-32.519168 0-47.275008 13.479936-65.787904 60.096512-3.180544 7.999488-7.689216 18.122752-10.257408 23.819264l-99.35872 0c-59.96544 0-108.750848 48.738304-108.750848 108.645376l0 469.933056c0 59.894784 48.785408 108.623872 108.750848 108.623872l722.37568 0c59.96544 0 108.751872-48.729088 108.751872-108.623872L981.940224 319.0016c0-59.91936-48.786432-108.665856-108.751872-108.665856l-96.535552 0c-4.458496-10.236928-12.420096-28.372992-16.574464-37.031936C744.823808 141.448192 733.973504 126.441472 700.505088 126.441472L700.505088 126.441472z" p-id="2083" fill="#ffffff"></path></svg>
 

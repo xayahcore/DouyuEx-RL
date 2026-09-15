@@ -1,3 +1,4 @@
+var P = (typeof GM_info !== "undefined" && GM_info.script && GM_info.script.version) ? GM_info.script.version : "2026.09.15.02-preview";
 /* ==================== DouyuEx 主程序 ==================== */
 
 var EXURL={flv:"https://registry.npmmirror.com/flv.js/1.6.2/files/dist/flv.min.js",svga:"https://fastly.jsdelivr.net/npm/svgaplayerweb@2.3.1/build/svga.min.js",gif:"https://registry.npmmirror.com/gif.js/0.2.0/files/dist/gif.js",three:"https://registry.npmmirror.com/three/0.80.0/files/build/three.min.js",xl:"https://registry.npmmirror.com/xlsx/0.16.4/files/dist/xlsx.full.min.js",purify:"https://registry.npmmirror.com/dompurify/2.3.6/files/dist/purify.min.js"},EXLIB={};
