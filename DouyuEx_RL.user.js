@@ -8,7 +8,7 @@
 
 // @icon         data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyB3aWR0aD0iMTA4cHgiIGhlaWdodD0iMTA4cHgiIHZpZXdCb3g9IjAgMCAxMDggMTA4IiB2ZXJzaW9uPSIxLjEiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiPgogICAgPHRpdGxlPueyvueBteeQgzwvdGl0bGU+CiAgICA8ZyBpZD0i6aG16Z2iLTEiIHN0cm9rZT0ibm9uZSIgc3Ryb2tlLXdpZHRoPSIxIiBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPgogICAgICAgIDxnIGlkPSLnsr7ngbXnkIMiIHRyYW5zZm9ybT0idHJhbnNsYXRlKDAuODMwNzY5LCAwLjgzMDc2OSkiIGZpbGwtcnVsZT0ibm9uemVybyI+CiAgICAgICAgICAgIDxwYXRoIGQ9Ik01My4xNjkyMzA3LDEwNi4zMzg0NjEgQzIzLjgyNzY5MjIsMTA2LjMzODQ2MSAwLDgyLjUxMDc2OTIgMCw1My4xNjkyMzA3IEMwLDUxLjAwMzA3NjkgMS43NzIzMDc3NSw0OS4yMzA3NjkyIDMuOTM4NDYxNSw0OS4yMzA3NjkyIEwzMy40NzY5MjMsNDkuMjMwNzY5MiBDMzUuNjQzMDc2OSw0OS4yMzA3NjkyIDM3LjQxNTM4NDUsNTEuMDAzMDc3IDM3LjQxNTM4NDYsNTMuMTY5MjMwNyBDMzcuNDE1Mzg0Niw2MS44MzM4NDYxIDQ0LjUwNDYxNTQsNjguOTIzMDc2OSA1My4xNjkyMzA3LDY4LjkyMzA3NjkgQzYxLjgzMzg0NjEsNjguOTIzMDc2OSA2OC45MjMwNzY5LDYxLjgzMzg0NjEgNjguOTIzMDc2OSw1My4xNjkyMzA3IEM2OC45MjMwNzY5LDUxLjAwMzA3NjkgNzAuNjk1Mzg0Niw0OS4yMzA3NjkyIDcyLjg2MTUzODUsNDkuMjMwNzY5MiBMMTAyLjQsNDkuMjMwNzY5MiBDMTA0LjU2NjE1NCw0OS4yMzA3NjkyIDEwNi4zMzg0NjEsNTEuMDAzMDc3IDEwNi4zMzg0NjEsNTMuMTY5MjMwNyBDMTA2LjMzODQ2MSw4Mi41MTA3NjkyIDgyLjUxMDc2OTIsMTA2LjMzODQ2MSA1My4xNjkyMzA3LDEwNi4zMzg0NjEgWiIgaWQ9Iui3r+W+hCIgZmlsbD0iIzMzMzYzQSI+PC9wYXRoPgogICAgICAgICAgICA8cGF0aCBkPSJNOC4wNzM4NDYxMiw1Ny4xMDc2OTIyIEMxMC4wNDMwNzY5LDgwLjI0NjE1MzcgMjkuNTM4NDYxNSw5OC40NjE1Mzg1IDUzLjE2OTIzMDcsOTguNDYxNTM4NSBDNzYuOCw5OC40NjE1Mzg1IDk2LjI5NTM4NDYsODAuMjQ2MTUzOSA5OC4yNjQ2MTU0LDU3LjEwNzY5MjIgTDc2LjUwNDYxNTQsNTcuMTA3NjkyMiBDNzQuNjMzODQ2MSw2OC4yMzM4NDYxIDY0Ljg4NjE1MzksNzYuOCA1My4xNjkyMzA3LDc2LjggQzQxLjQ1MjMwNzYsNzYuOCAzMS43MDQ2MTU0LDY4LjIzMzg0NjEgMjkuODMzODQ2MSw1Ny4xMDc2OTIyIEw4LjA3Mzg0NjEyLDU3LjEwNzY5MjIgWiIgaWQ9Iui3r+W+hCIgZmlsbD0iI0ZGRkZGRiI+PC9wYXRoPgogICAgICAgICAgICA8cGF0aCBkPSJNNTMuMTY5MjMwOCwzLjkzODQ2MTUgQzI1Ljk5Mzg0NjEsMy45Mzg0NjE1IDMuOTM4NDYxNSwyNS45OTM4NDYxIDMuOTM4NDYxNSw1My4xNjkyMzA3IEwzMy40NzY5MjMsNTMuMTY5MjMwNyBDMzMuNDc2OTIzLDQyLjMzODQ2MTUgNDIuMzM4NDYxNSwzMy40NzY5MjMgNTMuMTY5MjMwOCwzMy40NzY5MjMgQzY0LDMzLjQ3NjkyMyA3Mi44NjE1Mzg1LDQyLjMzODQ2MTUgNzIuODYxNTM4NSw1My4xNjkyMzA3IEwxMDIuNCw1My4xNjkyMzA3IEMxMDIuNCwyNS45OTM4NDYxIDgwLjM0NDYxNTQsMy45Mzg0NjE1IDUzLjE2OTIzMDgsMy45Mzg0NjE1IFoiIGlkPSLot6/lvoQiIGZpbGw9IiNENjA5MDkiPjwvcGF0aD4KICAgICAgICAgICAgPHBhdGggZD0iTTEwMi40LDU3LjEwNzY5MjIgTDcyLjg2MTUzODUsNTcuMTA3NjkyMiBDNzAuNjk1Mzg0Niw1Ny4xMDc2OTIyIDY4LjkyMzA3Nyw1NS4zMzUzODQ1IDY4LjkyMzA3NjksNTMuMTY5MjMwNyBDNjguOTIzMDc2OSw0NC41MDQ2MTU0IDYxLjgzMzg0NjEsMzcuNDE1Mzg0NiA1My4xNjkyMzA3LDM3LjQxNTM4NDYgQzQ0LjUwNDYxNTQsMzcuNDE1Mzg0NiAzNy40MTUzODQ2LDQ0LjUwNDYxNTQgMzcuNDE1Mzg0Niw1My4xNjkyMzA3IEMzNy40MTUzODQ2LDU1LjMzNTM4NDYgMzUuNjQzMDc2OSw1Ny4xMDc2OTIyIDMzLjQ3NjkyMyw1Ny4xMDc2OTIyIEwzLjkzODQ2MTUsNTcuMTA3NjkyMiBDMS43NzIzMDc2Miw1Ny4xMDc2OTIyIDAsNTUuMzM1Mzg0NSAwLDUzLjE2OTIzMDcgQzAsMjMuODI3NjkyMiAyMy44Mjc2OTIzLDAgNTMuMTY5MjMwNywwIEM4Mi41MTA3NjkyLDAgMTA2LjMzODQ2MSwyMy44Mjc2OTIyIDEwNi4zMzg0NjEsNTMuMTY5MjMwNyBDMTA2LjMzODQ2MSw1NS4zMzUzODQ2IDEwNC41NjYxNTQsNTcuMTA3NjkyMiAxMDIuNCw1Ny4xMDc2OTIyIFoiIGlkPSLot6/lvoQiIGZpbGw9IiMzMzM2M0EiPjwvcGF0aD4KICAgICAgICAgICAgPHBhdGggZD0iTTc2LjUwNDYxNTQsNDkuMjMwNzY5MyBMOTguMzYzMDc2OSw0OS4yMzA3NjkzIEM5Ni4yOTUzODQ2LDI2LjA5MjMwNzYgNzYuOCw3Ljg3NjkyMyA1My4xNjkyMzA3LDcuODc2OTIzIEMyOS41Mzg0NjE1LDcuODc2OTIzIDEwLjA0MzA3NjksMjYuMDkyMzA3NiA4LjA3Mzg0NjEyLDQ5LjIzMDc2OTMgTDI5LjkzMjMwNzYsNDkuMjMwNzY5MyBDMzEuNzA0NjE1NCwzOC4xMDQ2MTU0IDQxLjQ1MjMwNzYsMjkuNTM4NDYxNSA1My4xNjkyMzA3LDI5LjUzODQ2MTUgQzY0Ljg4NjE1MzksMjkuNTM4NDYxNSA3NC42MzM4NDYxLDM4LjEwNDYxNTQgNzYuNTA0NjE1NCw0OS4yMzA3NjkzIEw3Ni41MDQ2MTU0LDQ5LjIzMDc2OTMgWiIgaWQ9Iui3r+W+hCIgZmlsbD0iI0Q2MDkwOSI+PC9wYXRoPgogICAgICAgICAgICA8cGF0aCBkPSJNNTMuMTY5MjMwNyw3Ni44IEM0MC4xNzIzMDc2LDc2LjggMjkuNTM4NDYxNSw2Ni4xNjYxNTM5IDI5LjUzODQ2MTUsNTMuMTY5MjMwNyBDMjkuNTM4NDYxNSw0MC4xNzIzMDc2IDQwLjE3MjMwNzYsMjkuNTM4NDYxNSA1My4xNjkyMzA3LDI5LjUzODQ2MTUgQzY2LjE2NjE1MzksMjkuNTM4NDYxNSA3Ni44LDQwLjE3MjMwNzYgNzYuOCw1My4xNjkyMzA3IEM3Ni44LDY2LjE2NjE1MzkgNjYuMTY2MTUzOSw3Ni44IDUzLjE2OTIzMDcsNzYuOCBaIiBpZD0i6Lev5b6EIiBmaWxsPSIjMzMzNjNBIj48L3BhdGg+CiAgICAgICAgICAgIDxwYXRoIGQ9Ik01My4xNjkyMzA3LDM3LjQxNTM4NDYgQzQ0LjUwNDYxNTQsMzcuNDE1Mzg0NiAzNy40MTUzODQ2LDQ0LjUwNDYxNTQgMzcuNDE1Mzg0Niw1My4xNjkyMzA3IEMzNy40MTUzODQ2LDYxLjgzMzg0NjEgNDQuNTA0NjE1NCw2OC45MjMwNzY5IDUzLjE2OTIzMDcsNjguOTIzMDc2OSBDNjEuODMzODQ2MSw2OC45MjMwNzY5IDY4LjkyMzA3NjksNjEuODMzODQ2MSA2OC45MjMwNzY5LDUzLjE2OTIzMDcgQzY4LjkyMzA3NjksNDQuNTA0NjE1NCA2MS44MzM4NDYxLDM3LjQxNTM4NDYgNTMuMTY5MjMwNywzNy40MTUzODQ2IEw1My4xNjkyMzA3LDM3LjQxNTM4NDYgWiIgaWQ9Iui3r+W+hCIgZmlsbD0iI0ZGRkZGRiI+PC9wYXRoPgogICAgICAgICAgICA8cGF0aCBkPSJNNDMuMzIzMDc2OSw1My4xNjkyMzA3IEM0My4zMjMwNzY5LDU4LjYwNzExMTQgNDcuNzMxMzUwMSw2My4wMTUzODQ2IDUzLjE2OTIzMDcsNjMuMDE1Mzg0NiBDNTguNjA3MTExNCw2My4wMTUzODQ2IDYzLjAxNTM4NDYsNTguNjA3MTExNCA2My4wMTUzODQ2LDUzLjE2OTIzMDcgQzYzLjAxNTM4NDYsNDcuNzMxMzUwMSA1OC42MDcxMTE0LDQzLjMyMzA3NjkgNTMuMTY5MjMwNyw0My4zMjMwNzY5IEM0Ny43MzEzNTAxLDQzLjMyMzA3NjkgNDMuMzIzMDc2OSw0Ny43MzEzNTAxIDQzLjMyMzA3NjksNTMuMTY5MjMwNyBaIiBpZD0i6Lev5b6EIiBmaWxsPSIjMzMzNjNBIj48L3BhdGg+CiAgICAgICAgPC9nPgogICAgPC9nPgo8L3N2Zz4=
 
-// @version      2026.09.14.19-preview
+// @version      2026.09.15.01-preview
 
 // @description  DouyuEx 纯净重构版：源头全链路无缝最高画质（彻底告别开播二次切流卡顿）/ 活跃榜贡献值原生极速注入 / 物理单例长连接多路复用 / 优雅阻断P2P上传 / 彻底去除弹窗广告 / 剥离历史冗余死重
 
@@ -2151,7 +2151,7 @@ function createSignPanel() {
                     <input type="checkbox" id="sign_opt_stardiscover" class="sign-checkbox" data-key="stardiscover">
                     <div class="sign-option-text">
                         <span class="sign-option-title">星推日常任务</span>
-                        <span class="sign-option-desc">星推榜单曝光打卡与互动积分上报</span>
+                        <span class="sign-option-desc">打卡/口令弹幕/关注任务(完成自动安全取关)</span>
                     </div>
                 </label>
                 <label class="sign-option-item">
@@ -6309,11 +6309,65 @@ async function executeSignEngine(options, onLog) {
         }
     }
 
-    // 4. 星推日常任务 (榜单曝光打卡与互动积分上报，绝不残留陌生主播关注)
+    // 4. 星推日常任务 (打开活动页 + 曝光打卡 + 口令弹幕 + 关注任务完成立即安全取关)
     if (opts.stardiscover) {
         try {
-            onLog("正在获取星推榜单与任务...");
+            onLog("正在获取星推榜单与任务配置...");
             var curRid = String(window.room_id || (window.$ROOM && window.$ROOM.room_id) || (typeof B !== "undefined" ? B : "") || "9999");
+            var ctn = (typeof w === "function" ? w() : "") || "1";
+            var csrf = "";
+            try {
+                var mCsrf = document.cookie.match(/(^| )post-csrfToken=([^;]*)(;|$)/);
+                csrf = mCsrf ? unescape(mCsrf[2]) : "";
+                if (!csrf) {
+                    csrf = Math.random().toString(36).substr(2);
+                    document.cookie = "post-csrfToken=" + escape(csrf) + ";path=/";
+                }
+            } catch(e) {}
+
+            function postStarReport(rid, type) {
+                return fetch("https://www.douyu.com/japi/livebiznc/web/anchorstardiscover/user/task/report", {
+                    method: "POST",
+                    credentials: "include",
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded",
+                        "dy-csrf-token": csrf
+                    },
+                    body: "ctn=" + encodeURIComponent(ctn) + "&type=" + type + "&rid=" + encodeURIComponent(rid)
+                }).then(function(r) { return r.json(); }).catch(function() { return null; });
+            }
+
+            function followAnchorApi(rid) {
+                return new Promise(function(resolve) {
+                    fetch("https://www.douyu.com/wgapi/livenc/liveweb/follow/add", {
+                        method: "POST",
+                        mode: "no-cors",
+                        credentials: "include",
+                        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                        body: "rid=" + encodeURIComponent(rid) + "&ctn=" + encodeURIComponent(ctn)
+                    }).then(function(r) { return r.json(); }).then(resolve).catch(function() { resolve(null); });
+                });
+            }
+
+            function unfollowAnchorApi(rid) {
+                return new Promise(function(resolve) {
+                    fetch("https://www.douyu.com/wgapi/livenc/liveweb/follow/rm", {
+                        method: "POST",
+                        mode: "no-cors",
+                        credentials: "include",
+                        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                        body: "rid=" + encodeURIComponent(rid) + "&ctn=" + encodeURIComponent(ctn)
+                    }).then(function(r) { return r.json(); }).then(resolve).catch(function() { resolve(null); });
+                });
+            }
+
+            // (1) 任务6：每日首次打开活动页 (10金币)
+            try {
+                await postStarReport(curRid, 6);
+                onLog("【星推任务】已完成每日活动页打卡 (+10金币)", true);
+            } catch(e) {}
+
+            // (2) 拉取星推榜单主播列表
             var rankUrl = "https://www.douyu.com/japi/livebiznc/web/anchorstardiscover/rank/info?rid=" + curRid + "&type=5&track=3";
             var rankRes = await new Promise(function(resolve) {
                 fetch(rankUrl, { method: "GET", credentials: "include" })
@@ -6322,62 +6376,98 @@ async function executeSignEngine(options, onLog) {
                     .catch(function() { resolve(null); });
             });
             var rankList = (rankRes && rankRes.data && Array.isArray(rankRes.data.rankItemList)) ? rankRes.data.rankItemList : [];
-            if (rankList.length > 0) {
-                var ctn = (typeof w === "function" ? w() : "") || "1";
-                var csrf = "";
+            var starRids = rankList.map(function(item) { return String(item.rid || item.rId || ""); }).filter(Boolean);
+
+            // (3) 任务5：3个活动直播间签到打卡 (9金币)
+            var signRids = starRids.slice(0, 3);
+            if (signRids.indexOf(curRid) === -1 && curRid) signRids.unshift(curRid);
+            signRids = signRids.slice(0, 3);
+            var reportSuccess = 0;
+            for (var si = 0; si < signRids.length; si++) {
+                var srid = signRids[si];
                 try {
-                    var mCsrf = document.cookie.match(/(^| )post-csrfToken=([^;]*)(;|$)/);
-                    csrf = mCsrf ? unescape(mCsrf[2]) : "";
-                    if (!csrf) {
-                        csrf = Math.random().toString(36).substr(2);
-                        document.cookie = "post-csrfToken=" + escape(csrf) + ";path=/";
-                    }
+                    var rRes = await postStarReport(srid, 5);
+                    if (rRes && (rRes.error === 0 || rRes.error === "0")) reportSuccess++;
                 } catch(e) {}
-
-                // (1) 星推签到曝光任务：依次上报前 5 名星推主播
-                var reportSuccess = 0;
-                for (var si = 0; si < Math.min(5, rankList.length); si++) {
-                    var sItem = rankList[si];
-                    if (!sItem || !sItem.rid) continue;
-                    try {
-                        var reportRes = await fetch("https://www.douyu.com/japi/livebiznc/web/anchorstardiscover/user/task/report", {
-                            method: "POST",
-                            credentials: "include",
-                            headers: {
-                                "Content-Type": "application/x-www-form-urlencoded",
-                                "dy-csrf-token": csrf
-                            },
-                            body: "ctn=" + ctn + "&type=5&rid=" + sItem.rid
-                        }).then(function(r) { return r.json(); }).catch(function() { return null; });
-                        if (reportRes && (reportRes.error === 0 || reportRes.error === "0")) {
-                            reportSuccess++;
-                        }
-                    } catch(e) {}
-                    await b(200);
-                }
-                onLog("【星推签到】完成 " + reportSuccess + " 位星推主播曝光打卡", true);
-
-                // (2) 星推房间互动积分任务：上报进房与停留 (type=1)
-                for (var si2 = 0; si2 < Math.min(3, rankList.length); si2++) {
-                    var sItem2 = rankList[si2];
-                    if (!sItem2 || !sItem2.rid) continue;
-                    try {
-                        await fetch("https://www.douyu.com/japi/livebiznc/web/anchorstardiscover/user/task/report", {
-                            method: "POST",
-                            credentials: "include",
-                            headers: {
-                                "Content-Type": "application/x-www-form-urlencoded",
-                                "dy-csrf-token": csrf
-                            },
-                            body: "ctn=" + ctn + "&type=1&rid=" + sItem2.rid
-                        }).then(function(r) { return r.json(); }).catch(function() { return null; });
-                    } catch(e) {}
-                    await b(150);
-                }
-                onLog("【星推任务】星推互动与任务积分上报完毕", true);
-            } else {
-                onLog("【星推任务】当前无进行中的星推榜单", true);
+                await b(200);
             }
+            onLog("【星推签到】完成 " + signRids.length + " 个星推直播间打卡 (+9金币)", true);
+
+            // (4) 任务7：发送1次指定口令弹幕 “全民星推荐助力主播成长” (5金币)
+            try {
+                var txtEl = document.querySelector("textarea.ChatSend-txt") || document.querySelector("div.ChatSend-txt");
+                var sendBtn = document.querySelector(".ChatSend-button");
+                if (txtEl && sendBtn) {
+                    var isDiv = "div" === txtEl.tagName.toLowerCase();
+                    var origVal = isDiv ? txtEl.innerText : txtEl.value;
+                    if (isDiv) txtEl.innerText = "全民星推荐助力主播成长";
+                    else txtEl.value = "全民星推荐助力主播成长";
+                    txtEl.dispatchEvent(new Event("input", { bubbles: true }));
+                    sendBtn.click();
+                    await b(400);
+                    if (isDiv) txtEl.innerText = origVal || "";
+                    else txtEl.value = origVal || "";
+                    txtEl.dispatchEvent(new Event("input", { bubbles: true }));
+                    onLog("【星推弹幕】已自动发送指定助力口令弹幕 (+5金币)", true);
+                } else {
+                    onLog("【星推弹幕】未处于开播房间聊天区，跳过弹幕任务", true);
+                }
+            } catch(e) {
+                onLog("【星推弹幕】弹幕发送跳过", true);
+            }
+
+            // (5) 任务4：关注5名新主播 (15金币) - 关注完成后立即安全取关，绝不残留陌生主播
+            try {
+                var targetAnchors = [];
+                var introRes = await new Promise(function(resolve) {
+                    fetch("https://www.douyu.com/japi/livebiznc/web/anchorstardiscover/user/task/follow/introduce?rid=" + curRid, {
+                        credentials: "include"
+                    }).then(function(r) { return r.json(); }).then(resolve).catch(function() { resolve(null); });
+                });
+                if (introRes && introRes.data && Array.isArray(introRes.data.list)) {
+                    targetAnchors = introRes.data.list.map(function(item) { return String(item.rid || item.rId || ""); }).filter(Boolean);
+                }
+                // 若不足5位，用星推榜单补足
+                for (var sidx = 0; sidx < starRids.length; sidx++) {
+                    if (targetAnchors.indexOf(starRids[sidx]) === -1 && starRids[sidx] !== curRid) {
+                        targetAnchors.push(starRids[sidx]);
+                    }
+                    if (targetAnchors.length >= 5) break;
+                }
+
+                if (targetAnchors.length > 0) {
+                    onLog("正在执行【星推关注任务】(关注完成立即安全取关)...");
+                    var followSuccessCount = 0;
+                    for (var fi = 0; fi < Math.min(5, targetAnchors.length); fi++) {
+                        var aRid = targetAnchors[fi];
+                        try {
+                            // 1. 添加关注
+                            await followAnchorApi(aRid);
+                            // 2. 等待 1.2 秒确保斗鱼服务器接收关注事件并计入任务进度
+                            await b(1200);
+                            // 3. 立即安全取关，彻底杜绝陌生主播残留
+                            await unfollowAnchorApi(aRid);
+                            followSuccessCount++;
+                            onLog("【星推关注】房间 " + aRid + " 关注并已安全取关 (" + followSuccessCount + "/5)", true);
+                        } catch(err) {
+                            try { await unfollowAnchorApi(aRid); } catch(e) {}
+                        }
+                        await b(300);
+                    }
+                    onLog("【星推关注】达成 " + followSuccessCount + " 位关注任务，关注列表 100% 保持纯净 (+15金币)", true);
+                }
+            } catch(e) {
+                onLog("【星推关注】关注任务跳过或异常", true);
+            }
+
+            // (6) 互动积分任务上报 (type=1)
+            for (var si2 = 0; si2 < Math.min(3, starRids.length); si2++) {
+                try {
+                    await postStarReport(starRids[si2], 1);
+                } catch(e) {}
+                await b(150);
+            }
+            onLog("【星推任务】星推日常任务已尽量全满完成！", true);
         } catch(err) {
             onLog("【星推任务】执行异常: " + (err.message || "未知错误"), false);
         }

@@ -531,7 +531,7 @@ function createSignPanel() {
                     <input type="checkbox" id="sign_opt_stardiscover" class="sign-checkbox" data-key="stardiscover">
                     <div class="sign-option-text">
                         <span class="sign-option-title">星推日常任务</span>
-                        <span class="sign-option-desc">星推榜单曝光打卡与互动积分上报</span>
+                        <span class="sign-option-desc">打卡/口令弹幕/关注任务(完成自动安全取关)</span>
                     </div>
                 </label>
                 <label class="sign-option-item">
