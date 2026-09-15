@@ -55,7 +55,7 @@
 | **F-42** | 最高画质属性劫持 (`preloadStreamUrlPromise` 抑制预载, `getLegacyFirstStream` 强锁 rate=0) | `quality.js:37-70` | `core/quality.js` | local; `core.quality` | T-F-42 | H | `mock-tested` |
 | **F-43** | 六个斗鱼播放器官方画质偏好 key 一年期 rate=0 镜像硬化 | `quality.js:23-35` | `core/quality.js` | local; `core.quality` | T-F-43 | M | `mock-tested` |
 | **F-44** | 录播视频 Shadow DOM 观察器 (video/share/controller 三路监听) | `06_router.js:1` | `adapters/vod_player.js` | observer; `adapters.vod` | T-F-44 | M | `planned` |
-| **F-45** | 普通房间/exid 就绪探测与侧边栏/全屏触发 | `01_setup.js:6`, `06_router.js:5` | `adapters/room.js` | observer; `adapters.room` | T-F-45 | M | `planned` |
+| **F-45** | 普通房间/exid 就绪探测与侧边栏/全屏触发 | `01_setup.js:6`, `06_router.js:5` | `adapters/room.js` | observer; `adapters.room` | T-F-45 | M | `mock-tested` |
 | **F-46** | 60 秒任务心跳调度器 | `03_cron.js:2-6` | `runtime/heartbeat.js` | timer; `runtime.heartbeat` | T-F-46 | M | `planned` |
 | **F-47** | 粉丝勋章页 DOM 增强渲染 (佩戴天数、开通日期、红字高亮) | `06_router.js:1` | `modules/radar/badges.js` | DOM; `radar.badges` | T-F-47 | L | `planned` |
 | **F-48** | Level 2 Dock 9 按钮固定装配顺序与点击/展开生命周期控制 | `02_dom_ui.js:916-1045` | `ui/dock.js` | UI; `ui.dock` | T-F-48 | M | `planned` |
@@ -111,14 +111,14 @@
 
 | 路由ID | 场景名称与判定规则 | 优先级 | 初始化挂载范围 | 对应期望测试 | 当前状态 |
 |:---:|:---|:---:|:---|:---:|:---:|
-| **R-01** | 普通数字房间主模式 (`*.douyu.com/0-9*`, `beta/*`, `topic/*`) | 7 | 激活底层拦截 -> 挂载 Dock -> 挂载 MIUIX 模态窗 -> 启动业务心跳 | T-R-01 | `planned` |
-| **R-02** | 同屏画中画纯净流模式 (`URL 携带 ?exid=chun`) | 6 | 剥离聊天区/礼物区/顶栏，自动网页全屏，提供纯净视频流 | T-R-02 | `planned` |
-| **R-03** | 录播视频播放增强 (`v.douyu.com/show/*`) | 5 | 监听 Shadow DOM，挂载时间戳校准、截图录制与 ASS 字幕导出 | T-R-03 | `planned` |
-| **R-04** | 鱼吧已关闭板块浏览恢复 (`yuba.douyu.com/*?exRestore`) | 4 | 拦截改写接口 `group_id`，解除被封禁/关闭鱼吧话题的浏览限制 | T-R-04 | `planned` |
-| **R-05** | passport 跨域多账号免密切换管道 (`passport.douyu.com/*?exid=chun`) | 2 | 隐藏 iframe 通道：执行 `switch` / `clean` / `delete`，通过 GM_cookie 热切凭据 | T-R-05 | `planned` |
-| **R-06** | 粉丝勋章精确佩戴天数统计页 (`douyu.com/member/cp/getFansBadgeList`) | 3 | 解析 `data-fans-gbdgts` 时间戳推算天数，超 300 天标记高亮红字 | T-R-06 | `planned` |
-| **R-07** | 四站跨域 Clean 管道 (`msg/v/cz/yuba` 携带 `?exClean`) | 1 | 清理指定站点 Cookie 后通过 postMessage 通知父级并安全关闭管道 | T-R-07 | `planned` |
-| **R-08** | 其他非目标页面或未授权命令 (template, h5, 无关页) | 8 | 明确 no-op 静默退出，不启动任何业务逻辑 | T-R-08 | `planned` |
+| **R-01** | 普通数字房间主模式 (`*.douyu.com/0-9*`, `beta/*`, `topic/*`) | 7 | 激活底层拦截 -> 挂载 Dock -> 挂载 MIUIX 模态窗 -> 启动业务心跳 | T-R-01 | `mock-tested` |
+| **R-02** | 同屏画中画纯净流模式 (`URL 携带 ?exid=chun`) | 6 | 剥离聊天区/礼物区/顶栏，自动网页全屏，提供纯净视频流 | T-R-02 | `mock-tested` |
+| **R-03** | 录播视频播放增强 (`v.douyu.com/show/*`) | 5 | 监听 Shadow DOM，挂载时间戳校准、截图录制与 ASS 字幕导出 | T-R-03 | `mock-tested` |
+| **R-04** | 鱼吧已关闭板块浏览恢复 (`yuba.douyu.com/*?exRestore`) | 4 | 拦截改写接口 `group_id`，解除被封禁/关闭鱼吧话题的浏览限制 | T-R-04 | `mock-tested` |
+| **R-05** | passport 跨域多账号免密切换管道 (`passport.douyu.com/*?exid=chun`) | 2 | 隐藏 iframe 通道：执行 `switch` / `clean` / `delete`，通过 GM_cookie 热切凭据 | T-R-05 | `mock-tested` |
+| **R-06** | 粉丝勋章精确佩戴天数统计页 (`douyu.com/member/cp/getFansBadgeList`) | 3 | 解析 `data-fans-gbdgts` 时间戳推算天数，超 300 天标记高亮红字 | T-R-06 | `mock-tested` |
+| **R-07** | 四站跨域 Clean 管道 (`msg/v/cz/yuba` 携带 `?exClean`) | 1 | 清理指定站点 Cookie 后通过 postMessage 通知父级并安全关闭管道 | T-R-07 | `mock-tested` |
+| **R-08** | 其他非目标页面或未授权命令 (template, h5, 无关页) | 8 | 明确 no-op 静默退出，不启动任何业务逻辑 | T-R-08 | `mock-tested` |
 
 ---
 

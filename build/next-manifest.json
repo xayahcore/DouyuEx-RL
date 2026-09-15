@@ -7,6 +7,8 @@
     "src/runtime/scope.js",
     "src/runtime/events.js",
     "src/platform/capabilities.js",
+    "src/platform/credentials.js",
+    "src/platform/transport.js",
     "src/platform/page_bridge.js",
     "src/core/p2p_blocker.js",
     "src/core/quality.js",
@@ -14,6 +16,12 @@
     "src/store/schema.js",
     "src/store/storage.js",
     "src/store/index.js",
-    "src/store/migrator.js"
+    "src/store/migrator.js",
+    "src/api/client.js",
+    "src/adapters/room.js",
+    "src/adapters/chat.js",
+    "src/adapters/player.js",
+    "src/router/index.js",
+    "src/runtime/orchestrator.js"
   ]
 }

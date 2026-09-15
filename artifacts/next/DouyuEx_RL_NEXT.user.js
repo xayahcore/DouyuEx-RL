@@ -274,6 +274,198 @@
   });
 })();
 
+/* --- NEXT module: src/platform/credentials.js --- */
+// src/platform/credentials.js
+(function () {
+  'use strict';
+  if (!globalThis.DYEXRL_NEXT) return;
+
+  globalThis.DYEXRL_NEXT.registry.register('platform.credentials', [], function () {
+    var win = typeof window !== 'undefined' ? window : globalThis;
+
+    function getCookie(name) {
+      if (typeof document === 'undefined' || !document.cookie) return '';
+      var pattern = new RegExp('(?:^|;\\s*)' + name + '=([^;]+)');
+      var match = document.cookie.match(pattern);
+      return match ? decodeURIComponent(match[1]) : '';
+    }
+
+    function setCookie(name, value, path, days) {
+      if (typeof document === 'undefined') return;
+      var expires = '';
+      if (days) {
+        var d = new Date();
+        d.setTime(d.getTime() + days * 86400000);
+        expires = '; expires=' + d.toUTCString();
+      }
+      document.cookie = name + '=' + encodeURIComponent(value) + (path ? '; path=' + path : '; path=/') + expires;
+    }
+
+    async function getCcn() {
+      var ccn = getCookie('ccn');
+      if (ccn) return ccn;
+
+      // Try waking up ccn via official endpoint
+      try {
+        if (typeof fetch === 'function') {
+          await fetch('/wgapi/livenc/liveweb/csrfApi/getCsrfCookie', {
+            method: 'GET',
+            credentials: 'include',
+            cache: 'no-store'
+          });
+          ccn = getCookie('ccn');
+          if (ccn) return ccn;
+        }
+      } catch (e) {}
+
+      // Fallback to acf_ccn
+      var acfCcn = getCookie('acf_ccn');
+      if (acfCcn) return acfCcn;
+
+      return '';
+    }
+
+    function getCsrfToken() {
+      var token = getCookie('post-csrfToken');
+      if (!token) {
+        token = Math.random().toString(36).substring(2);
+        setCookie('post-csrfToken', token, '/', 7);
+      }
+      return token;
+    }
+
+    async function getCredentials() {
+      var ccn = await getCcn();
+      var csrfToken = getCsrfToken();
+      return {
+        ccn: ccn,
+        csrfToken: csrfToken,
+        deviceId: '-'
+      };
+    }
+
+    return {
+      getCookie: getCookie,
+      setCookie: setCookie,
+      getCcn: getCcn,
+      getCsrfToken: getCsrfToken,
+      getCredentials: getCredentials
+    };
+  });
+})();
+
+/* --- NEXT module: src/platform/transport.js --- */
+// src/platform/transport.js
+(function () {
+  'use strict';
+  if (!globalThis.DYEXRL_NEXT) return;
+
+  globalThis.DYEXRL_NEXT.registry.register('platform.transport', [], function () {
+    var DEFAULT_TIMEOUT_MS = 15000;
+
+    function delay(ms) {
+      return new Promise(function (resolve) { setTimeout(resolve, ms); });
+    }
+
+    async function sendRequest(options) {
+      var opts = options || {};
+      var url = opts.url;
+      var method = (opts.method || 'GET').toUpperCase();
+      var headers = opts.headers || {};
+      var body = opts.body;
+      var timeoutMs = opts.timeout || DEFAULT_TIMEOUT_MS;
+      var isIdempotent = opts.isIdempotent !== false && method === 'GET';
+      var maxRetries = isIdempotent ? (opts.retries ?? 2) : 0; // Non-idempotent write requests never retry!
+      var signal = opts.signal;
+
+      var attempt = 0;
+      var lastError = null;
+
+      while (attempt <= maxRetries) {
+        if (signal && signal.aborted) {
+          throw { code: 'ABORTED', message: 'Request aborted by user signal' };
+        }
+
+        try {
+          var controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+          var timerId = null;
+
+          var timeoutPromise = new Promise(function (_, reject) {
+            timerId = setTimeout(function () {
+              if (controller) controller.abort();
+              reject({ code: 'TIMEOUT', message: 'Request timed out after ' + timeoutMs + 'ms' });
+            }, timeoutMs);
+          });
+
+          var effectiveSignal = controller ? controller.signal : signal;
+
+          var fetchPromise = fetch(url, {
+            method: method,
+            headers: headers,
+            body: body,
+            credentials: 'include',
+            signal: effectiveSignal
+          }).then(async function (resp) {
+            clearTimeout(timerId);
+            if (!resp.ok) {
+              throw {
+                code: resp.status === 401 || resp.status === 403 ? 'AUTH_REQUIRED' : 'HTTP_ERROR',
+                status: resp.status,
+                message: 'HTTP ' + resp.status + ' ' + resp.statusText
+              };
+            }
+            var text = await resp.text();
+            var json;
+            try {
+              json = JSON.parse(text);
+            } catch (e) {
+              return text; // Return raw text if not JSON
+            }
+
+            // Check Douyu business error
+            if (json && typeof json === 'object') {
+              var errVal = json.error ?? json.code;
+              if (typeof errVal !== 'undefined' && errVal !== 0 && errVal !== '0') {
+                throw {
+                  code: 'BUSINESS_ERROR',
+                  businessCode: errVal,
+                  message: json.msg || json.message || 'Douyu business error ' + errVal,
+                  data: json
+                };
+              }
+            }
+            return json;
+          });
+
+          var result = await Promise.race([fetchPromise, timeoutPromise]);
+          return {
+            data: result,
+            receivedAt: Date.now()
+          };
+        } catch (err) {
+          lastError = err;
+          // Never retry non-idempotent or auth errors
+          if (!isIdempotent || err.code === 'AUTH_REQUIRED' || err.code === 'ABORTED') {
+            throw err;
+          }
+          attempt += 1;
+          if (attempt <= maxRetries) {
+            var backoff = Math.min(1000 * Math.pow(2, attempt - 1), 4000) + Math.floor(Math.random() * 250);
+            await delay(backoff);
+          }
+        }
+      }
+
+      throw lastError || { code: 'NETWORK', message: 'Network request failed' };
+    }
+
+    return {
+      sendRequest: sendRequest,
+      delay: delay
+    };
+  });
+})();
+
 /* --- NEXT module: src/platform/page_bridge.js --- */
 // src/platform/page_bridge.js
 (function () {
@@ -1347,6 +1539,455 @@
     return {
       MIGRATION_FLAG_KEY: MIGRATION_FLAG_KEY,
       migrateLegacyData: migrateLegacyData
+    };
+  });
+})();
+
+/* --- NEXT module: src/api/client.js --- */
+// src/api/client.js
+(function () {
+  'use strict';
+  if (!globalThis.DYEXRL_NEXT) return;
+
+  globalThis.DYEXRL_NEXT.registry.register('api.client', ['platform.credentials', 'platform.transport'], function (credentials, transport) {
+    var ENDPOINTS = {
+      // 1. Room & Stream
+      'room.betard': { method: 'GET', url: 'https://www.douyu.com/betard/{rid}', idempotent: true },
+      'room.h5play': { method: 'POST', url: 'https://www.douyu.com/lapi/live/getH5Play/{rid}', idempotent: true },
+      'room.roomApi': { method: 'GET', url: 'https://open.douyucdn.cn/api/RoomApi/room/{rid}', idempotent: true },
+
+      // 2. Backpack & Economy
+      'backpack.list': { method: 'GET', url: 'https://www.douyu.com/japi/prop/backpack/web/v5', idempotent: true },
+      'backpack.donate': { method: 'POST', url: 'https://www.douyu.com/japi/prop/donate/mainsite/v1', idempotent: false },
+
+      // 3. Routine: Sign, Star Push & Fishing
+      'routine.webSign': { method: 'POST', url: 'https://www.douyu.com/japi/carnival/nc/sign/webSign', idempotent: false },
+      'routine.starList': { method: 'GET', url: 'https://www.douyu.com/japi/livebiznc/web/anchorstardiscover/user/task/list', idempotent: true },
+      'routine.starReport': { method: 'POST', url: 'https://www.douyu.com/japi/livebiznc/web/anchorstardiscover/user/task/report', idempotent: true },
+      'routine.starIntroduce': { method: 'GET', url: 'https://www.douyu.com/japi/livebiznc/web/anchorstardiscover/user/task/follow/introduce', idempotent: true },
+      'routine.starRank': { method: 'GET', url: 'https://www.douyu.com/japi/livebiznc/web/anchorstardiscover/rank/info', idempotent: true },
+      'routine.followAdd': { method: 'POST', url: '/wgapi/livenc/liveweb/follow/add', idempotent: false },
+      'routine.followRm': { method: 'POST', url: '/wgapi/livenc/liveweb/follow/rm', idempotent: false },
+      'routine.fishHome': { method: 'GET', url: 'https://www.douyu.com/japi/revenuenc/web/actfans/fishing/homePage', idempotent: true },
+      'routine.fishReel': { method: 'POST', url: 'https://www.douyu.com/japi/revenuenc/web/actfans/fishing/reelIn', idempotent: false },
+
+      // 4. Radar & Perception
+      'radar.hardware': { method: 'GET', url: 'https://www.douyu.com/member/cp', idempotent: true }
+    };
+
+    function resolveUrl(urlTemplate, params) {
+      var p = params || {};
+      var resolved = urlTemplate;
+      for (var k in p) {
+        if (p.hasOwnProperty(k)) {
+          resolved = resolved.replace(new RegExp('\\{' + k + '\\}', 'g'), encodeURIComponent(p[k]));
+        }
+      }
+      return resolved;
+    }
+
+    function serializeQuery(params) {
+      if (!params || typeof params !== 'object') return '';
+      var pairs = [];
+      for (var k in params) {
+        if (params.hasOwnProperty(k) && params[k] !== undefined && params[k] !== null) {
+          pairs.push(encodeURIComponent(k) + '=' + encodeURIComponent(params[k]));
+        }
+      }
+      return pairs.join('&');
+    }
+
+    async function request(endpointId, options) {
+      var ep = ENDPOINTS[endpointId];
+      if (!ep) {
+        throw new Error('[NEXT Client] Unregistered endpoint: ' + endpointId);
+      }
+
+      var opts = options || {};
+      var creds = await credentials.getCredentials();
+
+      var finalUrl = resolveUrl(ep.url, opts.params);
+      var headers = Object.assign({}, opts.headers || {});
+      var body = opts.body;
+
+      if (ep.method === 'GET') {
+        var qs = serializeQuery(opts.query);
+        if (qs) {
+          finalUrl += (finalUrl.includes('?') ? '&' : '?') + qs;
+        }
+      } else if (ep.method === 'POST') {
+        if (!headers['Content-Type']) {
+          headers['Content-Type'] = 'application/x-www-form-urlencoded';
+        }
+        // Auto-inject ccn / dy-csrf-token if needed by routine
+        if (endpointId.startsWith('routine.')) {
+          headers['dy-csrf-token'] = creds.csrfToken;
+          if (typeof body === 'object' && body !== null) {
+            if (!body.ctn) body.ctn = creds.ccn;
+            body = serializeQuery(body);
+          } else if (typeof body === 'string' && !body.includes('ctn=')) {
+            body += (body.length > 0 ? '&' : '') + 'ctn=' + encodeURIComponent(creds.ccn);
+          }
+        }
+      }
+
+      return transport.sendRequest({
+        url: finalUrl,
+        method: ep.method,
+        headers: headers,
+        body: body,
+        isIdempotent: ep.idempotent,
+        timeout: opts.timeout,
+        signal: opts.signal
+      });
+    }
+
+    return {
+      ENDPOINTS: ENDPOINTS,
+      request: request,
+      get: function (endpointId, queryOrParams, options) {
+        var opts = Object.assign({}, options);
+        opts.query = queryOrParams;
+        opts.params = queryOrParams;
+        return request(endpointId, opts);
+      },
+      post: function (endpointId, body, options) {
+        var opts = Object.assign({}, options);
+        opts.body = body;
+        return request(endpointId, opts);
+      }
+    };
+  });
+})();
+
+/* --- NEXT module: src/adapters/room.js --- */
+// src/adapters/room.js
+(function () {
+  'use strict';
+  if (!globalThis.DYEXRL_NEXT) return;
+
+  globalThis.DYEXRL_NEXT.registry.register('adapters.room', [], function () {
+    function getNumericRoomId() {
+      if (typeof window === 'undefined') return '';
+      if (window.room_id && !isNaN(Number(window.room_id))) return String(window.room_id);
+      if (typeof unsafeWindow !== 'undefined') {
+        if (unsafeWindow.room_id && !isNaN(Number(unsafeWindow.room_id))) return String(unsafeWindow.room_id);
+        if (unsafeWindow.$DATA && unsafeWindow.$DATA.ROOM && unsafeWindow.$DATA.ROOM.room_id) {
+          return String(unsafeWindow.$DATA.ROOM.room_id);
+        }
+      }
+      var m = location.pathname.match(/^\/(\d+)/);
+      return m ? m[1] : '';
+    }
+
+    function getAnchorName() {
+      var el = document.querySelector('.Title-anchorName') || document.querySelector('.anchor-name');
+      return el ? el.textContent.trim() : '';
+    }
+
+    return {
+      getNumericRoomId: getNumericRoomId,
+      getAnchorName: getAnchorName
+    };
+  });
+})();
+
+/* --- NEXT module: src/adapters/chat.js --- */
+// src/adapters/chat.js
+(function () {
+  'use strict';
+  if (!globalThis.DYEXRL_NEXT) return;
+
+  globalThis.DYEXRL_NEXT.registry.register('adapters.chat', [], function () {
+    function getChatInput() {
+      return document.querySelector('textarea.ChatSend-txt') || document.querySelector('div.ChatSend-txt');
+    }
+
+    function getSendButton() {
+      return document.querySelector('.ChatSend-button');
+    }
+
+    function setChatText(text) {
+      var input = getChatInput();
+      if (!input) return false;
+
+      var isDiv = input.tagName.toLowerCase() === 'div';
+      if (isDiv) {
+        input.innerText = text;
+      } else {
+        input.value = text;
+      }
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      return true;
+    }
+
+    function sendChatText(text) {
+      if (!setChatText(text)) return false;
+      var btn = getSendButton();
+      if (btn) {
+        btn.click();
+        return true;
+      }
+      return false;
+    }
+
+    return {
+      getChatInput: getChatInput,
+      getSendButton: getSendButton,
+      setChatText: setChatText,
+      sendChatText: sendChatText
+    };
+  });
+})();
+
+/* --- NEXT module: src/adapters/player.js --- */
+// src/adapters/player.js
+(function () {
+  'use strict';
+  if (!globalThis.DYEXRL_NEXT) return;
+
+  globalThis.DYEXRL_NEXT.registry.register('adapters.player', [], function () {
+    function getVideoElement() {
+      return document.querySelector('.layout-Player-videoEntity video') || document.querySelector('video');
+    }
+
+    function setVolume(val) {
+      var video = getVideoElement();
+      if (!video) return 0;
+      var clamped = Math.max(0, Math.min(1, Number(val) || 0));
+      video.volume = clamped;
+      return clamped;
+    }
+
+    function getVolume() {
+      var video = getVideoElement();
+      return video ? video.volume : 1;
+    }
+
+    function triggerWebFullScreen() {
+      var btn = document.querySelector('.wfs-2a8e83') || document.querySelector('.icon-c8be96') || document.querySelector('[title*=\"网页全屏\"]');
+      if (btn) {
+        btn.click();
+        return true;
+      }
+      return false;
+    }
+
+    return {
+      getVideoElement: getVideoElement,
+      setVolume: setVolume,
+      getVolume: getVolume,
+      triggerWebFullScreen: triggerWebFullScreen
+    };
+  });
+})();
+
+/* --- NEXT module: src/router/index.js --- */
+// src/router/index.js
+(function () {
+  'use strict';
+  if (!globalThis.DYEXRL_NEXT) return;
+
+  globalThis.DYEXRL_NEXT.registry.register('router.index', ['runtime.events'], function (events) {
+    var eventBus = events.createEventBus();
+    var currentRole = null;
+    var currentRid = '';
+    var generation = 0;
+
+    function parseNumericRoomId(pathname) {
+      if (!pathname) return '';
+      var m = pathname.match(/^\/(\d+)/);
+      return m ? m[1] : '';
+    }
+
+    function matchRoute(urlStr) {
+      var url;
+      try {
+        url = new URL(urlStr, 'https://www.douyu.com');
+      } catch (e) {
+        return { role: 'R-08', name: 'NO_OP', url: urlStr };
+      }
+
+      var host = url.hostname;
+      var path = url.pathname;
+      var search = url.search;
+
+      // 1. R-07: Clean pipeline (Priority 1)
+      if ((host.includes('msg.douyu.com') || host.includes('yuba.douyu.com') || host.includes('cz.douyu.com') || host.includes('v.douyu.com')) && search.includes('exClean')) {
+        return { role: 'R-07', name: 'CLEAN_PIPELINE', host: host };
+      }
+
+      // 2. R-05: Passport switch pipeline (Priority 2)
+      if (host.includes('passport.douyu.com') && search.includes('exid=chun')) {
+        var cmd = url.searchParams.get('cmd') || '';
+        var uid = url.searchParams.get('uid') || '';
+        return { role: 'R-05', name: 'PASSPORT_PIPELINE', cmd: cmd, uid: uid };
+      }
+
+      // 3. R-06: Fans badge stats (Priority 3)
+      if (path.includes('/member/cp/getFansBadgeList')) {
+        return { role: 'R-06', name: 'BADGE_STATS' };
+      }
+
+      // 4. R-04: Yuba restore or general (Priority 4)
+      if (host.includes('yuba.douyu.com')) {
+        var isRestore = search.includes('exRestore');
+        return { role: 'R-04', name: 'YUBA', isRestore: isRestore };
+      }
+
+      // 5. R-03: VOD video playback (Priority 5)
+      if (host.includes('v.douyu.com') && path.includes('/show/')) {
+        var vid = path.split('/show/')[1] || '';
+        return { role: 'R-03', name: 'VOD', vid: vid };
+      }
+
+      // 6. R-02: Pure popup player stream (Priority 6)
+      if (search.includes('exid=chun')) {
+        return { role: 'R-02', name: 'POPUP_STREAM' };
+      }
+
+      // 7. R-01: Standard live room (Priority 7)
+      if (!path.includes('/template/') && !path.includes('/h5/')) {
+        var numRid = parseNumericRoomId(path);
+        if (numRid || path.includes('/beta/') || path.includes('/topic/')) {
+          return { role: 'R-01', name: 'LIVE_ROOM', rid: numRid };
+        }
+      }
+
+      // 8. R-08: Default no-op
+      return { role: 'R-08', name: 'NO_OP' };
+    }
+
+    function initRouter(targetWindow) {
+      var win = targetWindow || (typeof window !== 'undefined' ? window : globalThis);
+      var initialMatch = matchRoute(win.location ? win.location.href : 'https://www.douyu.com/9999');
+      currentRole = initialMatch.role;
+      currentRid = initialMatch.rid || '';
+      generation = 1;
+
+      // Hook SPA history navigation
+      if (win.history && typeof win.history.pushState === 'function') {
+        var origPushState = win.history.pushState;
+        var origReplaceState = win.history.replaceState;
+
+        win.history.pushState = function () {
+          var res = origPushState.apply(this, arguments);
+          handleLocationChange(win.location.href);
+          return res;
+        };
+
+        win.history.replaceState = function () {
+          var res = origReplaceState.apply(this, arguments);
+          handleLocationChange(win.location.href);
+          return res;
+        };
+
+        win.addEventListener('popstate', function () {
+          handleLocationChange(win.location.href);
+        }, false);
+      }
+
+      function handleLocationChange(newUrl) {
+        var match = matchRoute(newUrl);
+        var newRid = match.rid || '';
+        if (match.role === currentRole && newRid === currentRid) return; // Same room
+
+        var prevRid = currentRid;
+        currentRole = match.role;
+        currentRid = newRid;
+        generation += 1;
+
+        eventBus.emit('route.changed', {
+          role: currentRole,
+          previousRid: prevRid,
+          rid: currentRid,
+          generation: generation
+        });
+      }
+
+      return {
+        get role() { return currentRole; },
+        get rid() { return currentRid; },
+        get generation() { return generation; },
+        matchRoute: matchRoute,
+        subscribe: function (fn) {
+          return eventBus.on('route.changed', fn);
+        }
+      };
+    }
+
+    return {
+      matchRoute: matchRoute,
+      parseNumericRoomId: parseNumericRoomId,
+      initRouter: initRouter
+    };
+  });
+})();
+
+/* --- NEXT module: src/runtime/orchestrator.js --- */
+// src/runtime/orchestrator.js
+(function () {
+  'use strict';
+  if (!globalThis.DYEXRL_NEXT) return;
+
+  globalThis.DYEXRL_NEXT.registry.register('runtime.orchestrator', [
+    'router.index',
+    'store.index',
+    'store.migrator',
+    'runtime.scope'
+  ], function (router, store, migrator, scope) {
+    var activeRoomScope = null;
+    var routerInstance = null;
+
+    function bootstrap(targetWindow) {
+      var win = targetWindow || (typeof window !== 'undefined' ? window : globalThis);
+
+      // 1. Run safe legacy data migration (idempotent)
+      migrator.migrateLegacyData();
+
+      // 2. Initialize router
+      routerInstance = router.initRouter(win);
+
+      // 3. Handle route changes
+      function setupRouteScope(routeEvent) {
+        if (activeRoomScope) {
+          activeRoomScope.destroy();
+          activeRoomScope = null;
+        }
+
+        if (routeEvent.role === 'R-01') {
+          activeRoomScope = scope.createScope({ generation: routeEvent.generation });
+          store.set('runtime.room', {
+            rid: routeEvent.rid || '',
+            generation: routeEvent.generation,
+            isLive: true
+          });
+        }
+      }
+
+      setupRouteScope({
+        role: routerInstance.role,
+        rid: routerInstance.rid,
+        generation: routerInstance.generation
+      });
+
+      routerInstance.subscribe(setupRouteScope);
+
+      return {
+        router: routerInstance,
+        getActiveRoomScope: function () { return activeRoomScope; },
+        destroy: function () {
+          if (activeRoomScope) {
+            activeRoomScope.destroy();
+            activeRoomScope = null;
+          }
+          store.destroy();
+        }
+      };
+    }
+
+    return {
+      bootstrap: bootstrap
     };
   });
 })();
