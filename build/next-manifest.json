@@ -1,0 +1,8 @@
+{
+  "version": "1.0.0",
+  "meta": "src/meta_next.js",
+  "output": "artifacts/next/DouyuEx_RL_NEXT.user.js",
+  "files": [
+    "src/runtime/namespace.js"
+  ]
+}

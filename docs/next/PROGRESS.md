@@ -1,52 +1,57 @@
 # 📊 DouyuEx-RL NEXT 工程实施进度档案 (PROGRESS.md)
 
-任务包：P0.2（已完成）
+任务包：P0.3（已完成）
 基线commit / 当前产物SHA256：
-- 基线 Commit: `ce9ae66` (分支: `DYEXRL-NEXT`)
-- 当前产物 SHA256: `5f5eba93a5280cbebff86f03d18fa09bb37f1a8739aff7ed6e2b4fdde602ab90` (`DouyuEx_RL.user.js`)
+- 基线 Commit: `eecc0f2` (分支: `DYEXRL-NEXT`)
+- 当前产物 SHA256: `5f5eba93a5280cbebff86f03d18fa09bb37f1a8739aff7ed6e2b4fdde602ab90` (`DouyuEx_RL.user.js`，严格保持未修改)
+- NEXT 试验包 SHA256: `d866a4fba7b74b12595ff9d47a4697d2e46c761b6264fcf43b35582f3ad6ee21` (`artifacts/next/DouyuEx_RL_NEXT.user.js`)
 
 涉及能力：
-- 接口契约台账全面覆盖：A-01 ～ A-13, B-FISH, B-GIFTS, B-SEND, B-SIGN, B-CHAT, B-MUTE, B-SEARCH, B-AUDIENCE, B-VOD, B-LOTTERY, B-HARDWARE, B-UPDATE, B-YUBA, C-ENHANCE
-- 本地持久化字典全面映射：44 个 `ExSave_*` 键、GM 跨域键、6 个宿主播放器偏好硬化键与迁移白名单
-- 外部依赖与权限审计：6 个 @require CDN 依赖库、11 个 @connect 域名、10 个 @grant 特权指令
-- Hook 拦截时序与 Disposer 规约：涵盖 QualityLock, RankEngine, P2PBlocker, 观察器与 Scope 托管
+- 独立命名空间与模块注册体系：`src/runtime/namespace.js`
+- NEXT 独立构建管线：`build.js --next`
+- 清单驱动装配：`build/next-manifest.json`
+- 自动化测试基座：`tests/unit/*.test.js` (9 项单元测试通过)
 
 已阅读的源码符号及契约：
-- `src/core/quality.js`: `/betard/` 响应克隆与改写、`rate=0` 拦截
-- `src/core/rank_engine.js`: STT 序列化解析算法与 WebSocket 数据到达延迟
-- `src/modules/01_setup.js`: P2PBlocker 原型属性拦截、WeakMap 上下文关联
-- `src/modules/05_services.js`: `homePage` 与 `reelIn` 钓鱼全链路、星推自动化、背包 `v5` 接口、硬件探测
-- `src/modules/06_router.js`: 8 种路由模式的 URL 模式与 postMessage 协议
+- `build.js`: 原生 vm.Script 语法核验与双模式构建支持
+- `docs/NEXT_IMPLEMENTATION_PLAN.md` §2.2, §2.3 构建隔离与命名空间规约
+- `src/meta_next.js`: 独立 name/namespace 与安全隔离元数据
 
 修改文件：
-- `docs/next/API_CONTRACTS.md` (完整记录所有接口端点、参数、Schema、幂等性与消费者)
-- `docs/next/STORAGE_MAPPING.md` (44 个老键到 NEXT Store 路径映射、默认值、迁移逻辑与重置白名单)
-- `docs/next/DEPENDENCIES.md` (锁定 6 个 @require 版本、11 个 @connect 域名职责与 10 个 @grant 说明)
-- `docs/next/HOOKS_AND_LIFECYCLE.md` (定义 document-start ➔ idle ➔ DOM 就绪装配时序与 Scope 销毁机制)
-- `tests/fixtures/` (建立 betard, stt_sample, task_list, fishing_homepage 4 大脱敏测试夹具)
+- `src/meta_next.js` (NEXT 专用独立元数据头部)
+- `src/runtime/namespace.js` (模块注册与单例依赖解析中心)
+- `build/next-manifest.json` (NEXT 静态模块清单)
+- `build.js` (扩展 `--next` 独立构建模式与原子替换)
+- `tests/unit/registry.test.js` (模块注册、解析、去重、循环依赖与缺失测试)
+- `tests/unit/manifest.test.js` (清单格式与物理文件存在性核验测试)
+- `tests/unit/build.test.js` (构建输出确定性与根产物不修改测试)
 - `docs/next/PROGRESS.md` (更新进度档案)
 
 命令与结果：
-- `python D:/DouyuEx-RL/build_p0_forensics.py` -> 退出码: 0 (成功生成 4 份核心技术契约文档)
-- `python D:/DouyuEx-RL/build_fixtures.py` -> 退出码: 0 (成功建立脱敏夹具库)
-- 证据路径: `docs/next/API_CONTRACTS.md`, `docs/next/STORAGE_MAPPING.md`, `docs/next/DEPENDENCIES.md`, `docs/next/HOOKS_AND_LIFECYCLE.md`, `tests/fixtures/`
+- `node build.js --next` -> 退出码: 0 (耗时 1ms, 成功生成 `artifacts/next/DouyuEx_RL_NEXT.user.js`)
+- `node build.js` -> 退出码: 0 (耗时 13ms, 保持原版 `DouyuEx_RL.user.js` 完全不受影响)
+- `node --test tests/unit/*.test.js` -> 退出码: 0 (9/9 pass, 耗时 399ms)
+- 证据路径: `tests/unit/*.test.js`, `build/next-manifest.json`, `artifacts/next/DouyuEx_RL_NEXT.user.js`
 
 浏览器环境与测试：
-- 步骤：通过本地脱敏测试夹具验证数据契约格式，检查接口必需字段完整性
-- 期望：待实现接口无未知必需字段，所有参数均有确切来源与依据
-- 实际：全部 13 项 A 级接口与 12 组 B 级接口已具备完整的调用链依据与数据模型；未测（当前为协议与存储取证阶段）
+- 步骤：在 Node.js 原生测试环境下运行 9 项单元测试，覆盖命名空间注册、解析、依赖链与构建确定性
+- 期望：测试全量绿灯通过，构建输出完全确定，根产物未被触碰
+- 实际：9 项测试全部通过；未测（当前为构建与测试脚手架阶段，未挂载浏览器）
 
 数据/权限：
-- 是否触发真实写操作：否 (严格保持只读与本地文档生成)
-- 授权范围：本地文档与测试夹具生成
+- 是否触发真实写操作：否 (严格本地编译与单元测试)
+- 授权范围：本地构建管线与单元测试开发
 
 未完成：
-- P0.3 NEXT 构建与测试架搭建 (manifest.json, build.js --next, 单元测试基座)
-- Phase 1 ～ Phase 4 业务模块与 MIUIX 组件的具体编码
+- Phase 1: 核心拦截底座与统一网关 (P1.1 core, P1.2 store/scope, P1.3 client/router)
+- Phase 2: MIUIX 拟态组件库与通用对话框工厂
+- Phase 3: 业务服务领域切片 (A:资产, B:弹幕, C:播控, D:雷达)
+- Phase 4: 老数据平滑迁移器
+- Phase 5: 全域对照验收与分支锁定
 
 阻塞：
-- 暂无阻塞。P0.2 协议/存储/依赖取证门禁全部通过。
+- 暂无阻塞。Phase 0 全部三个任务包 (P0.1, P0.2, P0.3) 全部验收通过。
 
 下一任务：
-- 单个任务包：`P0.3 NEXT 构建与测试架`
-- 前置条件：P0.2 契约文档与夹具已就绪
+- 单个任务包：`P1.1 core 与主世界边界 (Core Interception & Page Bridge)`
+- 前置条件：Phase 0 已全部就绪
