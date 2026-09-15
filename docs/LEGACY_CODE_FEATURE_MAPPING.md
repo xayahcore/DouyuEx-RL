@@ -190,6 +190,21 @@
 - **老代码锚点**: `src/modules/05_services.js:120` (`barragePanel__search`, `doseeing.com/api/suggest_all`)
 - **NEXT 规划**: 重构为 `src/modules/danmaku/search.ts`。
 
+
+### 4.9 聊天区“+1”一键跟风复读与弹幕作者快捷卡片
+- **业务价值**:
+  - 聊天区每条弹幕右侧鼠标悬停显示微型 `+1` 气泡，点击即刻复制该弹幕并自动快速发送，极度贴合直播间“复读梗”体验；
+  - 点击弹幕作者头像或昵称，向外扩展出“快捷禁言”、“快捷回复”、“录入进房欢迎词”、“复制昵称/UID”快捷指令浮层。
+- **老代码锚点**: `src/modules/05_services.js:1565-1750`
+- **NEXT 规划**: 收敛至 `src/modules/danmaku/interaction.ts`。
+
+### 7.3 粉丝牌满 300 天铁粉标识与鱼吧封禁话题浏览恢复
+- **业务价值**:
+  - 访问 `douyu.com/member/cp/getFansBadgeList` 时，自动解析 `data-fans-gbdgts` 毫秒时间戳，推算佩戴天数，超 300 天的高亮显示铁粉专属红字；
+  - 访问 `yuba.douyu.com/*?exRestore` 时，自动拦截并改写接口 `group_id`，恢复浏览已被关闭或隐藏的鱼吧旧板块内容。
+- **老代码锚点**: `src/modules/06_router.js`, `05_services.js`
+- **NEXT 规划**: 纳入 `src/modules/passport/` 与 `src/router/`。
+
 ---
 
 ## 五、 资产运营与日常打卡系统 (Economy & Routine System)
@@ -225,6 +240,20 @@
 - **老代码锚点**: `src/modules/02_dom_ui.js:510-630`, `05_services.js:executeSignEngine`
 - **关联存储**: `ExSave_SignConfig`
 - **NEXT 规划**: 封装为 `src/modules/routine/sign_engine.ts`。
+
+
+### 5.5 自动钓鱼挂机系统 (AutoFish Engine)
+- **业务价值**: 斗鱼互动钓鱼系统常驻挂机助手。支持全天候与“钓鱼大赛”特定时段智能识别，自动检测鱼饵存量、自动抛竿、倒计时计算、自动提竿收杆，实时获取鱼种重量与奖励道具，实现无人值守全自动钓鱼。
+- **老代码锚点**: `src/modules/02_dom_ui.js:1711-1740` (`extool__autofish`), `src/modules/05_services.js:242-260` (`rt`, `ct`, `lt`, `st`, `dt`)
+- **底层原理**:
+  - `homePage` 接口 (`GET /japi/revenuenc/web/actfans/fishing/homePage?rid={rid}&opt=1`): 获取用户鱼饵数量 `data.user.baitNum`、形象 `data.user.avatar`、当前钓鱼状态 `data.fishing.stat` 以及收杆时间戳 `data.fishing.fishEtMs`；
+  - `reelIn` 接口 (`POST /japi/revenuenc/web/actfans/fishing/reelIn`): 到达时间戳后自动发起收杆，解析收获的鱼种（`fish.name`、`fish.wei` 斤数）与额外道具（`awards` 列表），通知气泡回显；
+  - 自动接续：只要用户仍有鱼饵，循环调度下一轮抛竿收杆。
+- **运行模式**:
+  - `all` (全天候轮询挂机)
+  - `contest` (限时钓鱼大赛: 12:00-12:30, 00:00-00:30 自动开启)
+- **关联存储**: `ExSave_AutoFish` (保存生效房间 rids 与运行模式 modes)
+- **NEXT 规划**: 重构为 `src/modules/routine/fishing.ts`，基于定时器调度与状态机管理，保持纯净日志提示。
 
 ---
 
@@ -334,8 +363,6 @@ DouyuEx-RL 全量三级/四级与独立悬浮面板全景树
 ## 八、 已确认下线的远古失效活动代码清理清单 (Dead Code Ledger)
 
 以下内容已由真机与接口反查**确认永久失效关停**，NEXT 架构中**坚决予以物理清除，绝不让僵尸垃圾污染代码库**：
-1. **2021 粉丝节自动钓鱼 (`ExSave_AutoFish`)**:
-   - 对应老接口 `/japi/revenuenc/web/actfans/fishing/reelIn`，斗鱼早下线 4 年以上，代码纯属死循环空跑。
 2. **失效的腾讯云 IM 车队周常打卡 (`Xn` / `motorcade`)**:
    - 斗鱼已关停车队系统，腾讯云 IM SDK 接口早已 404，已于上一版正式移除。
 3. **第三方彩虹屁生成器 (`api.shadiao.app/chp`)**:
