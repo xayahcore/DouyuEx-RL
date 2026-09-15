@@ -4,10 +4,16 @@
   "output": "artifacts/next/DouyuEx_RL_NEXT.user.js",
   "files": [
     "src/runtime/namespace.js",
+    "src/runtime/scope.js",
+    "src/runtime/events.js",
     "src/platform/capabilities.js",
     "src/platform/page_bridge.js",
     "src/core/p2p_blocker.js",
     "src/core/quality.js",
-    "src/core/rank_engine.js"
+    "src/core/rank_engine.js",
+    "src/store/schema.js",
+    "src/store/storage.js",
+    "src/store/index.js",
+    "src/store/migrator.js"
   ]
 }

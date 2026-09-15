@@ -124,6 +124,131 @@
   };
 })();
 
+/* --- NEXT module: src/runtime/scope.js --- */
+// src/runtime/scope.js
+(function () {
+  'use strict';
+  if (!globalThis.DYEXRL_NEXT) return;
+
+  globalThis.DYEXRL_NEXT.registry.register('runtime.scope', [], function () {
+    function createScope(options) {
+      var opts = options || {};
+      var generation = opts.generation || 0;
+      var parentSignal = opts.signal;
+      var disposers = [];
+      var timers = new Set();
+      var isDestroyed = false;
+
+      function add(disposeFn) {
+        if (typeof disposeFn === 'function' && !isDestroyed) {
+          disposers.push(disposeFn);
+        }
+        return disposeFn;
+      }
+
+      function timeout(fn, ms) {
+        if (isDestroyed) return function () {};
+        var timerId = setTimeout(function () {
+          timers.delete(timerId);
+          if (!isDestroyed) fn();
+        }, ms);
+        timers.add(timerId);
+
+        return function cancel() {
+          clearTimeout(timerId);
+          timers.delete(timerId);
+        };
+      }
+
+      function destroy() {
+        if (isDestroyed) return;
+        isDestroyed = true;
+        timers.forEach(function (id) {
+          clearTimeout(id);
+        });
+        timers.clear();
+        for (var i = disposers.length - 1; i >= 0; i--) {
+          try {
+            disposers[i]();
+          } catch (err) {
+            console.error('[NEXT Scope] Disposer error:', err);
+          }
+        }
+        disposers = [];
+      }
+
+      if (parentSignal && typeof parentSignal.addEventListener === 'function') {
+        parentSignal.addEventListener('abort', destroy, { once: true });
+      }
+
+      return {
+        generation: generation,
+        get isDestroyed() { return isDestroyed; },
+        add: add,
+        timeout: timeout,
+        destroy: destroy
+      };
+    }
+
+    return { createScope: createScope };
+  });
+})();
+
+/* --- NEXT module: src/runtime/events.js --- */
+// src/runtime/events.js
+(function () {
+  'use strict';
+  if (!globalThis.DYEXRL_NEXT) return;
+
+  globalThis.DYEXRL_NEXT.registry.register('runtime.events', [], function () {
+    function createEventBus() {
+      var listeners = new Map();
+
+      function on(event, callback) {
+        if (typeof event !== 'string' || typeof callback !== 'function') {
+          throw new Error('[NEXT EventBus] Invalid event or callback');
+        }
+        if (!listeners.has(event)) {
+          listeners.set(event, new Set());
+        }
+        listeners.get(event).add(callback);
+
+        return function off() {
+          var set = listeners.get(event);
+          if (set) {
+            set.delete(callback);
+            if (set.size === 0) listeners.delete(event);
+          }
+        };
+      }
+
+      function emit(event, data) {
+        var set = listeners.get(event);
+        if (!set) return;
+        set.forEach(function (fn) {
+          try {
+            fn(data);
+          } catch (err) {
+            console.error('[NEXT EventBus] Listener error on ' + event + ':', err);
+          }
+        });
+      }
+
+      function clear() {
+        listeners.clear();
+      }
+
+      return {
+        on: on,
+        emit: emit,
+        clear: clear
+      };
+    }
+
+    return { createEventBus: createEventBus };
+  });
+})();
+
 /* --- NEXT module: src/platform/capabilities.js --- */
 // src/platform/capabilities.js
 (function () {
@@ -664,6 +789,564 @@
     return {
       STT: STT,
       createRankEngine: createRankEngine
+    };
+  });
+})();
+
+/* --- NEXT module: src/store/schema.js --- */
+// src/store/schema.js
+(function () {
+  'use strict';
+  if (!globalThis.DYEXRL_NEXT) return;
+
+  globalThis.DYEXRL_NEXT.registry.register('store.schema', [], function () {
+    var FORBIDDEN_KEYS = new Set(['__proto__', 'prototype', 'constructor']);
+
+    function sanitizePath(path) {
+      if (typeof path !== 'string' || !path) {
+        throw new Error('[NEXT Store] Path must be a non-empty string');
+      }
+      var parts = path.split('.');
+      for (var i = 0; i < parts.length; i++) {
+        if (FORBIDDEN_KEYS.has(parts[i])) {
+          throw new Error('[NEXT Store] Forbidden property access in path: ' + parts[i]);
+        }
+      }
+      return parts;
+    }
+
+    function deepClone(obj) {
+      if (obj === null || typeof obj !== 'object') return obj;
+      if (Array.isArray(obj)) {
+        return obj.map(deepClone);
+      }
+      var copy = {};
+      var keys = Object.keys(obj);
+      for (var i = 0; i < keys.length; i++) {
+        var k = keys[i];
+        if (!FORBIDDEN_KEYS.has(k)) {
+          copy[k] = deepClone(obj[k]);
+        }
+      }
+      return copy;
+    }
+
+    function getByPath(obj, path) {
+      var parts = sanitizePath(path);
+      var curr = obj;
+      for (var i = 0; i < parts.length; i++) {
+        if (curr === null || typeof curr !== 'object') return undefined;
+        curr = curr[parts[i]];
+      }
+      return curr;
+    }
+
+    function setByPath(obj, path, value) {
+      var parts = sanitizePath(path);
+      var curr = obj;
+      for (var i = 0; i < parts.length - 1; i++) {
+        var key = parts[i];
+        if (!curr[key] || typeof curr[key] !== 'object') {
+          curr[key] = {};
+        }
+        curr = curr[key];
+      }
+      curr[parts[parts.length - 1]] = value;
+    }
+
+    var defaultSettings = {
+      core: {
+        highestQuality: true,
+        p2pBlock: true
+      },
+      player: {
+        autoFullScreen: false,
+        tabSwitchEconomy: false,
+        refreshSettings: {}
+      },
+      ui: {
+        cleanMode: false,
+        removeMsgNotice: false
+      },
+      media: {
+        pipSettings: {},
+        filters: { brightness: 100, contrast: 100, saturate: 100 }
+      },
+      vod: {
+        cameraHidden: false
+      },
+      danmaku: {
+        tail: { enabled: false, text: '', type: '2' },
+        collections: [],
+        bloopOptions: { list: [], delay: 3, random: false },
+        voteSettings: { select: '', theme: '', options: '', time: 30, repeat: false },
+        enterWords: [],
+        enterEnabled: false,
+        lastEnterWord: '',
+        thankGifts: [],
+        thankGiftEnabled: false,
+        muteRules: [],
+        muteEnabled: false,
+        autoReplyRules: [],
+        autoReplyCd: 5,
+        autoReplyEnabled: false,
+        filter: {
+          removeRepeated: false,
+          repeatWindowSeconds: 5,
+          removeEnter: false,
+          removeStickers: false,
+          removeBackground: false,
+          enlargeFont: false
+        }
+      },
+      economy: {
+        fansContinueCount: 0,
+        signConfig: { room: true, client: true, yuba: true, stardiscover: true, fanshome: true },
+        autoFish: { rids: [], modes: {} }
+      },
+      radar: {
+        lotterySettings: { isNotice: true },
+        treasure: { enabled: false, delay: 0 },
+        redpacket: { enabled: false }
+      },
+      system: {
+        monthCost: {},
+        monthCostHidden: true,
+        lastNotifiedVersion: '',
+        lastUpdateCheckTime: 0
+      }
+    };
+
+    return {
+      sanitizePath: sanitizePath,
+      deepClone: deepClone,
+      getByPath: getByPath,
+      setByPath: setByPath,
+      defaultSettings: defaultSettings
+    };
+  });
+})();
+
+/* --- NEXT module: src/store/storage.js --- */
+// src/store/storage.js
+(function () {
+  'use strict';
+  if (!globalThis.DYEXRL_NEXT) return;
+
+  globalThis.DYEXRL_NEXT.registry.register('store.storage', [], function () {
+    var CONFIG_KEY = 'DYEXRL_NEXT_CONFIG';
+    var CORE_MIRROR_KEY = 'DYEXRL_NEXT_CORE';
+    var DEBOUNCE_MS = 300;
+
+    var pendingTimer = null;
+    var latestData = null;
+
+    function rawGet(key, defaultVal) {
+      if (typeof GM_getValue === 'function') {
+        try {
+          var val = GM_getValue(key);
+          if (val !== undefined && val !== null) {
+            return typeof val === 'string' ? JSON.parse(val) : val;
+          }
+        } catch (e) {}
+      }
+      if (typeof localStorage !== 'undefined') {
+        try {
+          var lsVal = localStorage.getItem(key);
+          if (lsVal !== null) {
+            return JSON.parse(lsVal);
+          }
+        } catch (e) {}
+      }
+      return defaultVal;
+    }
+
+    function rawSet(key, value) {
+      var str = JSON.stringify(value);
+      if (typeof GM_setValue === 'function') {
+        try {
+          GM_setValue(key, str);
+        } catch (e) {}
+      }
+      if (typeof localStorage !== 'undefined') {
+        try {
+          localStorage.setItem(key, str);
+        } catch (e) {}
+      }
+    }
+
+    function syncCoreMirror(settings) {
+      if (!settings || !settings.core) return;
+      var mirror = {
+        highestQuality: !!settings.core.highestQuality,
+        p2pBlock: !!settings.core.p2pBlock,
+        version: 'next'
+      };
+      if (typeof localStorage !== 'undefined') {
+        try {
+          localStorage.setItem(CORE_MIRROR_KEY, JSON.stringify(mirror));
+        } catch (e) {}
+      }
+    }
+
+    function saveConfigImmediate(configObject) {
+      if (pendingTimer) {
+        clearTimeout(pendingTimer);
+        pendingTimer = null;
+      }
+      latestData = configObject;
+      configObject.updatedAt = Date.now();
+      rawSet(CONFIG_KEY, configObject);
+      syncCoreMirror(configObject.settings);
+    }
+
+    function scheduleSave(configObject) {
+      latestData = configObject;
+      if (pendingTimer) clearTimeout(pendingTimer);
+      pendingTimer = setTimeout(function () {
+        pendingTimer = null;
+        if (latestData) {
+          saveConfigImmediate(latestData);
+        }
+      }, DEBOUNCE_MS);
+    }
+
+    function flush() {
+      if (pendingTimer && latestData) {
+        saveConfigImmediate(latestData);
+      }
+    }
+
+    function loadConfig(defaultConfig) {
+      var loaded = rawGet(CONFIG_KEY, null);
+      if (!loaded || typeof loaded !== 'object') {
+        return defaultConfig;
+      }
+      return loaded;
+    }
+
+    return {
+      CONFIG_KEY: CONFIG_KEY,
+      CORE_MIRROR_KEY: CORE_MIRROR_KEY,
+      loadConfig: loadConfig,
+      scheduleSave: scheduleSave,
+      saveConfigImmediate: saveConfigImmediate,
+      flush: flush,
+      rawGet: rawGet,
+      rawSet: rawSet
+    };
+  });
+})();
+
+/* --- NEXT module: src/store/index.js --- */
+// src/store/index.js
+(function () {
+  'use strict';
+  if (!globalThis.DYEXRL_NEXT) return;
+
+  globalThis.DYEXRL_NEXT.registry.register('store.index', ['store.schema', 'store.storage', 'runtime.events'], function (schema, storage, events) {
+    var eventBus = events.createEventBus();
+
+    var initialConfig = {
+      schemaVersion: 1,
+      revision: 1,
+      updatedAt: Date.now(),
+      settings: schema.deepClone(schema.defaultSettings)
+    };
+
+    var configState = storage.loadConfig(initialConfig);
+    // Ensure all keys from schema exist
+    Object.keys(schema.defaultSettings).forEach(function (category) {
+      if (!configState.settings[category] || typeof configState.settings[category] !== 'object') {
+        configState.settings[category] = schema.deepClone(schema.defaultSettings[category]);
+      } else {
+        Object.keys(schema.defaultSettings[category]).forEach(function (key) {
+          if (typeof configState.settings[category][key] === 'undefined') {
+            configState.settings[category][key] = schema.deepClone(schema.defaultSettings[category][key]);
+          }
+        });
+      }
+    });
+
+    // In-memory runtime slices (never persisted to localStorage)
+    var runtimeState = {
+      room: { rid: '', anchorName: '', isLive: false, generation: 0 },
+      user: { uid: '', nickname: '', loggedIn: false, activeBadgeName: '' },
+      backpack: { items: [], updatedAt: 0 }
+    };
+
+    var store = {
+      get: function (path) {
+        if (typeof path !== 'string' || !path) {
+          return schema.deepClone(configState.settings);
+        }
+        if (path.startsWith('runtime.')) {
+          return schema.deepClone(schema.getByPath(runtimeState, path.slice(8)));
+        }
+        return schema.deepClone(schema.getByPath(configState.settings, path));
+      },
+
+      set: function (path, value) {
+        if (typeof path !== 'string' || !path) {
+          throw new Error('[NEXT Store] Path must be provided to set()');
+        }
+        if (path.startsWith('runtime.')) {
+          schema.setByPath(runtimeState, path.slice(8), value);
+          eventBus.emit('change:' + path, value);
+          return;
+        }
+
+        var prev = schema.getByPath(configState.settings, path);
+        if (JSON.stringify(prev) === JSON.stringify(value)) return;
+
+        schema.setByPath(configState.settings, path, value);
+        configState.revision += 1;
+        storage.scheduleSave(configState);
+        eventBus.emit('change:' + path, value);
+        eventBus.emit('change', { path: path, value: value });
+      },
+
+      patch: function (path, partial) {
+        if (typeof partial !== 'object' || partial === null) {
+          return store.set(path, partial);
+        }
+        var current = store.get(path) || {};
+        var merged = Object.assign({}, current, partial);
+        store.set(path, merged);
+      },
+
+      subscribe: function (path, callback) {
+        if (typeof callback !== 'function') {
+          throw new Error('[NEXT Store] Subscriber must be a function');
+        }
+        var eventKey = path ? 'change:' + path : 'change';
+        return eventBus.on(eventKey, callback);
+      },
+
+      // UI Binders
+      bindCheckbox: function (elementOrSelector, path) {
+        var el = typeof elementOrSelector === 'string' ? document.querySelector(elementOrSelector) : elementOrSelector;
+        if (!el) return function () {};
+
+        el.checked = !!store.get(path);
+        var updatingFromStore = false;
+
+        function handleChange() {
+          if (!updatingFromStore) {
+            store.set(path, el.checked);
+          }
+        }
+        el.addEventListener('change', handleChange, false);
+
+        var unsub = store.subscribe(path, function (val) {
+          updatingFromStore = true;
+          el.checked = !!val;
+          updatingFromStore = false;
+        });
+
+        return function unbind() {
+          el.removeEventListener('change', handleChange, false);
+          unsub();
+        };
+      },
+
+      bindInput: function (elementOrSelector, path) {
+        var el = typeof elementOrSelector === 'string' ? document.querySelector(elementOrSelector) : elementOrSelector;
+        if (!el) return function () {};
+
+        el.value = String(store.get(path) ?? '');
+        var updatingFromStore = false;
+
+        function handleInput() {
+          if (!updatingFromStore) {
+            store.set(path, el.value);
+          }
+        }
+        el.addEventListener('input', handleInput, false);
+
+        var unsub = store.subscribe(path, function (val) {
+          updatingFromStore = true;
+          if (el.value !== String(val ?? '')) {
+            el.value = String(val ?? '');
+          }
+          updatingFromStore = false;
+        });
+
+        return function unbind() {
+          el.removeEventListener('input', handleInput, false);
+          unsub();
+        };
+      },
+
+      flush: function () {
+        storage.flush();
+      },
+
+      destroy: function () {
+        storage.flush();
+        eventBus.clear();
+      }
+    };
+
+    return store;
+  });
+})();
+
+/* --- NEXT module: src/store/migrator.js --- */
+// src/store/migrator.js
+(function () {
+  'use strict';
+  if (!globalThis.DYEXRL_NEXT) return;
+
+  globalThis.DYEXRL_NEXT.registry.register('store.migrator', ['store.index', 'store.storage'], function (store, storage) {
+    var MIGRATION_FLAG_KEY = 'DYEXRL_NEXT_MIGRATED_V1';
+
+    function parseJsonSafe(val, defaultVal) {
+      if (!val) return defaultVal;
+      try {
+        return JSON.parse(val);
+      } catch (e) {
+        return defaultVal;
+      }
+    }
+
+    function migrateLegacyData(options) {
+      var opts = options || {};
+      var force = !!opts.force;
+      var storageSource = opts.storage || (typeof localStorage !== 'undefined' ? localStorage : null);
+      if (!storageSource) {
+        return { success: false, reason: 'No storage source available' };
+      }
+
+      if (!force) {
+        var alreadyMigrated = storage.rawGet(MIGRATION_FLAG_KEY, false);
+        if (alreadyMigrated) {
+          return { success: true, skipped: true, reason: 'Already migrated' };
+        }
+      }
+
+      var migrated = [];
+      var errors = [];
+
+      function safeMigrate(legacyKey, transformFn) {
+        try {
+          var val = storageSource.getItem ? storageSource.getItem(legacyKey) : storageSource[legacyKey];
+          if (val !== null && val !== undefined) {
+            transformFn(val);
+            migrated.push(legacyKey);
+          }
+        } catch (err) {
+          errors.push({ key: legacyKey, error: err.message });
+        }
+      }
+
+      // 1. Core
+      safeMigrate('ExSave_HighestVideoQuality', function (v) {
+        var p = parseJsonSafe(v, {});
+        store.set('core.highestQuality', p.isHighestVideoQuality ?? true);
+      });
+      safeMigrate('ExSave_P2P', function (v) {
+        var p = parseJsonSafe(v, {});
+        store.set('core.p2pBlock', p.isKillP2P ?? true);
+      });
+
+      // 2. Player & System
+      safeMigrate('ExSave_FullScreen', function (v) {
+        var p = parseJsonSafe(v, {});
+        store.set('player.autoFullScreen', !!p.isFullScreen);
+      });
+      safeMigrate('ExSave_Mode', function (v) {
+        var p = parseJsonSafe(v, {});
+        store.set('ui.cleanMode', p.mode === 1);
+      });
+      safeMigrate('ExSave_TabSwitch', function (v) {
+        var p = parseJsonSafe(v, {});
+        store.set('player.tabSwitchEconomy', !!p.isEnableTabSwitch);
+      });
+      safeMigrate('ExSave_Camera_Hidden', function (v) {
+        store.set('vod.cameraHidden', Date.now() < parseInt(v, 10));
+      });
+
+      // 3. Danmaku
+      safeMigrate('ExSave_DanmakuTail', function (v) {
+        var p = parseJsonSafe(v, {});
+        store.set('danmaku.tail', {
+          enabled: !!p.isTailEnabled,
+          text: String(p.tailContent || ''),
+          type: String(p.type || '2')
+        });
+      });
+      safeMigrate('ExSave_DanmakuCollect', function (v) {
+        var p = parseJsonSafe(v, []);
+        if (Array.isArray(p)) {
+          store.set('danmaku.collections', p);
+        }
+      });
+      safeMigrate('ExSave_Reply', function (v) {
+        var p = parseJsonSafe(v, []);
+        if (Array.isArray(p) || (typeof p === 'object' && p !== null)) {
+          store.set('danmaku.autoReplyRules', p);
+        }
+      });
+      safeMigrate('ExSave_ReplyCd', function (v) {
+        store.set('danmaku.autoReplyCd', parseInt(v, 10) || 5);
+      });
+      safeMigrate('ExSave_isReply', function (v) {
+        store.set('danmaku.autoReplyEnabled', !!v);
+      });
+      safeMigrate('ExSave_isRemoveRepeatedDanmaku', function (v) {
+        store.set('danmaku.filter.removeRepeated', v === '1' || v === 'true' || v === true);
+      });
+      safeMigrate('ExSave_repeatedDanmakuSeconds', function (v) {
+        store.set('danmaku.filter.repeatWindowSeconds', parseInt(v, 10) || 5);
+      });
+
+      // 4. Economy
+      safeMigrate('ExSave_FansContinue', function (v) {
+        store.set('economy.fansContinueCount', parseInt(v, 10) || 0);
+      });
+      safeMigrate('ExSave_SignConfig', function (v) {
+        var p = parseJsonSafe(v, {});
+        store.patch('economy.signConfig', p);
+      });
+      safeMigrate('ExSave_AutoFish', function (v) {
+        var p = parseJsonSafe(v, {});
+        if (p && typeof p === 'object') {
+          store.patch('economy.autoFish', p);
+        }
+      });
+
+      // 5. Radar
+      safeMigrate('ExSave_Lottery', function (v) {
+        var p = parseJsonSafe(v, {});
+        store.set('radar.lotterySettings.isNotice', p.isNotice ?? true);
+      });
+      safeMigrate('ExSave_Treasure', function (v) {
+        var p = parseJsonSafe(v, {});
+        store.set('radar.treasure', {
+          enabled: !!p.isGetTreasure,
+          delay: parseInt(p.treasureDelay, 10) || 0
+        });
+      });
+      safeMigrate('ExSave_RedPacket_Room', function (v) {
+        var p = parseJsonSafe(v, {});
+        store.set('radar.redpacket.enabled', !!p.isRedPacket);
+      });
+
+      store.flush();
+      storage.rawSet(MIGRATION_FLAG_KEY, true);
+
+      return {
+        success: true,
+        migratedCount: migrated.length,
+        migratedKeys: migrated,
+        errors: errors
+      };
+    }
+
+    return {
+      MIGRATION_FLAG_KEY: MIGRATION_FLAG_KEY,
+      migrateLegacyData: migrateLegacyData
     };
   });
 })();
