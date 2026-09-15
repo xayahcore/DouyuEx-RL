@@ -102,8 +102,6 @@ function y(){var e=document.createElement("style");e.appendChild(document.create
 
 .extool__redpacket_room,
 
-.extool__gold,
-
 .extool__clearbag,
 
 .extool__tabswitch,
@@ -125,8 +123,6 @@ function y(){var e=document.createElement("style");e.appendChild(document.create
 .extool__autofish::before,
 
 .extool__redpacket_room::before,
-
-.extool__gold::before,
 
 .extool__clearbag::before,
 
@@ -165,8 +161,6 @@ function y(){var e=document.createElement("style");e.appendChild(document.create
 .extool__autofish::before { content: "钓鱼"; }
 
 .extool__redpacket_room::before { content: "礼物红包"; }
-
-.extool__gold::before { content: "幻神/礼物"; }
 
 .extool__clearbag::before { content: "背包"; }
 
@@ -290,19 +284,7 @@ function y(){var e=document.createElement("style");e.appendChild(document.create
 
 /* 卡片内部已改为 flex，这里不再强制 inline-block */
 
-.ex_giftAnimation {
 
-	width: 100%;
-
-	height: 100%;
-
-	position: absolute;
-
-	z-index: 50;
-
-	pointer-events: none;
-
-}
 
 .ex-panel {	position: absolute;	bottom: 32px;	right: 0px;	background-color: rgba(255,255,255,0.8);	backdrop-filter: blur(18px) saturate(1.6);	-webkit-backdrop-filter: blur(18px) saturate(1.6);	border: 1px solid rgba(15,23,42,0.08);	border-radius: 14px;	box-shadow: 0 10px 28px rgba(15,23,42,0.14), 0 2px 8px rgba(15,23,42,0.06);	z-index: 1428;	user-select: none;	display: none;	overflow: visible;}.ex-panel__close {	position: absolute;	top: -9px;	right: -9px;	z-index: 3;	width: 18px;	height: 18px;	padding: 0;	margin: 0;	border: none;	border-radius: 50%;	background: rgba(255, 255, 255, 0.95);	color: #64748b;	font-size: 14px;	line-height: 16px;	text-align: center;	cursor: pointer;	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);	transition: color 0.15s ease, background-color 0.15s ease;}.ex-panel__close:hover {	color: #fff;	background: #f60;}.ex-panel__close:focus-visible {	outline: 2px solid #ff7700;	outline-offset: 1px;}/* 隐藏礼物栏时挂到播放器层，位置由 ExPanel_updateFloatingPosition 计算（视频工具条上方） */.ex-panel.ex-panel--floating {	position: fixed;	z-index: 10000;}.ex-panel__wrap {	display: flex;	align-items: center;	justify-content: center;	width: 100%;	height: 100%;	position: relative;	z-index: 1;}.ex-panel__icon {	margin: 0 6px;	display: block;	position: relative;	padding: 5px;	border-radius: 10px;	transition: background-color 0.2s ease, transform 0.25s cubic-bezier(0.34,1.56,0.64,1);}.ex-panel__icon:hover {	transform: scale(1.12);	background-color: rgba(255,106,0,0.1);}.ex-panel__tip {	display:none;	background:#ff4757;	border-radius:50%;	width:8px;	height:8px;	top:0px;	right:0px;	position:absolute;	box-shadow:0 0 0 2px rgba(255,255,255,0.9), 0 0 8px rgba(255,71,87,0.6);}/* 新版斗鱼右侧弹幕Panel的bottom */.live-next-body .layout-Player-chat>* {	bottom: 0 !important;}.text-879f3e {  height: auto !important;  max-height: 48px !important;}.ex-image-danmaku {  height: 48px;  border-radius: 6px;  margin: 0 4px;}.danmuContent-25f266 .ex-image-danmaku {  max-height: 32px;}.barrageSpeed {    position: absolute;    right: 10px;    top: -20px;    color: rgba(0,0,0,0.5);    cursor: default;    z-index: 0;}.enter__panel {    width: 100%;    display: none;    margin-top: 4px;}#enter__title {    cursor: pointer;    user-select: none;    color: royalblue;}#enter__select {    width: 190px;}.enter__option {    margin-top: 5px;}#enter__enterId {    width: 40px;}#enter__reply {    width: 150px;}#enter__word {    width: 140px;}#enter__level {    width: 25px;    text-align: center;}#enter__export {    cursor: pointer;    color: royalblue;    margin-left: 10px;}#enter__import {    cursor: pointer;    color: royalblue;    margin-left: 5px;}.gift__panel {    width: 100%;    display: none;    margin-top: 4px;}#gift__title {    cursor: pointer;    user-select: none;    color: royalblue;}#gift__select {    width: 113px;}.gift__option {    margin-top: 5px;}#gift__giftId {    width: 40px;}#gift__reply {    width: 150px;}#gift__export {    cursor: pointer;    color: royalblue;    margin-left: 10px;}#gift__import {    cursor: pointer;    color: royalblue;    margin-left: 5px;}.livetool {	background-color: rgba(255,255,255,0.78);
 	backdrop-filter: blur(18px) saturate(1.6);
@@ -994,8 +976,8 @@ function y(){var e=document.createElement("style");e.appendChild(document.create
 .miuix-modal__close:active { transform: scale(0.95) !important; }
 
 /* 4. 卡片合理宽度收敛 (左右严密留白 12px，彻底杜绝向右溢出) */
-.extool > div:not(.miuix-modal__header):not(.miuix-modal__body):not(.ex_giftAnimation):not(.extool__close),
-.extool__player_perf, .extool__treasure, .extool__gold, .extool__redpacket_room, .extool__autofish, .extool__clearbag, .extool__sendgift,
+.extool > div:not(.miuix-modal__header):not(.miuix-modal__body):not(.extool__close),
+.extool__player_perf, .extool__treasure, .extool__redpacket_room, .extool__autofish, .extool__clearbag, .extool__sendgift,
 .livetool__cell, .lottery__item, .bloop > div:not(.miuix-modal__header), .DanmakuTail-option-label, .DanmakuTail-checkbox-label {
     width: auto !important; max-width: none !important; min-width: 0 !important;
     margin-left: 12px !important; margin-right: 12px !important; margin-bottom: 10px !important; padding: 10px 14px !important;
@@ -1341,53 +1323,6 @@ function y(){var e=document.createElement("style");e.appendChild(document.create
     font-size: 11px !important;
     color: #64748b !important;
     margin-top: 2px !important;
-}
-
-/* 四级卡片与触发触控盒 */
-.ex-gift-flow {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
-    gap: 10px !important;
-    margin: 10px 0 !important;
-}
-.ex-gift-box {
-    flex: 1 !important;
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    padding: 8px 10px !important;
-    border-radius: 10px !important;
-    background: rgba(255, 255, 255, 0.6) !important;
-    border: 1px dashed rgba(0, 122, 255, 0.4) !important;
-    cursor: pointer !important;
-    transition: all 0.18s ease !important;
-}
-.ex-gift-box:hover {
-    background: #ffffff !important;
-    border-style: solid !important;
-    box-shadow: 0 2px 8px rgba(0, 122, 255, 0.2) !important;
-}
-.ex-gift-box__icon {
-    width: 36px !important;
-    height: 36px !important;
-    object-fit: contain !important;
-    margin-bottom: 4px !important;
-}
-.ex-gift-box__name {
-    font-size: 12px !important;
-    font-weight: 600 !important;
-    color: #0f172a !important;
-}
-.ex-gift-box__sub {
-    font-size: 10.5px !important;
-    color: #64748b !important;
-}
-.ex-gift-flow__arrow {
-    font-size: 18px !important;
-    color: #007aff !important;
-    font-weight: bold !important;
-    flex: 0 0 auto !important;
 }
 
 /* 4级菜单礼物触控触发胶囊 */
