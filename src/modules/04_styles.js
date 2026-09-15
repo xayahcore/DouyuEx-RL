@@ -714,7 +714,7 @@ function y(){var e=document.createElement("style");e.appendChild(document.create
 }
 
 /* 2. Level 3 模态控制台 (370px 齐平三维铁壁 - 扁平自然滚动) */
-.miuix-modal:not(.vote__result), .extool, .livetool, .bloop, .exlottery, .ChatToolBar-DanmakuTail-Panel, .fans-continue-panel, .popup-player-panel, .exupdate-panel {
+.miuix-modal:not(.vote__result), .extool, .livetool, .bloop, .exlottery, .ChatToolBar-DanmakuTail-Panel, .fans-continue-panel, .sign-panel, .popup-player-panel, .exupdate-panel {
     position: fixed !important;
     width: 380px !important; max-width: calc(100vw - 24px) !important;
     height: 370px !important; max-height: 370px !important; min-height: 370px !important;
@@ -742,6 +742,7 @@ function y(){var e=document.createElement("style");e.appendChild(document.create
 .exlottery.miuix-modal-in,
 .ChatToolBar-DanmakuTail-Panel.miuix-modal-in,
 .fans-continue-panel.miuix-modal-in,
+.sign-panel.miuix-modal-in,
 .popup-player-panel.miuix-modal-in,
 .exupdate-panel.miuix-modal-in,
 .miuix-modal[style*="display: block"], .miuix-modal[style*="display:block"],
@@ -756,8 +757,12 @@ function y(){var e=document.createElement("style");e.appendChild(document.create
 .exlottery[style*="display: flex"], .exlottery[style*="display:flex"],
 .ChatToolBar-DanmakuTail-Panel[style*="display: block"], .ChatToolBar-DanmakuTail-Panel[style*="display:block"],
 .ChatToolBar-DanmakuTail-Panel[style*="display: flex"], .ChatToolBar-DanmakuTail-Panel[style*="display:flex"],
-.fans-continue-panel[style*="display: block"], .fans-continue-panel[style*="display:block"],
-.fans-continue-panel[style*="display: flex"], .fans-continue-panel[style*="display:flex"],
+.fans-continue-panel[style*="display: block"],
+.sign-panel[style*="display: block"], .fans-continue-panel[style*="display:block"],
+.sign-panel[style*="display:block"],
+.fans-continue-panel[style*="display: flex"],
+.sign-panel[style*="display: flex"], .fans-continue-panel[style*="display:flex"],
+.sign-panel[style*="display:flex"],
 .popup-player-panel[style*="display: block"], .popup-player-panel[style*="display:block"],
 .popup-player-panel[style*="display: flex"], .popup-player-panel[style*="display:flex"],
 .exupdate-panel[style*="display: block"], .exupdate-panel[style*="display:block"],
@@ -1409,5 +1414,81 @@ function y(){var e=document.createElement("style");e.appendChild(document.create
     box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.18) !important;
 }
 
+
+
+/* ==================== 一键签到三级面板样式 ==================== */
+.sign-options-list {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 6px !important;
+    margin-top: 4px !important;
+}
+.sign-option-item {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    padding: 7px 10px !important;
+    border-radius: 10px !important;
+    background: rgba(255, 255, 255, 0.55) !important;
+    border: 1px solid rgba(0, 0, 0, 0.05) !important;
+    cursor: pointer !important;
+    user-select: none !important;
+    transition: all 0.16s ease !important;
+}
+.sign-option-item:hover {
+    background: rgba(255, 255, 255, 0.88) !important;
+    border-color: rgba(0, 122, 255, 0.3) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04) !important;
+}
+.sign-option-item input[type="checkbox"] {
+    accent-color: #ff5d23 !important;
+    width: 16px !important;
+    height: 16px !important;
+    cursor: pointer !important;
+    flex: 0 0 auto !important;
+}
+.sign-option-text {
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 !important;
+}
+.sign-option-title {
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    color: #0f172a !important;
+    line-height: 1.3 !important;
+}
+.sign-option-desc {
+    font-size: 10.5px !important;
+    color: #64748b !important;
+    line-height: 1.2 !important;
+    margin-top: 1px !important;
+}
+.sign-status-tag {
+    font-size: 11px !important;
+    color: #10b981 !important;
+    font-weight: 600 !important;
+}
+.sign-log-box {
+    min-height: 52px !important;
+    max-height: 72px !important;
+    overflow-y: auto !important;
+    font-size: 11px !important;
+    color: #334155 !important;
+    background: rgba(241, 245, 249, 0.7) !important;
+    border: 1px solid rgba(0, 0, 0, 0.05) !important;
+    border-radius: 8px !important;
+    padding: 6px 10px !important;
+    line-height: 1.45 !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+}
+.sign-log-box::-webkit-scrollbar {
+    width: 4px !important;
+}
+.sign-log-box::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2) !important;
+    border-radius: 4px !important;
+}
 
 `)),document.head.appendChild(e)}
