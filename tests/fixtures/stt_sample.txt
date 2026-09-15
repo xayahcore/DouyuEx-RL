@@ -1,0 +1,1 @@
+type@=ranklist/dayrk@=1/nn@=测试粉丝/gold@=52000/score@=1314/

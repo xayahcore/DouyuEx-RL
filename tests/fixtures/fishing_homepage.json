@@ -1,0 +1,14 @@
+{
+  "error": 0,
+  "msg": "success",
+  "data": {
+    "user": {
+      "avatar": "avatar.jpg",
+      "baitNum": 10
+    },
+    "fishing": {
+      "stat": 1,
+      "fishEtMs": 1726488000000
+    }
+  }
+}

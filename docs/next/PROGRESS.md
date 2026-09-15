@@ -1,55 +1,52 @@
 # 📊 DouyuEx-RL NEXT 工程实施进度档案 (PROGRESS.md)
 
-任务包：P0.1（进行中 / 基线冻结已完成）
+任务包：P0.2（已完成）
 基线commit / 当前产物SHA256：
-- 基线 Commit: `7c6f87d` (分支: `DYEXRL-NEXT`)
+- 基线 Commit: `ce9ae66` (分支: `DYEXRL-NEXT`)
 - 当前产物 SHA256: `5f5eba93a5280cbebff86f03d18fa09bb37f1a8739aff7ed6e2b4fdde602ab90` (`DouyuEx_RL.user.js`)
 
 涉及能力：
-- 全量能力建档：F-01 ～ F-62 (共 62 项独立交付能力)
-- 套娃子面板建档：L3-01 ～ L3-12 (共 12 个二级/三级手风琴子面板与独立大屏看板)
-- 一级控制台建档：P-01 ～ P-05 (5 大核心面板：fans, sign, popup, update, gift-picker)
-- 场景路由建档：R-01 ～ R-08 (8 大归一化路由分支)
+- 接口契约台账全面覆盖：A-01 ～ A-13, B-FISH, B-GIFTS, B-SEND, B-SIGN, B-CHAT, B-MUTE, B-SEARCH, B-AUDIENCE, B-VOD, B-LOTTERY, B-HARDWARE, B-UPDATE, B-YUBA, C-ENHANCE
+- 本地持久化字典全面映射：44 个 `ExSave_*` 键、GM 跨域键、6 个宿主播放器偏好硬化键与迁移白名单
+- 外部依赖与权限审计：6 个 @require CDN 依赖库、11 个 @connect 域名、10 个 @grant 特权指令
+- Hook 拦截时序与 Disposer 规约：涵盖 QualityLock, RankEngine, P2PBlocker, 观察器与 Scope 托管
 
 已阅读的源码符号及契约：
-- `src/meta.js`: 18 条 @match 规则、6 个 @require、11 个 @connect、10 个 @grant 特权指令
-- `src/core/quality.js`: runSeamlessQuality, 12s 状态机, preloadStreamUrlPromise, getLegacyFirstStream, betard 劫持
-- `src/core/rank_engine.js`: STT 协议双重转义解码器 (sttFlat, sttParse), WebSocket 代理与 Map 字典聚合
-- `src/modules/01_setup.js`: GracefulP2PBlocker, WeakMap XHR 代理, 菜单命令注册
-- `src/modules/02_dom_ui.js`: DOCK_DEFS (9 个功能图标), 12 个嵌套子面板 HTML 与 safeBind
-- `src/modules/05_services.js`: 业务服务集合 (画中画, 签到, 自动钓鱼, 录播, 弹幕套件)
-- `src/modules/06_router.js`: il 路由分发器 (8 大 URL 模式分支)
-- `build.js` / `release.js`: 构建打包与禁发版契约
+- `src/core/quality.js`: `/betard/` 响应克隆与改写、`rate=0` 拦截
+- `src/core/rank_engine.js`: STT 序列化解析算法与 WebSocket 数据到达延迟
+- `src/modules/01_setup.js`: P2PBlocker 原型属性拦截、WeakMap 上下文关联
+- `src/modules/05_services.js`: `homePage` 与 `reelIn` 钓鱼全链路、星推自动化、背包 `v5` 接口、硬件探测
+- `src/modules/06_router.js`: 8 种路由模式的 URL 模式与 postMessage 协议
 
 修改文件：
-- `docs/NEXT_IMPLEMENTATION_PLAN.md` (落盘由 GPT-6 重构的执行型实施契约全文)
-- `docs/next/BASELINE.md` (源码文件指纹、18 条 @match 规则、环境基线与禁发版契约)
-- `docs/next/TRACEABILITY.md` (初始化全量 F-01~F-62, L3-01~L3-12, P-01~P-05, R-01~R-08 台账)
-- `docs/next/PROGRESS.md` (建立接力进度追踪档案)
-- `docs/next/ui-baseline/README.md` (初始化 UI 截图取证目录结构与元数据规约)
+- `docs/next/API_CONTRACTS.md` (完整记录所有接口端点、参数、Schema、幂等性与消费者)
+- `docs/next/STORAGE_MAPPING.md` (44 个老键到 NEXT Store 路径映射、默认值、迁移逻辑与重置白名单)
+- `docs/next/DEPENDENCIES.md` (锁定 6 个 @require 版本、11 个 @connect 域名职责与 10 个 @grant 说明)
+- `docs/next/HOOKS_AND_LIFECYCLE.md` (定义 document-start ➔ idle ➔ DOM 就绪装配时序与 Scope 销毁机制)
+- `tests/fixtures/` (建立 betard, stt_sample, task_list, fishing_homepage 4 大脱敏测试夹具)
+- `docs/next/PROGRESS.md` (更新进度档案)
 
 命令与结果：
-- `python D:/DouyuEx-RL/build_p0_baseline.py` -> 退出码: 0 (成功生成 BASELINE.md)
-- `python D:/DouyuEx-RL/build_p0_traceability.py` -> 退出码: 0 (成功生成 TRACEABILITY.md)
-- 证据路径: `docs/next/BASELINE.md`, `docs/next/TRACEABILITY.md`
+- `python D:/DouyuEx-RL/build_p0_forensics.py` -> 退出码: 0 (成功生成 4 份核心技术契约文档)
+- `python D:/DouyuEx-RL/build_fixtures.py` -> 退出码: 0 (成功建立脱敏夹具库)
+- 证据路径: `docs/next/API_CONTRACTS.md`, `docs/next/STORAGE_MAPPING.md`, `docs/next/DEPENDENCIES.md`, `docs/next/HOOKS_AND_LIFECYCLE.md`, `tests/fixtures/`
 
 浏览器环境与测试：
-- 步骤：检查当前宿主浏览器环境，发现 Brave 浏览器实例正在运行
-- 期望：保持当前只读取证状态，不进行非授权页面篡改
-- 实际：Brave 浏览器已就绪，等待后续 UI 截图取证包调用；未测（当前仅完成静态基线冻结）
+- 步骤：通过本地脱敏测试夹具验证数据契约格式，检查接口必需字段完整性
+- 期望：待实现接口无未知必需字段，所有参数均有确切来源与依据
+- 实际：全部 13 项 A 级接口与 12 组 B 级接口已具备完整的调用链依据与数据模型；未测（当前为协议与存储取证阶段）
 
 数据/权限：
 - 是否触发真实写操作：否 (严格保持只读与本地文档生成)
-- 授权范围：仅授权在本地 `docs/next/` 生成技术白皮书与台账，未触发任何网络写请求
+- 授权范围：本地文档与测试夹具生成
 
 未完成：
-- P0.2 协议/存储/依赖取证 (API_CONTRACTS.md, STORAGE_MAPPING.md, DEPENDENCIES.md, HOOKS_AND_LIFECYCLE.md 待生成)
-- P0.3 NEXT 构建与测试架搭建 (manifest.json, build.js --next 待开发)
-- 所有具体业务模块的编码实现 (Phase 1 ～ Phase 4)
+- P0.3 NEXT 构建与测试架搭建 (manifest.json, build.js --next, 单元测试基座)
+- Phase 1 ～ Phase 4 业务模块与 MIUIX 组件的具体编码
 
 阻塞：
-- 暂无阻塞。P0.1 基线冻结门禁全部通过。
+- 暂无阻塞。P0.2 协议/存储/依赖取证门禁全部通过。
 
 下一任务：
-- 单个任务包：`P0.2 协议/存储/依赖取证`
-- 前置条件：P0.1 基线冻结已达成 (BASELINE 与 TRACEABILITY 已落盘)
+- 单个任务包：`P0.3 NEXT 构建与测试架`
+- 前置条件：P0.2 契约文档与夹具已就绪
