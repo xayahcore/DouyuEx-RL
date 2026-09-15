@@ -11,9 +11,9 @@
 
 | 能力ID | 功能名称与业务能力描述 | 源码依据与锚点 | 目标实现文件 (src/下) | 关联API / 状态路径 | 对应测试编号 | 风险 | 当前状态 |
 |:---:|:---|:---|:---|:---|:---:|:---:|:---:|
-| **F-01** | 最高画质截杀、预载流掐断与 12s 保护窗 | M1.1; `quality.js:1-171` | `core/quality.js` | A-01, A-02; `core.quality` | T-F-01 | H | `planned` |
+| **F-01** | 最高画质截杀、预载流掐断与 12s 保护窗 | M1.1; `quality.js:1-171` | `core/quality.js` | A-01, A-02; `core.quality` | T-F-01 | H | `mock-tested` |
 | **F-02** | 日周月总榜贡献值与 STT 双重转义解码 | M1.2; `rank_engine.js:1-1318` | `core/rank_engine.js` | WS STT; `core.rank` | T-F-02 | H | `planned` |
-| **F-03** | WebRTC P2P 上传阻断与假原型装配 | M1.3; `01_setup.js:6` | `core/p2p_blocker.js` | local; `core.p2p` | T-F-03 | H | `planned` |
+| **F-03** | WebRTC P2P 上传阻断与假原型装配 | M1.3; `01_setup.js:6` | `core/p2p_blocker.js` | local; `core.p2p` | T-F-03 | H | `mock-tested` |
 | **F-04** | 增强版画中画 (DocumentPictureInPicture) 弹幕流与小窗打字 | M2.1; `05_services.js:2150-2350` | `modules/media/pip.js` | chat adapter; `media.pip` | T-F-04 | M | `planned` |
 | **F-05** | 同屏多直播间联播 (FLV极速流/iframe、拖拽缩放、独立音量) | M2.2; `02_dom_ui.js:770`, `05_services.js:86` | `modules/media/multi_room.js` | A-02; `media.multiRoom` | T-F-05 | M | `planned` |
 | **F-06** | 播放器色彩滤镜 (亮/对比/饱和度滑块、预设模式、旋转缩放、影院) | M2.3; `05_services.js:2010` | `modules/media/filters.js` | local; `media.filters` | T-F-06 | L | `planned` |
@@ -49,11 +49,11 @@
 | **F-36** | 全局脚本插入靶向安全过滤 (`Node.prototype.appendChild/insertBefore`) | `01_setup.js:6` | `platform/script_bridge.js` | local; `platform.script` | T-F-36 | H | `planned` |
 | **F-37** | `/firstqueue` 关键路径拦截与内联补丁管道 | `01_setup.js:6` | `platform/script_bridge.js` | local; `platform.firstqueue` | T-F-37 | H | `planned` |
 | **F-38** | 通用 XHR 响应转换器注册表与生命周期改写链 | `01_setup.js:6` | `platform/xhr_transform.js` | local; `platform.xhr` | T-F-38 | H | `planned` |
-| **F-39** | P2P 完整原型替换 (`createOffer`/`getStats`/`dataChannel`) | `01_setup.js:6` | `core/p2p_blocker.js` | local; `core.p2p` | T-F-39 | H | `planned` |
+| **F-39** | P2P 完整原型替换 (`createOffer`/`getStats`/`dataChannel`) | `01_setup.js:6` | `core/p2p_blocker.js` | local; `core.p2p` | T-F-39 | H | `mock-tested` |
 | **F-40** | 贡献榜 Page-World WebSocket 代理与 Blob/ArrayBuffer 解码通道 | `rank_engine.js:488-568` | `core/rank_engine.js` | page bridge; `core.rank` | T-F-40 | H | `planned` |
 | **F-41** | 榜单注入调度防抖 (50ms debounce, 5s fallback, click 触发, debug 开关) | `rank_engine.js:78-100` | `core/rank_engine.js` | local; `core.rank` | T-F-41 | M | `planned` |
-| **F-42** | 最高画质属性劫持 (`preloadStreamUrlPromise` 抑制预载, `getLegacyFirstStream` 强锁 rate=0) | `quality.js:37-70` | `core/quality.js` | local; `core.quality` | T-F-42 | H | `planned` |
-| **F-43** | 六个斗鱼播放器官方画质偏好 key 一年期 rate=0 镜像硬化 | `quality.js:23-35` | `core/quality.js` | local; `core.quality` | T-F-43 | M | `planned` |
+| **F-42** | 最高画质属性劫持 (`preloadStreamUrlPromise` 抑制预载, `getLegacyFirstStream` 强锁 rate=0) | `quality.js:37-70` | `core/quality.js` | local; `core.quality` | T-F-42 | H | `mock-tested` |
+| **F-43** | 六个斗鱼播放器官方画质偏好 key 一年期 rate=0 镜像硬化 | `quality.js:23-35` | `core/quality.js` | local; `core.quality` | T-F-43 | M | `mock-tested` |
 | **F-44** | 录播视频 Shadow DOM 观察器 (video/share/controller 三路监听) | `06_router.js:1` | `adapters/vod_player.js` | observer; `adapters.vod` | T-F-44 | M | `planned` |
 | **F-45** | 普通房间/exid 就绪探测与侧边栏/全屏触发 | `01_setup.js:6`, `06_router.js:5` | `adapters/room.js` | observer; `adapters.room` | T-F-45 | M | `planned` |
 | **F-46** | 60 秒任务心跳调度器 | `03_cron.js:2-6` | `runtime/heartbeat.js` | timer; `runtime.heartbeat` | T-F-46 | M | `planned` |

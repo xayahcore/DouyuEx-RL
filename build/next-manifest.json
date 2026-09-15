@@ -3,6 +3,11 @@
   "meta": "src/meta_next.js",
   "output": "artifacts/next/DouyuEx_RL_NEXT.user.js",
   "files": [
-    "src/runtime/namespace.js"
+    "src/runtime/namespace.js",
+    "src/platform/capabilities.js",
+    "src/platform/page_bridge.js",
+    "src/core/p2p_blocker.js",
+    "src/core/quality.js",
+    "src/core/rank_engine.js"
   ]
 }

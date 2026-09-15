@@ -1,57 +1,61 @@
 # 📊 DouyuEx-RL NEXT 工程实施进度档案 (PROGRESS.md)
 
-任务包：P0.3（已完成）
+任务包：P1.1（已完成）
 基线commit / 当前产物SHA256：
-- 基线 Commit: `eecc0f2` (分支: `DYEXRL-NEXT`)
+- 基线 Commit: `8f7645f` (分支: `DYEXRL-NEXT`)
 - 当前产物 SHA256: `5f5eba93a5280cbebff86f03d18fa09bb37f1a8739aff7ed6e2b4fdde602ab90` (`DouyuEx_RL.user.js`，严格保持未修改)
-- NEXT 试验包 SHA256: `d866a4fba7b74b12595ff9d47a4697d2e46c761b6264fcf43b35582f3ad6ee21` (`artifacts/next/DouyuEx_RL_NEXT.user.js`)
+- NEXT 产物 SHA256: `1867c2ce4237f37bc449339e03d368e734c5aeebf552f4eb26be2e269222ebce` (`artifacts/next/DouyuEx_RL_NEXT.user.js`, 20.88 KB)
 
 涉及能力：
-- 独立命名空间与模块注册体系：`src/runtime/namespace.js`
-- NEXT 独立构建管线：`build.js --next`
-- 清单驱动装配：`build/next-manifest.json`
-- 自动化测试基座：`tests/unit/*.test.js` (9 项单元测试通过)
+- F-01: 最高画质截杀与 12s 保护窗 (`mock-tested`)
+- F-02: 贡献榜 STT 双重转义解码与亲密度聚合 (`mock-tested`)
+- F-03 / F-39: W3C 规范假原型 WebRTC P2P 上传优雅阻断 (`mock-tested`)
+- F-40: Page-World 消息隔离与白名单通道 (`mock-tested`)
+- F-42: preloadStreamUrlPromise 与 getLegacyFirstStream 属性劫持 (`mock-tested`)
+- F-43: 宿主播放器 6 大画质偏好 key rate=0 镜像硬化 (`mock-tested`)
 
 已阅读的源码符号及契约：
-- `build.js`: 原生 vm.Script 语法核验与双模式构建支持
-- `docs/NEXT_IMPLEMENTATION_PLAN.md` §2.2, §2.3 构建隔离与命名空间规约
-- `src/meta_next.js`: 独立 name/namespace 与安全隔离元数据
+- `src/core/quality.js`: 12s 状态机 `isInitialLoad`, `rewriteRateInString`, `rewriteBetardData`, `packHostPreference`, `mirrorHostPreferences`
+- `src/core/rank_engine.js`: `sttFlat`, `sttParse`, `sttType`, `parseList`, `RankEngine` 状态机
+- `src/core/p2p_blocker.js`: `GracefulP2PBlocker`, `DOMException("WebRTC P2P disabled by user policy", "NotSupportedError")`, `install/uninstall`
+- `src/platform/page_bridge.js`: 跨世界白名单消息总线 (`RANK_STT_PACKET`, `QUALITY_STATE`, `PLAYER_EVENT`), 严防 Cookie 泄漏与未授权代理
+- `src/platform/capabilities.js`: 浏览器特性探针
 
 修改文件：
-- `src/meta_next.js` (NEXT 专用独立元数据头部)
-- `src/runtime/namespace.js` (模块注册与单例依赖解析中心)
-- `build/next-manifest.json` (NEXT 静态模块清单)
-- `build.js` (扩展 `--next` 独立构建模式与原子替换)
-- `tests/unit/registry.test.js` (模块注册、解析、去重、循环依赖与缺失测试)
-- `tests/unit/manifest.test.js` (清单格式与物理文件存在性核验测试)
-- `tests/unit/build.test.js` (构建输出确定性与根产物不修改测试)
+- `src/platform/capabilities.js` (环境特性探针模块)
+- `src/platform/page_bridge.js` (安全白名单跨世界消息桥)
+- `src/core/p2p_blocker.js` (优雅 P2P 上传阻断模块)
+- `src/core/quality.js` (模块化原画秒开与劫持拦截器)
+- `src/core/rank_engine.js` (模块化 STT 解码与榜单引擎)
+- `build/next-manifest.json` (更新拓扑文件清单)
+- `artifacts/next/DouyuEx_RL_NEXT.user.js` (重新编译产物，20.88 KB)
+- `tests/unit/core.test.js` (新增 5 项核心拦截与桥接单元测试)
+- `docs/next/TRACEABILITY.md` (更新 F-01, F-02, F-03, F-39, F-40, F-42, F-43 状态为 mock-tested)
 - `docs/next/PROGRESS.md` (更新进度档案)
 
 命令与结果：
-- `node build.js --next` -> 退出码: 0 (耗时 1ms, 成功生成 `artifacts/next/DouyuEx_RL_NEXT.user.js`)
-- `node build.js` -> 退出码: 0 (耗时 13ms, 保持原版 `DouyuEx_RL.user.js` 完全不受影响)
-- `node --test tests/unit/*.test.js` -> 退出码: 0 (9/9 pass, 耗时 399ms)
-- 证据路径: `tests/unit/*.test.js`, `build/next-manifest.json`, `artifacts/next/DouyuEx_RL_NEXT.user.js`
+- `node build.js --next` -> 退出码: 0 (V8 语法核验 2ms 通过，生成 20.88 KB 产物)
+- `node --test tests/unit/*.test.js` -> 退出码: 0 (14/14 pass, 耗时 416ms)
+- 证据路径: `tests/unit/core.test.js`, `artifacts/next/DouyuEx_RL_NEXT.user.js`, `docs/next/TRACEABILITY.md`
 
 浏览器环境与测试：
-- 步骤：在 Node.js 原生测试环境下运行 9 项单元测试，覆盖命名空间注册、解析、依赖链与构建确定性
-- 期望：测试全量绿灯通过，构建输出完全确定，根产物未被触碰
-- 实际：9 项测试全部通过；未测（当前为构建与测试脚手架阶段，未挂载浏览器）
+- 步骤：通过 Node.js 原生测试沙箱模拟 window/storage/DOMException 环境，运行 14 项单元测试
+- 期望：12s 原画窗口判定准确、P2P 阻断抛出标准 NotSupportedError 且支持 uninstall 恢复、STT 双重转义解析无损、PageBridge 非法消息强拦截
+- 实际：全部 14 项测试 100% 绿灯通过；未测（因当前为核心拦截层单元测试阶段，无真实写操作）
 
 数据/权限：
-- 是否触发真实写操作：否 (严格本地编译与单元测试)
-- 授权范围：本地构建管线与单元测试开发
+- 是否触发真实写操作：否 (严格保持只读与本地脱敏测试)
+- 授权范围：本地核心层模块化与单元测试
 
 未完成：
-- Phase 1: 核心拦截底座与统一网关 (P1.1 core, P1.2 store/scope, P1.3 client/router)
-- Phase 2: MIUIX 拟态组件库与通用对话框工厂
-- Phase 3: 业务服务领域切片 (A:资产, B:弹幕, C:播控, D:雷达)
-- Phase 4: 老数据平滑迁移器
-- Phase 5: 全域对照验收与分支锁定
+- P1.2 Store/迁移/Scope (schema.js, storage.js, migrator.js, scope.js, events.js)
+- P1.3 Client/Router/Adapters (client.js, router, adapters)
+- Phase 2: 全量 MIUIX 拟态组件库工厂
+- Phase 3: 业务服务领域切片全量重构
 
 阻塞：
-- 暂无阻塞。Phase 0 全部三个任务包 (P0.1, P0.2, P0.3) 全部验收通过。
+- 暂无阻塞。P1.1 核心拦截底座与主世界边界验收通过。
 
 下一任务：
-- 单个任务包：`P1.1 core 与主世界边界 (Core Interception & Page Bridge)`
-- 前置条件：Phase 0 已全部就绪
+- 单个任务包：`P1.2 Store/迁移/Scope (State Store, DataMigrator & Scope Lifecycle)`
+- 前置条件：P1.1 核心拦截与平台能力已就绪
