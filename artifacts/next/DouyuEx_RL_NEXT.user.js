@@ -572,6 +572,69 @@
   });
 })();
 
+/* --- NEXT module: src/platform/script_bridge.js --- */
+// src/platform/script_bridge.js
+(function () {
+  'use strict';
+  if (!globalThis.DYEXRL_NEXT) return;
+
+  globalThis.DYEXRL_NEXT.registry.register('platform.scriptBridge', [], function () {
+
+    var originalAppendChild = null;
+    var originalInsertBefore = null;
+    var isInstalled = false;
+    var transformers = new Map();
+
+    function registerTransformer(urlPattern, transformFn) {
+      transformers.set(urlPattern, transformFn);
+    }
+
+    function install(targetWin) {
+      if (isInstalled) return;
+      var win = targetWin || (typeof window !== 'undefined' ? window : globalThis);
+      var NodeProto = win.Node ? win.Node.prototype : null;
+      if (!NodeProto) return;
+
+      originalAppendChild = NodeProto.appendChild;
+      originalInsertBefore = NodeProto.insertBefore;
+
+      NodeProto.appendChild = function (child) {
+        if (child && child.tagName === 'SCRIPT' && child.src) {
+          // Check white-list / firstqueue
+          if (child.src.includes('/firstqueue')) {
+            // Safe pipeline
+          }
+        }
+        return originalAppendChild.apply(this, arguments);
+      };
+
+      NodeProto.insertBefore = function (child, ref) {
+        return originalInsertBefore.apply(this, arguments);
+      };
+
+      isInstalled = true;
+    }
+
+    function uninstall(targetWin) {
+      if (!isInstalled) return;
+      var win = targetWin || (typeof window !== 'undefined' ? window : globalThis);
+      var NodeProto = win.Node ? win.Node.prototype : null;
+      if (NodeProto && originalAppendChild) {
+        NodeProto.appendChild = originalAppendChild;
+        NodeProto.insertBefore = originalInsertBefore;
+      }
+      isInstalled = false;
+      transformers.clear();
+    }
+
+    return {
+      install: install,
+      uninstall: uninstall,
+      registerTransformer: registerTransformer
+    };
+  });
+})();
+
 /* --- NEXT module: src/core/p2p_blocker.js --- */
 // src/core/p2p_blocker.js
 (function () {
@@ -4162,6 +4225,50 @@
   });
 })();
 
+/* --- NEXT module: src/modules/danmaku/image_codec.js --- */
+// src/modules/danmaku/image_codec.js
+(function () {
+  'use strict';
+  if (!globalThis.DYEXRL_NEXT) return;
+
+  globalThis.DYEXRL_NEXT.registry.register('modules.danmaku.imageCodec', [], function () {
+
+    var WHITE_LIST_HOSTS = ['douyucdn.cn', 'douyu.com'];
+
+    function encodeImageUrl(url) {
+      if (!url) return '';
+      try {
+        var u = new URL(url);
+        var isValid = WHITE_LIST_HOSTS.some(function (h) { return u.hostname.endsWith(h); });
+        if (!isValid) return url;
+        return '[DouyuEx图片:' + encodeURIComponent(url) + ']';
+      } catch (e) {
+        return url;
+      }
+    }
+
+    function decodeImageText(text) {
+      if (!text || typeof text !== 'string') return text;
+      return text.replace(/\[DouyuEx图片:([^\]]+)\]/g, function (match, p1) {
+        try {
+          var rawUrl = decodeURIComponent(p1);
+          var u = new URL(rawUrl);
+          var isValid = WHITE_LIST_HOSTS.some(function (h) { return u.hostname.endsWith(h); });
+          if (!isValid) return match;
+          return '<img src=\"' + rawUrl + '\" class=\"miuix-danmaku-inline-img\" style=\"max-height: 24px; vertical-align: middle; border-radius: 3px;\" />';
+        } catch (e) {
+          return match;
+        }
+      });
+    }
+
+    return {
+      encodeImageUrl: encodeImageUrl,
+      decodeImageText: decodeImageText
+    };
+  });
+})();
+
 /* --- NEXT module: src/modules/danmaku/interaction.js --- */
 // src/modules/danmaku/interaction.js
 (function () {
@@ -4363,6 +4470,63 @@
       setFilter: setFilter,
       resetFilters: resetFilters,
       DEFAULT_FILTERS: DEFAULT_FILTERS
+    };
+  });
+})();
+
+/* --- NEXT module: src/modules/media/follow_list.js --- */
+// src/modules/media/follow_list.js
+(function () {
+  'use strict';
+  if (!globalThis.DYEXRL_NEXT) return;
+
+  globalThis.DYEXRL_NEXT.registry.register('modules.media.followList', [
+    'store.index',
+    'api.client'
+  ], function (store, client) {
+
+    function filterLiveStreamers(streamers) {
+      if (!Array.isArray(streamers)) return [];
+      return streamers.filter(function (s) {
+        return s.isLive === true || s.show_status === 1;
+      });
+    }
+
+    function hookFollowItemInteraction(itemEl, roomId, onLongPress) {
+      if (!itemEl || !roomId) return;
+
+      var pressTimer = null;
+      var longPressed = false;
+
+      itemEl.addEventListener('mousedown', function (e) {
+        if (e.button !== 0) return;
+        longPressed = false;
+        pressTimer = setTimeout(function () {
+          longPressed = true;
+          if (typeof onLongPress === 'function') {
+            onLongPress(roomId);
+          }
+        }, 600);
+      });
+
+      itemEl.addEventListener('mouseup', function () {
+        if (pressTimer) {
+          clearTimeout(pressTimer);
+          pressTimer = null;
+        }
+      });
+
+      itemEl.addEventListener('click', function (e) {
+        if (longPressed) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+      });
+    }
+
+    return {
+      filterLiveStreamers: filterLiveStreamers,
+      hookFollowItemInteraction: hookFollowItemInteraction
     };
   });
 })();
@@ -4583,6 +4747,47 @@
       stopTrackingAndExport: stopTrackingAndExport,
       get isTracking() { return isTracking; },
       get count() { return danmakuTrack.length; }
+    };
+  });
+})();
+
+/* --- NEXT module: src/modules/vod/exporter.js --- */
+// src/modules/vod/exporter.js
+(function () {
+  'use strict';
+  if (!globalThis.DYEXRL_NEXT) return;
+
+  globalThis.DYEXRL_NEXT.registry.register('modules.vod.exporter', [], function () {
+
+    function generateHeatmapBuckets(danmakuList, durationSec) {
+      var BUCKET_COUNT = 100;
+      var buckets = new Array(BUCKET_COUNT).fill(0);
+      var totalSec = Math.max(1, durationSec || 3600);
+
+      if (!Array.isArray(danmakuList)) return buckets;
+
+      danmakuList.forEach(function (dm) {
+        var t = Number(dm.time || dm.offset || 0);
+        if (t >= 0 && t <= totalSec) {
+          var idx = Math.min(BUCKET_COUNT - 1, Math.floor((t / totalSec) * BUCKET_COUNT));
+          buckets[idx]++;
+        }
+      });
+
+      return buckets;
+    }
+
+    function extractM3u8StreamUrl(playData) {
+      if (!playData) return null;
+      if (typeof playData === 'string' && playData.includes('.m3u8')) return playData;
+      if (playData.data && playData.data.video_url) return playData.data.video_url;
+      if (playData.video_url) return playData.video_url;
+      return null;
+    }
+
+    return {
+      generateHeatmapBuckets: generateHeatmapBuckets,
+      extractM3u8StreamUrl: extractM3u8StreamUrl
     };
   });
 })();
@@ -4851,6 +5056,63 @@
       addAccount: addAccount,
       removeAccount: removeAccount,
       switchAccount: switchAccount
+    };
+  });
+})();
+
+/* --- NEXT module: src/modules/system/month_cost.js --- */
+// src/modules/system/month_cost.js
+(function () {
+  'use strict';
+  if (!globalThis.DYEXRL_NEXT) return;
+
+  globalThis.DYEXRL_NEXT.registry.register('modules.system.monthCost', [
+    'store.index',
+    'api.client'
+  ], function (store, client) {
+
+    var isHidden = store.get('system.monthCost.hidden') !== false;
+
+    function getMonthCostDisplay(amount) {
+      if (isHidden) return '***';
+      return (Number(amount) || 0).toFixed(2);
+    }
+
+    function togglePrivacy() {
+      isHidden = !isHidden;
+      store.set('system.monthCost.hidden', isHidden);
+      return isHidden;
+    }
+
+    function mountMonthCostWidget(containerEl) {
+      if (!containerEl || containerEl.querySelector('.miuix-month-cost')) return;
+
+      var wrap = document.createElement('div');
+      wrap.className = 'miuix-month-cost';
+      wrap.style.cssText = 'display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: #64748b; cursor: pointer; user-select: none; margin-right: 8px;';
+      wrap.innerHTML = `
+        <span>本月消费</span>
+        <b id="month-cost-val" style="color: #0f172a;">${getMonthCostDisplay(0)}</b>
+        <span>元</span>
+        <span id="month-cost-eye" style="font-size: 12px; margin-left: 2px;">${isHidden ? '🙈' : '👁️'}</span>
+      `;
+
+      wrap.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var hidden = togglePrivacy();
+        var valEl = wrap.querySelector('#month-cost-val');
+        var eyeEl = wrap.querySelector('#month-cost-eye');
+        if (valEl) valEl.textContent = getMonthCostDisplay(0);
+        if (eyeEl) eyeEl.textContent = hidden ? '🙈' : '👁️';
+      });
+
+      containerEl.appendChild(wrap);
+    }
+
+    return {
+      getMonthCostDisplay: getMonthCostDisplay,
+      togglePrivacy: togglePrivacy,
+      mountMonthCostWidget: mountMonthCostWidget
     };
   });
 })();
