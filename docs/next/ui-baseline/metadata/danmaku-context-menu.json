@@ -1,0 +1,25 @@
+{
+  "captureId": "danmaku-context-menu-default",
+  "source": "legacy-browser-and-code",
+  "route": "room",
+  "urlRedacted": "https://www.douyu.com/60937",
+  "viewport": {
+    "width": 800,
+    "height": 450
+  },
+  "devicePixelRatio": 1,
+  "browser": "Microsoft Edge (Chromium)",
+  "manager": "Tampermonkey BETA",
+  "scriptVersion": "2026.09.15.01",
+  "state": "default",
+  "panel": "danmaku-context-menu",
+  "category": "danmaku",
+  "title": "视频播放器弹幕右键菜单 (作者卡片/回复/查弹幕/禁言)",
+  "containerSelector": ".danmuTips-1ee820 / #Ex_BarragePanel",
+  "injectedSelector": "#barragePanel__reply, #barragePanel__search, #barragePanel__mute",
+  "interactionsPerformed": [
+    "right_click_floating_danmaku"
+  ],
+  "capturedAt": "2026-09-16T11:32:28Z",
+  "notes": "在视频播放器内部右键飘动的弹幕或点击弹幕作者卡片时，DouyuEx-RL 注入 '回复'、'查弹幕'、'快速禁言' 功能菜单与天数选择。"
+}

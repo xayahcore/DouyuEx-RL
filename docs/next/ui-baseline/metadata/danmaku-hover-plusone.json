@@ -1,0 +1,25 @@
+{
+  "captureId": "danmaku-hover-plusone-default",
+  "source": "legacy-browser-and-code",
+  "route": "room",
+  "urlRedacted": "https://www.douyu.com/60937",
+  "viewport": {
+    "width": 800,
+    "height": 450
+  },
+  "devicePixelRatio": 1,
+  "browser": "Microsoft Edge (Chromium)",
+  "manager": "Tampermonkey BETA",
+  "scriptVersion": "2026.09.15.01",
+  "state": "default",
+  "panel": "danmaku-hover-plusone",
+  "category": "danmaku",
+  "title": "视频播放器弹幕悬停功能栏 (+1 按钮)",
+  "containerSelector": "#comment-dzjy-container",
+  "injectedSelector": "#barrage-panel-tip__+1",
+  "interactionsPerformed": [
+    "hover_floating_danmaku"
+  ],
+  "capturedAt": "2026-09-16T11:32:27Z",
+  "notes": "鼠标悬停在视频播放器内部飘动的弹幕上时，Douyu 原生弹出 #comment-dzjy-container，原脚本在其中追加 '|' 与 '+1' 按钮 (barrage-panel-tip__+1)，点击自动在聊天框发送相同弹幕。"
+}

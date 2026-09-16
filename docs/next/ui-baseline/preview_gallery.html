@@ -79,7 +79,7 @@
 
   <div class="main-stage">
     <div class="preview-box">
-      <img id="stageImg" class="preview-img" src="images/dock-open.png" alt="UI Baseline" />
+      <img id="stageImg" class="preview-img" src="D:/DouyuEx-RL/docs/next/ui-baseline/images/dock-open.png" alt="UI Baseline" />
     </div>
     <div class="info-panel" id="metaPanel">
       <div class="info-row"><span class="info-label">面板标识</span><span class="info-val" id="metaId">dock-open</span></div>
@@ -128,7 +128,7 @@
       tab.addEventListener("click", function () {
         document.querySelectorAll(".nav-tab").forEach(function (t) { t.classList.remove("is-active"); });
         tab.classList.add("is-active");
-        stageImg.src = "images/" + item.id + ".png";
+        stageImg.src = "D:/DouyuEx-RL/docs/next/ui-baseline/images/" + item.id + ".png";
         metaId.textContent = item.id;
         metaName.textContent = item.name;
         metaSize.textContent = item.size;
