@@ -430,31 +430,94 @@
 
 /* Level 2 Dock 工具栏装配 */
 .miuix-dock-wrap {
+  position: fixed !important;
+  bottom: 24px !important;
+  right: 24px !important;
+  z-index: 999999 !important;
+  background: rgba(255, 255, 255, 0.88) !important;
+  backdrop-filter: blur(28px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
+  border: 1px solid rgba(226, 232, 240, 0.9) !important;
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(255, 255, 255, 0.6) inset !important;
+  border-radius: 20px !important;
+  padding: 5px 8px !important;
   display: flex !important;
   align-items: center !important;
-  gap: 6px !important;
-  position: relative !important;
+  gap: 4px !important;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  user-select: none !important;
 }
 
 .miuix-dock-item {
   position: relative !important;
-  width: 34px !important;
-  height: 34px !important;
-  border-radius: var(--miuix-radius-sm) !important;
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 10px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   cursor: pointer !important;
   transition: var(--miuix-transition) !important;
   user-select: none !important;
+  color: #475569 !important;
 }
 
 .miuix-dock-item:hover {
-  background: rgba(0, 102, 255, 0.08) !important;
+  background: rgba(0, 102, 255, 0.1) !important;
+  color: var(--miuix-primary) !important;
+  transform: translateY(-2px);
 }
 
 .miuix-dock-item.is-active {
-  background: rgba(0, 102, 255, 0.14) !important;
+  background: rgba(0, 102, 255, 0.16) !important;
+  color: var(--miuix-primary) !important;
+}
+
+/* 弹幕 +1 跟风复读气泡 */
+.miuix-danmaku-plusone {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin-left: 6px !important;
+  padding: 1px 5px !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  color: #0066FF !important;
+  background: rgba(0, 102, 255, 0.08) !important;
+  border: 1px solid rgba(0, 102, 255, 0.2) !important;
+  border-radius: 4px !important;
+  cursor: pointer !important;
+  opacity: 0.85 !important;
+  transition: all 0.15s ease !important;
+  user-select: none !important;
+}
+
+.miuix-danmaku-plusone:hover {
+  opacity: 1 !important;
+  background: #0066FF !important;
+  color: #fff !important;
+  transform: scale(1.05) !important;
+}
+
+/* 聊天栏弹幕小尾巴切换胶囊 */
+.miuix-tail-trigger {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  padding: 2px 8px !important;
+  border-radius: 12px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: #64748b !important;
+  background: rgba(0, 0, 0, 0.04) !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  user-select: none !important;
+}
+
+.miuix-tail-trigger.is-active {
+  color: #0066FF !important;
+  background: rgba(0, 102, 255, 0.12) !important;
 }
 
 /* 磁吸指示胶囊 (16x3px) */

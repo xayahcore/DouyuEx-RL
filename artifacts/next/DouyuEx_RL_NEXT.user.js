@@ -2367,31 +2367,94 @@
 
 /* Level 2 Dock 工具栏装配 */
 .miuix-dock-wrap {
+  position: fixed !important;
+  bottom: 24px !important;
+  right: 24px !important;
+  z-index: 999999 !important;
+  background: rgba(255, 255, 255, 0.88) !important;
+  backdrop-filter: blur(28px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
+  border: 1px solid rgba(226, 232, 240, 0.9) !important;
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(255, 255, 255, 0.6) inset !important;
+  border-radius: 20px !important;
+  padding: 5px 8px !important;
   display: flex !important;
   align-items: center !important;
-  gap: 6px !important;
-  position: relative !important;
+  gap: 4px !important;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  user-select: none !important;
 }
 
 .miuix-dock-item {
   position: relative !important;
-  width: 34px !important;
-  height: 34px !important;
-  border-radius: var(--miuix-radius-sm) !important;
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 10px !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   cursor: pointer !important;
   transition: var(--miuix-transition) !important;
   user-select: none !important;
+  color: #475569 !important;
 }
 
 .miuix-dock-item:hover {
-  background: rgba(0, 102, 255, 0.08) !important;
+  background: rgba(0, 102, 255, 0.1) !important;
+  color: var(--miuix-primary) !important;
+  transform: translateY(-2px);
 }
 
 .miuix-dock-item.is-active {
-  background: rgba(0, 102, 255, 0.14) !important;
+  background: rgba(0, 102, 255, 0.16) !important;
+  color: var(--miuix-primary) !important;
+}
+
+/* 弹幕 +1 跟风复读气泡 */
+.miuix-danmaku-plusone {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin-left: 6px !important;
+  padding: 1px 5px !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  color: #0066FF !important;
+  background: rgba(0, 102, 255, 0.08) !important;
+  border: 1px solid rgba(0, 102, 255, 0.2) !important;
+  border-radius: 4px !important;
+  cursor: pointer !important;
+  opacity: 0.85 !important;
+  transition: all 0.15s ease !important;
+  user-select: none !important;
+}
+
+.miuix-danmaku-plusone:hover {
+  opacity: 1 !important;
+  background: #0066FF !important;
+  color: #fff !important;
+  transform: scale(1.05) !important;
+}
+
+/* 聊天栏弹幕小尾巴切换胶囊 */
+.miuix-tail-trigger {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+  padding: 2px 8px !important;
+  border-radius: 12px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: #64748b !important;
+  background: rgba(0, 0, 0, 0.04) !important;
+  cursor: pointer !important;
+  transition: all 0.2s ease !important;
+  user-select: none !important;
+}
+
+.miuix-tail-trigger.is-active {
+  color: #0066FF !important;
+  background: rgba(0, 102, 255, 0.12) !important;
 }
 
 /* 磁吸指示胶囊 (16x3px) */
@@ -2583,16 +2646,41 @@
       }
       panel.appendChild(body);
 
-      document.body.appendChild(panel);
+      function attachPanel() {
+        if (panel.parentNode) return;
+        var b = (typeof document !== 'undefined' && document.body) ? document.body : (typeof document !== 'undefined' ? document.documentElement : null);
+        if (b && typeof b.appendChild === 'function') b.appendChild(panel);
+      }
+
+      if (typeof document !== 'undefined' && document.body) {
+        attachPanel();
+      } else if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
+        document.addEventListener('DOMContentLoaded', attachPanel, { once: true });
+      }
 
       function show(anchorEl) {
+        attachPanel();
         if (anchorEl && typeof anchorEl.getBoundingClientRect === 'function') {
           var rect = anchorEl.getBoundingClientRect();
-          // Anchor right above the button
-          var left = Math.max(8, Math.min(window.innerWidth - width - 8, rect.left + (rect.width - width) / 2));
-          var top = Math.max(8, rect.top - height - 12);
-          panel.style.left = left + 'px';
-          panel.style.top = top + 'px';
+          if (rect.width > 0 || rect.top > 0) {
+            // Anchor right above the button
+            var left = Math.max(8, Math.min(window.innerWidth - width - 8, rect.left + (rect.width - width) / 2));
+            var top = Math.max(8, rect.top - height - 12);
+            panel.style.left = left + 'px';
+            panel.style.top = top + 'px';
+            panel.style.right = 'auto';
+            panel.style.bottom = 'auto';
+          } else {
+            panel.style.right = '24px';
+            panel.style.bottom = '80px';
+            panel.style.left = 'auto';
+            panel.style.top = 'auto';
+          }
+        } else {
+          panel.style.right = '24px';
+          panel.style.bottom = '80px';
+          panel.style.left = 'auto';
+          panel.style.top = 'auto';
         }
         panel.classList.add('is-active');
       }
@@ -2857,22 +2945,21 @@
     tokens.injectTokens();
 
     var DOCK_BUTTONS = [
-      { id: 'ex-sign', icon: 'sign', title: '一键签到', hasPanel: true },
       { id: 'fans-continue', icon: 'fans', title: '一键续牌', hasPanel: true },
-      { id: 'extool-icon', icon: 'extool', title: '扩展功能', hasPanel: true },
-      { id: 'livetool-icon', icon: 'livetool', title: '直播间工具', hasPanel: true },
-      { id: 'bloop-icon', icon: 'bloop', title: '弹幕小助手', hasPanel: true },
-      { id: 'ex-lottery', icon: 'lottery', title: '全站抽奖', hasPanel: true },
-      { id: 'popup-player', icon: 'popup', title: '同屏播放器', hasPanel: true },
+      { id: 'ex-sign', icon: 'sign', title: '一键签到', hasPanel: true },
+      { id: 'livetool', icon: 'livetool', title: '直播间工具', hasPanel: true },
+      { id: 'media-panel', icon: 'media', title: '画质与播控', hasPanel: true },
+      { id: 'ex-setting', icon: 'setting', title: '全局设置', hasPanel: true },
+      { id: 'ex-lottery', icon: 'lottery', title: '全站抽奖', hasPanel: false },
+      { id: 'popup-player', icon: 'popup', title: '画中画/同屏', hasPanel: false },
       { id: 'ex-monitor', icon: 'monitor', title: '在线弹幕助手', hasPanel: false },
-      { id: 'ex-update', icon: 'update', title: '版本更新', hasPanel: true }
+      { id: 'ex-update', icon: 'update', title: '检查更新', hasPanel: false }
     ];
 
     var CLOSE_DELAY_MS = 400;
 
     function createDock(options) {
       var opts = options || {};
-      var container = opts.container || document.querySelector('.layout-Player-toolbar') || document.body;
 
       var dockWrap = document.createElement('div');
       dockWrap.className = 'miuix-dock-wrap';
@@ -2986,8 +3073,10 @@
         // Click events
         btn.addEventListener('click', function (e) {
           e.stopPropagation();
-          if (btnDef.hasPanel) {
+          if (btnDef.hasPanel && registeredPanels.has(btnDef.id)) {
             togglePanel(btnDef.id, btn);
+          } else if (typeof opts.onItemClick === 'function') {
+            opts.onItemClick(btnDef, btn);
           } else if (typeof opts.onAction === 'function') {
             opts.onAction(btnDef.id);
           }
@@ -2996,13 +3085,26 @@
         dockWrap.appendChild(btn);
       });
 
-      container.appendChild(dockWrap);
+      function mount(targetContainer) {
+        var c = targetContainer || opts.container || (typeof document !== 'undefined' ? (document.querySelector('.PlayerToolbar-ContentRow') || document.querySelector('.layout-Player-toolbar') || document.body) : null);
+        if (c && !dockWrap.parentNode && typeof c.appendChild === 'function') {
+          c.appendChild(dockWrap);
+        }
+      }
+
+      if (opts.autoMount !== false) {
+        if (typeof document !== 'undefined' && document.body) {
+          mount();
+        } else if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
+          document.addEventListener('DOMContentLoaded', function () { mount(); }, { once: true });
+        }
+      }
 
       function registerPanel(id, panelInstance) {
         registeredPanels.set(id, panelInstance);
 
         // Hook panel element mouseenter/leave for 400ms close timer
-        if (panelInstance && panelInstance.element) {
+        if (panelInstance && panelInstance.element && typeof panelInstance.element.addEventListener === 'function') {
           panelInstance.element.addEventListener('mouseenter', clearCloseTimer);
           panelInstance.element.addEventListener('mouseleave', scheduleClose);
         }
@@ -5236,6 +5338,109 @@
   });
 })();
 
+/* --- NEXT module: src/modules/ui/enhancements.js --- */
+// src/modules/ui/enhancements.js
+(function () {
+  'use strict';
+  if (!globalThis.DYEXRL_NEXT) return;
+
+  globalThis.DYEXRL_NEXT.registry.register('modules.ui.enhancements', [
+    'store.index',
+    'adapters.chat',
+    'ui.miuix',
+    'ui.icons'
+  ], function (store, chatAdapter, miuix, icons) {
+
+    function mountChatTailButton(doc) {
+      var d = doc || document;
+      var bar = d.querySelector('.ChatToolBar__left') || d.querySelector('.ChatToolBar');
+      if (!bar || bar.querySelector('.miuix-tail-trigger')) return;
+
+      var btn = d.createElement('div');
+      btn.className = 'miuix-tail-trigger';
+      var tailConf = store.get('danmaku.tail') || {};
+      if (tailConf.enabled) btn.classList.add('is-active');
+      btn.textContent = tailConf.enabled ? '小尾巴: 开' : '小尾巴: 关';
+
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var cur = store.get('danmaku.tail') || {};
+        cur.enabled = !cur.enabled;
+        store.set('danmaku.tail', cur);
+        btn.classList.toggle('is-active', cur.enabled);
+        btn.textContent = cur.enabled ? '小尾巴: 开' : '小尾巴: 关';
+        miuix.Toast('弹幕小尾巴已' + (cur.enabled ? '开启' : '关闭'), 'info', 1500);
+      });
+
+      bar.appendChild(btn);
+    }
+
+    function hookBarragePlusOne(doc) {
+      var d = doc || document;
+      var list = d.querySelector('#js-barrage-list') || d.querySelector('.Barrage-list');
+      if (!list || list.dataset.plusOneHooked) return;
+      list.dataset.plusOneHooked = '1';
+
+      function checkItems(container) {
+        var items = container.querySelectorAll('.Barrage-listItem:not([data-plus-one])');
+        items.forEach(function (item) {
+          item.setAttribute('data-plus-one', '1');
+          var textEl = item.querySelector('.Barrage-content');
+          if (!textEl) return;
+          var text = textEl.textContent.trim();
+          if (!text) return;
+
+          var btn = d.createElement('span');
+          btn.className = 'miuix-danmaku-plusone';
+          btn.textContent = '+1';
+          btn.title = '跟风复读';
+          btn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            chatAdapter.sendChatText(text);
+            miuix.Toast('已 +1 跟风复读: ' + text.slice(0, 10), 'info', 1200);
+          });
+          item.appendChild(btn);
+        });
+      }
+
+      if (typeof MutationObserver !== 'undefined') {
+        var obs = new MutationObserver(function () {
+          checkItems(list);
+        });
+        obs.observe(list, { childList: true, subtree: true });
+      }
+      checkItems(list);
+    }
+
+    function mountPlayerToolbarButton(doc, onMediaClick) {
+      var d = doc || document;
+      var rightBar = d.querySelector('.right-e7ea5d') || d.querySelector('.right-17e251');
+      if (!rightBar || rightBar.querySelector('.miuix-vtoolbar-btn')) return;
+
+      var btn = d.createElement('div');
+      btn.className = 'miuix-vtoolbar-btn';
+      btn.style.cssText = 'display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; cursor: pointer; color: #fff; margin-right: 4px;';
+      btn.title = 'DouyuEx-RL NEXT 播控中心';
+      btn.appendChild(icons.createSvg('media', 18));
+
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        if (typeof onMediaClick === 'function') {
+          onMediaClick(btn);
+        }
+      });
+
+      rightBar.insertBefore(btn, rightBar.firstChild);
+    }
+
+    return {
+      mountChatTailButton: mountChatTailButton,
+      hookBarragePlusOne: hookBarragePlusOne,
+      mountPlayerToolbarButton: mountPlayerToolbarButton
+    };
+  });
+})();
+
 /* --- NEXT module: src/runtime/orchestrator.js --- */
 // src/runtime/orchestrator.js
 (function () {
@@ -5259,7 +5464,8 @@
     'ui.modals.signPanel',
     'ui.modals.livetoolPanel',
     'ui.modals.mediaPanel',
-    'ui.modals.settingPanel'
+    'ui.modals.settingPanel',
+    'modules.ui.enhancements'
   ], function (
     router,
     store,
@@ -5277,7 +5483,8 @@
     signPanel,
     livetoolPanel,
     mediaPanel,
-    settingPanel
+    settingPanel,
+    enhancements
   ) {
     var activeRoomScope = null;
     var routerInstance = null;
@@ -5353,19 +5560,58 @@
               }
             });
 
-            function mountDock() {
-              if (doc && doc.body && dockInstance && dockInstance.element && !dockInstance.element.parentNode) {
+            // Register panels into dock
+            dockInstance.registerPanel('fans-continue', panelInstances.fans);
+            dockInstance.registerPanel('ex-sign', panelInstances.sign);
+            dockInstance.registerPanel('livetool', panelInstances.livetool);
+            dockInstance.registerPanel('media-panel', panelInstances.media);
+            dockInstance.registerPanel('ex-setting', panelInstances.setting);
+
+            function mountAllUI() {
+              if (!doc || !dockInstance || !dockInstance.element) return;
+
+              // 1. Mount Dock
+              var toolbar = doc.querySelector('.PlayerToolbar-ContentCell .PlayerToolbar-Wealth') ||
+                            doc.querySelector('.PlayerToolbar-ContentRow') ||
+                            doc.querySelector('.layout-Player-toolbar') ||
+                            doc.getElementById('js-player-toolbar');
+              if (toolbar) {
+                if (dockInstance.element.parentNode !== toolbar) {
+                  toolbar.appendChild(dockInstance.element);
+                  if (dockInstance.element.classList && typeof dockInstance.element.classList.add === 'function') {
+                    dockInstance.element.classList.add('is-embedded');
+                  }
+                }
+              } else if (doc.body && !dockInstance.element.parentNode) {
                 doc.body.appendChild(dockInstance.element);
+                if (dockInstance.element.classList && typeof dockInstance.element.classList.remove === 'function') {
+                  dockInstance.element.classList.remove('is-embedded');
+                }
               }
+
+              // 2. Mount Enhancements
+              enhancements.mountChatTailButton(doc);
+              enhancements.hookBarragePlusOne(doc);
+              enhancements.mountPlayerToolbarButton(doc, function (btnEl) {
+                if (panelInstances.media) panelInstances.media.show(btnEl);
+              });
             }
 
             if (doc.body) {
-              mountDock();
+              mountAllUI();
             } else {
-              doc.addEventListener('DOMContentLoaded', mountDock, { once: true });
+              doc.addEventListener('DOMContentLoaded', mountAllUI, { once: true });
               if (typeof win.addEventListener === 'function') {
-                win.addEventListener('load', mountDock, { once: true });
+                win.addEventListener('load', mountAllUI, { once: true });
               }
+            }
+
+            // Continuous watcher for SPA hydration
+            var watchTimer = setInterval(mountAllUI, 1200);
+            if (activeRoomScope) {
+              activeRoomScope.add(function () {
+                clearInterval(watchTimer);
+              });
             }
 
             // Initialize danmaku tail and background pickers

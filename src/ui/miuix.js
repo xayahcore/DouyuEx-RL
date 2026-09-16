@@ -75,16 +75,41 @@
       }
       panel.appendChild(body);
 
-      document.body.appendChild(panel);
+      function attachPanel() {
+        if (panel.parentNode) return;
+        var b = (typeof document !== 'undefined' && document.body) ? document.body : (typeof document !== 'undefined' ? document.documentElement : null);
+        if (b && typeof b.appendChild === 'function') b.appendChild(panel);
+      }
+
+      if (typeof document !== 'undefined' && document.body) {
+        attachPanel();
+      } else if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
+        document.addEventListener('DOMContentLoaded', attachPanel, { once: true });
+      }
 
       function show(anchorEl) {
+        attachPanel();
         if (anchorEl && typeof anchorEl.getBoundingClientRect === 'function') {
           var rect = anchorEl.getBoundingClientRect();
-          // Anchor right above the button
-          var left = Math.max(8, Math.min(window.innerWidth - width - 8, rect.left + (rect.width - width) / 2));
-          var top = Math.max(8, rect.top - height - 12);
-          panel.style.left = left + 'px';
-          panel.style.top = top + 'px';
+          if (rect.width > 0 || rect.top > 0) {
+            // Anchor right above the button
+            var left = Math.max(8, Math.min(window.innerWidth - width - 8, rect.left + (rect.width - width) / 2));
+            var top = Math.max(8, rect.top - height - 12);
+            panel.style.left = left + 'px';
+            panel.style.top = top + 'px';
+            panel.style.right = 'auto';
+            panel.style.bottom = 'auto';
+          } else {
+            panel.style.right = '24px';
+            panel.style.bottom = '80px';
+            panel.style.left = 'auto';
+            panel.style.top = 'auto';
+          }
+        } else {
+          panel.style.right = '24px';
+          panel.style.bottom = '80px';
+          panel.style.left = 'auto';
+          panel.style.top = 'auto';
         }
         panel.classList.add('is-active');
       }

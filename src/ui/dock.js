@@ -7,22 +7,21 @@
     tokens.injectTokens();
 
     var DOCK_BUTTONS = [
-      { id: 'ex-sign', icon: 'sign', title: '一键签到', hasPanel: true },
       { id: 'fans-continue', icon: 'fans', title: '一键续牌', hasPanel: true },
-      { id: 'extool-icon', icon: 'extool', title: '扩展功能', hasPanel: true },
-      { id: 'livetool-icon', icon: 'livetool', title: '直播间工具', hasPanel: true },
-      { id: 'bloop-icon', icon: 'bloop', title: '弹幕小助手', hasPanel: true },
-      { id: 'ex-lottery', icon: 'lottery', title: '全站抽奖', hasPanel: true },
-      { id: 'popup-player', icon: 'popup', title: '同屏播放器', hasPanel: true },
+      { id: 'ex-sign', icon: 'sign', title: '一键签到', hasPanel: true },
+      { id: 'livetool', icon: 'livetool', title: '直播间工具', hasPanel: true },
+      { id: 'media-panel', icon: 'media', title: '画质与播控', hasPanel: true },
+      { id: 'ex-setting', icon: 'setting', title: '全局设置', hasPanel: true },
+      { id: 'ex-lottery', icon: 'lottery', title: '全站抽奖', hasPanel: false },
+      { id: 'popup-player', icon: 'popup', title: '画中画/同屏', hasPanel: false },
       { id: 'ex-monitor', icon: 'monitor', title: '在线弹幕助手', hasPanel: false },
-      { id: 'ex-update', icon: 'update', title: '版本更新', hasPanel: true }
+      { id: 'ex-update', icon: 'update', title: '检查更新', hasPanel: false }
     ];
 
     var CLOSE_DELAY_MS = 400;
 
     function createDock(options) {
       var opts = options || {};
-      var container = opts.container || document.querySelector('.layout-Player-toolbar') || document.body;
 
       var dockWrap = document.createElement('div');
       dockWrap.className = 'miuix-dock-wrap';
@@ -136,8 +135,10 @@
         // Click events
         btn.addEventListener('click', function (e) {
           e.stopPropagation();
-          if (btnDef.hasPanel) {
+          if (btnDef.hasPanel && registeredPanels.has(btnDef.id)) {
             togglePanel(btnDef.id, btn);
+          } else if (typeof opts.onItemClick === 'function') {
+            opts.onItemClick(btnDef, btn);
           } else if (typeof opts.onAction === 'function') {
             opts.onAction(btnDef.id);
           }
@@ -146,13 +147,26 @@
         dockWrap.appendChild(btn);
       });
 
-      container.appendChild(dockWrap);
+      function mount(targetContainer) {
+        var c = targetContainer || opts.container || (typeof document !== 'undefined' ? (document.querySelector('.PlayerToolbar-ContentRow') || document.querySelector('.layout-Player-toolbar') || document.body) : null);
+        if (c && !dockWrap.parentNode && typeof c.appendChild === 'function') {
+          c.appendChild(dockWrap);
+        }
+      }
+
+      if (opts.autoMount !== false) {
+        if (typeof document !== 'undefined' && document.body) {
+          mount();
+        } else if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
+          document.addEventListener('DOMContentLoaded', function () { mount(); }, { once: true });
+        }
+      }
 
       function registerPanel(id, panelInstance) {
         registeredPanels.set(id, panelInstance);
 
         // Hook panel element mouseenter/leave for 400ms close timer
-        if (panelInstance && panelInstance.element) {
+        if (panelInstance && panelInstance.element && typeof panelInstance.element.addEventListener === 'function') {
           panelInstance.element.addEventListener('mouseenter', clearCloseTimer);
           panelInstance.element.addEventListener('mouseleave', scheduleClose);
         }

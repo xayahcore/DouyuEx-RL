@@ -20,7 +20,8 @@
     'ui.modals.signPanel',
     'ui.modals.livetoolPanel',
     'ui.modals.mediaPanel',
-    'ui.modals.settingPanel'
+    'ui.modals.settingPanel',
+    'modules.ui.enhancements'
   ], function (
     router,
     store,
@@ -38,7 +39,8 @@
     signPanel,
     livetoolPanel,
     mediaPanel,
-    settingPanel
+    settingPanel,
+    enhancements
   ) {
     var activeRoomScope = null;
     var routerInstance = null;
@@ -114,19 +116,58 @@
               }
             });
 
-            function mountDock() {
-              if (doc && doc.body && dockInstance && dockInstance.element && !dockInstance.element.parentNode) {
+            // Register panels into dock
+            dockInstance.registerPanel('fans-continue', panelInstances.fans);
+            dockInstance.registerPanel('ex-sign', panelInstances.sign);
+            dockInstance.registerPanel('livetool', panelInstances.livetool);
+            dockInstance.registerPanel('media-panel', panelInstances.media);
+            dockInstance.registerPanel('ex-setting', panelInstances.setting);
+
+            function mountAllUI() {
+              if (!doc || !dockInstance || !dockInstance.element) return;
+
+              // 1. Mount Dock
+              var toolbar = doc.querySelector('.PlayerToolbar-ContentCell .PlayerToolbar-Wealth') ||
+                            doc.querySelector('.PlayerToolbar-ContentRow') ||
+                            doc.querySelector('.layout-Player-toolbar') ||
+                            doc.getElementById('js-player-toolbar');
+              if (toolbar) {
+                if (dockInstance.element.parentNode !== toolbar) {
+                  toolbar.appendChild(dockInstance.element);
+                  if (dockInstance.element.classList && typeof dockInstance.element.classList.add === 'function') {
+                    dockInstance.element.classList.add('is-embedded');
+                  }
+                }
+              } else if (doc.body && !dockInstance.element.parentNode) {
                 doc.body.appendChild(dockInstance.element);
+                if (dockInstance.element.classList && typeof dockInstance.element.classList.remove === 'function') {
+                  dockInstance.element.classList.remove('is-embedded');
+                }
               }
+
+              // 2. Mount Enhancements
+              enhancements.mountChatTailButton(doc);
+              enhancements.hookBarragePlusOne(doc);
+              enhancements.mountPlayerToolbarButton(doc, function (btnEl) {
+                if (panelInstances.media) panelInstances.media.show(btnEl);
+              });
             }
 
             if (doc.body) {
-              mountDock();
+              mountAllUI();
             } else {
-              doc.addEventListener('DOMContentLoaded', mountDock, { once: true });
+              doc.addEventListener('DOMContentLoaded', mountAllUI, { once: true });
               if (typeof win.addEventListener === 'function') {
-                win.addEventListener('load', mountDock, { once: true });
+                win.addEventListener('load', mountAllUI, { once: true });
               }
+            }
+
+            // Continuous watcher for SPA hydration
+            var watchTimer = setInterval(mountAllUI, 1200);
+            if (activeRoomScope) {
+              activeRoomScope.add(function () {
+                clearInterval(watchTimer);
+              });
             }
 
             // Initialize danmaku tail and background pickers
