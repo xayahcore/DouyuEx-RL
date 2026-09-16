@@ -3943,6 +3943,387 @@
   });
 })();
 
+/* --- NEXT module: src/modules/media/pip.js --- */
+// src/modules/media/pip.js
+(function () {
+  'use strict';
+  if (!globalThis.DYEXRL_NEXT) return;
+
+  globalThis.DYEXRL_NEXT.registry.register('modules.media.pip', [
+    'adapters.player',
+    'adapters.chat',
+    'ui.miuix',
+    'store.index'
+  ], function (playerAdapter, chatAdapter, miuix, store) {
+
+    var isFloating = false;
+    var floatContainer = null;
+
+    async function toggleNativePip() {
+      var video = playerAdapter.getVideoElement();
+      if (!video) {
+        miuix.Toast('未检测到正在播放的视频元素', 'error');
+        return false;
+      }
+
+      if (document.pictureInPictureElement) {
+        await document.exitPictureInPicture();
+        return false;
+      } else if (document.pictureInPictureEnabled && typeof video.requestPictureInPicture === 'function') {
+        try {
+          await video.requestPictureInPicture();
+          miuix.Toast('已开启画中画模式', 'info');
+          return true;
+        } catch (e) {
+          console.warn('[NEXT PIP] Native PiP failed, fallback to modal:', e);
+        }
+      }
+      return toggleFloatingWindow();
+    }
+
+    function toggleFloatingWindow() {
+      if (isFloating && floatContainer) {
+        floatContainer.remove();
+        floatContainer = null;
+        isFloating = false;
+        return false;
+      }
+
+      isFloating = true;
+      floatContainer = document.createElement('div');
+      floatContainer.className = 'miuix-panel';
+      floatContainer.style.position = 'fixed';
+      floatContainer.style.bottom = '80px';
+      floatContainer.style.right = '24px';
+      floatContainer.style.width = '360px';
+      floatContainer.style.height = '240px';
+      floatContainer.style.zIndex = '99999';
+      floatContainer.style.display = 'flex';
+      floatContainer.style.flexDirection = 'column';
+
+      floatContainer.innerHTML = `
+        <div class="miuix-panel__header" style="cursor: move;">
+          <span class="miuix-panel__title" style="font-size: 12px;">画中画独立小窗</span>
+          <button type="button" class="miuix-panel__close" id="pip-close-btn">&times;</button>
+        </div>
+        <div style="flex: 1; background: #000; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 11px;">
+          [独立视窗播放流]
+        </div>
+        <div style="display: flex; gap: 4px; padding: 6px; background: rgba(255,255,255,0.9);">
+          <input type="text" id="pip-chat-input" class="miuix-input" style="flex: 1;" placeholder="小窗快捷发言..." />
+          <button type="button" id="pip-chat-send" class="miuix-btn miuix-btn-primary" style="padding: 2px 10px;">发送</button>
+        </div>
+      `;
+
+      var closeBtn = floatContainer.querySelector('#pip-close-btn');
+      if (closeBtn) closeBtn.addEventListener('click', toggleFloatingWindow);
+
+      var sendBtn = floatContainer.querySelector('#pip-chat-send');
+      var chatInp = floatContainer.querySelector('#pip-chat-input');
+
+      function doSend() {
+        if (!chatInp || !chatInp.value.trim()) return;
+        chatAdapter.sendChatText(chatInp.value.trim());
+        chatInp.value = '';
+        miuix.Toast('小窗弹幕已发送', 'success', 1500);
+      }
+
+      if (sendBtn) sendBtn.addEventListener('click', doSend);
+      if (chatInp) chatInp.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') doSend();
+      });
+
+      document.body.appendChild(floatContainer);
+      return true;
+    }
+
+    return {
+      toggleNativePip: toggleNativePip,
+      toggleFloatingWindow: toggleFloatingWindow,
+      get isFloating() { return isFloating; }
+    };
+  });
+})();
+
+/* --- NEXT module: src/modules/media/filters.js --- */
+// src/modules/media/filters.js
+(function () {
+  'use strict';
+  if (!globalThis.DYEXRL_NEXT) return;
+
+  globalThis.DYEXRL_NEXT.registry.register('modules.media.filters', [
+    'adapters.player',
+    'store.index'
+  ], function (playerAdapter, store) {
+
+    var DEFAULT_FILTERS = {
+      brightness: 100, // %
+      contrast: 100,   // %
+      saturate: 100,   // %
+      hueRotate: 0,    // deg
+      blur: 0          // px
+    };
+
+    function getFilterString(conf) {
+      var c = conf || store.get('media.filters') || DEFAULT_FILTERS;
+      return [
+        'brightness(' + (c.brightness ?? 100) + '%)',
+        'contrast(' + (c.contrast ?? 100) + '%)',
+        'saturate(' + (c.saturate ?? 100) + '%)',
+        'hue-rotate(' + (c.hueRotate ?? 0) + 'deg)',
+        'blur(' + (c.blur ?? 0) + 'px)'
+      ].join(' ');
+    }
+
+    function applyFilters() {
+      var video = playerAdapter.getVideoElement();
+      if (!video) return;
+      var str = getFilterString();
+      video.style.filter = str;
+    }
+
+    function setFilter(key, value) {
+      var cur = store.get('media.filters') || Object.assign({}, DEFAULT_FILTERS);
+      cur[key] = value;
+      store.set('media.filters', cur);
+      applyFilters();
+    }
+
+    function resetFilters() {
+      store.set('media.filters', Object.assign({}, DEFAULT_FILTERS));
+      applyFilters();
+    }
+
+    return {
+      getFilterString: getFilterString,
+      applyFilters: applyFilters,
+      setFilter: setFilter,
+      resetFilters: resetFilters,
+      DEFAULT_FILTERS: DEFAULT_FILTERS
+    };
+  });
+})();
+
+/* --- NEXT module: src/modules/media/capture.js --- */
+// src/modules/media/capture.js
+(function () {
+  'use strict';
+  if (!globalThis.DYEXRL_NEXT) return;
+
+  globalThis.DYEXRL_NEXT.registry.register('modules.media.capture', [
+    'adapters.player',
+    'ui.miuix'
+  ], function (playerAdapter, miuix) {
+
+    var mediaRecorder = null;
+    var recordedChunks = [];
+    var isRecording = false;
+
+    function takeScreenshot() {
+      var video = playerAdapter.getVideoElement();
+      if (!video) {
+        miuix.Toast('未找到视频画面', 'error');
+        return null;
+      }
+
+      var width = video.videoWidth || video.clientWidth || 1920;
+      var height = video.videoHeight || video.clientHeight || 1080;
+
+      var canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+
+      var ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, width, height);
+
+      try {
+        var dataUrl = canvas.toDataURL('image/png');
+        var a = document.createElement('a');
+        a.href = dataUrl;
+        a.download = 'Douyu_Snapshot_' + Date.now() + '.png';
+        a.click();
+        miuix.Toast('高清截图已保存', 'success');
+        return dataUrl;
+      } catch (err) {
+        miuix.Toast('截图失败 (跨域保护或无画面)', 'error');
+        return null;
+      }
+    }
+
+    function toggleRecording() {
+      if (isRecording) {
+        stopRecording();
+      } else {
+        startRecording();
+      }
+    }
+
+    function startRecording() {
+      var video = playerAdapter.getVideoElement();
+      if (!video) {
+        miuix.Toast('未找到视频画面，无法录制', 'error');
+        return false;
+      }
+
+      if (typeof video.captureStream !== 'function') {
+        miuix.Toast('当前浏览器不支持画面录制', 'error');
+        return false;
+      }
+
+      try {
+        var stream = video.captureStream();
+        recordedChunks = [];
+        mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp8,opus' });
+
+        mediaRecorder.ondataavailable = function (e) {
+          if (e.data && e.data.size > 0) {
+            recordedChunks.push(e.data);
+          }
+        };
+
+        mediaRecorder.onstop = function () {
+          var blob = new Blob(recordedChunks, { type: 'video/webm' });
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement('a');
+          a.href = url;
+          a.download = 'Douyu_Record_' + Date.now() + '.webm';
+          a.click();
+          miuix.Toast('录制完成，已触发下载', 'success');
+          recordedChunks = [];
+        };
+
+        mediaRecorder.start();
+        isRecording = true;
+        miuix.Toast('【视频录制】已开始录屏...', 'info');
+        return true;
+      } catch (e) {
+        miuix.Toast('启动录制失败: ' + e.message, 'error');
+        return false;
+      }
+    }
+
+    function stopRecording() {
+      if (mediaRecorder && isRecording) {
+        mediaRecorder.stop();
+        isRecording = false;
+        mediaRecorder = null;
+      }
+    }
+
+    return {
+      takeScreenshot: takeScreenshot,
+      toggleRecording: toggleRecording,
+      startRecording: startRecording,
+      stopRecording: stopRecording,
+      get isRecording() { return isRecording; }
+    };
+  });
+})();
+
+/* --- NEXT module: src/modules/media/ass_export.js --- */
+// src/modules/media/ass_export.js
+(function () {
+  'use strict';
+  if (!globalThis.DYEXRL_NEXT) return;
+
+  globalThis.DYEXRL_NEXT.registry.register('modules.media.assExport', ['ui.miuix'], function (miuix) {
+
+    var danmakuTrack = [];
+    var startTime = 0;
+    var isTracking = false;
+
+    function startTracking() {
+      danmakuTrack = [];
+      startTime = Date.now();
+      isTracking = true;
+      miuix.Toast('【字幕录制】已开始记录弹幕轨...', 'info');
+    }
+
+    function recordDanmaku(text, color, sender) {
+      if (!isTracking) return;
+      var offsetSec = Math.max(0, (Date.now() - startTime) / 1000);
+      danmakuTrack.push({
+        start: offsetSec,
+        end: offsetSec + 8, // 8 seconds display window
+        text: text,
+        color: color || 'FFFFFF',
+        sender: sender || ''
+      });
+    }
+
+    function formatTime(sec) {
+      var h = Math.floor(sec / 3600);
+      var m = Math.floor((sec % 3600) / 60);
+      var s = (sec % 60).toFixed(2);
+      return (
+        String(h).padStart(1, '0') + ':' +
+        String(m).padStart(2, '0') + ':' +
+        (s < 10 ? '0' : '') + s
+      );
+    }
+
+    function generateAssContent() {
+      var header = [
+        '[Script Info]',
+        'Title: DouyuEx-RL NEXT Danmaku Export',
+        'ScriptType: v4.00+',
+        'PlayResX: 1920',
+        'PlayResY: 1080',
+        'ScaledBorderAndShadow: yes',
+        '',
+        '[V4+ Styles]',
+        'Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding',
+        'Style: R2L,Microsoft YaHei,38,&H00FFFFFF,&H00FFFFFF,&H00000000,&H00000000,-1,0,0,0,100,100,0,0,1,2,0,2,20,20,20,1',
+        '',
+        '[Events]',
+        'Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text'
+      ].join('\r\n');
+
+      var events = danmakuTrack.map(function (d) {
+        var startStr = formatTime(d.start);
+        var endStr = formatTime(d.end);
+        var safeText = String(d.text || '').replace(/[\r\n]/g, ' ');
+        return 'Dialogue: 0,' + startStr + ',' + endStr + ',R2L,,0,0,0,,' + safeText;
+      }).join('\r\n');
+
+      return header + '\r\n' + events;
+    }
+
+    function exportAssFile() {
+      if (danmakuTrack.length === 0) {
+        miuix.Toast('暂无记录的弹幕轨迹', 'info');
+        return null;
+      }
+
+      var assText = generateAssContent();
+      var blob = new Blob([assText], { type: 'text/plain;charset=utf-8' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'Douyu_Danmaku_' + Date.now() + '.ass';
+      a.click();
+
+      miuix.Toast('ASS 弹幕字幕已导出 (' + danmakuTrack.length + ' 条)', 'success');
+      return assText;
+    }
+
+    function stopTrackingAndExport() {
+      isTracking = false;
+      return exportAssFile();
+    }
+
+    return {
+      startTracking: startTracking,
+      recordDanmaku: recordDanmaku,
+      generateAssContent: generateAssContent,
+      exportAssFile: exportAssFile,
+      stopTrackingAndExport: stopTrackingAndExport,
+      get isTracking() { return isTracking; },
+      get count() { return danmakuTrack.length; }
+    };
+  });
+})();
+
 /* --- NEXT module: src/ui/modals/fans_panel.js --- */
 // src/ui/modals/fans_panel.js
 (function () {
@@ -4352,6 +4733,122 @@
 
     return {
       createLivetoolPanel: createLivetoolPanel
+    };
+  });
+})();
+
+/* --- NEXT module: src/ui/modals/media_panel.js --- */
+// src/ui/modals/media_panel.js
+(function () {
+  'use strict';
+  if (!globalThis.DYEXRL_NEXT) return;
+
+  globalThis.DYEXRL_NEXT.registry.register('ui.modals.mediaPanel', [
+    'ui.miuix',
+    'modules.media.filters',
+    'modules.media.pip',
+    'modules.media.capture'
+  ], function (miuix, filters, pip, capture) {
+
+    function createMediaPanel() {
+      var panel = miuix.Panel({
+        id: 'media-panel',
+        title: '画质与播控中心',
+        subtitle: '滤镜调色、画中画与音视频创作'
+      });
+
+      // 1. 快捷播控工具行 (Card 1)
+      var actionCard = document.createElement('div');
+      actionCard.className = 'miuix-card';
+      actionCard.innerHTML = `
+        <div class="miuix-card__header">
+          <span class="miuix-card__title">播放控制</span>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" id="media-btn-pip" class="miuix-btn" style="flex: 1;">画中画小窗</button>
+          <button type="button" id="media-btn-shot" class="miuix-btn" style="flex: 1;">高清截图</button>
+          <button type="button" id="media-btn-record" class="miuix-btn" style="flex: 1;">视频录制</button>
+        </div>
+      `;
+      panel.body.appendChild(actionCard);
+
+      actionCard.querySelector('#media-btn-pip')?.addEventListener('click', () => pip.toggleNativePip());
+      actionCard.querySelector('#media-btn-shot')?.addEventListener('click', () => capture.takeScreenshot());
+      actionCard.querySelector('#media-btn-record')?.addEventListener('click', () => capture.toggleRecording());
+
+      // 2. 色彩滤镜抽屉 (L3-11)
+      var filterAccordion = miuix.Accordion({
+        id: 'filter__panel',
+        title: '色彩滤镜抽屉',
+        actions: [
+          { label: '重置', onClick: () => filters.resetFilters() }
+        ],
+        content: [
+          (function () {
+            var box = document.createElement('div');
+            box.style.display = 'flex';
+            box.style.flexDirection = 'column';
+            box.style.gap = '8px';
+
+            var SLIDERS = [
+              { key: 'brightness', label: '亮度', min: 50, max: 200, def: 100 },
+              { key: 'contrast', label: '对比度', min: 50, max: 200, def: 100 },
+              { key: 'saturate', label: '饱和度', min: 0, max: 250, def: 100 },
+              { key: 'hueRotate', label: '色相', min: 0, max: 360, def: 0 }
+            ];
+
+            SLIDERS.forEach(s => {
+              var row = document.createElement('div');
+              row.style.display = 'flex';
+              row.style.alignItems = 'center';
+              row.style.gap = '8px';
+              row.innerHTML = `
+                <span style="font-size: 11px; width: 45px; color: #475569;">${s.label}</span>
+                <input type="range" class="miuix-slider" min="${s.min}" max="${s.max}" value="${s.def}" style="flex: 1;" />
+                <span class="val-txt" style="font-size: 10px; width: 30px; text-align: right; color: #94a3b8;">${s.def}</span>
+              `;
+              var slider = row.querySelector('input');
+              var txt = row.querySelector('.val-txt');
+              slider.addEventListener('input', () => {
+                txt.textContent = slider.value;
+                filters.setFilter(s.key, Number(slider.value));
+              });
+              box.appendChild(row);
+            });
+
+            return box;
+          })()
+        ]
+      });
+      panel.body.appendChild(filterAccordion.element);
+
+      // 3. 画质微光调节 (L3-12)
+      var glowAccordion = miuix.Accordion({
+        id: 'glow__panel',
+        title: '画质微光弹窗',
+        content: [
+          (function () {
+            var box = document.createElement('div');
+            box.innerHTML = `
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 11px; width: 45px; color: #475569;">微光模糊</span>
+                <input type="range" min="0" max="10" value="0" style="flex: 1;" />
+                <span style="font-size: 10px; color: #94a3b8;">0px</span>
+              </div>
+            `;
+            var slider = box.querySelector('input');
+            slider.addEventListener('input', () => filters.setFilter('blur', Number(slider.value)));
+            return box;
+          })()
+        ]
+      });
+      panel.body.appendChild(glowAccordion.element);
+
+      return panel;
+    }
+
+    return {
+      createMediaPanel: createMediaPanel
     };
   });
 })();

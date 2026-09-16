@@ -36,9 +36,14 @@
     "src/modules/danmaku/auto_reply.js",
     "src/modules/danmaku/filter.js",
     "src/modules/danmaku/interaction.js",
+    "src/modules/media/pip.js",
+    "src/modules/media/filters.js",
+    "src/modules/media/capture.js",
+    "src/modules/media/ass_export.js",
     "src/ui/modals/fans_panel.js",
     "src/ui/modals/sign_panel.js",
     "src/ui/modals/livetool_panel.js",
+    "src/ui/modals/media_panel.js",
     "src/runtime/orchestrator.js"
   ]
 }
