@@ -487,7 +487,7 @@
     function injectTokens(targetDocument) {
       var doc = targetDocument || (typeof document !== 'undefined' ? document : null);
       if (!doc) return;
-      if (doc.getElementById('miuix-tokens-style')) return; // Idempotent
+      if (typeof doc.getElementById === 'function' && doc.getElementById('miuix-tokens-style')) return; // Idempotent
 
       var style = doc.createElement('style');
       style.id = 'miuix-tokens-style';

@@ -50,6 +50,7 @@
     "src/ui/modals/livetool_panel.js",
     "src/ui/modals/media_panel.js",
     "src/ui/modals/setting_panel.js",
-    "src/runtime/orchestrator.js"
+    "src/runtime/orchestrator.js",
+    "src/index_next.js"
   ]
 }

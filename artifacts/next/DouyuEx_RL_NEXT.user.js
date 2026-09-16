@@ -2424,7 +2424,7 @@
     function injectTokens(targetDocument) {
       var doc = targetDocument || (typeof document !== 'undefined' ? document : null);
       if (!doc) return;
-      if (doc.getElementById('miuix-tokens-style')) return; // Idempotent
+      if (typeof doc.getElementById === 'function' && doc.getElementById('miuix-tokens-style')) return; // Idempotent
 
       var style = doc.createElement('style');
       style.id = 'miuix-tokens-style';
@@ -5353,8 +5353,19 @@
               }
             });
 
+            function mountDock() {
+              if (doc && doc.body && dockInstance && dockInstance.element && !dockInstance.element.parentNode) {
+                doc.body.appendChild(dockInstance.element);
+              }
+            }
+
             if (doc.body) {
-              doc.body.appendChild(dockInstance.element);
+              mountDock();
+            } else {
+              doc.addEventListener('DOMContentLoaded', mountDock, { once: true });
+              if (typeof win.addEventListener === 'function') {
+                win.addEventListener('load', mountDock, { once: true });
+              }
             }
 
             // Initialize danmaku tail and background pickers
@@ -5403,5 +5414,36 @@
       bootstrap: bootstrap
     };
   });
+})();
+
+/* --- NEXT module: src/index_next.js --- */
+// src/index_next.js
+(function () {
+  'use strict';
+  if (!globalThis.DYEXRL_NEXT) return;
+
+  var targetWin = typeof unsafeWindow !== 'undefined' ? unsafeWindow : (typeof window !== 'undefined' ? window : globalThis);
+
+  function start() {
+    // Only auto-start inside real Userscript engine (Tampermonkey / Violentmonkey)
+    if (typeof GM_info === 'undefined') {
+      return;
+    }
+
+    try {
+      var orchestrator = globalThis.DYEXRL_NEXT.registry.resolve('runtime.orchestrator');
+      if (orchestrator && typeof orchestrator.bootstrap === 'function') {
+        console.log('%c[DouyuEx-RL NEXT]%c 纯净重构版运行时启动...', 'background: #0066FF; color: #fff; padding: 2px 6px; border-radius: 4px; font-weight: bold;', 'color: #0066FF; font-weight: bold;');
+        globalThis.DYEXRL_NEXT.app = orchestrator.bootstrap(targetWin);
+        if (targetWin !== globalThis) {
+          targetWin.DYEXRL_NEXT = globalThis.DYEXRL_NEXT;
+        }
+      }
+    } catch (err) {
+      console.error('[DouyuEx-RL NEXT] 启动失败:', err);
+    }
+  }
+
+  start();
 })();
 

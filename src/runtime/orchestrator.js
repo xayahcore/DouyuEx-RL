@@ -114,8 +114,19 @@
               }
             });
 
+            function mountDock() {
+              if (doc && doc.body && dockInstance && dockInstance.element && !dockInstance.element.parentNode) {
+                doc.body.appendChild(dockInstance.element);
+              }
+            }
+
             if (doc.body) {
-              doc.body.appendChild(dockInstance.element);
+              mountDock();
+            } else {
+              doc.addEventListener('DOMContentLoaded', mountDock, { once: true });
+              if (typeof win.addEventListener === 'function') {
+                win.addEventListener('load', mountDock, { once: true });
+              }
             }
 
             // Initialize danmaku tail and background pickers
