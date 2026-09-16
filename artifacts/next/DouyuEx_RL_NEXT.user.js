@@ -3701,6 +3701,248 @@
   });
 })();
 
+/* --- NEXT module: src/modules/danmaku/tail.js --- */
+// src/modules/danmaku/tail.js
+(function () {
+  'use strict';
+  if (!globalThis.DYEXRL_NEXT) return;
+
+  globalThis.DYEXRL_NEXT.registry.register('modules.danmaku.tail', [
+    'store.index',
+    'adapters.chat'
+  ], function (store, chatAdapter) {
+
+    function appendTailToText(rawText) {
+      var conf = store.get('danmaku.tail') || {};
+      if (!conf.enabled || !conf.text) return rawText;
+
+      var tail = String(conf.text);
+      var type = String(conf.type || '2'); // '1': 前缀, '2': 后缀
+      var t = String(rawText || '');
+
+      if (!t.trim()) return t;
+
+      if (type === '1') {
+        if (!t.startsWith(tail)) return tail + t;
+      } else {
+        if (!t.endsWith(tail)) return t + tail;
+      }
+      return t;
+    }
+
+    function initTailListener() {
+      var isComposing = false;
+
+      document.addEventListener('compositionstart', function () {
+        isComposing = true;
+      }, true);
+
+      document.addEventListener('compositionend', function () {
+        isComposing = false;
+      }, true);
+
+      document.addEventListener('keydown', function (e) {
+        if (e.key !== 'Enter' || e.shiftKey || isComposing) return;
+        var input = chatAdapter.getChatInput();
+        if (!input || !input.contains(e.target)) return;
+
+        var conf = store.get('danmaku.tail') || {};
+        if (!conf.enabled || !conf.text) return;
+
+        var isDiv = input.tagName.toLowerCase() === 'div';
+        var currentText = isDiv ? input.innerText : input.value;
+        var withTail = appendTailToText(currentText);
+
+        if (withTail !== currentText) {
+          if (isDiv) input.innerText = withTail;
+          else input.value = withTail;
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+      }, true);
+    }
+
+    return {
+      appendTailToText: appendTailToText,
+      initTailListener: initTailListener
+    };
+  });
+})();
+
+/* --- NEXT module: src/modules/danmaku/collect.js --- */
+// src/modules/danmaku/collect.js
+(function () {
+  'use strict';
+  if (!globalThis.DYEXRL_NEXT) return;
+
+  globalThis.DYEXRL_NEXT.registry.register('modules.danmaku.collect', [
+    'store.index',
+    'adapters.chat',
+    'ui.miuix'
+  ], function (store, chatAdapter, miuix) {
+
+    function addCollection(text) {
+      if (!text || !text.trim()) return;
+      var list = store.get('danmaku.collections') || [];
+      // Deduplicate
+      var filtered = list.filter(it => it.content !== text);
+      filtered.unshift({
+        id: Date.now(),
+        content: text.trim(),
+        createdAt: Date.now()
+      });
+      store.set('danmaku.collections', filtered);
+      miuix.Toast('已收藏弹幕: ' + text.slice(0, 15), 'success');
+    }
+
+    function removeCollection(id) {
+      var list = store.get('danmaku.collections') || [];
+      var filtered = list.filter(it => it.id !== id);
+      store.set('danmaku.collections', filtered);
+    }
+
+    function fillToChatInput(text) {
+      chatAdapter.setChatText(text);
+      miuix.Toast('已填入聊天框', 'info');
+    }
+
+    return {
+      addCollection: addCollection,
+      removeCollection: removeCollection,
+      fillToChatInput: fillToChatInput
+    };
+  });
+})();
+
+/* --- NEXT module: src/modules/danmaku/auto_reply.js --- */
+// src/modules/danmaku/auto_reply.js
+(function () {
+  'use strict';
+  if (!globalThis.DYEXRL_NEXT) return;
+
+  globalThis.DYEXRL_NEXT.registry.register('modules.danmaku.autoReply', [
+    'store.index',
+    'adapters.chat'
+  ], function (store, chatAdapter) {
+
+    var lastReplyTime = 0;
+
+    function handleIncomingDanmaku(text, senderUid) {
+      var enabled = store.get('danmaku.autoReplyEnabled');
+      if (!enabled || !text) return false;
+
+      var now = Date.now();
+      var cdSec = Number(store.get('danmaku.autoReplyCd') || 5);
+      if (now - lastReplyTime < cdSec * 1000) return false;
+
+      var rules = store.get('danmaku.autoReplyRules') || [];
+      var matchedRule = null;
+
+      if (Array.isArray(rules)) {
+        matchedRule = rules.find(r => r.keyword && text.includes(r.keyword));
+      } else if (typeof rules === 'object') {
+        for (var kw in rules) {
+          if (text.includes(kw)) {
+            matchedRule = { keyword: kw, content: rules[kw] };
+            break;
+          }
+        }
+      }
+
+      if (matchedRule && matchedRule.content) {
+        lastReplyTime = now;
+        chatAdapter.sendChatText(matchedRule.content);
+        return true;
+      }
+      return false;
+    }
+
+    return {
+      handleIncomingDanmaku: handleIncomingDanmaku
+    };
+  });
+})();
+
+/* --- NEXT module: src/modules/danmaku/filter.js --- */
+// src/modules/danmaku/filter.js
+(function () {
+  'use strict';
+  if (!globalThis.DYEXRL_NEXT) return;
+
+  globalThis.DYEXRL_NEXT.registry.register('modules.danmaku.filter', ['store.index'], function (store) {
+    var recentDanmakus = new Map(); // text -> timestamp
+
+    function shouldFilterMessage(messageText) {
+      var filterConf = store.get('danmaku.filter') || {};
+      if (!filterConf.removeRepeated || !messageText) return false;
+
+      var now = Date.now();
+      var windowMs = (Number(filterConf.repeatWindowSeconds) || 5) * 1000;
+
+      // Clean old entries
+      recentDanmakus.forEach(function (ts, txt) {
+        if (now - ts > windowMs) {
+          recentDanmakus.delete(txt);
+        }
+      });
+
+      if (recentDanmakus.has(messageText)) {
+        return true; // Filter repeated
+      }
+
+      recentDanmakus.set(messageText, now);
+      return false;
+    }
+
+    return {
+      shouldFilterMessage: shouldFilterMessage
+    };
+  });
+})();
+
+/* --- NEXT module: src/modules/danmaku/interaction.js --- */
+// src/modules/danmaku/interaction.js
+(function () {
+  'use strict';
+  if (!globalThis.DYEXRL_NEXT) return;
+
+  globalThis.DYEXRL_NEXT.registry.register('modules.danmaku.interaction', [
+    'adapters.chat',
+    'modules.danmaku.collect',
+    'ui.miuix'
+  ], function (chatAdapter, collect, miuix) {
+
+    function handlePlusOne(text) {
+      if (!text) return;
+      chatAdapter.sendChatText(text);
+      miuix.Toast('已 +1 跟风复读', 'info', 1500);
+    }
+
+    function showAuthorCard(authorInfo, targetElement) {
+      if (!authorInfo) return;
+      var uid = authorInfo.uid || '';
+      var nickname = authorInfo.nickname || '';
+
+      // MIUIX Dialog for author actions
+      miuix.Dialog({
+        mode: 'alert',
+        title: '弹幕作者: ' + nickname,
+        message: 'UID: ' + uid + '\\n可在此快速复制信息或执行房管操作。',
+        confirmText: '复制UID'
+      }).then(function (res) {
+        if (res.confirmed && typeof GM_setClipboard === 'function') {
+          GM_setClipboard(uid);
+          miuix.Toast('已复制作者 UID 到剪贴板', 'success');
+        }
+      });
+    }
+
+    return {
+      handlePlusOne: handlePlusOne,
+      showAuthorCard: showAuthorCard
+    };
+  });
+})();
+
 /* --- NEXT module: src/ui/modals/fans_panel.js --- */
 // src/ui/modals/fans_panel.js
 (function () {
@@ -3954,6 +4196,162 @@
 
     return {
       createSignPanel: createSignPanel
+    };
+  });
+})();
+
+/* --- NEXT module: src/ui/modals/livetool_panel.js --- */
+// src/ui/modals/livetool_panel.js
+(function () {
+  'use strict';
+  if (!globalThis.DYEXRL_NEXT) return;
+
+  globalThis.DYEXRL_NEXT.registry.register('ui.modals.livetoolPanel', [
+    'ui.miuix',
+    'store.index',
+    'adapters.chat'
+  ], function (miuix, store, chatAdapter) {
+
+    function createLivetoolPanel() {
+      var panel = miuix.Panel({
+        id: 'livetool-panel',
+        title: '直播间工具',
+        subtitle: '互动、投票与房管工具箱'
+      });
+
+      // 1. 弹幕投票 (L3-01)
+      var voteAccordion = miuix.Accordion({
+        id: 'vote__panel',
+        title: '弹幕投票',
+        actions: [
+          { label: '大屏看板', onClick: function () { miuix.Toast('已展开独立投票看板', 'info'); } }
+        ],
+        content: [
+          (function () {
+            var box = document.createElement('div');
+            box.style.display = 'flex';
+            box.style.flexDirection = 'column';
+            box.style.gap = '6px';
+            box.innerHTML = `
+              <input type="text" id="vote__theme" class="miuix-input" placeholder="输入投票主题..." />
+              <input type="text" id="vote__options" class="miuix-input" placeholder="输入选项(空格分隔)..." />
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <label style="font-size: 11px;"><input type="checkbox" id="vote__repeat" /> 允许重复投票</label>
+                <button type="button" class="miuix-btn miuix-btn-primary" style="padding: 3px 10px;">发起投票</button>
+              </div>
+            `;
+            return box;
+          })()
+        ]
+      });
+      panel.body.appendChild(voteAccordion.element);
+
+      // 2. 进场欢迎 (L3-02)
+      var enterAccordion = miuix.Accordion({
+        id: 'enter__panel',
+        title: '进场欢迎',
+        actions: [
+          { label: '导出', onClick: function () { miuix.Toast('已导出欢迎规则', 'info'); } },
+          { label: '导入', onClick: function () { miuix.Toast('已导入欢迎规则', 'info'); } }
+        ],
+        content: [
+          (function () {
+            var box = document.createElement('div');
+            box.innerHTML = `
+              <div style="display: flex; gap: 6px; margin-bottom: 6px;">
+                <input type="number" id="enter__level" class="miuix-input" style="width: 60px;" placeholder="等级" value="10" />
+                <input type="text" id="enter__word" class="miuix-input" style="flex: 1;" placeholder="欢迎语内容..." />
+              </div>
+              <div style="display: flex; justify-content: flex-end;">
+                <button type="button" class="miuix-btn miuix-btn-primary" style="padding: 3px 10px;">保存规则</button>
+              </div>
+            `;
+            return box;
+          })()
+        ]
+      });
+      panel.body.appendChild(enterAccordion.element);
+
+      // 3. 关键词禁言 (L3-03)
+      var muteAccordion = miuix.Accordion({
+        id: 'mute__panel',
+        title: '关键词禁言',
+        actions: [
+          { label: '名单', onClick: function () { miuix.Toast('查询禁言名单', 'info'); } },
+          { label: '导出', onClick: function () { miuix.Toast('已导出禁言规则', 'info'); } }
+        ],
+        content: [
+          (function () {
+            var box = document.createElement('div');
+            box.innerHTML = `
+              <div style="display: flex; gap: 6px;">
+                <input type="text" class="miuix-input" style="flex: 1;" placeholder="输入违规关键词..." />
+                <select class="miuix-input" style="width: 75px;">
+                  <option value="1">1天</option>
+                  <option value="3">3天</option>
+                  <option value="7">7天</option>
+                  <option value="30">30天</option>
+                </select>
+              </div>
+            `;
+            return box;
+          })()
+        ]
+      });
+      panel.body.appendChild(muteAccordion.element);
+
+      // 4. 自动谢礼物 (L3-04)
+      var giftAccordion = miuix.Accordion({
+        id: 'gift__panel',
+        title: '自动谢礼物',
+        actions: [
+          { label: '导出', onClick: function () { miuix.Toast('已导出谢礼模板', 'info'); } },
+          { label: '导入', onClick: function () { miuix.Toast('已导入谢礼模板', 'info'); } }
+        ],
+        content: [
+          (function () {
+            var box = document.createElement('div');
+            box.innerHTML = `
+              <input type="text" class="miuix-input" style="width: 100%;" placeholder="感谢文案模板 (支持 {name}, {gift})..." />
+            `;
+            return box;
+          })()
+        ]
+      });
+      panel.body.appendChild(giftAccordion.element);
+
+      // 5. 关键词回复 (L3-05)
+      var replyAccordion = miuix.Accordion({
+        id: 'reply__panel',
+        title: '关键词回复',
+        actions: [
+          { label: '导出', onClick: function () { miuix.Toast('已导出回复规则', 'info'); } },
+          { label: '导入', onClick: function () { miuix.Toast('已导入回复规则', 'info'); } }
+        ],
+        content: [
+          (function () {
+            var box = document.createElement('div');
+            box.innerHTML = `
+              <div style="display: flex; gap: 6px; margin-bottom: 6px;">
+                <input type="text" class="miuix-input" style="width: 100px;" placeholder="触发词" />
+                <input type="text" class="miuix-input" style="flex: 1;" placeholder="回复内容..." />
+              </div>
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 11px; color: #64748b;">冷却 CD: 5秒</span>
+                <button type="button" class="miuix-btn miuix-btn-primary" style="padding: 3px 10px;">添加规则</button>
+              </div>
+            `;
+            return box;
+          })()
+        ]
+      });
+      panel.body.appendChild(replyAccordion.element);
+
+      return panel;
+    }
+
+    return {
+      createLivetoolPanel: createLivetoolPanel
     };
   });
 })();

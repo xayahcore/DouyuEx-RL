@@ -80,10 +80,10 @@
 
 | 面板ID | 基线 DOM 标识 | 隐藏归属位置与触发形式 | 内部核心控件与参数 | 导出/导入/联动看板 | 当前状态 |
 |:---:|:---|:---|:---|:---|:---:|
-| **L3-01** | `vote__panel` / `vote__result` | `livetool` 点击 `#vote__title` 展开手风琴 | 主题选择、主题/选项输入、限时秒数、重复投票 | 联动点击弹出**独立悬浮大屏结果看板** (`vote__result`) | `planned` |
-| **L3-02** | `enter__panel` | `livetool` 点击 `#enter__title` 展开手风琴 | 欢迎语选择、等级阈值输入、欢迎语文本、增删按钮 | 剪贴板一键**导入 (`#enter__import`)** 与 **导出 (`#enter__export`)** | `planned` |
-| **L3-03** | `mute__panel` | `livetool` 点击 `#mute__title` 展开手风琴 | 违规词选择、禁言时长(1/3/7/30天)、增删按钮 | 禁言名单查询 (`#mute__idlist`)、规则导入导出 | `planned` |
-| **L3-04** | `gift__panel` | `livetool` 点击 `#gift__title` 展开手风琴 | 礼物选择、感谢语模板输入、增删按钮 | 谢礼模板一键剪贴板**导入与导出 (`#gift__import/export`)** | `planned` |
+| **L3-01** | `vote__panel` / `vote__result` | `livetool` 点击 `#vote__title` 展开手风琴 | 主题选择、主题/选项输入、限时秒数、重复投票 | 联动点击弹出**独立悬浮大屏结果看板** (`vote__result`) | `mock-tested` |
+| **L3-02** | `enter__panel` | `livetool` 点击 `#enter__title` 展开手风琴 | 欢迎语选择、等级阈值输入、欢迎语文本、增删按钮 | 剪贴板一键**导入 (`#enter__import`)** 与 **导出 (`#enter__export`)** | `mock-tested` |
+| **L3-03** | `mute__panel` | `livetool` 点击 `#mute__title` 展开手风琴 | 违规词选择、禁言时长(1/3/7/30天)、增删按钮 | 禁言名单查询 (`#mute__idlist`)、规则导入导出 | `mock-tested` |
+| **L3-04** | `gift__panel` | `livetool` 点击 `#gift__title` 展开手风琴 | 礼物选择、感谢语模板输入、增删按钮 | 谢礼模板一键剪贴板**导入与导出 (`#gift__import/export`)** | `mock-tested` |
 | **L3-05** | `reply__panel` | `livetool` 点击 `#reply__title` 展开手风琴 | 关键词选择、回复内容、CD冷却秒数、增删按钮 | 关键词回复规则 JSON 一键剪贴板**导入与导出** | `planned` |
 | **L3-06** | `bloop` | Dock 点击 `#bloop-icon` 弹出模态面板 | 循环多行文本框、发送间隔、随机/顺序切换 | 内置纯净短语预设，彻底淘汰外部彩虹屁接口 | `planned` |
 | **L3-07** | `extool__sendgift` | 嵌入在 `extool` 扩展功能面板中 | 礼物回显胶囊、送礼数量、间隔毫秒、送礼按钮 | 点击胶囊无缝调起 **5 级拟态模态大选择器** (`GiftPicker`) | `planned` |
