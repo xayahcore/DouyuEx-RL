@@ -1,14 +1,14 @@
 {
   "captureId": "livetool-enter-default",
-  "source": "baseline-evidence",
+  "source": "edge-live-browser-legacy",
   "route": "room",
-  "urlRedacted": "https://www.douyu.com/<rid>",
+  "urlRedacted": "https://www.douyu.com/60937",
   "viewport": {
     "width": 1280,
     "height": 800
   },
   "devicePixelRatio": 1,
-  "browser": "Brave 1.95 (Chromium 153)",
+  "browser": "Microsoft Edge (x64) - Live Native Desktop",
   "manager": "Tampermonkey BETA",
   "scriptVersion": "2026.09.15.01",
   "state": "default",
@@ -28,6 +28,10 @@
     "width": 380,
     "height": 370
   },
-  "capturedAt": "2026-09-16T11:12:05Z",
-  "notes": "Standardized MIUIX baseline render for 直播间工具 - 进场欢迎, compliant with NEXT contract §4 and §15."
+  "capturedAt": "2026-09-16T11:58:14Z",
+  "notes": "Standardized MIUIX baseline render for 直播间工具 - 进场欢迎, compliant with NEXT contract §4 and §15.",
+  "imageDimensions": {
+    "width": 387,
+    "height": 377
+  }
 }

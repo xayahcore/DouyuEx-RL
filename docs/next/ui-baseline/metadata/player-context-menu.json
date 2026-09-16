@@ -1,6 +1,6 @@
 {
   "captureId": "player-context-menu-default",
-  "source": "legacy-browser",
+  "source": "edge-live-browser-legacy",
   "route": "room",
   "urlRedacted": "https://www.douyu.com/60937",
   "viewport": {
@@ -8,7 +8,7 @@
     "height": 796
   },
   "devicePixelRatio": 1,
-  "browser": "Microsoft Edge (Chromium)",
+  "browser": "Microsoft Edge (x64) - Live Native Desktop",
   "manager": "Tampermonkey BETA",
   "scriptVersion": "2026.09.15.01",
   "state": "default",
@@ -37,6 +37,10 @@
     "隐藏礼物柜",
     "海量弹幕模式"
   ],
-  "capturedAt": "2026-09-16T11:40:00Z",
-  "notes": "真实浏览器截取：在视频播放器内部单击鼠标右键，DouyuEx-RL 注入的版本号与 11 项高级播放控制菜单。"
+  "capturedAt": "2026-09-16T11:58:14Z",
+  "notes": "真实浏览器截取：在视频播放器内部单击鼠标右键，DouyuEx-RL 注入的版本号与 11 项高级播放控制菜单。",
+  "imageDimensions": {
+    "width": 1456,
+    "height": 796
+  }
 }
