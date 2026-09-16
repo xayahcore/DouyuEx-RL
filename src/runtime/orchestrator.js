@@ -18,7 +18,11 @@
     'modules.radar.redpacket',
     'ui.modals.fansPanel',
     'ui.modals.signPanel',
+    'ui.modals.extoolPanel',
     'ui.modals.livetoolPanel',
+    'ui.modals.bloopPanel',
+    'ui.modals.popupPlayerPanel',
+    'ui.modals.updatePanel',
     'ui.modals.mediaPanel',
     'ui.modals.settingPanel',
     'modules.ui.enhancements'
@@ -37,7 +41,11 @@
     redpacket,
     fansPanel,
     signPanel,
+    extoolPanel,
     livetoolPanel,
+    bloopPanel,
+    popupPlayerPanel,
+    updatePanel,
     mediaPanel,
     settingPanel,
     enhancements
@@ -75,7 +83,7 @@
 
         // Clean existing dock if any
         if (dockInstance && dockInstance.element) {
-          dockInstance.element.remove();
+          dockInstance.destroy();
           dockInstance = null;
         }
 
@@ -88,64 +96,66 @@
           });
 
           if (doc && typeof doc.createElement === 'function') {
-            // Lazy instantiate panels
-            panelInstances.fans = fansPanel.createFansPanel();
+            // 实例化 5 大一级面板 + 辅助面板
             panelInstances.sign = signPanel.createSignPanel();
+            panelInstances.fans = fansPanel.createFansPanel();
+            panelInstances.extool = extoolPanel.createExtoolPanel();
             panelInstances.livetool = livetoolPanel.createLivetoolPanel();
+            panelInstances.bloop = bloopPanel.createBloopPanel();
+            panelInstances.popup = popupPlayerPanel.createPopupPlayerPanel();
+            panelInstances.update = updatePanel.createUpdatePanel();
             panelInstances.media = mediaPanel.createMediaPanel();
             panelInstances.setting = settingPanel.createSettingPanel();
 
-            // Create Dock
+            // 创建遵循计划书 §13.2 规范的 9 按钮 Dock
             dockInstance = dock.createDock({
               onItemClick: function (itemDef, btnEl) {
-                if (itemDef.id === 'fans-continue' && panelInstances.fans) {
-                  panelInstances.fans.show(btnEl);
-                } else if (itemDef.id === 'ex-sign' && panelInstances.sign) {
+                if (itemDef.id === 'ex-sign' && panelInstances.sign) {
                   panelInstances.sign.show(btnEl);
+                } else if (itemDef.id === 'fans-continue' && panelInstances.fans) {
+                  panelInstances.fans.show(btnEl);
+                } else if (itemDef.id === 'extool' && panelInstances.extool) {
+                  panelInstances.extool.show(btnEl);
                 } else if (itemDef.id === 'livetool' && panelInstances.livetool) {
                   panelInstances.livetool.show(btnEl);
-                } else if (itemDef.id === 'media-panel' && panelInstances.media) {
-                  panelInstances.media.show(btnEl);
-                } else if (itemDef.id === 'ex-setting' && panelInstances.setting) {
-                  panelInstances.setting.show(btnEl);
-                } else if (itemDef.id === 'ex-update') {
-                  miuix.Toast('当前已是最新 DouyuEx-RL NEXT 构建版本', 'info');
+                } else if (itemDef.id === 'bloop' && panelInstances.bloop) {
+                  panelInstances.bloop.show(btnEl);
+                } else if (itemDef.id === 'popup-player' && panelInstances.popup) {
+                  panelInstances.popup.show(btnEl);
+                } else if (itemDef.id === 'ex-update' && panelInstances.update) {
+                  panelInstances.update.show(btnEl);
+                } else if (itemDef.id === 'ex-lottery') {
+                  miuix.Toast('全站抽奖雷达监听中', 'info');
+                } else if (itemDef.id === 'ex-monitor') {
+                  var rid = store.get('runtime.room.rid') || '60937';
+                  window.open('https://www.douyuex.com/' + rid, '_blank');
                 } else {
                   miuix.Toast('【' + itemDef.title + '】面板准备就绪', 'info');
                 }
               }
             });
 
-            // Register panels into dock
-            dockInstance.registerPanel('fans-continue', panelInstances.fans);
+            // 注册面板至 Dock 槽位
             dockInstance.registerPanel('ex-sign', panelInstances.sign);
+            dockInstance.registerPanel('fans-continue', panelInstances.fans);
+            dockInstance.registerPanel('extool', panelInstances.extool);
             dockInstance.registerPanel('livetool', panelInstances.livetool);
-            dockInstance.registerPanel('media-panel', panelInstances.media);
-            dockInstance.registerPanel('ex-setting', panelInstances.setting);
+            dockInstance.registerPanel('bloop', panelInstances.bloop);
+            dockInstance.registerPanel('popup-player', panelInstances.popup);
+            dockInstance.registerPanel('ex-update', panelInstances.update);
 
             function mountAllUI() {
               if (!doc || !dockInstance || !dockInstance.element) return;
 
-              // 1. Mount Dock
-              var toolbar = doc.querySelector('.PlayerToolbar-ContentCell .PlayerToolbar-Wealth') ||
-                            doc.querySelector('.PlayerToolbar-ContentRow') ||
-                            doc.querySelector('.layout-Player-toolbar') ||
-                            doc.getElementById('js-player-toolbar');
-              if (toolbar) {
-                if (dockInstance.element.parentNode !== toolbar) {
-                  toolbar.appendChild(dockInstance.element);
-                  if (dockInstance.element.classList && typeof dockInstance.element.classList.add === 'function') {
-                    dockInstance.element.classList.add('is-embedded');
-                  }
-                }
-              } else if (doc.body && !dockInstance.element.parentNode) {
+              // 1. 挂载礼物栏红白精灵球入口 (.miuix-ex-icon)
+              dockInstance.mountLauncher(doc);
+
+              // 2. 挂载 Dock 到 body
+              if (doc.body && !dockInstance.element.parentNode) {
                 doc.body.appendChild(dockInstance.element);
-                if (dockInstance.element.classList && typeof dockInstance.element.classList.remove === 'function') {
-                  dockInstance.element.classList.remove('is-embedded');
-                }
               }
 
-              // 2. Mount Enhancements
+              // 3. 挂载播放器视窗增强
               enhancements.mountChatTailButton(doc);
               enhancements.hookFloatingDanmakuPlusOne(doc);
               enhancements.hookFloatingDanmakuContextMenu(doc);
@@ -164,7 +174,7 @@
               }
             }
 
-            // Continuous watcher for SPA hydration
+            // 持续观察 SPA DOM 水合
             var watchTimer = setInterval(mountAllUI, 1200);
             if (activeRoomScope) {
               activeRoomScope.add(function () {
@@ -172,7 +182,7 @@
               });
             }
 
-            // Initialize danmaku tail and background pickers
+            // 初始化弹幕小尾巴与后台红包轮询
             danmakuTail.initTailListener();
             var pickTimer = redpacket.startAutoPicker();
             if (pickTimer && activeRoomScope) {
@@ -203,7 +213,7 @@
             activeRoomScope = null;
           }
           if (dockInstance && dockInstance.element) {
-            dockInstance.element.remove();
+            dockInstance.destroy();
             dockInstance = null;
           }
           redpacket.stopAutoPicker();

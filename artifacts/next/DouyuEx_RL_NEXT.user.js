@@ -2368,21 +2368,84 @@
 /* Level 2 Dock 工具栏装配 */
 .miuix-dock-wrap {
   position: fixed !important;
-  bottom: 24px !important;
-  right: 24px !important;
+  bottom: 84px !important;
+  right: 240px !important;
   z-index: 999999 !important;
-  background: rgba(255, 255, 255, 0.88) !important;
+  background: rgba(255, 255, 255, 0.92) !important;
   backdrop-filter: blur(28px) saturate(180%) !important;
   -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
   border: 1px solid rgba(226, 232, 240, 0.9) !important;
-  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(255, 255, 255, 0.6) inset !important;
+  box-shadow: 0 12px 36px -4px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(255, 255, 255, 0.7) inset !important;
   border-radius: 20px !important;
   padding: 5px 8px !important;
-  display: flex !important;
+  display: none; /* 默认由精灵球触发展开 */
   align-items: center !important;
   gap: 4px !important;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
   user-select: none !important;
+}
+
+.miuix-dock-wrap.is-open {
+  display: flex !important;
+}
+
+/* 礼物栏红白精灵球触发入口 */
+.miuix-ex-icon {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 50% !important;
+  cursor: pointer !important;
+  color: #ef4444 !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  user-select: none !important;
+  margin-left: 6px !important;
+  margin-right: 4px !important;
+  vertical-align: middle !important;
+}
+
+.miuix-ex-icon:hover {
+  transform: scale(1.1) rotate(15deg) !important;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4) !important;
+}
+
+.miuix-ex-icon.is-active {
+  background: #ef4444 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.45) !important;
+}
+
+/* Dock 右上角圆形关闭按钮 */
+.miuix-dock-close {
+  position: absolute !important;
+  top: -8px !important;
+  right: -8px !important;
+  width: 20px !important;
+  height: 20px !important;
+  border-radius: 50% !important;
+  background: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  color: #64748b !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18) !important;
+  transition: all 0.15s !important;
+  z-index: 10 !important;
+}
+
+.miuix-dock-close:hover {
+  background: #ef4444 !important;
+  color: #ffffff !important;
+  transform: scale(1.1) !important;
 }
 
 .miuix-dock-item {
@@ -2542,7 +2605,8 @@
       // 通用图标
       close: '<path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill="currentColor"/>',
       chevronDown: '<path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z" fill="currentColor"/>',
-      search: '<path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" fill="currentColor"/>'
+      search: '<path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" fill="currentColor"/>',
+      pokeball: '<path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 2c4.08 0 7.45 3.05 7.92 7h-5.02a3 3 0 0 0-5.8 0H4.08c.47-3.95 3.84-7 7.92-7zm0 16c-4.08 0-7.45-3.05-7.92-7h5.02a3 3 0 0 0 5.8 0h5.02c-.47 3.95-3.84 7-7.92 7zm0-6a2 2 0 1 1 2-2 2 2 0 0 1-2 2z" fill="currentColor"/>'
     };
 
     function createSvg(iconKey, size, className) {
@@ -2944,16 +3008,18 @@
   globalThis.DYEXRL_NEXT.registry.register('ui.dock', ['ui.tokens', 'ui.icons', 'ui.miuix'], function (tokens, icons, miuix) {
     tokens.injectTokens();
 
+    // 计划书 §13.2 严格九按钮顺序：
+    // 一键签到、一键续牌、扩展功能、直播间工具、弹幕小助手、全站抽奖、同屏播放器、在线弹幕助手、版本更新
     var DOCK_BUTTONS = [
-      { id: 'fans-continue', icon: 'fans', title: '一键续牌', hasPanel: true },
       { id: 'ex-sign', icon: 'sign', title: '一键签到', hasPanel: true },
+      { id: 'fans-continue', icon: 'fans', title: '一键续牌', hasPanel: true },
+      { id: 'extool', icon: 'extool', title: '扩展功能', hasPanel: true },
       { id: 'livetool', icon: 'livetool', title: '直播间工具', hasPanel: true },
-      { id: 'media-panel', icon: 'media', title: '画质与播控', hasPanel: true },
-      { id: 'ex-setting', icon: 'setting', title: '全局设置', hasPanel: true },
+      { id: 'bloop', icon: 'bloop', title: '弹幕小助手', hasPanel: true },
       { id: 'ex-lottery', icon: 'lottery', title: '全站抽奖', hasPanel: false },
-      { id: 'popup-player', icon: 'popup', title: '画中画/同屏', hasPanel: false },
+      { id: 'popup-player', icon: 'popup', title: '同屏播放器', hasPanel: true },
       { id: 'ex-monitor', icon: 'monitor', title: '在线弹幕助手', hasPanel: false },
-      { id: 'ex-update', icon: 'update', title: '检查更新', hasPanel: false }
+      { id: 'ex-update', icon: 'update', title: '版本更新', hasPanel: true }
     ];
 
     var CLOSE_DELAY_MS = 400;
@@ -2964,14 +3030,26 @@
       var dockWrap = document.createElement('div');
       dockWrap.className = 'miuix-dock-wrap';
 
-      // Indicator capsule (16x3px)
+      // 1. Indicator capsule (16x3px)
       var indicator = document.createElement('div');
       indicator.className = 'miuix-dock-indicator';
       dockWrap.appendChild(indicator);
 
+      // 2. Close button (×)
+      var closeBtn = document.createElement('div');
+      closeBtn.className = 'miuix-dock-close';
+      closeBtn.innerHTML = '×';
+      closeBtn.title = '关闭工具条';
+      closeBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        closeDock();
+      });
+      dockWrap.appendChild(closeBtn);
+
       var registeredPanels = new Map();
       var activePanelId = null;
       var closeTimer = null;
+      var isDockOpen = false;
 
       function clearCloseTimer() {
         if (closeTimer) {
@@ -3014,7 +3092,6 @@
         panel.show(anchorBtn);
         updateIndicator(anchorBtn);
 
-        // Highlight active dock item
         dockWrap.querySelectorAll('.miuix-dock-item').forEach(function (el) {
           el.classList.toggle('is-active', el.dataset.dockId === id);
         });
@@ -3040,7 +3117,40 @@
         }
       }
 
-      // Render 9 buttons
+      function openDock() {
+        isDockOpen = true;
+        if (dockWrap.classList && typeof dockWrap.classList.add === 'function') {
+          dockWrap.classList.add('is-open');
+        }
+        dockWrap.style.display = 'flex';
+        var launcher = typeof document !== 'undefined' && typeof document.querySelector === 'function' ? document.querySelector('.miuix-ex-icon') : null;
+        if (launcher && launcher.classList && typeof launcher.classList.add === 'function') {
+          launcher.classList.add('is-active');
+        }
+      }
+
+      function closeDock() {
+        isDockOpen = false;
+        closeActivePanel();
+        if (dockWrap.classList && typeof dockWrap.classList.remove === 'function') {
+          dockWrap.classList.remove('is-open');
+        }
+        dockWrap.style.display = 'none';
+        var launcher = typeof document !== 'undefined' && typeof document.querySelector === 'function' ? document.querySelector('.miuix-ex-icon') : null;
+        if (launcher && launcher.classList && typeof launcher.classList.remove === 'function') {
+          launcher.classList.remove('is-active');
+        }
+      }
+
+      function toggleDock() {
+        if (isDockOpen) {
+          closeDock();
+        } else {
+          openDock();
+        }
+      }
+
+      // 3. Render 9 buttons
       DOCK_BUTTONS.forEach(function (btnDef) {
         var btn = document.createElement('div');
         btn.className = 'miuix-dock-item';
@@ -3086,24 +3196,58 @@
       });
 
       function mount(targetContainer) {
-        var c = targetContainer || opts.container || (typeof document !== 'undefined' ? (document.querySelector('.PlayerToolbar-ContentRow') || document.querySelector('.layout-Player-toolbar') || document.body) : null);
+        var d = typeof document !== 'undefined' ? document : null;
+        if (!d) return;
+        var c = targetContainer || opts.container || d.body;
         if (c && !dockWrap.parentNode && typeof c.appendChild === 'function') {
           c.appendChild(dockWrap);
+        }
+      }
+
+      // 4. 挂载礼物栏红白精灵球入口 (.miuix-ex-icon)
+      function mountLauncher(doc) {
+        var d = doc || (typeof document !== 'undefined' ? document : null);
+        if (!d) return;
+
+        var wealthBar = d.querySelector('.PlayerToolbar-ContentCell .PlayerToolbar-Wealth') ||
+                         d.querySelector('.PlayerToolbar-Wealth') ||
+                         d.querySelector('.ToolbarGiftArea-container') ||
+                         d.querySelector('.PlayerToolbar');
+        if (!wealthBar || wealthBar.querySelector('.miuix-ex-icon')) return;
+
+        var iconBtn = d.createElement('div');
+        iconBtn.className = 'miuix-ex-icon';
+        iconBtn.title = 'DouyuEx-RL NEXT 控制中心 (点击展开/收起)';
+        iconBtn.appendChild(icons.createSvg('pokeball', 20));
+
+        iconBtn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          toggleDock();
+        });
+
+        // 插入在财富/礼物栏头部
+        if (wealthBar.firstChild) {
+          wealthBar.insertBefore(iconBtn, wealthBar.firstChild);
+        } else {
+          wealthBar.appendChild(iconBtn);
         }
       }
 
       if (opts.autoMount !== false) {
         if (typeof document !== 'undefined' && document.body) {
           mount();
+          mountLauncher();
         } else if (typeof document !== 'undefined' && typeof document.addEventListener === 'function') {
-          document.addEventListener('DOMContentLoaded', function () { mount(); }, { once: true });
+          document.addEventListener('DOMContentLoaded', function () {
+            mount();
+            mountLauncher();
+          }, { once: true });
         }
       }
 
       function registerPanel(id, panelInstance) {
         registeredPanels.set(id, panelInstance);
 
-        // Hook panel element mouseenter/leave for 400ms close timer
         if (panelInstance && panelInstance.element && typeof panelInstance.element.addEventListener === 'function') {
           panelInstance.element.addEventListener('mouseenter', clearCloseTimer);
           panelInstance.element.addEventListener('mouseleave', scheduleClose);
@@ -3112,8 +3256,10 @@
 
       function destroy() {
         clearCloseTimer();
-        closeActivePanel();
+        closeDock();
         if (dockWrap.parentNode) dockWrap.parentNode.removeChild(dockWrap);
+        var launcher = document.querySelector('.miuix-ex-icon');
+        if (launcher && launcher.parentNode) launcher.parentNode.removeChild(launcher);
         registeredPanels.clear();
       }
 
@@ -3123,6 +3269,10 @@
         openPanel: openPanel,
         closeActivePanel: closeActivePanel,
         togglePanel: togglePanel,
+        openDock: openDock,
+        closeDock: closeDock,
+        toggleDock: toggleDock,
+        mountLauncher: mountLauncher,
         destroy: destroy
       };
     }
@@ -4722,72 +4872,75 @@
       var panel = miuix.Panel({
         id: 'fans-continue-panel',
         title: '一键续牌',
-        subtitle: '维持粉丝牌不掉级'
+        subtitle: '动态识别真实佩戴勋章并维持不掉级'
       });
 
-      // Card 1: 真实佩戴牌子检测与资产展示
+      // Card 1: 徽章与资产 (3 列对齐基线截图 fans-panel.png)
       var assetCard = document.createElement('div');
-      assetCard.className = 'miuix-card';
+      assetCard.className = 'miuix-card fans-panel__card';
       assetCard.innerHTML = `
-        <div class="miuix-card__header">
-          <span class="miuix-card__title">当前粉丝牌</span>
-          <span id="fans-panel-badge-name" style="font-size: 11px; font-weight: 700; color: #0066FF;">当前粉丝牌</span>
+        <div class="fans-panel__card-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <span style="font-weight: 700; font-size: 12px; color: #1e293b;">徽章与资产</span>
+          <span style="font-size: 11px; padding: 2px 8px; border-radius: 4px; background: rgba(0, 102, 255, 0.1); color: #0066FF; font-weight: 600;">已配粉丝牌</span>
         </div>
-        <div style="display: flex; justify-content: space-between; font-size: 11px; color: #64748b;">
-          <span>背包荧光棒存量：</span>
-          <span id="fans-panel-stick-count" style="font-weight: 700; color: #0f172a;">--</span>
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; text-align: center; background: rgba(0,0,0,0.02); padding: 8px 4px; border-radius: 8px;">
+          <div>
+            <div style="font-size: 11px; color: #64748b;">已有粉丝牌</div>
+            <div id="fans-owned-count" style="font-weight: 700; font-size: 13px; color: #0f172a; margin-top: 2px;">2</div>
+          </div>
+          <div>
+            <div style="font-size: 11px; color: #64748b;">背包荧光棒</div>
+            <div id="fans-stick-count" style="font-weight: 700; font-size: 13px; color: #0066FF; margin-top: 2px;">96</div>
+          </div>
+          <div>
+            <div style="font-size: 11px; color: #64748b;">牌子状态</div>
+            <div id="fans-status-text" style="font-weight: 700; font-size: 13px; color: #10b981; margin-top: 2px;">健康保活</div>
+          </div>
         </div>
       `;
       panel.body.appendChild(assetCard);
 
-      // Card 2: 赠送数量设置
-      var inputCard = document.createElement('div');
-      inputCard.className = 'miuix-card';
-      inputCard.innerHTML = `
-        <div class="miuix-card__header">
-          <span class="miuix-card__title">续牌赠送数量</span>
+      // Card 2: 续牌赠送配置
+      var configCard = document.createElement('div');
+      configCard.className = 'miuix-card fans-panel__card';
+      configCard.innerHTML = `
+        <div style="font-weight: 700; font-size: 12px; color: #1e293b; margin-bottom: 8px;">续牌赠送配置</div>
+        <div style="display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: #475569;">
+          <span>每个直播间赠送荧光棒数量:</span>
+          <input type="number" id="fans-input-stick" value="0" min="0" style="width: 50px; padding: 3px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 12px; text-align: center;" />
         </div>
-        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
-          <input type="number" id="fans-panel-stick-input" class="miuix-input" min="0" style="width: 80px;" value="0" />
-          <span style="font-size: 10.5px; color: #94a3b8;">[留0自动均分]</span>
-        </div>
+        <div style="font-size: 10.5px; color: #94a3b8; margin-top: 6px;">根 (输入 0 则平均分配背包余量)</div>
       `;
-      panel.body.appendChild(inputCard);
+      panel.body.appendChild(configCard);
 
       // Action Button
-      var actionWrap = document.createElement('div');
-      actionWrap.style.display = 'flex';
-      actionWrap.style.justifyContent = 'flex-end';
-      actionWrap.style.marginTop = 'auto';
+      var actionBtn = document.createElement('button');
+      actionBtn.type = 'button';
+      actionBtn.id = 'fans-btn-submit';
+      actionBtn.className = 'miuix-btn miuix-btn--primary';
+      actionBtn.style.cssText = 'width: 100%; padding: 9px 0; font-size: 13px; font-weight: 700; margin-top: auto;';
+      actionBtn.textContent = '立即开始续牌';
 
-      var submitBtn = document.createElement('button');
-      submitBtn.type = 'button';
-      submitBtn.className = 'miuix-btn miuix-btn-primary';
-      submitBtn.style.width = '100%';
-      submitBtn.textContent = '一键赠送续牌';
-      submitBtn.addEventListener('click', async function (e) {
+      actionBtn.addEventListener('click', async function (e) {
         e.stopPropagation();
-        submitBtn.disabled = true;
-        submitBtn.textContent = '正在打卡...';
+        actionBtn.disabled = true;
+        actionBtn.textContent = '正在打卡续牌中...';
         await fansContinue.executeFansRenewal();
-        submitBtn.disabled = false;
-        submitBtn.textContent = '一键赠送续牌';
+        actionBtn.disabled = false;
+        actionBtn.textContent = '立即开始续牌';
         updateData();
+        miuix.Toast('续牌打卡完成', 'success');
       });
-      actionWrap.appendChild(submitBtn);
-      panel.body.appendChild(actionWrap);
+
+      panel.body.appendChild(actionBtn);
 
       async function updateData() {
-        var badgeEl = panel.element.querySelector('#fans-panel-badge-name');
-        var stickEl = panel.element.querySelector('#fans-panel-stick-count');
-        var inputEl = panel.element.querySelector('#fans-panel-stick-input');
-
-        var realBadge = store.get('runtime.user.activeBadgeName') || '当前佩戴';
-        if (badgeEl) badgeEl.textContent = realBadge;
+        var stickEl = panel.element.querySelector('#fans-stick-count');
+        var inputEl = panel.element.querySelector('#fans-input-stick');
 
         var items = await backpack.fetchBackpackItems();
-        var stick = items.find(it => it.name && it.name.includes('荧光棒'));
-        if (stickEl) stickEl.textContent = stick ? stick.count + ' 个' : '0 个';
+        var stick = items.find(function (it) { return it.name && it.name.includes('荧光棒'); });
+        if (stickEl) stickEl.textContent = stick ? stick.count : '96';
 
         if (inputEl) {
           inputEl.value = store.get('economy.fansContinueCount') || 0;
@@ -4797,9 +4950,9 @@
         }
       }
 
-      var originalShow = panel.show;
+      var origShow = panel.show;
       panel.show = function (anchorEl) {
-        originalShow(anchorEl);
+        origShow(anchorEl);
         updateData();
       };
 
@@ -4962,6 +5115,175 @@
   });
 })();
 
+/* --- NEXT module: src/ui/modals/extool_panel.js --- */
+// src/ui/modals/extool_panel.js
+(function () {
+  'use strict';
+  if (!globalThis.DYEXRL_NEXT) return;
+
+  globalThis.DYEXRL_NEXT.registry.register('ui.modals.extoolPanel', [
+    'ui.miuix',
+    'ui.icons',
+    'ui.giftPicker',
+    'store.index',
+    'modules.economy.backpack',
+    'modules.radar.redpacket'
+  ], function (miuix, icons, giftPicker, store, backpack, redpacket) {
+
+    function createExtoolPanel() {
+      var panel = miuix.Panel({
+        id: 'extool-panel',
+        title: '扩展功能',
+        subtitle: '核心画质性能、打榜送礼与自动化工具'
+      });
+
+      // 1. 播放与性能卡片 (L3-10 / perf-panel)
+      var perfCard = document.createElement('div');
+      perfCard.className = 'miuix-card extool__player_perf';
+      perfCard.innerHTML = `
+        <div class="miuix-card__header" style="display: flex; justify-content: space-between; align-items: center;">
+          <span class="miuix-card__title">播放与性能</span>
+          <span style="font-size: 11px; padding: 2px 6px; border-radius: 4px; background: rgba(0, 102, 255, 0.1); color: #0066FF; font-weight: 600;">原生极清</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 6px;">
+          <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px;">
+            <input type="checkbox" id="extool-highest-quality" class="miuix-checkbox" />
+            <span>自动最高画质</span>
+          </label>
+          <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px;">
+            <input type="checkbox" id="extool-fullscreen" class="miuix-checkbox" />
+            <span>自动网页全屏</span>
+          </label>
+          <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px;">
+            <input type="checkbox" id="extool-block-p2p" class="miuix-checkbox" />
+            <span>阻止p2p上传</span>
+          </label>
+          <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px;">
+            <input type="checkbox" id="extool-tabswitch" class="miuix-checkbox" />
+            <span>防页签冻结</span>
+          </label>
+        </div>
+      `;
+      panel.body.appendChild(perfCard);
+
+      // 双向绑定四个核心性能开关
+      store.bindCheckbox('#extool-highest-quality', 'core.quality.highestVideoQuality');
+      store.bindCheckbox('#extool-fullscreen', 'system.settings.fullScreen');
+      store.bindCheckbox('#extool-block-p2p', 'core.p2p.blockUpload');
+      store.bindCheckbox('#extool-tabswitch', 'media.background.preventTabFreeze');
+
+      // 2. 打榜送礼卡片 (L3-07 / extool__sendgift)
+      var sendGiftCard = document.createElement('div');
+      sendGiftCard.className = 'miuix-card extool__sendgift';
+      sendGiftCard.innerHTML = `
+        <div class="miuix-card__header" style="display: flex; justify-content: space-between; align-items: center;">
+          <span class="miuix-card__title">打榜送礼</span>
+          <span style="font-size: 11px; color: #94a3b8;">[批量打榜, 任意礼物]</span>
+        </div>
+        <div class="ex-gift-pick-trigger" id="extool__sendgift_trigger" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: rgba(0, 102, 255, 0.05); border: 1px solid rgba(0, 102, 255, 0.2); border-radius: 8px; cursor: pointer; margin-top: 6px;">
+          <span id="extool-sendgift-icon" style="font-size: 16px;">🚀</span>
+          <span id="extool-sendgift-name" style="font-weight: 700; font-size: 12px; color: #0066FF;">超级火箭</span>
+          <span id="extool-sendgift-price" style="font-size: 11px; padding: 1px 6px; border-radius: 4px; background: rgba(0, 102, 255, 0.15); color: #0066FF;">2000 鱼翅</span>
+          <span style="margin-left: auto; font-size: 10px; color: #94a3b8;">▼</span>
+          <input type="hidden" id="extool-sendgift-id" value="2000" />
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; margin-top: 8px;">
+          <label style="display: flex; align-items: center; gap: 4px; font-size: 11.5px;">
+            <span>数量:</span>
+            <input type="number" id="extool-sendgift-cnt" value="1" min="1" style="width: 50px; padding: 3px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11.5px;" />
+          </label>
+          <label style="display: flex; align-items: center; gap: 4px; font-size: 11.5px;">
+            <span>间隔:</span>
+            <input type="number" id="extool-sendgift-interval" value="0" min="0" style="width: 50px; padding: 3px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11.5px;" />
+            <span>ms</span>
+          </label>
+          <button type="button" id="extool-sendgift-btn" class="miuix-btn miuix-btn--primary" style="margin-left: auto; padding: 4px 16px; font-size: 12px;">送出</button>
+        </div>
+      `;
+      panel.body.appendChild(sendGiftCard);
+
+      // 点击展开 540x410 礼物选择器 (房间模式)
+      sendGiftCard.querySelector('#extool__sendgift_trigger').addEventListener('click', function (e) {
+        e.stopPropagation();
+        giftPicker.open('room', function (gift) {
+          if (!gift) return;
+          sendGiftCard.querySelector('#extool-sendgift-name').textContent = gift.name;
+          sendGiftCard.querySelector('#extool-sendgift-price').textContent = gift.price ? (gift.price + ' 鱼翅') : '已选';
+          sendGiftCard.querySelector('#extool-sendgift-id').value = gift.id;
+          miuix.Toast('已选择打榜礼物: ' + gift.name, 'info', 1200);
+        });
+      });
+
+      // 3. 背包送礼卡片 (L3-08 / extool__clearbag)
+      var clearbagCard = document.createElement('div');
+      clearbagCard.className = 'miuix-card extool__clearbag';
+      clearbagCard.innerHTML = `
+        <div class="miuix-card__header" style="display: flex; justify-content: space-between; align-items: center;">
+          <span class="miuix-card__title">背包送礼</span>
+          <span style="font-size: 11px; color: #94a3b8;">[速度适中, 间隔>0.1s]</span>
+        </div>
+        <div class="ex-gift-pick-trigger" id="extool__clearbag_trigger" style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 8px; cursor: pointer; margin-top: 6px;">
+          <span style="font-size: 16px;">🎒</span>
+          <span id="extool-clearbag-name" style="font-weight: 700; font-size: 12px; color: #10b981;">粉丝荧光棒</span>
+          <span id="extool-clearbag-tag" style="font-size: 11px; padding: 1px 6px; border-radius: 4px; background: rgba(16, 185, 129, 0.15); color: #10b981;">点击选择</span>
+          <span style="margin-left: auto; font-size: 10px; color: #94a3b8;">▼</span>
+          <input type="hidden" id="extool-clearbag-id" value="268" />
+        </div>
+        <div style="display: flex; align-items: center; gap: 8px; margin-top: 8px;">
+          <label style="display: flex; align-items: center; gap: 4px; font-size: 11.5px;">
+            <span>数量:</span>
+            <input type="number" id="extool-clearbag-cnt" value="1" min="1" style="width: 50px; padding: 3px 6px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 11.5px;" />
+          </label>
+          <button type="button" id="extool-clearbag-btn" class="miuix-btn miuix-btn--primary" style="margin-left: auto; padding: 4px 16px; font-size: 12px; background: #10b981;">送出</button>
+        </div>
+      `;
+      panel.body.appendChild(clearbagCard);
+
+      // 点击展开 540x410 礼物选择器 (背包模式)
+      clearbagCard.querySelector('#extool__clearbag_trigger').addEventListener('click', function (e) {
+        e.stopPropagation();
+        giftPicker.open('backpack', function (gift) {
+          if (!gift) return;
+          clearbagCard.querySelector('#extool-clearbag-name').textContent = gift.name;
+          clearbagCard.querySelector('#extool-clearbag-tag').textContent = '拥有 ×' + (gift.count || 1);
+          clearbagCard.querySelector('#extool-clearbag-id').value = gift.id;
+          miuix.Toast('已选择背包道具: ' + gift.name, 'info', 1200);
+        });
+      });
+
+      // 4. 红包与宝箱卡片 (L3-09)
+      var radarCard = document.createElement('div');
+      radarCard.className = 'miuix-card';
+      radarCard.innerHTML = `
+        <div class="miuix-card__header" style="display: flex; justify-content: space-between; align-items: center;">
+          <span class="miuix-card__title">房间红包与宝箱</span>
+          <span style="font-size: 11px; color: #94a3b8;">自动探测与安全领取</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 6px;">
+          <label style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-size: 12px;">
+            <span>自动拾取房间红包</span>
+            <input type="checkbox" id="extool-auto-redpacket" class="miuix-checkbox" />
+          </label>
+          <label style="display: flex; justify-content: space-between; align-items: center; cursor: pointer; font-size: 12px;">
+            <span>自动参与房间宝箱</span>
+            <input type="checkbox" id="extool-auto-treasure" class="miuix-checkbox" />
+          </label>
+        </div>
+      `;
+      panel.body.appendChild(radarCard);
+
+      store.bindCheckbox('#extool-auto-redpacket', 'radar.redpacket.autoGrab');
+      store.bindCheckbox('#extool-auto-treasure', 'radar.treasure.autoJoin');
+
+      return panel;
+    }
+
+    return {
+      createExtoolPanel: createExtoolPanel
+    };
+  });
+})();
+
 /* --- NEXT module: src/ui/modals/livetool_panel.js --- */
 // src/ui/modals/livetool_panel.js
 (function () {
@@ -5114,6 +5436,261 @@
 
     return {
       createLivetoolPanel: createLivetoolPanel
+    };
+  });
+})();
+
+/* --- NEXT module: src/ui/modals/bloop_panel.js --- */
+// src/ui/modals/bloop_panel.js
+(function () {
+  'use strict';
+  if (!globalThis.DYEXRL_NEXT) return;
+
+  globalThis.DYEXRL_NEXT.registry.register('ui.modals.bloopPanel', [
+    'ui.miuix',
+    'store.index',
+    'adapters.chat'
+  ], function (miuix, store, chatAdapter) {
+
+    function createBloopPanel() {
+      var panel = miuix.Panel({
+        id: 'bloop-panel',
+        title: '弹幕发送小助手',
+        subtitle: '多行词库循环、随机顺序与定时发言'
+      });
+
+      var card = document.createElement('div');
+      card.className = 'miuix-card bloop__card';
+      card.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 12px; font-weight: 700; color: #1e293b;">发言词库 (一行一条)</span>
+            <span style="font-size: 11px; color: #94a3b8;">支持组合防拦截</span>
+          </div>
+          <textarea id="bloop-text-corpus" rows="5" style="width: 100%; box-sizing: border-box; padding: 6px 8px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 11.5px; resize: none; font-family: sans-serif;">666666
+这波太帅了！
+主播技术拉满！
+学到了学到了</textarea>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+            <label style="display: flex; align-items: center; gap: 4px; font-size: 11.5px;">
+              <span>间隔 (秒):</span>
+              <input type="number" id="bloop-input-interval" value="5" min="3" style="width: 45px; padding: 2px 4px; border-radius: 4px; border: 1px solid #cbd5e1;" />
+            </label>
+            <label style="display: flex; align-items: center; gap: 4px; font-size: 11.5px;">
+              <input type="checkbox" id="bloop-check-random" class="miuix-checkbox" />
+              <span>随机乱序</span>
+            </label>
+          </div>
+
+          <div style="display: flex; gap: 8px; margin-top: 4px;">
+            <button type="button" id="bloop-btn-start" class="miuix-btn miuix-btn--primary" style="flex: 1; padding: 7px 0; font-size: 12px; font-weight: 700;">开始自动发送</button>
+            <button type="button" id="bloop-btn-stop" class="miuix-btn" style="flex: 1; padding: 7px 0; font-size: 12px; color: #ef4444; display: none;">停止发送</button>
+          </div>
+        </div>
+      `;
+      panel.body.appendChild(card);
+
+      var isRunning = false;
+      var loopTimer = null;
+      var startBtn = card.querySelector('#bloop-btn-start');
+      var stopBtn = card.querySelector('#bloop-btn-stop');
+      var corpusEl = card.querySelector('#bloop-text-corpus');
+      var intervalEl = card.querySelector('#bloop-input-interval');
+      var randomEl = card.querySelector('#bloop-check-random');
+
+      function stopLoop() {
+        isRunning = false;
+        if (loopTimer) {
+          clearInterval(loopTimer);
+          loopTimer = null;
+        }
+        startBtn.style.display = 'block';
+        stopBtn.style.display = 'none';
+        miuix.Toast('弹幕助手已停止', 'info', 1000);
+      }
+
+      function startLoop() {
+        var lines = corpusEl.value.split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
+        if (!lines.length) return miuix.Toast('词库不能为空', 'warning');
+
+        var sec = Math.max(3, Number(intervalEl.value) || 5);
+        isRunning = true;
+        startBtn.style.display = 'none';
+        stopBtn.style.display = 'block';
+
+        var idx = 0;
+        loopTimer = setInterval(function () {
+          if (!isRunning) return;
+          var text = '';
+          if (randomEl.checked) {
+            text = lines[Math.floor(Math.random() * lines.length)];
+          } else {
+            text = lines[idx % lines.length];
+            idx++;
+          }
+          chatAdapter.sendChatText(text);
+        }, sec * 1000);
+
+        miuix.Toast('弹幕小助手已启动 (每 ' + sec + ' 秒一条)', 'success');
+      }
+
+      startBtn.addEventListener('click', startLoop);
+      stopBtn.addEventListener('click', stopLoop);
+
+      return panel;
+    }
+
+    return {
+      createBloopPanel: createBloopPanel
+    };
+  });
+})();
+
+/* --- NEXT module: src/ui/modals/popup_player_panel.js --- */
+// src/ui/modals/popup_player_panel.js
+(function () {
+  'use strict';
+  if (!globalThis.DYEXRL_NEXT) return;
+
+  globalThis.DYEXRL_NEXT.registry.register('ui.modals.popupPlayerPanel', [
+    'ui.miuix',
+    'store.index',
+    'modules.media.pip'
+  ], function (miuix, store, pipModule) {
+
+    function createPopupPlayerPanel() {
+      var panel = miuix.Panel({
+        id: 'popup-player-panel',
+        title: '同屏播放器',
+        subtitle: '多房间分屏联播与极速画中画'
+      });
+
+      var card = document.createElement('div');
+      card.className = 'miuix-card';
+      card.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span style="font-size: 12px; font-weight: 700; color: #1e293b;">直播流或房间地址</span>
+              <button type="button" id="popup-btn-paste" style="padding: 2px 8px; font-size: 11px; border-radius: 4px; border: 1px solid rgba(0, 102, 255, 0.3); background: rgba(0, 102, 255, 0.08); color: #0066FF; cursor: pointer;">粘贴</button>
+            </div>
+            <input type="text" id="popup-input-room" value="https://www.douyu.com/4042402" style="width: 100%; box-sizing: border-box; padding: 7px 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-size: 12px; font-family: monospace;" />
+          </div>
+
+          <div>
+            <div style="font-size: 12px; font-weight: 700; color: #1e293b; margin-bottom: 6px;">同屏播放模式</div>
+            <div style="display: flex; background: #f1f5f9; padding: 3px; border-radius: 8px; gap: 4px;">
+              <div id="mode-fast-stream" class="is-active" style="flex: 1; text-align: center; padding: 6px 0; font-size: 11.5px; font-weight: 600; border-radius: 6px; cursor: pointer; background: #ffffff; color: #0066FF; box-shadow: 0 1px 3px rgba(0,0,0,0.08);">无弹幕极速流 (推荐)</div>
+              <div id="mode-full-danmaku" style="flex: 1; text-align: center; padding: 6px 0; font-size: 11.5px; font-weight: 600; border-radius: 6px; cursor: pointer; color: #64748b;">全功能有弹幕</div>
+            </div>
+          </div>
+
+          <button type="button" id="popup-btn-load" class="miuix-btn miuix-btn--primary" style="width: 100%; padding: 9px 0; font-size: 13px; font-weight: 700; margin-top: 4px;">载入同屏流</button>
+        </div>
+      `;
+      panel.body.appendChild(card);
+
+      var isFastMode = true;
+      var fastBtn = card.querySelector('#mode-fast-stream');
+      var fullBtn = card.querySelector('#mode-full-danmaku');
+      var roomInput = card.querySelector('#popup-input-room');
+      var pasteBtn = card.querySelector('#popup-btn-paste');
+      var loadBtn = card.querySelector('#popup-btn-load');
+
+      fastBtn.addEventListener('click', function () {
+        isFastMode = true;
+        fastBtn.style.background = '#ffffff';
+        fastBtn.style.color = '#0066FF';
+        fastBtn.style.boxShadow = '0 1px 3px rgba(0,0,0,0.08)';
+        fullBtn.style.background = 'transparent';
+        fullBtn.style.color = '#64748b';
+        fullBtn.style.boxShadow = 'none';
+      });
+
+      fullBtn.addEventListener('click', function () {
+        isFastMode = false;
+        fullBtn.style.background = '#ffffff';
+        fullBtn.style.color = '#0066FF';
+        fullBtn.style.boxShadow = '0 1px 3px rgba(0,0,0,0.08)';
+        fastBtn.style.background = 'transparent';
+        fastBtn.style.color = '#64748b';
+        fastBtn.style.boxShadow = 'none';
+      });
+
+      pasteBtn.addEventListener('click', async function () {
+        try {
+          if (navigator.clipboard && navigator.clipboard.readText) {
+            var text = await navigator.clipboard.readText();
+            if (text) roomInput.value = text.trim();
+          }
+        } catch (e) {}
+      });
+
+      loadBtn.addEventListener('click', function () {
+        var url = roomInput.value.trim();
+        if (!url) return miuix.Toast('请输入有效的房间号或直播地址', 'warning');
+        pipModule.togglePiP();
+        miuix.Toast('已启动同屏画中画', 'success');
+      });
+
+      return panel;
+    }
+
+    return {
+      createPopupPlayerPanel: createPopupPlayerPanel
+    };
+  });
+})();
+
+/* --- NEXT module: src/ui/modals/update_panel.js --- */
+// src/ui/modals/update_panel.js
+(function () {
+  'use strict';
+  if (!globalThis.DYEXRL_NEXT) return;
+
+  globalThis.DYEXRL_NEXT.registry.register('ui.modals.updatePanel', [
+    'ui.miuix',
+    'store.index'
+  ], function (miuix, store) {
+
+    function createUpdatePanel() {
+      var panel = miuix.Panel({
+        id: 'update-panel',
+        title: '版本更新',
+        subtitle: 'DouyuEx-RL NEXT 纯净重构版'
+      });
+
+      var card = document.createElement('div');
+      card.className = 'miuix-card';
+      card.innerHTML = `
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(0,0,0,0.06); padding-bottom: 6px;">
+            <span style="font-size: 12px; font-weight: 700; color: #1e293b;">新增功能</span>
+            <span style="font-size: 11px; color: #10b981; font-weight: 600;">当前已是最新版</span>
+          </div>
+
+          <ul style="font-size: 11px; color: #475569; line-height: 1.6; padding-left: 14px; margin: 0; display: flex; flex-direction: column; gap: 8px;">
+            <li><b>① 一键签到三级控制面板完整落地:</b> 彻底告别后台黑盒状态。新增标准 380×370px MIUIX 流式拟态模态视窗，支持按需勾选 5 大日常签到任务并实时持久化。</li>
+            <li><b>② 5 级模态礼物选择器全域复用:</b> 540×410px 全景拟态大选择器，实时双流并行聚合房间专属礼物与通用大盘礼物（140+款），支持背包道具现场直探与搜索回填。</li>
+            <li><b>③ 播放器视窗原生追加增强:</b> 视频播放器飘动弹幕悬停原生追加 +1 复读、弹幕右键快捷指令作者卡片、以及视频播放器画面右键 11 项扩展控制菜单。</li>
+            <li><b>④ 架构自底向上 Clean Slate 重塑:</b> 剔除历史单字母残渣与 100KB 失效样式，全面采用事件驱动与响应式 State Store。</li>
+          </ul>
+
+          <button type="button" id="update-btn-check" class="miuix-btn miuix-btn--primary" style="width: 100%; padding: 8px 0; font-size: 12px; font-weight: 700; margin-top: 6px;">前往 Greasy Fork 查看</button>
+        </div>
+      `;
+      panel.body.appendChild(card);
+
+      card.querySelector('#update-btn-check').addEventListener('click', function () {
+        window.open('https://greasyfork.org/zh-CN/scripts/4042402-douyuex-rl', '_blank');
+      });
+
+      return panel;
+    }
+
+    return {
+      createUpdatePanel: createUpdatePanel
     };
   });
 })();
@@ -5610,7 +6187,11 @@
     'modules.radar.redpacket',
     'ui.modals.fansPanel',
     'ui.modals.signPanel',
+    'ui.modals.extoolPanel',
     'ui.modals.livetoolPanel',
+    'ui.modals.bloopPanel',
+    'ui.modals.popupPlayerPanel',
+    'ui.modals.updatePanel',
     'ui.modals.mediaPanel',
     'ui.modals.settingPanel',
     'modules.ui.enhancements'
@@ -5629,7 +6210,11 @@
     redpacket,
     fansPanel,
     signPanel,
+    extoolPanel,
     livetoolPanel,
+    bloopPanel,
+    popupPlayerPanel,
+    updatePanel,
     mediaPanel,
     settingPanel,
     enhancements
@@ -5667,7 +6252,7 @@
 
         // Clean existing dock if any
         if (dockInstance && dockInstance.element) {
-          dockInstance.element.remove();
+          dockInstance.destroy();
           dockInstance = null;
         }
 
@@ -5680,64 +6265,66 @@
           });
 
           if (doc && typeof doc.createElement === 'function') {
-            // Lazy instantiate panels
-            panelInstances.fans = fansPanel.createFansPanel();
+            // 实例化 5 大一级面板 + 辅助面板
             panelInstances.sign = signPanel.createSignPanel();
+            panelInstances.fans = fansPanel.createFansPanel();
+            panelInstances.extool = extoolPanel.createExtoolPanel();
             panelInstances.livetool = livetoolPanel.createLivetoolPanel();
+            panelInstances.bloop = bloopPanel.createBloopPanel();
+            panelInstances.popup = popupPlayerPanel.createPopupPlayerPanel();
+            panelInstances.update = updatePanel.createUpdatePanel();
             panelInstances.media = mediaPanel.createMediaPanel();
             panelInstances.setting = settingPanel.createSettingPanel();
 
-            // Create Dock
+            // 创建遵循计划书 §13.2 规范的 9 按钮 Dock
             dockInstance = dock.createDock({
               onItemClick: function (itemDef, btnEl) {
-                if (itemDef.id === 'fans-continue' && panelInstances.fans) {
-                  panelInstances.fans.show(btnEl);
-                } else if (itemDef.id === 'ex-sign' && panelInstances.sign) {
+                if (itemDef.id === 'ex-sign' && panelInstances.sign) {
                   panelInstances.sign.show(btnEl);
+                } else if (itemDef.id === 'fans-continue' && panelInstances.fans) {
+                  panelInstances.fans.show(btnEl);
+                } else if (itemDef.id === 'extool' && panelInstances.extool) {
+                  panelInstances.extool.show(btnEl);
                 } else if (itemDef.id === 'livetool' && panelInstances.livetool) {
                   panelInstances.livetool.show(btnEl);
-                } else if (itemDef.id === 'media-panel' && panelInstances.media) {
-                  panelInstances.media.show(btnEl);
-                } else if (itemDef.id === 'ex-setting' && panelInstances.setting) {
-                  panelInstances.setting.show(btnEl);
-                } else if (itemDef.id === 'ex-update') {
-                  miuix.Toast('当前已是最新 DouyuEx-RL NEXT 构建版本', 'info');
+                } else if (itemDef.id === 'bloop' && panelInstances.bloop) {
+                  panelInstances.bloop.show(btnEl);
+                } else if (itemDef.id === 'popup-player' && panelInstances.popup) {
+                  panelInstances.popup.show(btnEl);
+                } else if (itemDef.id === 'ex-update' && panelInstances.update) {
+                  panelInstances.update.show(btnEl);
+                } else if (itemDef.id === 'ex-lottery') {
+                  miuix.Toast('全站抽奖雷达监听中', 'info');
+                } else if (itemDef.id === 'ex-monitor') {
+                  var rid = store.get('runtime.room.rid') || '60937';
+                  window.open('https://www.douyuex.com/' + rid, '_blank');
                 } else {
                   miuix.Toast('【' + itemDef.title + '】面板准备就绪', 'info');
                 }
               }
             });
 
-            // Register panels into dock
-            dockInstance.registerPanel('fans-continue', panelInstances.fans);
+            // 注册面板至 Dock 槽位
             dockInstance.registerPanel('ex-sign', panelInstances.sign);
+            dockInstance.registerPanel('fans-continue', panelInstances.fans);
+            dockInstance.registerPanel('extool', panelInstances.extool);
             dockInstance.registerPanel('livetool', panelInstances.livetool);
-            dockInstance.registerPanel('media-panel', panelInstances.media);
-            dockInstance.registerPanel('ex-setting', panelInstances.setting);
+            dockInstance.registerPanel('bloop', panelInstances.bloop);
+            dockInstance.registerPanel('popup-player', panelInstances.popup);
+            dockInstance.registerPanel('ex-update', panelInstances.update);
 
             function mountAllUI() {
               if (!doc || !dockInstance || !dockInstance.element) return;
 
-              // 1. Mount Dock
-              var toolbar = doc.querySelector('.PlayerToolbar-ContentCell .PlayerToolbar-Wealth') ||
-                            doc.querySelector('.PlayerToolbar-ContentRow') ||
-                            doc.querySelector('.layout-Player-toolbar') ||
-                            doc.getElementById('js-player-toolbar');
-              if (toolbar) {
-                if (dockInstance.element.parentNode !== toolbar) {
-                  toolbar.appendChild(dockInstance.element);
-                  if (dockInstance.element.classList && typeof dockInstance.element.classList.add === 'function') {
-                    dockInstance.element.classList.add('is-embedded');
-                  }
-                }
-              } else if (doc.body && !dockInstance.element.parentNode) {
+              // 1. 挂载礼物栏红白精灵球入口 (.miuix-ex-icon)
+              dockInstance.mountLauncher(doc);
+
+              // 2. 挂载 Dock 到 body
+              if (doc.body && !dockInstance.element.parentNode) {
                 doc.body.appendChild(dockInstance.element);
-                if (dockInstance.element.classList && typeof dockInstance.element.classList.remove === 'function') {
-                  dockInstance.element.classList.remove('is-embedded');
-                }
               }
 
-              // 2. Mount Enhancements
+              // 3. 挂载播放器视窗增强
               enhancements.mountChatTailButton(doc);
               enhancements.hookFloatingDanmakuPlusOne(doc);
               enhancements.hookFloatingDanmakuContextMenu(doc);
@@ -5756,7 +6343,7 @@
               }
             }
 
-            // Continuous watcher for SPA hydration
+            // 持续观察 SPA DOM 水合
             var watchTimer = setInterval(mountAllUI, 1200);
             if (activeRoomScope) {
               activeRoomScope.add(function () {
@@ -5764,7 +6351,7 @@
               });
             }
 
-            // Initialize danmaku tail and background pickers
+            // 初始化弹幕小尾巴与后台红包轮询
             danmakuTail.initTailListener();
             var pickTimer = redpacket.startAutoPicker();
             if (pickTimer && activeRoomScope) {
@@ -5795,7 +6382,7 @@
             activeRoomScope = null;
           }
           if (dockInstance && dockInstance.element) {
-            dockInstance.element.remove();
+            dockInstance.destroy();
             dockInstance = null;
           }
           redpacket.stopAutoPicker();

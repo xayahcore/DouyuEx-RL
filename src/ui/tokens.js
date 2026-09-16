@@ -431,21 +431,84 @@
 /* Level 2 Dock 工具栏装配 */
 .miuix-dock-wrap {
   position: fixed !important;
-  bottom: 24px !important;
-  right: 24px !important;
+  bottom: 84px !important;
+  right: 240px !important;
   z-index: 999999 !important;
-  background: rgba(255, 255, 255, 0.88) !important;
+  background: rgba(255, 255, 255, 0.92) !important;
   backdrop-filter: blur(28px) saturate(180%) !important;
   -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
   border: 1px solid rgba(226, 232, 240, 0.9) !important;
-  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(255, 255, 255, 0.6) inset !important;
+  box-shadow: 0 12px 36px -4px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(255, 255, 255, 0.7) inset !important;
   border-radius: 20px !important;
   padding: 5px 8px !important;
-  display: flex !important;
+  display: none; /* 默认由精灵球触发展开 */
   align-items: center !important;
   gap: 4px !important;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
   user-select: none !important;
+}
+
+.miuix-dock-wrap.is-open {
+  display: flex !important;
+}
+
+/* 礼物栏红白精灵球触发入口 */
+.miuix-ex-icon {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 50% !important;
+  cursor: pointer !important;
+  color: #ef4444 !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  user-select: none !important;
+  margin-left: 6px !important;
+  margin-right: 4px !important;
+  vertical-align: middle !important;
+}
+
+.miuix-ex-icon:hover {
+  transform: scale(1.1) rotate(15deg) !important;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4) !important;
+}
+
+.miuix-ex-icon.is-active {
+  background: #ef4444 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.45) !important;
+}
+
+/* Dock 右上角圆形关闭按钮 */
+.miuix-dock-close {
+  position: absolute !important;
+  top: -8px !important;
+  right: -8px !important;
+  width: 20px !important;
+  height: 20px !important;
+  border-radius: 50% !important;
+  background: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  color: #64748b !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18) !important;
+  transition: all 0.15s !important;
+  z-index: 10 !important;
+}
+
+.miuix-dock-close:hover {
+  background: #ef4444 !important;
+  color: #ffffff !important;
+  transform: scale(1.1) !important;
 }
 
 .miuix-dock-item {
