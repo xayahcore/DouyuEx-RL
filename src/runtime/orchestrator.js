@@ -147,7 +147,9 @@
 
               // 2. Mount Enhancements
               enhancements.mountChatTailButton(doc);
-              enhancements.hookBarragePlusOne(doc);
+              enhancements.hookFloatingDanmakuPlusOne(doc);
+              enhancements.hookFloatingDanmakuContextMenu(doc);
+              enhancements.hookPlayerContextMenu(doc);
               enhancements.mountPlayerToolbarButton(doc, function (btnEl) {
                 if (panelInstances.media) panelInstances.media.show(btnEl);
               });
