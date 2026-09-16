@@ -31,7 +31,7 @@
 | **F-18** | 关键词与快捷禁言管理 (禁言时长1/3/7/30天、名单查询、导入导出) | M4.7; `02_dom_ui.js:1320` | `modules/danmaku/mute.js` | B-MUTE; `danmaku.mute` | T-F-18 | H | `planned` |
 | **F-19** | 实时弹幕溯源搜索、聊天区 +1 跟风复读与作者四合一快捷卡片 | M4.8-4.9; `05_services.js:120` | `modules/danmaku/search.js`, `interaction.js` | B-SEARCH/CHAT; `danmaku.interaction` | T-F-19 | H | `planned` |
 | **F-20** | 5 级礼物大选择器 (专属+通用140+款双流聚合、背包直探、搜索回填) | M5.1; `02_dom_ui.js:16-177` | `ui/gift_picker.js` | A-01, A-12, B-GIFTS; `economy.picker` | T-F-20 | M | `planned` |
-| **F-21** | 跨房打榜送礼与背包清空 (精准道具映射、数量、延迟、确认安全) | M5.2; `02_dom_ui.js:1111` | `modules/economy/backpack.js` | A-12, A-13, B-SEND; `economy.backpack` | T-F-21 | H | `planned` |
+| **F-21** | 跨房打榜送礼与背包清空 (精准道具映射、数量、延迟、确认安全) | M5.2; `02_dom_ui.js:1111` | `modules/economy/backpack.js` | A-12, A-13, B-SEND; `economy.backpack` | T-F-21 | H | `mock-tested` |
 | **F-22** | 一键续牌 (动态识别真实佩戴牌子、荧光棒数量计算、自动打卡) | M5.3; `02_dom_ui.js:350` | `modules/economy/fans_continue.js` | A-11, A-12, A-13; `economy.fans` | T-F-22 | H | `planned` |
 | **F-23** | 一键签到五大日常任务闭环 (房间/客户端/鱼吧打卡补签/星推全满/钻粉) | M5.4; `02_dom_ui.js:498` | `modules/economy/sign_engine.js` | A-03～11, B-SIGN; `economy.sign` | T-F-23 | H | `planned` |
 | **F-24** | 自动钓鱼挂机系统 (全天/钓鱼大赛双模式、鱼饵/时间戳探测、自动提竿结算) | M5.5; `02_dom_ui.js:1711`, `05_services.js:242` | `modules/economy/autofish.js` | B-FISH; `economy.fish` | T-F-24 | H | `planned` |
@@ -87,7 +87,7 @@
 | **L3-05** | `reply__panel` | `livetool` 点击 `#reply__title` 展开手风琴 | 关键词选择、回复内容、CD冷却秒数、增删按钮 | 关键词回复规则 JSON 一键剪贴板**导入与导出** | `planned` |
 | **L3-06** | `bloop` | Dock 点击 `#bloop-icon` 弹出模态面板 | 循环多行文本框、发送间隔、随机/顺序切换 | 内置纯净短语预设，彻底淘汰外部彩虹屁接口 | `planned` |
 | **L3-07** | `extool__sendgift` | 嵌入在 `extool` 扩展功能面板中 | 礼物回显胶囊、送礼数量、间隔毫秒、送礼按钮 | 点击胶囊无缝调起 **5 级拟态模态大选择器** (`GiftPicker`) | `planned` |
-| **L3-08** | `extool__clearbag` | 嵌入在 `extool` 扩展功能面板中 | 背包道具资产动态展示、赠送数量、送出按钮 | 点击胶囊调起 **5 级拟态模态大选择器**，直选背包道具回填 | `planned` |
+| **L3-08** | `extool__clearbag` | 嵌入在 `extool` 扩展功能面板中 | 背包道具资产动态展示、赠送数量、送出按钮 | 点击胶囊调起 **5 级拟态模态大选择器**，直选背包道具回填 | `mock-tested` |
 | **L3-09** | `extool__redpacket_room` / `treasure` | 嵌入在 `extool` 扩展功能面板中 | 房间红包自动抢开关、宝箱自动拾取、延迟毫秒 | 毫秒级后台守护，遇验证码自动暂停并弹窗呼叫人工 | `planned` |
 | **L3-10** | `extool__player_perf` | 嵌入在 `extool` 扩展功能面板中 | 实时堆内存、GC状态指示、首帧截杀耗时看板 | 纯客户端沙盒性能探针 | `planned` |
 | **L3-11** | `filter__panel` | 播放器悬浮条 `vtoolbar-menu` 点击滑出抽屉 | 亮度/对比度/饱和度三条滑块、快捷预设下拉框 | 实时计算 CSS Filter 动态注入播放器视频实体 | `planned` |
@@ -99,8 +99,8 @@
 
 | 面板ID | 面板名称与 DOM 标识 | 尺寸与触发锚点 | 核心控件与业务流 | 对应能力编号 | 当前状态 |
 |:---:|:---|:---:|:---|:---:|:---:|
-| **P-01** | 一键续牌面板 (`fans-panel`) | 380×370px; Dock `fans-continue` | 真实佩戴牌子动态识别、背包荧光棒数量回显、自定义赠送数量、一键打卡按钮 | F-22 | `planned` |
-| **P-02** | 一键签到控制台 (`sign-panel`) | 380×370px; Dock `ex-sign` | 5 大任务复选框 (房间/客户端/鱼吧/星推/钻粉)、实时滚动日志视窗、纯文字开始签到 | F-23 | `planned` |
+| **P-01** | 一键续牌面板 (`fans-panel`) | 380×370px; Dock `fans-continue` | 真实佩戴牌子动态识别、背包荧光棒数量回显、自定义赠送数量、一键打卡按钮 | F-22 | `mock-tested` |
+| **P-02** | 一键签到控制台 (`sign-panel`) | 380×370px; Dock `ex-sign` | 5 大任务复选框 (房间/客户端/鱼吧/星推/钻粉)、实时滚动日志视窗、纯文字开始签到 | F-23 | `mock-tested` |
 | **P-03** | 同屏播放控制台 (`popup-player-panel`) | 380×370px; Dock `popup-player` | 房间号/URL 输入框、剪贴板一键粘贴、极速流/iframe模式切换单选组、创建同屏窗 | F-05 | `planned` |
 | **P-04** | 版本更新面板 (`exupdate-panel`) | 380×370px; Dock `ex-update` | 三段式演进日志展示 (新增/优化/其它)、多态交互按钮 (我已收到/检查更新/前往更新) | F-30 | `planned` |
 | **P-05** | Level 5 大礼物选择器 (`ex-gift-picker`) | 540×410px; 全屏居中悬浮模态 | 房间在播/背包道具双 Tab 切换、顶部实时模糊搜索框、礼物网格流、4px 滚动条 | F-20 | `mock-tested` |

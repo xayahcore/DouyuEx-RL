@@ -27,6 +27,12 @@
     "src/ui/miuix.js",
     "src/ui/dock.js",
     "src/ui/gift_picker.js",
+    "src/modules/economy/backpack.js",
+    "src/modules/economy/fans_continue.js",
+    "src/modules/economy/sign_engine.js",
+    "src/modules/economy/autofish.js",
+    "src/ui/modals/fans_panel.js",
+    "src/ui/modals/sign_panel.js",
     "src/runtime/orchestrator.js"
   ]
 }

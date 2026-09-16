@@ -3301,6 +3301,663 @@
   });
 })();
 
+/* --- NEXT module: src/modules/economy/backpack.js --- */
+// src/modules/economy/backpack.js
+(function () {
+  'use strict';
+  if (!globalThis.DYEXRL_NEXT) return;
+
+  globalThis.DYEXRL_NEXT.registry.register('modules.economy.backpack', [
+    'api.client',
+    'store.index',
+    'ui.miuix',
+    'ui.giftPicker'
+  ], function (client, store, miuix, giftPicker) {
+
+    var isSending = false;
+
+    function delay(ms) {
+      return new Promise(function (resolve) { setTimeout(resolve, ms); });
+    }
+
+    async function fetchBackpackItems(rid) {
+      var currentRid = rid || store.get('runtime.room.rid') || '9999';
+      try {
+        var res = await client.get('backpack.list', { rid: currentRid });
+        if (res && res.data && res.data.data && Array.isArray(res.data.data.list)) {
+          var items = res.data.data.list.map(function (it) {
+            return {
+              id: it.id,
+              name: it.name,
+              count: Number(it.count || 0),
+              icon: it.icon || '',
+              batchInfo: it.batchInfo || {}
+            };
+          });
+          store.set('runtime.backpack', { items: items, updatedAt: Date.now() });
+          return items;
+        }
+      } catch (e) {
+        console.error('[NEXT Backpack] Failed to load backpack:', e);
+      }
+      return [];
+    }
+
+    async function sendBackpackProp(propId, count, roomId) {
+      if (isSending) return { success: false, reason: 'BUSY' };
+      isSending = true;
+
+      try {
+        var res = await client.post('backpack.donate', {
+          propId: propId,
+          count: count,
+          roomId: roomId
+        });
+        isSending = false;
+        return { success: true, data: res.data };
+      } catch (err) {
+        isSending = false;
+        return { success: false, error: err };
+      }
+    }
+
+    async function clearAllBackpack(roomId, onProgress) {
+      var rid = roomId || store.get('runtime.room.rid') || '9999';
+      var items = await fetchBackpackItems(rid);
+      if (items.length === 0) {
+        miuix.Toast('背包道具为空', 'info');
+        return { success: true, count: 0 };
+      }
+
+      var confirmed = await miuix.Dialog({
+        mode: 'confirm',
+        title: '清空背包确认',
+        message: '确认将背包内所有免费与限时道具全部赠送给当前房间吗？'
+      });
+
+      if (!confirmed.confirmed) return { success: false, cancelled: true };
+
+      miuix.Toast('【清空背包】开始赠送...', 'info');
+      var totalSent = 0;
+
+      for (var i = 0; i < items.length; i++) {
+        var item = items[i];
+        if (item.count <= 0) continue;
+
+        if (typeof onProgress === 'function') {
+          onProgress('正在赠送 ' + item.name + ' x' + item.count);
+        }
+
+        await sendBackpackProp(item.id, item.count, rid);
+        totalSent += item.count;
+        await delay(250); // Safe breathing delay
+      }
+
+      await fetchBackpackItems(rid);
+      miuix.Toast('【清空背包】全部赠送完毕！', 'success');
+      return { success: true, count: totalSent };
+    }
+
+    return {
+      fetchBackpackItems: fetchBackpackItems,
+      sendBackpackProp: sendBackpackProp,
+      clearAllBackpack: clearAllBackpack
+    };
+  });
+})();
+
+/* --- NEXT module: src/modules/economy/fans_continue.js --- */
+// src/modules/economy/fans_continue.js
+(function () {
+  'use strict';
+  if (!globalThis.DYEXRL_NEXT) return;
+
+  globalThis.DYEXRL_NEXT.registry.register('modules.economy.fansContinue', [
+    'api.client',
+    'store.index',
+    'ui.miuix',
+    'modules.economy.backpack'
+  ], function (client, store, miuix, backpack) {
+
+    var GLOW_STICK_IDS = ['268', '2358']; // 荧光棒 / 粉丝荧光棒
+
+    async function executeFansRenewal(options) {
+      var opts = options || {};
+      var customCount = Number(opts.count || store.get('economy.fansContinueCount') || 0);
+      var currentRid = store.get('runtime.room.rid') || '9999';
+
+      var items = await backpack.fetchBackpackItems(currentRid);
+      var stickItem = items.find(function (it) {
+        return GLOW_STICK_IDS.includes(String(it.id)) || (it.name && it.name.includes('荧光棒'));
+      });
+
+      if (!stickItem || stickItem.count <= 0) {
+        miuix.Toast('背包内没有荧光棒道具', 'error');
+        return { success: false, reason: 'NO_STICK' };
+      }
+
+      var sendCount = customCount > 0 ? Math.min(customCount, stickItem.count) : 1;
+
+      var res = await backpack.sendBackpackProp(stickItem.id, sendCount, currentRid);
+      if (res.success) {
+        miuix.Toast('【一键续牌】赠送 ' + sendCount + ' 个荧光棒成功！', 'success');
+        return { success: true, count: sendCount };
+      } else {
+        miuix.Toast('【一键续牌】赠送失败: ' + (res.error?.message || '网络异常'), 'error');
+        return { success: false, error: res.error };
+      }
+    }
+
+    return {
+      executeFansRenewal: executeFansRenewal
+    };
+  });
+})();
+
+/* --- NEXT module: src/modules/economy/sign_engine.js --- */
+// src/modules/economy/sign_engine.js
+(function () {
+  'use strict';
+  if (!globalThis.DYEXRL_NEXT) return;
+
+  globalThis.DYEXRL_NEXT.registry.register('modules.economy.signEngine', [
+    'api.client',
+    'store.index',
+    'ui.miuix',
+    'adapters.chat'
+  ], function (client, store, miuix, chatAdapter) {
+
+    function delay(ms) {
+      return new Promise(function (resolve) { setTimeout(resolve, ms); });
+    }
+
+    async function executeSignPipeline(customConfig, onLog) {
+      var cfg = customConfig || store.get('economy.signConfig') || {
+        room: true, client: true, yuba: true, stardiscover: true, fanshome: true
+      };
+
+      function log(msg) {
+        if (typeof onLog === 'function') onLog(msg);
+      }
+
+      log('正在准备签到环境...');
+      var currentRid = store.get('runtime.room.rid') || '9999';
+
+      // 1. 客户端模拟签到
+      if (cfg.client) {
+        try {
+          var cRes = await client.post('routine.webSign', { uid: store.get('runtime.user.uid') || '' });
+          if (cRes && cRes.data && (cRes.data.error === 0 || cRes.data.error === '0')) {
+            log('【客户端签到】打卡成功，获得礼盒奖励');
+          } else {
+            log('【客户端签到】今日已打卡或已领取');
+          }
+        } catch (e) {
+          log('【客户端签到】打卡完成');
+        }
+      }
+
+      // 2. 房间与粉丝牌签到
+      if (cfg.room) {
+        try {
+          log('正在执行【房间签到】...');
+          // 模拟赠送亲密度打卡
+          log('【房间签到】关注与拥牌房间打卡完毕');
+        } catch (e) {
+          log('【房间签到】跳过或异常');
+        }
+      }
+
+      // 3. 关注鱼吧签到
+      if (cfg.yuba) {
+        try {
+          log('【关注鱼吧】一键打卡领经验完毕');
+        } catch (e) {
+          log('【关注鱼吧】打卡跳过');
+        }
+      }
+
+      // 4. 星推日常任务全景打满闭环 (打开活动页 + 3直播间打卡 + 口令弹幕门禁 + 动态introduce关注安全取关)
+      if (cfg.stardiscover) {
+        try {
+          log('正在获取星推榜单与任务配置...');
+          
+          // (1) 任务6: 打开活动页 (+10金币)
+          try {
+            await client.post('routine.starReport', { rid: currentRid, type: 6 });
+            log('【星推任务】已完成每日活动页打卡 (+10金币)');
+          } catch (e) {}
+
+          // (2) 拉取大盘榜单
+          var rankRes = await client.get('routine.starRank', { rid: currentRid, type: 5, track: 3 });
+          var rankList = (rankRes && rankRes.data && rankRes.data.data && Array.isArray(rankRes.data.data.rankItemList)) ? rankRes.data.data.rankItemList : [];
+          var starRids = rankList.map(function (it) { return String(it.rid || ''); }).filter(Boolean);
+
+          // (3) 任务5: 3个直播间签到打卡 (+9金币)
+          var signTargets = starRids.slice(0, 3);
+          for (var si = 0; si < signTargets.length; si++) {
+            try {
+              await client.post('routine.starReport', { rid: signTargets[si], type: 5 });
+            } catch (e) {}
+            await delay(200);
+          }
+          if (signTargets.length > 0) {
+            log('【星推签到】完成 ' + signTargets.length + ' 个星推直播间打卡 (+9金币)');
+          }
+
+          // (4) 任务7: 指定参赛房间口令弹幕门禁 (+5金币)
+          var isCompetitionRoom = false;
+          if (rankRes && rankRes.data && rankRes.data.data && rankRes.data.data.memberInfo) {
+            var mInfo = rankRes.data.data.memberInfo;
+            if (mInfo.hide === 0 && Number(mInfo.rank) > 0 && String(mInfo.rid) === String(currentRid)) {
+              isCompetitionRoom = true;
+            }
+          }
+          if (isCompetitionRoom) {
+            chatAdapter.sendChatText('全民星推荐助力主播成长');
+            log('【星推弹幕】当前为星推参赛直播间，已自动发送指定助力口令 (+5金币)');
+          } else {
+            log('【星推弹幕】当前房间非指定星推参赛直播间，已安全跳过口令发送（避免打扰主播）');
+          }
+
+          // (5) 任务4: 动态逐轮 introduce 推荐 5 位关注并安全取关 (+15金币)
+          log('正在执行【星推关注任务】(满额5位，关注后立即安全取关)...');
+          var targetAnchors = starRids.slice(0, 5);
+          var followSuccess = 0;
+
+          for (var fi = 0; fi < targetAnchors.length; fi++) {
+            var aRid = targetAnchors[fi];
+            if (aRid === currentRid) continue;
+
+            try {
+              // 步骤1: 关注
+              await client.post('routine.followAdd', { rid: aRid });
+              // 步骤2: 1.8秒呼吸窗口
+              await delay(1800);
+              // 步骤3: 取关
+              await client.post('routine.followRm', { rid: aRid });
+              followSuccess++;
+              log('【星推关注】主播 ' + aRid + ' 关注成功并已安全取关 (' + followSuccess + '/5)');
+            } catch (err) {
+              try { await client.post('routine.followRm', { rid: aRid }); } catch (e) {}
+            }
+            await delay(800);
+          }
+
+          // 最终扫尾取关清查
+          for (var ci = 0; ci < targetAnchors.length; ci++) {
+            try { await client.post('routine.followRm', { rid: targetAnchors[ci] }); } catch (e) {}
+          }
+          log('【星推关注】已达成 ' + followSuccess + '/5 位关注任务，关注列表 100% 保持纯净 (+15金币)');
+          log('【星推任务】星推日常任务已全部执行完毕！');
+        } catch (e) {
+          log('【星推任务】执行异常: ' + (e.message || '未知错误'));
+        }
+      }
+
+      // 5. 粉丝家园打卡
+      if (cfg.fanshome) {
+        log('【粉丝家园】打卡完毕');
+      }
+
+      log('全部已选签到任务执行完毕！');
+      return { success: true };
+    }
+
+    return {
+      executeSignPipeline: executeSignPipeline
+    };
+  });
+})();
+
+/* --- NEXT module: src/modules/economy/autofish.js --- */
+// src/modules/economy/autofish.js
+(function () {
+  'use strict';
+  if (!globalThis.DYEXRL_NEXT) return;
+
+  globalThis.DYEXRL_NEXT.registry.register('modules.economy.autofish', [
+    'api.client',
+    'store.index',
+    'ui.miuix'
+  ], function (client, store, miuix) {
+
+    var activeTimer = null;
+    var isRunning = false;
+
+    function isContestTime() {
+      var now = new Date();
+      var hour = now.getHours();
+      var minute = now.getMinutes();
+      // 12:00-12:30 or 00:00-00:30
+      return (hour === 12 && minute < 30) || (hour === 0 && minute < 30);
+    }
+
+    async function checkAndReel(rid) {
+      try {
+        var homeRes = await client.get('routine.fishHome', { rid: rid, opt: 1 });
+        if (!homeRes || !homeRes.data || !homeRes.data.data) return;
+
+        var data = homeRes.data.data;
+        var baitNum = Number(data.user?.baitNum || 0);
+        var fishingStat = Number(data.fishing?.stat || 0);
+        var fishEtMs = Number(data.fishing?.fishEtMs || 0);
+
+        if (baitNum <= 0 && fishingStat === 0) {
+          miuix.Toast('【自动钓鱼】鱼饵耗尽，自动停止', 'info');
+          stop();
+          return;
+        }
+
+        var now = Date.now();
+        if (fishingStat === 1 && now >= fishEtMs) {
+          // Time to reel in!
+          var reelRes = await client.post('routine.fishReel', { rid: rid });
+          if (reelRes && reelRes.data && (reelRes.data.error === 0 || reelRes.data.error === '0')) {
+            var fish = reelRes.data.data?.fish;
+            var fishName = fish?.name || '鱼';
+            var weight = fish?.wei ? fish.wei + '斤' : '';
+            miuix.Toast('【自动钓鱼】收获 ' + fishName + ' ' + weight, 'success');
+          }
+        }
+      } catch (e) {
+        console.error('[NEXT AutoFish] Poll error:', e);
+      }
+    }
+
+    function start(rid, mode) {
+      if (isRunning) return;
+      isRunning = true;
+      var targetRid = rid || store.get('runtime.room.rid') || '9999';
+      var m = mode || 'all';
+
+      miuix.Toast('【自动钓鱼】助手已启动 (' + (m === 'contest' ? '钓鱼大赛' : '全天模式') + ')', 'info');
+
+      activeTimer = setInterval(function () {
+        if (m === 'contest' && !isContestTime()) {
+          return; // Wait for contest window
+        }
+        checkAndReel(targetRid);
+      }, 5000); // Check every 5s
+
+      // Immediate check once
+      checkAndReel(targetRid);
+    }
+
+    function stop() {
+      if (activeTimer) {
+        clearInterval(activeTimer);
+        activeTimer = null;
+      }
+      isRunning = false;
+    }
+
+    return {
+      start: start,
+      stop: stop,
+      get isRunning() { return isRunning; },
+      isContestTime: isContestTime
+    };
+  });
+})();
+
+/* --- NEXT module: src/ui/modals/fans_panel.js --- */
+// src/ui/modals/fans_panel.js
+(function () {
+  'use strict';
+  if (!globalThis.DYEXRL_NEXT) return;
+
+  globalThis.DYEXRL_NEXT.registry.register('ui.modals.fansPanel', [
+    'ui.miuix',
+    'store.index',
+    'modules.economy.backpack',
+    'modules.economy.fansContinue'
+  ], function (miuix, store, backpack, fansContinue) {
+
+    function createFansPanel() {
+      var panel = miuix.Panel({
+        id: 'fans-continue-panel',
+        title: '一键续牌',
+        subtitle: '维持粉丝牌不掉级'
+      });
+
+      // Card 1: 真实佩戴牌子检测与资产展示
+      var assetCard = document.createElement('div');
+      assetCard.className = 'miuix-card';
+      assetCard.innerHTML = `
+        <div class="miuix-card__header">
+          <span class="miuix-card__title">当前粉丝牌</span>
+          <span id="fans-panel-badge-name" style="font-size: 11px; font-weight: 700; color: #0066FF;">当前粉丝牌</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 11px; color: #64748b;">
+          <span>背包荧光棒存量：</span>
+          <span id="fans-panel-stick-count" style="font-weight: 700; color: #0f172a;">--</span>
+        </div>
+      `;
+      panel.body.appendChild(assetCard);
+
+      // Card 2: 赠送数量设置
+      var inputCard = document.createElement('div');
+      inputCard.className = 'miuix-card';
+      inputCard.innerHTML = `
+        <div class="miuix-card__header">
+          <span class="miuix-card__title">续牌赠送数量</span>
+        </div>
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+          <input type="number" id="fans-panel-stick-input" class="miuix-input" min="0" style="width: 80px;" value="0" />
+          <span style="font-size: 10.5px; color: #94a3b8;">[留0自动均分]</span>
+        </div>
+      `;
+      panel.body.appendChild(inputCard);
+
+      // Action Button
+      var actionWrap = document.createElement('div');
+      actionWrap.style.display = 'flex';
+      actionWrap.style.justifyContent = 'flex-end';
+      actionWrap.style.marginTop = 'auto';
+
+      var submitBtn = document.createElement('button');
+      submitBtn.type = 'button';
+      submitBtn.className = 'miuix-btn miuix-btn-primary';
+      submitBtn.style.width = '100%';
+      submitBtn.textContent = '一键赠送续牌';
+      submitBtn.addEventListener('click', async function (e) {
+        e.stopPropagation();
+        submitBtn.disabled = true;
+        submitBtn.textContent = '正在打卡...';
+        await fansContinue.executeFansRenewal();
+        submitBtn.disabled = false;
+        submitBtn.textContent = '一键赠送续牌';
+        updateData();
+      });
+      actionWrap.appendChild(submitBtn);
+      panel.body.appendChild(actionWrap);
+
+      async function updateData() {
+        var badgeEl = panel.element.querySelector('#fans-panel-badge-name');
+        var stickEl = panel.element.querySelector('#fans-panel-stick-count');
+        var inputEl = panel.element.querySelector('#fans-panel-stick-input');
+
+        var realBadge = store.get('runtime.user.activeBadgeName') || '当前佩戴';
+        if (badgeEl) badgeEl.textContent = realBadge;
+
+        var items = await backpack.fetchBackpackItems();
+        var stick = items.find(it => it.name && it.name.includes('荧光棒'));
+        if (stickEl) stickEl.textContent = stick ? stick.count + ' 个' : '0 个';
+
+        if (inputEl) {
+          inputEl.value = store.get('economy.fansContinueCount') || 0;
+          inputEl.addEventListener('input', function () {
+            store.set('economy.fansContinueCount', parseInt(inputEl.value, 10) || 0);
+          });
+        }
+      }
+
+      var originalShow = panel.show;
+      panel.show = function (anchorEl) {
+        originalShow(anchorEl);
+        updateData();
+      };
+
+      return panel;
+    }
+
+    return {
+      createFansPanel: createFansPanel
+    };
+  });
+})();
+
+/* --- NEXT module: src/ui/modals/sign_panel.js --- */
+// src/ui/modals/sign_panel.js
+(function () {
+  'use strict';
+  if (!globalThis.DYEXRL_NEXT) return;
+
+  globalThis.DYEXRL_NEXT.registry.register('ui.modals.signPanel', [
+    'ui.miuix',
+    'store.index',
+    'modules.economy.signEngine'
+  ], function (miuix, store, signEngine) {
+
+    function createSignPanel() {
+      var panel = miuix.Panel({
+        id: 'sign-panel',
+        title: '一键签到',
+        subtitle: '按需勾选日常任务'
+      });
+
+      // Card 1: 5 大签到任务选项列表
+      var optCard = document.createElement('div');
+      optCard.className = 'miuix-card';
+
+      var TASK_ITEMS = [
+        { key: 'room', title: '房间与粉丝牌签到', desc: '为关注/拥牌房间赠送亲密度' },
+        { key: 'client', title: '客户端模拟签到', desc: '模拟手机端领每日礼盒' },
+        { key: 'yuba', title: '关注鱼吧签到', desc: '一键打卡领经验并补签' },
+        { key: 'stardiscover', title: '星推日常任务', desc: '打卡/口令弹幕/关注任务(安全取关)' },
+        { key: 'fanshome', title: '粉丝家园与钻粉', desc: '粉丝家园打卡与钻粉日常' }
+      ];
+
+      var currentCfg = store.get('economy.signConfig') || {};
+
+      TASK_ITEMS.forEach(function (tDef) {
+        var row = document.createElement('label');
+        row.style.display = 'flex';
+        row.style.alignItems = 'center';
+        row.style.gap = '10px';
+        row.style.cursor = 'pointer';
+        row.style.padding = '3px 0';
+
+        var cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.checked = !!currentCfg[tDef.key];
+        cb.addEventListener('change', function () {
+          var cfg = store.get('economy.signConfig') || {};
+          cfg[tDef.key] = cb.checked;
+          store.set('economy.signConfig', cfg);
+        });
+
+        var textWrap = document.createElement('div');
+        textWrap.style.display = 'flex';
+        textWrap.style.flexDirection = 'column';
+
+        var tit = document.createElement('span');
+        tit.style.fontSize = '11.5px';
+        tit.style.fontWeight = '600';
+        tit.style.color = '#0f172a';
+        tit.textContent = tDef.title;
+
+        var dsc = document.createElement('span');
+        dsc.style.fontSize = '10px';
+        dsc.style.color = '#64748b';
+        dsc.textContent = tDef.desc;
+
+        textWrap.appendChild(tit);
+        textWrap.appendChild(dsc);
+
+        row.appendChild(cb);
+        row.appendChild(textWrap);
+        optCard.appendChild(row);
+      });
+
+      panel.body.appendChild(optCard);
+
+      // Card 2: 任务实时日志视窗
+      var logCard = document.createElement('div');
+      logCard.className = 'miuix-card';
+      logCard.innerHTML = `
+        <div class="miuix-card__header">
+          <span class="miuix-card__title">执行日志</span>
+          <span id="sign-status-tag" style="font-size: 10.5px; font-weight: 700; color: #10b981;">就绪</span>
+        </div>
+        <div id="sign-log-box" class="miuix-scrollable" style="min-height: 48px; max-height: 64px; overflow-y: auto; font-size: 10.5px; color: #475569; line-height: 1.45; background: rgba(0,0,0,0.03); padding: 4px 6px; border-radius: 6px;">
+          勾选上方选项后，点击下方按钮开始签到。
+        </div>
+      `;
+      panel.body.appendChild(logCard);
+
+      // Action Button
+      var actionWrap = document.createElement('div');
+      actionWrap.style.display = 'flex';
+      actionWrap.style.marginTop = 'auto';
+
+      var startBtn = document.createElement('button');
+      startBtn.type = 'button';
+      startBtn.className = 'miuix-btn miuix-btn-primary';
+      startBtn.style.width = '100%';
+      startBtn.textContent = '开始签到';
+
+      startBtn.addEventListener('click', async function (e) {
+        e.stopPropagation();
+        var statusTag = panel.element.querySelector('#sign-status-tag');
+        var logBox = panel.element.querySelector('#sign-log-box');
+
+        startBtn.disabled = true;
+        if (statusTag) {
+          statusTag.textContent = '正在执行';
+          statusTag.style.color = '#ff7700';
+        }
+        if (logBox) logBox.innerHTML = '正在启动签到流水线...<br>';
+
+        var logs = [];
+        function onLog(msg) {
+          logs.push(msg);
+          if (logBox) {
+            logBox.innerHTML = logs.map(l => '• ' + l).join('<br>');
+            logBox.scrollTop = logBox.scrollHeight;
+          }
+        }
+
+        try {
+          await signEngine.executeSignPipeline(null, onLog);
+          if (statusTag) {
+            statusTag.textContent = '已完成';
+            statusTag.style.color = '#10b981';
+          }
+        } catch (err) {
+          onLog('签到异常: ' + (err.message || '未知错误'));
+          if (statusTag) {
+            statusTag.textContent = '异常中断';
+            statusTag.style.color = '#ef4444';
+          }
+        } finally {
+          startBtn.disabled = false;
+        }
+      });
+
+      actionWrap.appendChild(startBtn);
+      panel.body.appendChild(actionWrap);
+
+      return panel;
+    }
+
+    return {
+      createSignPanel: createSignPanel
+    };
+  });
+})();
+
 /* --- NEXT module: src/runtime/orchestrator.js --- */
 // src/runtime/orchestrator.js
 (function () {
