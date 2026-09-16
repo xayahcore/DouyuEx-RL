@@ -10,6 +10,7 @@
   ], function (client, store, miuix) {
 
     var isPicking = false;
+    var activeTimer = null;
 
     function detectRedPackets() {
       // Query red packet DOM triggers in room
@@ -40,7 +41,7 @@
       isPicking = true;
 
       // Scan every 3s
-      setInterval(function () {
+      activeTimer = setInterval(function () {
         if (!store.get('radar.autoPick')) return;
         var list = detectRedPackets();
         if (list.length > 0) {
@@ -49,12 +50,22 @@
           });
         }
       }, 3000);
+      return activeTimer;
+    }
+
+    function stopAutoPicker() {
+      if (activeTimer) {
+        clearInterval(activeTimer);
+        activeTimer = null;
+      }
+      isPicking = false;
     }
 
     return {
       detectRedPackets: detectRedPackets,
       pickRedPacket: pickRedPacket,
-      startAutoPicker: startAutoPicker
+      startAutoPicker: startAutoPicker,
+      stopAutoPicker: stopAutoPicker
     };
   });
 })();

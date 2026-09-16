@@ -107,6 +107,7 @@
       DOCK_BUTTONS.forEach(function (btnDef) {
         var btn = document.createElement('div');
         btn.className = 'miuix-dock-item';
+        if (!btn.dataset) btn.dataset = {};
         btn.dataset.dockId = btnDef.id;
         btn.title = btnDef.title;
 

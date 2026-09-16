@@ -16,7 +16,7 @@
       if (!name) return;
       var list = getAccounts();
       list.push({
-        id: Date.now(),
+        id: Date.now() + '_' + Math.random().toString(36).slice(2, 7),
         name: name,
         cookie: cookieSnippet || ''
       });

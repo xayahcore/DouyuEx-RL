@@ -81,6 +81,16 @@
           type: String(p.type || '2')
         });
       });
+      safeMigrate('ExSave_Tail_status', function (v) {
+        var cur = store.get('danmaku.tail') || {};
+        cur.enabled = (v === '1' || v === 'true' || v === true);
+        store.set('danmaku.tail', cur);
+      });
+      safeMigrate('ExSave_Tail_txt', function (v) {
+        var cur = store.get('danmaku.tail') || {};
+        cur.text = String(v || '');
+        store.set('danmaku.tail', cur);
+      });
       safeMigrate('ExSave_DanmakuCollect', function (v) {
         var p = parseJsonSafe(v, []);
         if (Array.isArray(p)) {
