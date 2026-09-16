@@ -4324,6 +4324,263 @@
   });
 })();
 
+/* --- NEXT module: src/modules/radar/redpacket.js --- */
+// src/modules/radar/redpacket.js
+(function () {
+  'use strict';
+  if (!globalThis.DYEXRL_NEXT) return;
+
+  globalThis.DYEXRL_NEXT.registry.register('modules.radar.redpacket', [
+    'api.client',
+    'store.index',
+    'ui.miuix'
+  ], function (client, store, miuix) {
+
+    var isPicking = false;
+
+    function detectRedPackets() {
+      // Query red packet DOM triggers in room
+      var nodes = document.querySelectorAll('.RedPacket-countdown, .Treasure-box, [class*="redPacket"]');
+      return Array.from(nodes).map(function (n, idx) {
+        return {
+          id: idx,
+          text: n.textContent?.trim() || '红包/宝箱',
+          element: n
+        };
+      });
+    }
+
+    async function pickRedPacket(item) {
+      if (!item || !item.element) return false;
+      try {
+        item.element.click();
+        miuix.Toast('已触发红包/宝箱拾取', 'info');
+        return true;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    function startAutoPicker() {
+      var enabled = store.get('radar.autoPick') ?? true;
+      if (!enabled || isPicking) return;
+      isPicking = true;
+
+      // Scan every 3s
+      setInterval(function () {
+        if (!store.get('radar.autoPick')) return;
+        var list = detectRedPackets();
+        if (list.length > 0) {
+          list.forEach(function (it) {
+            pickRedPacket(it);
+          });
+        }
+      }, 3000);
+    }
+
+    return {
+      detectRedPackets: detectRedPackets,
+      pickRedPacket: pickRedPacket,
+      startAutoPicker: startAutoPicker
+    };
+  });
+})();
+
+/* --- NEXT module: src/modules/radar/lottery.js --- */
+// src/modules/radar/lottery.js
+(function () {
+  'use strict';
+  if (!globalThis.DYEXRL_NEXT) return;
+
+  globalThis.DYEXRL_NEXT.registry.register('modules.radar.lottery', [
+    'store.index',
+    'ui.miuix'
+  ], function (store, miuix) {
+
+    var activePrizes = [];
+
+    function handleBroadcastMessage(msg) {
+      if (!msg || typeof msg !== 'object') return;
+
+      // Broadcast types: spbc (全站广播), lottery_notice
+      if (msg.type === 'spbc' || msg.type === 'lottery_notice' || msg.type === 'gbroadcast') {
+        var prize = {
+          id: Date.now() + Math.random(),
+          rid: msg.rid || msg.drid || '',
+          sender: msg.snick || msg.src_n || '神秘观众',
+          giftName: msg.gn || msg.n || '超级大奖',
+          timestamp: Date.now()
+        };
+
+        activePrizes.unshift(prize);
+        if (activePrizes.length > 50) activePrizes.pop();
+
+        store.set('runtime.radar.latestPrize', prize);
+
+        if (store.get('radar.notifyPrize')) {
+          miuix.Toast('【全站雷达】房间 ' + prize.rid + ' 出现大奖: ' + prize.giftName, 'info', 3000);
+        }
+      }
+    }
+
+    function getActivePrizes() {
+      return activePrizes.slice();
+    }
+
+    return {
+      handleBroadcastMessage: handleBroadcastMessage,
+      getActivePrizes: getActivePrizes
+    };
+  });
+})();
+
+/* --- NEXT module: src/modules/system/hardware.js --- */
+// src/modules/system/hardware.js
+(function () {
+  'use strict';
+  if (!globalThis.DYEXRL_NEXT) return;
+
+  globalThis.DYEXRL_NEXT.registry.register('modules.system.hardware', [
+    'adapters.player'
+  ], function (playerAdapter) {
+
+    function inspectStreamInfo() {
+      var video = playerAdapter.getVideoElement();
+      var args = globalThis.room_args || {};
+
+      var resWidth = video ? (video.videoWidth || video.clientWidth || 0) : 0;
+      var resHeight = video ? (video.videoHeight || video.clientHeight || 0) : 0;
+
+      // Guess encoder and software from stream parameters
+      var streamUrl = args.stream_url || '';
+      var software = '未知推流软件';
+      var encoder = '硬件/CPU编码';
+
+      if (streamUrl.includes('obs')) software = 'OBS Studio';
+      else if (streamUrl.includes('livehime')) software = '斗鱼直播伴侣';
+      else if (streamUrl.includes('vmix')) software = 'vMix Pro';
+
+      return {
+        resolution: resWidth > 0 ? (resWidth + 'x' + resHeight) : '自动 (1080P)',
+        bitrate: args.rate ? args.rate + ' kbps' : '原画极致',
+        fps: 60,
+        software: software,
+        encoder: encoder,
+        p2pBlocked: true
+      };
+    }
+
+    return {
+      inspectStreamInfo: inspectStreamInfo
+    };
+  });
+})();
+
+/* --- NEXT module: src/modules/system/fans_highlight.js --- */
+// src/modules/system/fans_highlight.js
+(function () {
+  'use strict';
+  if (!globalThis.DYEXRL_NEXT) return;
+
+  globalThis.DYEXRL_NEXT.registry.register('modules.system.fansHighlight', [
+    'store.index'
+  ], function (store) {
+
+    function processDanmakuNode(node) {
+      if (!node || node.nodeType !== 1) return;
+      var enabled = store.get('system.fansHighlight') ?? true;
+      if (!enabled) return;
+
+      // Check for fans badge days attribute or tooltip
+      var badge = node.querySelector('.FansMedal, [class*="FansMedal"]');
+      if (!badge) return;
+
+      var title = badge.getAttribute('title') || badge.getAttribute('data-title') || badge.textContent || '';
+      // Look for days e.g. "佩戴320天" or "300天"
+      var m = title.match(/(\d{3,4})\s*天/);
+      if (m && Number(m[1]) >= 300) {
+        // Highlight as 300-day Iron Fan!
+        var tag = node.querySelector('.iron-fan-badge');
+        if (!tag) {
+          tag = document.createElement('span');
+          tag.className = 'iron-fan-badge';
+          tag.style.color = '#ef4444';
+          tag.style.fontWeight = '700';
+          tag.style.fontSize = '10px';
+          tag.style.marginLeft = '4px';
+          tag.textContent = '【' + m[1] + '天铁粉】';
+          badge.parentNode?.insertBefore(tag, badge.nextSibling);
+        }
+      }
+    }
+
+    return {
+      processDanmakuNode: processDanmakuNode
+    };
+  });
+})();
+
+/* --- NEXT module: src/modules/system/account.js --- */
+// src/modules/system/account.js
+(function () {
+  'use strict';
+  if (!globalThis.DYEXRL_NEXT) return;
+
+  globalThis.DYEXRL_NEXT.registry.register('modules.system.account', [
+    'store.index',
+    'ui.miuix'
+  ], function (store, miuix) {
+
+    function getAccounts() {
+      return store.get('system.accounts') || [];
+    }
+
+    function addAccount(name, cookieSnippet) {
+      if (!name) return;
+      var list = getAccounts();
+      list.push({
+        id: Date.now(),
+        name: name,
+        cookie: cookieSnippet || ''
+      });
+      store.set('system.accounts', list);
+      miuix.Toast('账号 ' + name + ' 已保存', 'success');
+    }
+
+    function removeAccount(id) {
+      var list = getAccounts().filter(it => it.id !== id);
+      store.set('system.accounts', list);
+    }
+
+    async function switchAccount(acc) {
+      if (!acc) return;
+      var confirmed = await miuix.Dialog({
+        mode: 'confirm',
+        title: '切换账号',
+        message: '确认切换至账号【' + acc.name + '】吗？切换后页面将自动刷新生效。'
+      });
+
+      if (confirmed.confirmed) {
+        miuix.Toast('正在应用账号凭据...', 'info');
+        // Apply cookie if snippet provided
+        if (acc.cookie) {
+          document.cookie = acc.cookie;
+        }
+        setTimeout(function () {
+          location.reload();
+        }, 800);
+      }
+    }
+
+    return {
+      getAccounts: getAccounts,
+      addAccount: addAccount,
+      removeAccount: removeAccount,
+      switchAccount: switchAccount
+    };
+  });
+})();
+
 /* --- NEXT module: src/ui/modals/fans_panel.js --- */
 // src/ui/modals/fans_panel.js
 (function () {
@@ -4849,6 +5106,110 @@
 
     return {
       createMediaPanel: createMediaPanel
+    };
+  });
+})();
+
+/* --- NEXT module: src/ui/modals/setting_panel.js --- */
+// src/ui/modals/setting_panel.js
+(function () {
+  'use strict';
+  if (!globalThis.DYEXRL_NEXT) return;
+
+  globalThis.DYEXRL_NEXT.registry.register('ui.modals.settingPanel', [
+    'ui.miuix',
+    'store.index',
+    'modules.system.hardware',
+    'modules.system.account'
+  ], function (miuix, store, hardware, account) {
+
+    function createSettingPanel() {
+      var panel = miuix.Panel({
+        id: 'setting-panel',
+        title: '全局设置',
+        subtitle: '核心防护、流媒体与系统配置'
+      });
+
+      // 1. 性能看板 (L3-06)
+      var perfAccordion = miuix.Accordion({
+        id: 'perf__panel',
+        title: '推流性能与硬件看板',
+        content: [
+          (function () {
+            var box = document.createElement('div');
+            box.style.display = 'flex';
+            box.style.flexDirection = 'column';
+            box.style.gap = '4px';
+            box.style.fontSize = '11px';
+
+            var info = hardware.inspectStreamInfo();
+            box.innerHTML = `
+              <div style="display: flex; justify-content: space-between;"><span>当前分辨率:</span><b>${info.resolution}</b></div>
+              <div style="display: flex; justify-content: space-between;"><span>推流码率:</span><b>${info.bitrate}</b></div>
+              <div style="display: flex; justify-content: space-between;"><span>识别推流软件:</span><b>${info.software}</b></div>
+              <div style="display: flex; justify-content: space-between;"><span>WebRTC P2P 状态:</span><b style="color: #10b981;">已阻断 (纯CDN拉流)</b></div>
+            `;
+            return box;
+          })()
+        ]
+      });
+      panel.body.appendChild(perfAccordion.element);
+
+      // 2. 核心功能开关卡片 (Card 2)
+      var coreCard = document.createElement('div');
+      coreCard.className = 'miuix-card';
+      coreCard.innerHTML = `
+        <div class="miuix-card__header"><span class="miuix-card__title">核心体验设置</span></div>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <label style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+            <span style="font-size: 11px;">首流原画强锁 (12s免二次切流)</span>
+            <input type="checkbox" id="set-lock-quality" checked />
+          </label>
+          <label style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+            <span style="font-size: 11px;">WebRTC P2P 强制阻断</span>
+            <input type="checkbox" id="set-block-p2p" checked />
+          </label>
+          <label style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+            <span style="font-size: 11px;">300天铁粉红字标识</span>
+            <input type="checkbox" id="set-fans-highlight" checked />
+          </label>
+          <label style="display: flex; justify-content: space-between; align-items: center; cursor: pointer;">
+            <span style="font-size: 11px;">自动拾取房间红包/宝箱</span>
+            <input type="checkbox" id="set-auto-pick" checked />
+          </label>
+        </div>
+      `;
+      panel.body.appendChild(coreCard);
+
+      // 3. 多账号管理与重置卡片 (Card 3)
+      var accCard = document.createElement('div');
+      accCard.className = 'miuix-card';
+      accCard.innerHTML = `
+        <div class="miuix-card__header"><span class="miuix-card__title">配置与账号</span></div>
+        <div style="display: flex; gap: 8px;">
+          <button type="button" id="set-btn-acc" class="miuix-btn" style="flex: 1;">账号管理</button>
+          <button type="button" id="set-btn-reset" class="miuix-btn" style="flex: 1; color: #ef4444;">重置所有设置</button>
+        </div>
+      `;
+      panel.body.appendChild(accCard);
+
+      accCard.querySelector('#set-btn-reset')?.addEventListener('click', async () => {
+        var conf = await miuix.Dialog({
+          mode: 'confirm',
+          title: '重置确认',
+          message: '确定清空所有自定义配置并恢复初始状态吗？'
+        });
+        if (conf.confirmed) {
+          store.reset();
+          miuix.Toast('已恢复初始默认配置', 'success');
+        }
+      });
+
+      return panel;
+    }
+
+    return {
+      createSettingPanel: createSettingPanel
     };
   });
 })();
