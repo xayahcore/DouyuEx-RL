@@ -58,9 +58,9 @@
 | **F-45** | 普通房间/exid 就绪探测与侧边栏/全屏触发 | `01_setup.js:6`, `06_router.js:5` | `adapters/room.js` | observer; `adapters.room` | T-F-45 | M | `mock-tested` |
 | **F-46** | 60 秒任务心跳调度器 | `03_cron.js:2-6` | `runtime/heartbeat.js` | timer; `runtime.heartbeat` | T-F-46 | M | `planned` |
 | **F-47** | 粉丝勋章页 DOM 增强渲染 (佩戴天数、开通日期、红字高亮) | `06_router.js:1` | `modules/radar/badges.js` | DOM; `radar.badges` | T-F-47 | L | `planned` |
-| **F-48** | Level 2 Dock 9 按钮固定装配顺序与点击/展开生命周期控制 | `02_dom_ui.js:916-1045` | `ui/dock.js` | UI; `ui.dock` | T-F-48 | M | `planned` |
+| **F-48** | Level 2 Dock 9 按钮固定装配顺序与点击/展开生命周期控制 | `02_dom_ui.js:916-1045` | `ui/dock.js` | UI; `ui.dock` | T-F-48 | M | `mock-tested` |
 | **F-49** | 四大一级控制台面板具体交互 (fans, sign, popup, update) | `02_dom_ui.js:350-914` | `ui/modals/` | UI; `ui.modals` | T-F-49 | M | `planned` |
-| **F-50** | GiftPicker 完整选择器交互 (双Tab/搜索/懒图/回填/mask关闭/160ms移除) | `02_dom_ui.js:16-175` | `ui/gift_picker.js` | UI; `ui.picker` | T-F-50 | M | `planned` |
+| **F-50** | GiftPicker 完整选择器交互 (双Tab/搜索/懒图/回填/mask关闭/160ms移除) | `02_dom_ui.js:16-175` | `ui/gift_picker.js` | UI; `ui.picker` | T-F-50 | M | `mock-tested` |
 | **F-51** | 月度消费统计、明文/隐藏状态与礼物消费清单 | `05_services.js:576` | `modules/system/month_cost.js` | B-USER; `system.cost` | T-F-51 | M | `planned` |
 | **F-52** | 用户等级任务详情、任务状态查询与经验奖励领取 | `05_services.js:546` | `modules/economy/level_task.js` | B-SIGN; `economy.level` | T-F-52 | H | `planned` |
 | **F-53** | 房间卡任务信息查询与状态感知 | `05_services.js:576` | `modules/economy/card_task.js` | B-SIGN; `economy.card` | T-F-53 | M | `planned` |
@@ -103,7 +103,7 @@
 | **P-02** | 一键签到控制台 (`sign-panel`) | 380×370px; Dock `ex-sign` | 5 大任务复选框 (房间/客户端/鱼吧/星推/钻粉)、实时滚动日志视窗、纯文字开始签到 | F-23 | `planned` |
 | **P-03** | 同屏播放控制台 (`popup-player-panel`) | 380×370px; Dock `popup-player` | 房间号/URL 输入框、剪贴板一键粘贴、极速流/iframe模式切换单选组、创建同屏窗 | F-05 | `planned` |
 | **P-04** | 版本更新面板 (`exupdate-panel`) | 380×370px; Dock `ex-update` | 三段式演进日志展示 (新增/优化/其它)、多态交互按钮 (我已收到/检查更新/前往更新) | F-30 | `planned` |
-| **P-05** | Level 5 大礼物选择器 (`ex-gift-picker`) | 540×410px; 全屏居中悬浮模态 | 房间在播/背包道具双 Tab 切换、顶部实时模糊搜索框、礼物网格流、4px 滚动条 | F-20 | `planned` |
+| **P-05** | Level 5 大礼物选择器 (`ex-gift-picker`) | 540×410px; 全屏居中悬浮模态 | 房间在播/背包道具双 Tab 切换、顶部实时模糊搜索框、礼物网格流、4px 滚动条 | F-20 | `mock-tested` |
 
 ---
 

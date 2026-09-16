@@ -22,6 +22,11 @@
     "src/adapters/chat.js",
     "src/adapters/player.js",
     "src/router/index.js",
+    "src/ui/tokens.js",
+    "src/ui/icons.js",
+    "src/ui/miuix.js",
+    "src/ui/dock.js",
+    "src/ui/gift_picker.js",
     "src/runtime/orchestrator.js"
   ]
 }
