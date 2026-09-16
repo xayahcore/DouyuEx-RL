@@ -1,0 +1,33 @@
+{
+  "captureId": "perf-panel-default",
+  "source": "baseline-evidence",
+  "route": "room",
+  "urlRedacted": "https://www.douyu.com/<rid>",
+  "viewport": {
+    "width": 1280,
+    "height": 800
+  },
+  "devicePixelRatio": 1,
+  "browser": "Brave 1.95 (Chromium 153)",
+  "manager": "Tampermonkey BETA",
+  "scriptVersion": "2026.09.15.01",
+  "state": "default",
+  "panel": "perf-panel",
+  "category": "panel",
+  "title": "推流性能与硬件看板",
+  "interactionsPerformed": [
+    "open",
+    "default_mount"
+  ],
+  "redactions": [
+    "account",
+    "chat",
+    "query"
+  ],
+  "dimensions": {
+    "width": 380,
+    "height": 370
+  },
+  "capturedAt": "2026-09-16T11:12:12Z",
+  "notes": "Standardized MIUIX baseline render for 推流性能与硬件看板, compliant with NEXT contract §4 and §15."
+}

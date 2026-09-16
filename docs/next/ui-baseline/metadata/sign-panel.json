@@ -1,0 +1,33 @@
+{
+  "captureId": "sign-panel-default",
+  "source": "baseline-evidence",
+  "route": "room",
+  "urlRedacted": "https://www.douyu.com/<rid>",
+  "viewport": {
+    "width": 1280,
+    "height": 800
+  },
+  "devicePixelRatio": 1,
+  "browser": "Brave 1.95 (Chromium 153)",
+  "manager": "Tampermonkey BETA",
+  "scriptVersion": "2026.09.15.01",
+  "state": "default",
+  "panel": "sign-panel",
+  "category": "panel",
+  "title": "一键签到控制台",
+  "interactionsPerformed": [
+    "open",
+    "default_mount"
+  ],
+  "redactions": [
+    "account",
+    "chat",
+    "query"
+  ],
+  "dimensions": {
+    "width": 380,
+    "height": 370
+  },
+  "capturedAt": "2026-09-16T11:11:56Z",
+  "notes": "Standardized MIUIX baseline render for 一键签到控制台, compliant with NEXT contract §4 and §15."
+}

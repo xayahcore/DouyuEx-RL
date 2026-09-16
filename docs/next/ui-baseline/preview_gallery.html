@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>DouyuEx-RL NEXT UI 基线取证全景画廊</title>
+  <style>
+    :root {
+      --primary: #0066FF;
+      --bg: #0b0f19;
+      --card-bg: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      min-height: 100vh;
+    }
+    .gallery-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .gallery-title { font-size: 16px; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px; }
+    .gallery-badge {
+      background: rgba(0, 102, 255, 0.2); color: var(--primary);
+      border: 1px solid rgba(0, 102, 255, 0.4); padding: 2px 8px; border-radius: 6px; font-size: 11px;
+    }
+    .nav-tabs {
+      display: flex; gap: 6px; flex-wrap: wrap;
+    }
+    .nav-tab {
+      padding: 5px 10px; border-radius: 6px; font-size: 11.5px; font-weight: 600; cursor: pointer;
+      background: var(--card-bg); border: 1px solid var(--border); color: var(--text-muted); transition: all 0.2s;
+    }
+    .nav-tab.is-active, .nav-tab:hover {
+      background: var(--primary); color: #fff; border-color: var(--primary);
+    }
+    .main-stage {
+      display: flex; gap: 16px; flex: 1;
+    }
+    .preview-box {
+      flex: 1; background: #020617; border: 1px solid var(--border); border-radius: 12px;
+      display: flex; flex-direction: column; overflow: hidden; align-items: center; justify-content: center; min-height: 520px;
+    }
+    .preview-img {
+      max-width: 100%; max-height: 480px; object-fit: contain; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    .info-panel {
+      width: 280px; background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px;
+      padding: 14px; display: flex; flex-direction: column; gap: 10px; font-size: 11.5px;
+    }
+    .info-row { display: flex; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 6px; }
+    .info-label { color: var(--text-muted); }
+    .info-val { font-weight: 600; color: #e2e8f0; }
+  </style>
+</head>
+<body>
+  <div class="gallery-header">
+    <div class="gallery-title">
+      🎨 DouyuEx-RL NEXT UI 基线取证全景库
+      <span class="gallery-badge">16 个面板与控件 100% 完整收录</span>
+    </div>
+    <div style="font-size: 11px; color: var(--text-muted);">
+      契约真源：docs/next/ui-baseline/ §15.4
+    </div>
+  </div>
+
+  <div class="nav-tabs" id="tabList"></div>
+
+  <div class="main-stage">
+    <div class="preview-box">
+      <img id="stageImg" class="preview-img" src="images/dock-open.png" alt="UI Baseline" />
+    </div>
+    <div class="info-panel" id="metaPanel">
+      <div class="info-row"><span class="info-label">面板标识</span><span class="info-val" id="metaId">dock-open</span></div>
+      <div class="info-row"><span class="info-label">面板名称</span><span class="info-val" id="metaName">Level 2 Dock 工具条</span></div>
+      <div class="info-row"><span class="info-label">标准尺寸</span><span class="info-val" id="metaSize">34x34px (9按钮)</span></div>
+      <div class="info-row"><span class="info-label">挂载目标</span><span class="info-val">.PlayerToolbar / body</span></div>
+      <div class="info-row"><span class="info-label">设计令牌</span><span class="info-val">blur(28px), #0066FF</span></div>
+      <div class="info-row"><span class="info-label">手风琴/Tab</span><span class="info-val" id="metaFeature">固定9按钮 / 400ms延时</span></div>
+      <div style="margin-top: 10px; font-size: 10.5px; color: var(--text-muted); line-height: 1.5;" id="metaNotes">
+        严格遵循《实施计划书》§4 与 §15 视觉规范。微交互尺寸严密锁定，纯 CSS Variables 驱动。
+      </div>
+    </div>
+  </div>
+
+  <script>
+    var ITEMS = [
+      { id: "dock-open", name: "Dock 9按钮展开态", size: "固定 9 按钮横栏", feature: "16x3px 磁吸胶囊 / 32px 连桥" },
+      { id: "fans-panel", name: "一键续牌控制台", size: "380×370px", feature: "动态勋章天数识别 / 荧光棒打卡" },
+      { id: "sign-panel", name: "一键签到控制台", size: "380×370px", feature: "5大任务闭环 / 参赛门禁+安全取关" },
+      { id: "popup-player-panel", name: "同屏/画中画面板", size: "380×370px", feature: "多路分屏联播 / 原生与拟态小窗" },
+      { id: "update-panel", name: "版本更新中心", size: "380×370px", feature: "12h 检查周期 / 架构无损迁移" },
+      { id: "gift-picker-room", name: "大礼物选择器 (房间Tab)", size: "540×410px", feature: "网格流排版 / 模糊即时检索" },
+      { id: "gift-picker-backpack", name: "大礼物选择器 (背包Tab)", size: "540×410px", feature: "存量回填 / 清空背包安全确认" },
+      { id: "extool", name: "扩展功能面板", size: "380×370px", feature: "钓鱼状态机 / 红包宝箱安全拾取" },
+      { id: "livetool-vote", name: "直播间工具 - 弹幕投票", size: "380×370px", feature: "手风琴 L3-01 / 独立大屏" },
+      { id: "livetool-enter", name: "直播间工具 - 进场欢迎", size: "380×370px", feature: "手风琴 L3-02 / 等级门禁+导入导出" },
+      { id: "livetool-mute", name: "直播间工具 - 关键词禁言", size: "380×370px", feature: "手风琴 L3-03 / 规则树与天数" },
+      { id: "livetool-gift", name: "直播间工具 - 自动谢礼", size: "380×370px", feature: "手风琴 L3-04 / 动态模板替换" },
+      { id: "livetool-reply", name: "直播间工具 - 关键词回复", size: "380×370px", feature: "手风琴 L3-05 / 5s 动态 CD" },
+      { id: "filter-panel", name: "色彩滤镜调节抽屉", size: "380×370px", feature: "手风琴 L3-11 / 4通道滑动条" },
+      { id: "enhance-panel", name: "画质微光调节弹窗", size: "380×370px", feature: "手风琴 L3-12 / 投影矩阵" },
+      { id: "perf-panel", name: "推流性能硬件看板", size: "380×370px", feature: "L3-06 / OBS识别 / 8000kbps" }
+    ];
+
+    var tabList = document.getElementById("tabList");
+    var stageImg = document.getElementById("stageImg");
+    var metaId = document.getElementById("metaId");
+    var metaName = document.getElementById("metaName");
+    var metaSize = document.getElementById("metaSize");
+    var metaFeature = document.getElementById("metaFeature");
+
+    ITEMS.forEach(function (item, idx) {
+      var tab = document.createElement("div");
+      tab.className = "nav-tab" + (idx === 0 ? " is-active" : "");
+      tab.textContent = item.name;
+      tab.addEventListener("click", function () {
+        document.querySelectorAll(".nav-tab").forEach(function (t) { t.classList.remove("is-active"); });
+        tab.classList.add("is-active");
+        stageImg.src = "images/" + item.id + ".png";
+        metaId.textContent = item.id;
+        metaName.textContent = item.name;
+        metaSize.textContent = item.size;
+        metaFeature.textContent = item.feature;
+      });
+      tabList.appendChild(tab);
+    });
+  </script>
+</body>
+</html>

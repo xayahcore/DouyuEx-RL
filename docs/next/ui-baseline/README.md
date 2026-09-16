@@ -1,39 +1,43 @@
 # 🎨 DouyuEx-RL NEXT UI 基线与截图取证库 (ui-baseline)
 
-本文档库用于保存 Brave 浏览器在斗鱼生产环境中的真实 UI 截图与微交互状态元数据，作为 NEXT 版本 MIUIX 组件库重构时的视觉基准。
+本文档库为运行在当前环境下的 **DouyuEx-RL NEXT 官方 UI 视觉与交互真源**，严格依从《实施计划书》§4（MIUIX 视觉与交互契约）与 §15（Brave UI 基线协议）建立。
 
 ---
 
-## 目录结构
+## 一、 基线资产台账 (16 大核心面板与控件)
 
-```text
-docs/next/ui-baseline/
-  README.md                     # 本规范说明
-  metadata/                     # 截图元数据 JSON (包含视口尺寸、状态、脱敏说明等)
-    dock-open.json
-    fans-panel.json
-    sign-panel.json
-    popup-player-panel.json
-    update-panel.json
-    gift-picker-room.json
-    gift-picker-backpack.json
-    extool.json
-    livetool-vote.json
-    livetool-enter.json
-    livetool-mute.json
-    livetool-gift.json
-    livetool-reply.json
-    filter-panel.json
-    enhance-panel.json
-    perf-panel.json
-  images/                       # 真实环境只读截图 (PNG 格式)
-  states/                       # 各状态分类测试 (loading, empty, error, disabled, destroying, narrow-viewport)
-```
+| 编号 | 面板/控件标识 | 类别 | 标准尺寸 | 对应功能/面板编号 | 截图资产 | 状态元数据 |
+|---|---|---|---|---|---|---|
+| **01** | `dock-open` | Dock | 34×34px (9按钮) | F-48 / Level 2 Dock | [`dock-open.png`](images/dock-open.png) | [`dock-open.json`](metadata/dock-open.json) |
+| **02** | `fans-panel` | Panel | 380×370px | F-22 / P-01 一键续牌 | [`fans-panel.png`](images/fans-panel.png) | [`fans-panel.json`](metadata/fans-panel.json) |
+| **03** | `sign-panel` | Panel | 380×370px | F-23 / P-02 一键签到 | [`sign-panel.png`](images/sign-panel.png) | [`sign-panel.json`](metadata/sign-panel.json) |
+| **04** | `popup-player-panel` | Panel | 380×370px | F-04 / F-05 同屏/画中画 | [`popup-player-panel.png`](images/popup-player-panel.png) | [`popup-player-panel.json`](metadata/popup-player-panel.json) |
+| **05** | `update-panel` | Panel | 380×370px | F-34 / 版本更新中心 | [`update-panel.png`](images/update-panel.png) | [`update-panel.json`](metadata/update-panel.json) |
+| **06** | `gift-picker-room` | Modal | 540×410px | F-20 / P-05 礼物选择器(房间) | [`gift-picker-room.png`](images/gift-picker-room.png) | [`gift-picker-room.json`](metadata/gift-picker-room.json) |
+| **07** | `gift-picker-backpack` | Modal | 540×410px | F-21 / P-05 礼物选择器(背包) | [`gift-picker-backpack.png`](images/gift-picker-backpack.png) | [`gift-picker-backpack.json`](metadata/gift-picker-backpack.json) |
+| **08** | `extool` | Panel | 380×370px | F-24 / 扩展功能总控 | [`extool.png`](images/extool.png) | [`extool.json`](metadata/extool.json) |
+| **09** | `livetool-vote` | Accordion | 380×370px | L3-01 弹幕投票手风琴 | [`livetool-vote.png`](images/livetool-vote.png) | [`livetool-vote.json`](metadata/livetool-vote.json) |
+| **10** | `livetool-enter` | Accordion | 380×370px | L3-02 进场欢迎手风琴 | [`livetool-enter.png`](images/livetool-enter.png) | [`livetool-enter.json`](metadata/livetool-enter.json) |
+| **11** | `livetool-mute` | Accordion | 380×370px | L3-03 关键词禁言手风琴 | [`livetool-mute.png`](images/livetool-mute.png) | [`livetool-mute.json`](metadata/livetool-mute.json) |
+| **12** | `livetool-gift` | Accordion | 380×370px | L3-04 自动答谢手风琴 | [`livetool-gift.png`](images/livetool-gift.png) | [`livetool-gift.json`](metadata/livetool-gift.json) |
+| **13** | `livetool-reply` | Accordion | 380×370px | L3-05 关键词回复手风琴 | [`livetool-reply.png`](images/livetool-reply.png) | [`livetool-reply.json`](metadata/livetool-reply.json) |
+| **14** | `filter-panel` | Accordion | 380×370px | F-06 / L3-11 滤镜抽屉 | [`filter-panel.png`](images/filter-panel.png) | [`filter-panel.json`](metadata/filter-panel.json) |
+| **15** | `enhance-panel` | Accordion | 380×370px | F-06 / L3-12 画质微光调节 | [`enhance-panel.png`](images/enhance-panel.png) | [`enhance-panel.json`](metadata/enhance-panel.json) |
+| **16** | `perf-panel` | Panel | 380×370px | F-27 / L3-06 推流性能硬件看板 | [`perf-panel.png`](images/perf-panel.png) | [`perf-panel.json`](metadata/perf-panel.json) |
 
 ---
 
-## 截图取证硬性规约
+## 二、 核心视觉约束与设计令牌
 
-1. **只读安全原则**：截取面板与控件时，仅执行点击展开、悬停、滚动、Tab 切换等无害只读交互。严禁在真实账号上触发送礼、发弹幕、批量关注/取关、禁言等操作。
-2. **隐私脱敏原则**：截图不得包含用户 Cookie、Token、完整个人敏感 UID、私密聊天内容；必要时使用脱敏夹具或裁剪。
-3. **状态完整性原则**：每个面板需分别记录默认、loading、empty、error、disabled、destroying 等状态或标明 N/A 理由。
+1. **绝对尺寸锁定**：
+   - 普通面板严密锁定为 `380×370px`，禁止被内容撑开抖动；
+   - 大礼物选择器锁定为 `540×410px`；
+   - Dock 图标严格为 `32×32px` / `34×34px`，磁吸光标胶囊为 `16×3px`；
+2. **高斯磨砂微质感**：
+   - 面板统一采用 `backdrop-filter: blur(36px) saturate(220%)`；
+   - 粘性吸顶 Header 采用 `height: 44px; backdrop-filter: blur(28px)`；
+   - 极细滚动条为 `4px`（滑块 `#cbd5e1`，悬停 `#94a3b8`）；
+3. **交互手感与退出防抖**：
+   - 隐形悬浮桥 `32px`；
+   - 鼠标移出关闭定时器严格为 `400ms`（移入面板或按钮即刻清除定时器取消关闭）；
+   - 所有对话框与操作提示统一调用 `MIUIX.Dialog` 与 `MIUIX.Toast`。
