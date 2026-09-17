@@ -58,7 +58,7 @@
 | **F-45** | 普通房间/exid 就绪探测与侧边栏/全屏触发 | `01_setup.js:6`, `06_router.js:5` | `adapters/room.js` | observer; `adapters.room` | T-F-45 | M | `mock-tested` |
 | **F-46** | 60 秒任务心跳调度器 | `03_cron.js:2-6` | `runtime/heartbeat.js` | timer; `runtime.heartbeat` | T-F-46 | M | `mock-tested` |
 | **F-47** | 粉丝勋章页 DOM 增强渲染 (佩戴天数、开通日期、红字高亮) | `06_router.js:1` | `modules/radar/badges.js` | DOM; `radar.badges` | T-F-47 | L | `mock-tested` |
-| **F-48** | Level 2 Dock 9 按钮固定装配顺序与点击/展开生命周期控制 | `02_dom_ui.js:916-1045` | `ui/dock.js` | UI; `ui.dock` | T-F-48 | M | `mock-tested` |
+| **F-48** | Level 2 Dock 9 按钮固定顺序 (前7项+更新设三级面板, 在线助手直达)、108×108 多色精灵球财富栏内嵌挂载 | `02_dom_ui.js:916-1045` | `ui/dock.js` | UI; `ui.dock` | T-F-48 | M | `mock-tested` |
 | **F-49** | 四大一级控制台面板具体交互 (fans, sign, popup, update) | `02_dom_ui.js:350-914` | `ui/modals/` | UI; `ui.modals` | T-F-49 | M | `mock-tested` |
 | **F-50** | GiftPicker 完整选择器交互 (双Tab/搜索/懒图/回填/mask关闭/160ms移除) | `02_dom_ui.js:16-175` | `ui/gift_picker.js` | UI; `ui.picker` | T-F-50 | M | `mock-tested` |
 | **F-51** | 月度消费统计、明文/隐藏状态与礼物消费清单 | `05_services.js:576` | `modules/system/month_cost.js` | B-USER; `system.cost` | T-F-51 | M | `mock-tested` |
@@ -95,7 +95,7 @@
 
 ---
 
-## 三、 5 个核心一级控制台面板追踪矩阵 (P-01 ～ P-05)
+## 三、 6 个核心一级控制台面板追踪矩阵 (P-01 ～ P-06)
 
 | 面板ID | 面板名称与 DOM 标识 | 尺寸与触发锚点 | 核心控件与业务流 | 对应能力编号 | 当前状态 |
 |:---:|:---|:---:|:---|:---:|:---:|
@@ -104,6 +104,7 @@
 | **P-03** | 同屏播放控制台 (`popup-player-panel`) | 380×370px; Dock `popup-player` | 房间号/URL 输入框、剪贴板一键粘贴、极速流/iframe模式切换单选组、创建同屏窗 | F-05 | `mock-tested` |
 | **P-04** | 版本更新面板 (`exupdate-panel`) | 380×370px; Dock `ex-update` | 三段式演进日志展示 (新增/优化/其它)、多态交互按钮 (我已收到/检查更新/前往更新) | F-30 | `mock-tested` |
 | **P-05** | Level 5 大礼物选择器 (`ex-gift-picker`) | 540×410px; 全屏居中悬浮模态 | 房间在播/背包道具双 Tab 切换、顶部实时模糊搜索框、礼物网格流、4px 滚动条 | F-20 | `mock-tested` |
+| **P-06** | 全站抽奖控制台 (`lottery-panel`) | 380×370px; Dock `ex-lottery` | 抽奖雷达状态机、广播大奖列表实时展示、一键刷新与直达直播间上车 | F-25 | `mock-tested` |
 
 ---
 
