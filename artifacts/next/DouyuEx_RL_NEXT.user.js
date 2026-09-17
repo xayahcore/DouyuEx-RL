@@ -2428,112 +2428,159 @@
   gap: 8px !important;
 }
 
-/* Level 2 Dock 工具栏装配 */
-.miuix-dock-wrap {
-  position: fixed !important;
-  bottom: 84px !important;
-  right: 240px !important;
-  z-index: 999999 !important;
-  background: rgba(255, 255, 255, 0.92) !important;
-  backdrop-filter: blur(28px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
-  border: 1px solid rgba(226, 232, 240, 0.9) !important;
-  box-shadow: 0 12px 36px -4px rgba(0, 0, 0, 0.18), 0 0 0 1px rgba(255, 255, 255, 0.7) inset !important;
-  border-radius: 20px !important;
-  padding: 5px 8px !important;
-  display: none; /* 默认由精灵球触发展开 */
+/* Level 2 Dock 启动坞 (76px 晶透微胶囊 - 100% 还原原版外观与尺寸) */
+.ex-panel, .miuix-dock-wrap {
+  min-width: max-content !important;
+  width: max-content !important;
+  height: 76px !important;
+  box-sizing: border-box !important;
+  background: rgba(255, 255, 255, 0.76) !important;
+  backdrop-filter: blur(36px) saturate(220%) !important;
+  -webkit-backdrop-filter: blur(36px) saturate(220%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.95) !important;
+  border-radius: 38px !important;
+  box-shadow: inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.98), 0 16px 40px rgba(15, 23, 42, 0.16), 0 4px 12px rgba(15, 23, 42, 0.08) !important;
+  padding: 0 24px !important;
+  display: none; /* 由精灵球点击或浮动展开 */
   align-items: center !important;
-  gap: 4px !important;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  justify-content: center !important;
+  z-index: 10000 !important;
   user-select: none !important;
+  overflow: visible !important;
+  position: absolute;
+  bottom: 32px;
+  right: 0px;
 }
 
-.miuix-dock-wrap.is-open {
+.ex-panel.is-open, .miuix-dock-wrap.is-open {
   display: flex !important;
 }
 
-/* 礼物栏红白精灵球触发入口 */
-.miuix-ex-icon {
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  width: 32px !important;
-  height: 32px !important;
-  border-radius: 50% !important;
-  cursor: pointer !important;
-  color: #ef4444 !important;
-  background: rgba(255, 255, 255, 0.95) !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2) !important;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
-  user-select: none !important;
-  margin-left: 6px !important;
-  margin-right: 4px !important;
+.ex-panel.ex-panel--floating, .miuix-dock-wrap.ex-panel--floating {
+  position: fixed !important;
+  z-index: 10000 !important;
+}
+
+/* 礼物栏红白精灵球触发入口 (.ex-icon) */
+.ex-icon, .miuix-ex-icon {
+  display: inline-block !important;
   vertical-align: middle !important;
+  margin-right: 8px !important;
+  margin-left: 2px !important;
+  user-select: none !important;
+  cursor: pointer !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  width: auto !important;
+  height: auto !important;
 }
 
-.miuix-ex-icon:hover {
-  transform: scale(1.1) rotate(15deg) !important;
-  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.4) !important;
+.ex-icon a, .miuix-ex-icon a {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  cursor: pointer !important;
 }
 
-.miuix-ex-icon.is-active {
-  background: #ef4444 !important;
-  color: #ffffff !important;
-  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.45) !important;
+.ex-icon svg:hover, .miuix-ex-icon svg:hover {
+  transform: scale(1.1) !important;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
 }
 
 /* Dock 右上角圆形关闭按钮 */
-.miuix-dock-close {
+.ex-panel__close, .miuix-dock-close {
   position: absolute !important;
-  top: -8px !important;
-  right: -8px !important;
+  top: -9px !important;
+  right: -9px !important;
+  z-index: 10 !important;
   width: 20px !important;
   height: 20px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
   border-radius: 50% !important;
-  background: #ffffff !important;
-  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  background: rgba(255, 255, 255, 0.95) !important;
   color: #64748b !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
+  font-size: 14px !important;
+  line-height: 18px !important;
+  text-align: center !important;
   cursor: pointer !important;
-  font-size: 13px !important;
-  font-weight: 700 !important;
-  line-height: 1 !important;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18) !important;
-  transition: all 0.15s !important;
-  z-index: 10 !important;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2) !important;
+  transition: color 0.15s ease, background-color 0.15s ease, transform 0.15s !important;
 }
 
-.miuix-dock-close:hover {
-  background: #ef4444 !important;
+.ex-panel__close:hover, .miuix-dock-close:hover {
   color: #ffffff !important;
+  background: #ff6600 !important;
   transform: scale(1.1) !important;
 }
 
-.miuix-dock-item {
-  position: relative !important;
-  width: 32px !important;
-  height: 32px !important;
-  border-radius: 10px !important;
+/* 按钮内部横向容器与 56x56 单元格 */
+.ex-panel__wrap {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 12px !important;
+  height: 100% !important;
+  width: auto !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.ex-panel__wrap > div, .miuix-dock-item {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
+  flex-shrink: 0 !important;
+  width: 56px !important;
+  height: 56px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  position: relative !important;
+  border-radius: 14px !important;
+  border: 1px solid rgba(255, 255, 255, 0.7) !important;
+  background: rgba(255, 255, 255, 0.45) !important;
+  box-sizing: border-box !important;
+  transition: all 0.18s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
   cursor: pointer !important;
-  transition: var(--miuix-transition) !important;
   user-select: none !important;
-  color: #475569 !important;
 }
 
-.miuix-dock-item:hover {
-  background: rgba(0, 102, 255, 0.1) !important;
-  color: var(--miuix-primary) !important;
-  transform: translateY(-2px);
+.ex-panel__wrap > div:hover, .miuix-dock-item:hover {
+  transform: translateY(-2.5px) !important;
+  background: rgba(255, 255, 255, 0.88) !important;
+  border-color: rgba(0, 102, 255, 0.3) !important;
+  box-shadow: 0 6px 18px rgba(0, 102, 255, 0.24), inset 0 1px 1px #ffffff !important;
 }
 
-.miuix-dock-item.is-active {
-  background: rgba(0, 102, 255, 0.16) !important;
-  color: var(--miuix-primary) !important;
+.ex-panel__wrap > div:active, .miuix-dock-item:active {
+  transform: translateY(0) scale(0.96) !important;
+}
+
+/* 磁吸指示器小胶囊 (24x4px 生机蓝) */
+.ex-panel__indicator, .miuix-dock-indicator {
+  position: absolute !important;
+  bottom: 3px !important;
+  left: 50% !important;
+  width: 24px !important;
+  height: 4px !important;
+  border-radius: 2px !important;
+  background: var(--miuix-primary, #0066ff) !important;
+  box-shadow: 0 0 8px rgba(0, 102, 255, 0.65) !important;
+  transform: translateX(-50%) scaleX(0) !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+.ex-panel__wrap > div.is-active .ex-panel__indicator,
+.ex-panel__wrap > div.ex-dock-active .ex-panel__indicator,
+.miuix-dock-item.is-active .ex-panel__indicator {
+  transform: translateX(-50%) scaleX(1) !important;
+  opacity: 1 !important;
 }
 
 /* 弹幕 +1 跟风复读气泡 */
@@ -2637,44 +2684,39 @@
   if (!globalThis.DYEXRL_NEXT) return;
 
   globalThis.DYEXRL_NEXT.registry.register('ui.icons', [], function () {
+    // 兼容路径字典 (供轻量引用与单元测试验证)
     var SVG_PATHS = {
-      // 1. 一键签到 (日历打卡)
-      sign: '<path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zM7 11h5v5H7z" fill="currentColor"/>',
-      
-      // 2. 一键续牌 (闪烁荧光棒/徽章)
-      fans: '<path d="M12 2L9.19 8.63 2 9.24l5.46 4.73L5.82 21 12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2z" fill="currentColor"/>',
-      
-      // 3. 扩展功能 (工具箱)
-      extool: '<path d="M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z" fill="currentColor"/>',
-      
-      // 4. 直播间工具 (播控齿轮)
-      livetool: '<path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z" fill="currentColor"/>',
-      
-      // 5. 弹幕小助手 (气泡发言)
-      bloop: '<path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zM6 9h12v2H6V9zm8 5H6v-2h8v2zm4-6H6V6h12v2z" fill="currentColor"/>',
-      
-      // 6. 全站抽奖 (礼物转盘)
+      sign: '<path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z" fill="currentColor"/>',
+      fans: '<path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z" fill="currentColor"/>',
+      extool: '<path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.5 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z" fill="currentColor"/>',
+      livetool: '<path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H4V6h16v12zM10 8.5v7l6-3.5-6-3.5z" fill="currentColor"/>',
+      bloop: '<path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.17L4 17.17V4h16v12z" fill="currentColor"/>',
       lottery: '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" fill="currentColor"/>',
-      
-      // 7. 同屏播放器 (画中画双窗)
       popup: '<path d="M19 11h-8v6h8v-6zm4 8V4.98C23 3.88 22.1 3 21 3H3c-1.1 0-2 .88-2 1.98V19c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2zm-2 .02H3V4.97h18v14.05z" fill="currentColor"/>',
-      
-      // 8. 在线弹幕助手 (雷达监控)
       monitor: '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-9l6 4.5-6 4.5z" fill="currentColor"/>',
-      
-      // 9. 版本更新 (云同步)
       update: '<path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z" fill="currentColor"/>',
-      
-      // 通用图标
       close: '<path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" fill="currentColor"/>',
       chevronDown: '<path d="M7.41 8.59L12 13.17l4.59-4.58L18 10l-6 6-6-6 1.41-1.41z" fill="currentColor"/>',
       search: '<path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" fill="currentColor"/>',
       pokeball: '<path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 2c4.08 0 7.45 3.05 7.92 7h-5.02a3 3 0 0 0-5.8 0H4.08c.47-3.95 3.84-7 7.92-7zm0 16c-4.08 0-7.45-3.05-7.92-7h5.02a3 3 0 0 0 5.8 0h5.02c-.47 3.95-3.84 7-7.92 7zm0-6a2 2 0 1 1 2-2 2 2 0 0 1-2 2z" fill="currentColor"/>'
     };
 
+    // 100% 还原原版高精度多色矢量图与专属徽章
+    var RAW_ICONS = {
+      "sign": "<svg style=\"display: block;\" t=\"1578566545259\" class=\"icon\" viewBox=\"0 0 1024 1024\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" p-id=\"12959\" width=\"32\" height=\"32\"><path d=\"M698.368 80.896v114.688c0 23.552 19.968 43.008 44.032 43.008s44.032-19.456 44.032-43.008V80.896c0-23.552-19.968-43.008-44.032-43.008s-44.032 18.944-44.032 43.008zM227.328 80.896v114.688c0 23.552 19.968 43.008 44.032 43.008 24.576 0 44.032-19.456 44.032-43.008V80.896c0-23.552-19.968-43.008-44.032-43.008-24.576 0-44.032 18.944-44.032 43.008z\" fill=\"#F96C5D\" p-id=\"12960\"></path><path d=\"M977.92 195.584c0-23.552-19.968-43.008-44.032-43.008h-88.576v43.008c0 55.296-46.08 100.352-102.912 100.352s-102.912-45.056-102.912-100.352v-43.008H374.272v43.008c0 55.296-46.08 100.352-102.912 100.352-56.832 0-102.912-45.056-102.912-100.352v-43.008H79.872c-24.576 0-44.032 19.456-44.032 43.008v611.328l252.928-145.92-8.192-8.192c-10.24-9.728-16.384-23.552-16.384-38.4 0-29.696 25.088-54.272 55.808-54.272 15.36 0 29.184 6.144 39.424 15.872l28.16 27.648L977.92 263.168V195.584z\" fill=\"#F96C5D\" p-id=\"12961\"></path><path d=\"M329.216 278.528c-5.632 3.584-11.264 6.656-17.408 9.216 5.632-2.56 11.776-5.632 17.408-9.216zM344.064 266.24c4.608-4.608 8.704-9.728 12.8-14.848-3.584 5.632-8.192 10.24-12.8 14.848zM329.216 278.528c5.632-3.584 10.752-7.68 15.36-12.288-5.12 4.608-10.24 8.704-15.36 12.288zM449.536 664.064l220.16-214.016c10.24-9.728 24.064-15.872 39.424-15.872 30.72 0 55.808 24.064 55.808 54.272 0 14.848-6.144 28.672-16.384 38.4l-259.072 252.416c-10.24 9.728-24.064 15.872-39.424 15.872s-29.184-6.144-39.424-15.872l-121.344-118.272L35.84 806.912v104.96c0 23.552 19.968 43.008 44.032 43.008h854.016c24.576 0 44.032-19.456 44.032-43.008V263.168L387.584 603.648l61.952 60.416zM350.72 569.856c-4.608-3.072-9.216-5.12-14.336-6.656 5.12 1.024 10.24 3.584 14.336 6.656zM271.36 295.936c14.336 0 27.648-2.56 39.936-7.68-12.288 4.608-25.6 7.68-39.936 7.68z\" fill=\"#F15A4A\" p-id=\"12962\"></path></svg>",
+      "fans": "<img style=\"width: 32px;height: 32px;display:block;\" src=\"https://gfs-op.douyucdn.cn/dygift/1705/7db9beee246848252f1c7fe916259f4e.png\"/>",
+      "extool": "<svg t=\"1590294700144\" style=\"display:block;\" class=\"icon\" viewBox=\"0 0 1077 1024\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" p-id=\"11915\" width=\"30\" height=\"30\"><path d=\"M152.770257 11.469971l213.048618 206.378138-37.094375 36.931681 159.440737 158.545917-76.95456 73.782015-159.440737-158.545917-38.47728 36.931681L0.244042 159.115348 152.770257 11.469971z\" p-id=\"11916\" fill=\"#d81e06\"></path><path d=\"M1077.851922 217.848109h-105.751509L929.393073 260.311408l-31.644106 31.400063-33.02701 32.538926L776.866857 300.985065l-23.428026-87.204321 33.027009-32.538926 33.02701-32.538926L862.281538 105.751509V0.569431h-8.134732a244.041945 244.041945 0 0 0-178.964092 68.331745 234.768351 234.768351 0 0 0-68.738481 147.645376 250.712425 250.712425 0 0 0 10.981887 95.664443v2.765808a34.165872 34.165872 0 0 1-9.598983 36.931681c-17.896409 16.269463-525.096918 497.520178-525.096918 497.520178-42.625993 35.548777-38.47728 102.497617 0 142.113759 39.860184 38.233238 105.751509 40.673657 142.927233 0 0 0 478.322212-504.353352 498.984429-524.852875A33.677788 33.677788 0 0 1 754.821735 455.544963c5.531617 1.382904 10.981888 4.067366 16.269463 5.450271a242.170956 242.170956 0 0 0 87.936447 9.598983 237.290118 237.290118 0 0 0 148.45885-68.331745 231.677153 231.677153 0 0 0 68.738481-177.662536 14.805211 14.805211 0 0 0 1.626946-6.751827zM178.964093 943.628853a33.352399 33.352399 0 0 1-48.076263 0 32.538926 32.538926 0 0 1 0-47.832221 33.352399 33.352399 0 0 1 48.076263 0 35.467429 35.467429 0 0 1 0 47.832221z\" p-id=\"11917\" fill=\"#d81e06\"></path><path d=\"M981.618049 785.082936L747.988561 567.804258S617.344773 601.97013 526.642517 753.682873c5.531617 1.382904 241.926915 239.161106 241.926914 239.161105a109.98157 109.98157 0 0 0 152.607563 0l60.441055-58.732761a102.823006 102.823006 0 0 0 0-149.028281zM854.146806 951.763584a29.366381 29.366381 0 0 1-38.477279 0l-195.233556-189.94598-1.382905-1.382904a25.543057 25.543057 0 0 1 1.382905-35.548777 29.366381 29.366381 0 0 1 38.47728 0l196.535113 189.94598A28.796949 28.796949 0 0 1 854.146806 951.763584z m86.634891-83.380997a29.366381 29.366381 0 0 1-38.47728 0L705.362568 678.436606l-1.382905-1.382904a25.543057 25.543057 0 0 1 1.382905-35.548777 29.366381 29.366381 0 0 1 38.477279 0l196.535113 189.945981a24.404194 24.404194 0 0 1 0 37.013028z\" p-id=\"11918\" fill=\"#d81e06\"></path></svg>",
+      "livetool": "<svg t=\"1590294900594\" style=\"display:block;\" class=\"icon\" viewBox=\"0 0 1024 1024\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" p-id=\"20028\" width=\"36\" height=\"36\"><path d=\"M352.2 245.3c-5.1 0-10.2-2-14.1-5.9L196.6 98c-7.8-7.8-7.8-20.5 0-28.3s20.5-7.8 28.3 0l141.4 141.4c7.8 7.8 7.8 20.5 0 28.3-3.9 3.9-9 5.9-14.1 5.9zM477.1 245.3c-5.1 0-10.2-2-14.1-5.9-7.8-7.8-7.8-20.5 0-28.3L604.3 69.7c7.8-7.8 20.5-7.8 28.3 0 7.8 7.8 7.8 20.5 0 28.3L491.2 239.4c-3.9 3.9-9 5.9-14.1 5.9z\" fill=\"#0C2B4A\" p-id=\"20029\"></path><path d=\"M703.9 194.8H124.2c-33 0-60 27-60 60v453c0 33 27 60 60 60h418c1.7-122.5 99.6-221.8 221.7-225.5V254.8c0-33-27-60-60-60zM533.4 522.9L356.3 625.2c-24 13.9-54-3.5-54-31.2V389.5c0-27.7 30-45 54-31.2l177.1 102.2c24 13.9 24 48.6 0 62.4zM815.2 776.4c0 21.9-17.8 39.7-39.7 39.7-21.9 0-39.7-17.8-39.7-39.7 0-21.9 17.8-39.7 39.7-39.7 21.9 0 39.7 17.8 39.7 39.7z\" fill=\"#0C2B4A\" p-id=\"20030\"></path><path d=\"M775.5 591C673.6 591 591 673.6 591 775.5S673.6 960 775.5 960 960 877.4 960 775.5 877.4 591 775.5 591zM879 819l-15.6 27c-2.1 3.6-6.8 4.9-10.4 2.8l-15.5-8.9c-2.7-1.6-6.1-1.3-8.5 0.6-7.5 5.9-15.9 10.6-25.1 13.8-3 1.1-5.1 4-5.1 7.2v18.7c0 4.2-3.4 7.6-7.6 7.6H760c-4.2 0-7.6-3.4-7.6-7.6v-18.5c0-3.3-2.1-6.2-5.1-7.2-9.3-3.2-17.9-7.8-25.5-13.7-2.4-1.9-5.8-2.2-8.5-0.6l-15.2 8.8c-3.6 2.1-8.3 0.9-10.4-2.8l-15.6-27c-2.1-3.6-0.8-8.3 2.8-10.4l12.2-7.1c3-1.7 4.5-5.2 3.7-8.5-1.7-6.8-2.6-13.8-2.6-21.1 0-4.1 0.3-8.2 0.9-12.2 0.4-3.1-1-6.1-3.7-7.7l-10.5-6.1c-3.6-2.1-4.9-6.8-2.8-10.4l15.6-27c2.1-3.6 6.8-4.9 10.4-2.8l7.8 4.5c2.9 1.7 6.6 1.3 9-1.1 9.1-8.7 20-15.5 32.2-19.7 3.1-1 5.1-4 5.1-7.2v-7.9c0-4.2 3.4-7.6 7.6-7.6H791c4.2 0 7.6 3.4 7.6 7.6v8.1c0 3.2 2 6.1 5.1 7.2 12.1 4.2 22.9 10.9 31.9 19.6 2.4 2.4 6.1 2.8 9.1 1.1l8.2-4.7c3.6-2.1 8.3-0.8 10.4 2.8l15.6 27c2.1 3.6 0.9 8.3-2.8 10.4l-11 6.3c-2.7 1.6-4.1 4.6-3.7 7.7 0.6 3.9 0.8 8 0.8 12.1 0 7.2-0.9 14.1-2.5 20.8-0.8 3.3 0.7 6.7 3.6 8.3l12.8 7.4c3.7 2.1 5 6.8 2.9 10.4z\" fill=\"#0C2B4A\" p-id=\"20031\"></path></svg>",
+      "bloop": "<svg t=\"1578572568198\" style=\"display: block;\" class=\"icon\" viewBox=\"0 0 1024 1024\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" p-id=\"55445\" width=\"32\" height=\"32\"><path d=\"M511.99883605 1020.07740302c-68.78771655 0-135.53209458-13.47788003-198.38074083-40.06106453-60.69004402-25.67037725-115.18953131-62.41203655-161.98371328-109.20738247-46.79418197-46.79301803-83.53700523-101.29366926-109.20621853-161.98371328C15.84497778 645.97776043 2.36709774 579.23105337 2.36709774 510.4445019s13.47904398-135.53209458 40.06106453-198.38074083c25.6692133-60.69004402 62.41203655-115.18953131 109.20621853-161.98371328 46.79534706-46.79418197 101.29366926-83.53700523 161.98371328-109.20621853 62.84864739-26.5831845 129.59418937-40.06106453 198.38074083-40.06106453 68.78771655 0 135.53209458 13.47904398 198.38190592 40.06106453 60.69004402 25.6692133 115.18953131 62.41203655 161.98487723 109.20621853 46.79301803 46.79418197 83.53584128 101.29366926 109.20621853 161.98371328 26.5831845 62.84864739 40.06106453 129.59418937 40.06106453 198.38074083s-13.47788003 135.53325853-40.06106453 198.38074084c-25.67037725 60.69004402-62.41203655 115.19069525-109.20621853 161.98371328-46.79534706 46.79418197-101.29483435 83.53817031-161.98487723 109.20738247C647.53092949 1006.59952413 580.78655147 1020.07740302 511.99883605 1020.07740302zM511.99883605 57.86089358c-249.55500203 0-452.58244437 203.02744235-452.58244437 452.58244437s203.02744235 452.58244437 452.58244437 452.58244438c249.55616597 0 452.58360832-203.02744235 452.58360832-452.58244438C964.58244437 260.88949987 761.55500203 57.86089358 511.99883605 57.86089358z\" p-id=\"55446\" fill=\"#1296db\" data-spm-anchor-id=\"a313x.7781069.0.i24\"></path><path d=\"M322.42598685 461.65355293l-8.51099648 74.46598314 97.86947811 0c-2.85950862 76.59314973-4.9866752 127.6556379-6.38266595 153.18746454-1.42975431 51.06132423-27.65899321 75.16339541-78.72148139 72.33881542-18.45058333 1.39598962-35.47024839 2.12716658-51.06248818 2.12716658-2.85950862-17.02082901-6.38266595-34.77283613-10.63816419-53.19081984 18.41681863 0 35.43764878 0 51.06248817 0 25.53066155 2.82574393 38.99456967-7.77981952 40.42432399-31.9133275 1.39598962-9.9069861 2.12833166-25.53182663 2.12833166-46.80698994 1.39598962-21.27632725 2.12716658-36.86740309 2.12716658-46.80698994l-99.9966447 0 14.89366244-172.33546126 89.3584805 0 0-78.72148138-102.12497636 0 0-48.9353216 151.05913287 0 0 176.5909595L322.42598685 461.65355293zM450.08162475 580.79819435l0-242.54594504 74.46598314 0c-17.0219941-24.10090723-31.91449145-43.25006791-44.67982222-57.44515413l46.80698994-21.27632725c4.25433429 4.25549824 10.63699911 12.06675342 19.14799673 23.40349497 15.5910747 18.45058333 24.79948459 30.51733789 27.65899321 36.16882574l-42.5514917 19.14799673 80.84864796 0c25.53066155-38.29715741 41.8203136-64.5263963 48.93415652-78.72031744l53.19081984 14.89366244c-5.68525255 8.50983253-15.62483939 22.70491762-29.78732487 42.55149169-7.11384291 9.93958685-12.06675342 17.02082901-14.89249849 21.27516331l70.20931982 0 0 242.54594503L620.28991829 580.7970304l0 51.06248818 144.67646806 0 0 48.93415651L620.28991829 680.79367509l0 87.23131392-51.06132423 0 0-87.23131392L428.80646144 680.79367509l0-48.93415651 140.42213376 0 0-51.06248818L450.08162475 580.7970304zM501.14411293 385.0604032l0 53.18965475 68.08331718 0 0-53.18965475L501.14411293 385.0604032zM501.14411293 480.80154965l0 55.31682248 68.08331718 0L569.22743011 480.80154965 501.14411293 480.80154965zM688.37323549 385.0604032l-68.0833172 0 0 53.18965475 68.0833172 0L688.37323549 385.0604032zM620.28991829 480.80154965l0 55.31682248 68.0833172 0L688.37323549 480.80154965 620.28991829 480.80154965z\" p-id=\"55447\" fill=\"#1296db\"></path></svg>",
+      "lottery": "<svg style=\"display:block;\" t=\"1636332741708\" class=\"icon\" viewBox=\"0 0 1024 1024\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" p-id=\"19181\" width=\"32\" height=\"32\"><path d=\"M508.858182 986.042182c-261.748364 0-473.925818-212.177455-473.925818-473.925818S247.109818 38.190545 508.858182 38.190545s473.925818 212.177455 473.925818 473.925819-212.200727 473.925818-473.925818 473.925818m0-981.690182C228.421818 4.352 1.093818 231.703273 1.093818 512.116364s227.351273 507.764364 507.764364 507.764363c280.413091 0 507.787636-227.351273 507.787636-507.764363S789.271273 4.352 508.858182 4.352\" fill=\"#FF4517\" p-id=\"19182\"></path><path d=\"M322.536727 512.302545l0.023273-1.326545-313.064727-1.931636c0 1.093818-0.093091 2.164364-0.093091 3.281454 0 90.88 24.785455 175.918545 67.84 248.925091l270.173091-155.997091a185.274182 185.274182 0 0 1-24.878546-92.951273zM416.791273 350.440727L264.029091 82.013091A492.986182 492.986182 0 0 0 77.498182 262.981818l270.173091 155.997091a186.717091 186.717091 0 0 1 69.12-68.538182zM602.856727 351.697455l151.831273-259.211637A488.261818 488.261818 0 0 0 508.718545 21.690182l0.023273 304.453818c34.350545 0 66.513455 9.355636 94.114909 25.553455zM258.536727 939.450182a488.471273 488.471273 0 0 0 241.710546 63.674182c2.839273 0 5.632-0.139636 8.448-0.186182V698.507636a185.064727 185.064727 0 0 1-94.068364-25.553454l-156.090182 266.496zM927.325091 270.452364l-257.466182 148.666181a185.204364 185.204364 0 0 1 25.041455 93.207273l-0.046546 1.070546 296.168727 1.838545c0.023273-0.977455 0.069818-1.931636 0.069819-2.909091 0-87.994182-23.249455-170.496-63.767273-241.873454zM600.855273 674.094545l148.573091 261.073455a492.776727 492.776727 0 0 0 178.106181-181.387636l-257.466181-148.642909a187.042909 187.042909 0 0 1-69.213091 68.95709z\" fill=\"#FF4517\" p-id=\"19183\"></path><path d=\"M644.142545 512.302545a135.400727 135.400727 0 0 0-135.424-135.400727l-84.619636-160.791273 20.642909 173.824c-42.658909 22.784-71.400727 70.609455-71.400727 122.368a135.447273 135.447273 0 0 0 270.801454 0z m-133.492363 70.097455a68.491636 68.491636 0 1 1 0.023273-136.96 68.491636 68.491636 0 0 1-0.023273 136.96z\" fill=\"#FF4517\" p-id=\"19184\"></path></svg>",
+      "popup": "<svg style=\"display:block;\" t=\"1579448049771\" class=\"icon\" viewBox=\"0 0 1024 1024\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" p-id=\"1804\" width=\"30\" height=\"30\"><path d=\"M353.024 900.416H109.952c-57.856 0-109.952-46.336-109.952-98.432V153.6c0-52.096 52.096-98.432 109.952-98.432h810.176c57.856 0 104.192 46.336 104.192 98.496v185.472c0 28.928-23.168 52.096-46.336 52.096s-46.272-23.168-46.272-52.096V159.36H98.368V807.68h248.896c34.688 0 52.032 17.408 52.032 46.336 0 28.928-17.344 46.272-46.272 46.272\" fill=\"#f26b1f\" p-id=\"1805\"></path><path d=\"M619.2 631.488c-5.76 0-5.76 5.76-5.76 11.52v223.04c0 5.76 5.76 11.52 5.76 11.52h289.344c5.76 0 11.584-5.76 11.584-11.52v-222.976c0-5.824-5.76-11.584-11.52-11.584H619.136z m289.344 338.688h-289.28a103.68 103.68 0 0 1-104.192-104.128v-222.976c0-57.92 46.272-109.952 104.128-109.952h289.344c57.856 0 104.128 46.272 104.128 109.952v222.976c5.824 57.856-40.448 104.128-104.128 104.128z\" fill=\"#f26b1f\" p-id=\"1806\"></path></svg>",
+      "monitor": "<svg style=\"display:block;\" t=\"1638235744961\" class=\"icon\" viewBox=\"0 0 1024 1024\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" p-id=\"69800\" width=\"32\" height=\"32\"><path d=\"M426.666667 106.666667a21.333333 21.333333 0 0 1 21.333333-21.333334h512a21.333333 21.333333 0 0 1 0 42.666667H448a21.333333 21.333333 0 0 1-21.333333-21.333333z m533.333333 789.333333H448a21.333333 21.333333 0 0 0 0 42.666667h512a21.333333 21.333333 0 0 0 0-42.666667z m0-554.666667H448a21.333333 21.333333 0 0 0 0 42.666667h512a21.333333 21.333333 0 0 0 0-42.666667z m0 298.666667H448a21.333333 21.333333 0 0 0 0 42.666667h512a21.333333 21.333333 0 0 0 0-42.666667zM245.333333 42.666667H96a53.393333 53.393333 0 0 0-53.333333 53.333333v149.333333a53.393333 53.393333 0 0 0 53.333333 53.333334h149.333333a53.393333 53.393333 0 0 0 53.333334-53.333334V96a53.393333 53.393333 0 0 0-53.333334-53.333333z m0 341.333333H96a53.393333 53.393333 0 0 0-53.333333 53.333333v149.333334a53.393333 53.393333 0 0 0 53.333333 53.333333h149.333333a53.393333 53.393333 0 0 0 53.333334-53.333333V437.333333a53.393333 53.393333 0 0 0-53.333334-53.333333z m0 341.333333H96a53.393333 53.393333 0 0 0-53.333333 53.333334v149.333333a53.393333 53.393333 0 0 0 53.333333 53.333333h149.333333a53.393333 53.393333 0 0 0 53.333334-53.333333v-149.333333a53.393333 53.393333 0 0 0-53.333334-53.333334z\" fill=\"#13227a\" p-id=\"69801\"></path></svg>",
+      "update": "<svg t=\"1578767541873\" style=\"display:block;\" class=\"icon\" viewBox=\"0 0 1024 1024\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" p-id=\"23715\" width=\"32\" height=\"32\"><path d=\"M768 810.7H512c-23.6 0-42.7-19.1-42.7-42.7s19.1-42.7 42.7-42.7h256c94.1 0 170.7-76.6 170.7-170.7 0-89.6-70.1-164.3-159.5-170.1L754 383l-10.7-22.7c-42.2-89.3-133-147-231.3-147s-189.1 57.7-231.3 147L270 383l-25.1 1.6c-89.5 5.8-159.5 80.5-159.5 170.1 0 94.1 76.6 170.7 170.7 170.7 23.6 0 42.7 19.1 42.7 42.7s-19.1 42.7-42.7 42.7c-141.2 0-256-114.8-256-256 0-126.1 92.5-232.5 214.7-252.4C274.8 195.7 388.9 128 512 128s237.2 67.7 297.3 174.2C931.5 322.1 1024 428.6 1024 554.7c0 141.1-114.8 256-256 256z\" fill=\"#3688FF\" p-id=\"23716\"></path><path d=\"M554.7 938.7c-10.9 0-21.8-4.2-30.2-12.5l-128-128c-16.7-16.7-16.7-43.7 0-60.3l128-128c16.6-16.7 43.7-16.7 60.3 0 16.7 16.7 16.7 43.7 0 60.3L487 768l97.8 97.8c16.7 16.7 16.7 43.7 0 60.3-8.3 8.4-19.2 12.6-30.1 12.6z\" fill=\"#5F6379\" p-id=\"23717\"></path></svg>",
+      "pokeball": "<svg class=\"icon\" width=\"24\" height=\"24\" viewBox=\"0 0 108 108\" version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\" xmlns:xlink=\"http://www.w3.org/1999/xlink\">\n\n    <g id=\"页面-1\" stroke=\"none\" stroke-width=\"1\" fill=\"none\" fill-rule=\"evenodd\">\n\n        <g id=\"精灵球\" transform=\"translate(0.830769, 0.830769)\" fill-rule=\"nonzero\">\n\n            <path d=\"M53.1692307,106.338461 C23.8276922,106.338461 0,82.5107692 0,53.1692307 C0,51.0030769 1.77230775,49.2307692 3.9384615,49.2307692 L33.476923,49.2307692 C35.6430769,49.2307692 37.4153845,51.003077 37.4153846,53.1692307 C37.4153846,61.8338461 44.5046154,68.9230769 53.1692307,68.9230769 C61.8338461,68.9230769 68.9230769,61.8338461 68.9230769,53.1692307 C68.9230769,51.0030769 70.6953846,49.2307692 72.8615385,49.2307692 L102.4,49.2307692 C104.566154,49.2307692 106.338461,51.003077 106.338461,53.1692307 C106.338461,82.5107692 82.5107692,106.338461 53.1692307,106.338461 Z\" id=\"路径\" fill=\"#33363A\"></path>\n\n            <path d=\"M8.07384612,57.1076922 C10.0430769,80.2461537 29.5384615,98.4615385 53.1692307,98.4615385 C76.8,98.4615385 96.2953846,80.2461539 98.2646154,57.1076922 L76.5046154,57.1076922 C74.6338461,68.2338461 64.8861539,76.8 53.1692307,76.8 C41.4523076,76.8 31.7046154,68.2338461 29.8338461,57.1076922 L8.07384612,57.1076922 Z\" id=\"路径\" fill=\"#FFFFFF\"></path>\n\n            <path d=\"M53.1692308,3.9384615 C25.9938461,3.9384615 3.9384615,25.9938461 3.9384615,53.1692307 L33.476923,53.1692307 C33.476923,42.3384615 42.3384615,33.476923 53.1692308,33.476923 C64,33.476923 72.8615385,42.3384615 72.8615385,53.1692307 L102.4,53.1692307 C102.4,25.9938461 80.3446154,3.9384615 53.1692308,3.9384615 Z\" id=\"路径\" fill=\"#D60909\"></path>\n\n            <path d=\"M102.4,57.1076922 L72.8615385,57.1076922 C70.6953846,57.1076922 68.923077,55.3353845 68.9230769,53.1692307 C68.9230769,44.5046154 61.8338461,37.4153846 53.1692307,37.4153846 C44.5046154,37.4153846 37.4153846,44.5046154 37.4153846,53.1692307 C37.4153846,55.3353846 35.6430769,57.1076922 33.476923,57.1076922 L3.9384615,57.1076922 C1.77230762,57.1076922 0,55.3353845 0,53.1692307 C0,23.8276922 23.8276923,0 53.1692307,0 C82.5107692,0 106.338461,23.8276922 106.338461,53.1692307 C106.338461,55.3353846 104.566154,57.1076922 102.4,57.1076922 Z\" id=\"路径\" fill=\"#33363A\"></path>\n\n            <path d=\"M76.5046154,49.2307693 L98.3630769,49.2307693 C96.2953846,26.0923076 76.8,7.876923 53.1692307,7.876923 C29.5384615,7.876923 10.0430769,26.0923076 8.07384612,49.2307693 L29.9323076,49.2307693 C31.7046154,38.1046154 41.4523076,29.5384615 53.1692307,29.5384615 C64.8861539,29.5384615 74.6338461,38.1046154 76.5046154,49.2307693 L76.5046154,49.2307693 Z\" id=\"路径\" fill=\"#D60909\"></path>\n\n            <path d=\"M53.1692307,76.8 C40.1723076,76.8 29.5384615,66.1661539 29.5384615,53.1692307 C29.5384615,40.1723076 40.1723076,29.5384615 53.1692307,29.5384615 C66.1661539,29.5384615 76.8,40.1723076 76.8,53.1692307 C76.8,66.1661539 66.1661539,76.8 53.1692307,76.8 Z\" id=\"路径\" fill=\"#33363A\"></path>\n\n            <path d=\"M53.1692307,37.4153846 C44.5046154,37.4153846 37.4153846,44.5046154 37.4153846,53.1692307 C37.4153846,61.8338461 44.5046154,68.9230769 53.1692307,68.9230769 C61.8338461,68.9230769 68.9230769,61.8338461 68.9230769,53.1692307 C68.9230769,44.5046154 61.8338461,37.4153846 53.1692307,37.4153846 L53.1692307,37.4153846 Z\" id=\"路径\" fill=\"#FFFFFF\"></path>\n\n            <path d=\"M43.3230769,53.1692307 C43.3230769,58.6071114 47.7313501,63.0153846 53.1692307,63.0153846 C58.6071114,63.0153846 63.0153846,58.6071114 63.0153846,53.1692307 C63.0153846,47.7313501 58.6071114,43.3230769 53.1692307,43.3230769 C47.7313501,43.3230769 43.3230769,47.7313501 43.3230769,53.1692307 Z\" id=\"路径\" fill=\"#33363A\"></path>\n\n        </g>\n\n    </g>\n\n</svg>"
+};
+
     function createSvg(iconKey, size, className) {
-      var pathHtml = SVG_PATHS[iconKey] || SVG_PATHS.extool;
-      var s = size || 20;
+      var s = size || 32;
       var cls = className ? ' ' + className : '';
 
       var wrapper = document.createElement('span');
@@ -2684,12 +2726,26 @@
       wrapper.style.justifyContent = 'center';
       wrapper.style.width = s + 'px';
       wrapper.style.height = s + 'px';
-      wrapper.innerHTML = '<svg viewBox="0 0 24 24" width="' + s + '" height="' + s + '" style="display:block;">' + pathHtml + '</svg>';
+
+      if (RAW_ICONS[iconKey]) {
+        var raw = RAW_ICONS[iconKey];
+        // 如果传入了特定尺寸，微调 svg/img
+        if (size && size !== 32) {
+          raw = raw.replace(/width="\d+"/, 'width="' + size + '"').replace(/height="\d+"/, 'height="' + size + '"');
+          raw = raw.replace(/width:\s*\d+px/, 'width: ' + size + 'px').replace(/height:\s*\d+px/, 'height: ' + size + 'px');
+        }
+        wrapper.innerHTML = raw;
+      } else {
+        var pathHtml = SVG_PATHS[iconKey] || SVG_PATHS.extool;
+        wrapper.innerHTML = '<svg viewBox="0 0 24 24" width="' + s + '" height="' + s + '" style="display:block;">' + pathHtml + '</svg>';
+      }
+
       return wrapper;
     }
 
     return {
       PATHS: SVG_PATHS,
+      RAW_ICONS: RAW_ICONS,
       createSvg: createSvg
     };
   });
@@ -3074,15 +3130,15 @@
     // 计划书 §13.2 严格九按钮顺序：
     // 一键签到、一键续牌、扩展功能、直播间工具、弹幕小助手、全站抽奖、同屏播放器、在线弹幕助手、版本更新
     var DOCK_BUTTONS = [
-      { id: 'ex-sign', icon: 'sign', title: '一键签到', hasPanel: true },
-      { id: 'fans-continue', icon: 'fans', title: '一键续牌', hasPanel: true },
-      { id: 'extool', icon: 'extool', title: '扩展功能', hasPanel: true },
-      { id: 'livetool', icon: 'livetool', title: '直播间工具', hasPanel: true },
-      { id: 'bloop', icon: 'bloop', title: '弹幕小助手', hasPanel: true },
-      { id: 'ex-lottery', icon: 'lottery', title: '全站抽奖', hasPanel: false },
-      { id: 'popup-player', icon: 'popup', title: '同屏播放器', hasPanel: true },
-      { id: 'ex-monitor', icon: 'monitor', title: '在线弹幕助手', hasPanel: false },
-      { id: 'ex-update', icon: 'update', title: '版本更新', hasPanel: true }
+      { id: 'ex-sign', cls: 'ex-sign', icon: 'sign', title: '一键签到', hasPanel: true },
+      { id: 'fans-continue', cls: 'fans-continue', icon: 'fans', title: '一键续牌', hasPanel: true },
+      { id: 'extool', cls: 'extool-icon', icon: 'extool', title: '扩展功能', hasPanel: true },
+      { id: 'livetool', cls: 'livetool-icon', icon: 'livetool', title: '直播间工具', hasPanel: true },
+      { id: 'bloop', cls: 'bloop-icon', icon: 'bloop', title: '弹幕小助手', hasPanel: true },
+      { id: 'ex-lottery', cls: 'ex-lottery', icon: 'lottery', title: '全站抽奖', hasPanel: true },
+      { id: 'popup-player', cls: 'popup-player', icon: 'popup', title: '同屏播放器', hasPanel: true },
+      { id: 'ex-monitor', cls: 'ex-monitor', icon: 'monitor', title: '在线弹幕助手', hasPanel: false },
+      { id: 'ex-update', cls: 'ex-update', icon: 'update', title: '版本更新', hasPanel: true }
     ];
 
     var CLOSE_DELAY_MS = 400;
@@ -3091,23 +3147,32 @@
       var opts = options || {};
 
       var dockWrap = document.createElement('div');
-      dockWrap.className = 'miuix-dock-wrap';
+      dockWrap.className = 'ex-panel miuix-dock-wrap';
 
-      // 1. Indicator capsule (16x3px)
+      // 1. Indicator capsule (24x4px 生机蓝指示器小胶囊)
       var indicator = document.createElement('div');
-      indicator.className = 'miuix-dock-indicator';
+      indicator.className = 'ex-panel__indicator miuix-dock-indicator';
       dockWrap.appendChild(indicator);
 
       // 2. Close button (×)
-      var closeBtn = document.createElement('div');
-      closeBtn.className = 'miuix-dock-close';
+      var closeBtn = document.createElement('button');
+      closeBtn.type = 'button';
+      closeBtn.className = 'ex-panel__close miuix-dock-close';
       closeBtn.innerHTML = '×';
       closeBtn.title = '关闭工具条';
+      if (typeof closeBtn.setAttribute === 'function') {
+        closeBtn.setAttribute('aria-label', '关闭 DouyuEx 工具条');
+      }
       closeBtn.addEventListener('click', function (e) {
         e.stopPropagation();
         closeDock();
       });
       dockWrap.appendChild(closeBtn);
+
+      // 3. Inner wrap for 9 buttons
+      var itemsWrap = document.createElement('div');
+      itemsWrap.className = 'ex-panel__wrap';
+      dockWrap.appendChild(itemsWrap);
 
       var registeredPanels = new Map();
       var activePanelId = null;
@@ -3136,7 +3201,7 @@
         }
         var btnRect = targetBtnEl.getBoundingClientRect();
         var wrapRect = dockWrap.getBoundingClientRect();
-        var xOffset = btnRect.left - wrapRect.left + (btnRect.width - 16) / 2;
+        var xOffset = btnRect.left - wrapRect.left + (btnRect.width - 24) / 2;
         indicator.style.transform = 'translateX(' + xOffset + 'px)';
         indicator.style.opacity = '1';
       }
@@ -3156,7 +3221,9 @@
         updateIndicator(anchorBtn);
 
         dockWrap.querySelectorAll('.miuix-dock-item').forEach(function (el) {
-          el.classList.toggle('is-active', el.dataset.dockId === id);
+          var match = el.dataset.dockId === id;
+          el.classList.toggle('is-active', match);
+          el.classList.toggle('ex-dock-active', match);
         });
       }
 
@@ -3168,7 +3235,7 @@
         updateIndicator(null);
 
         dockWrap.querySelectorAll('.miuix-dock-item').forEach(function (el) {
-          el.classList.remove('is-active');
+          el.classList.remove('is-active', 'ex-dock-active');
         });
       }
 
@@ -3180,13 +3247,84 @@
         }
       }
 
+      function getToolbarContainer() {
+        var d = typeof document !== 'undefined' ? document : null;
+        if (!d) return null;
+        return d.querySelector('.PlayerToolbar-ContentCell .PlayerToolbar-Wealth') ||
+               d.querySelector('.PlayerToolbar-ContentRow');
+      }
+
+      function getFloatingParent() {
+        var d = typeof document !== 'undefined' ? document : null;
+        if (!d) return null;
+        var dlg = typeof d.getElementById === 'function' ? d.getElementById('js-player-dialog') : null;
+        if (dlg) return dlg;
+        var box = typeof d.getElementsByClassName === 'function' ? d.getElementsByClassName('room-Player-Box')[0] : null;
+        if (box) return box;
+        return d.body || null;
+      }
+
+      function isPlayerToolbarHidden() {
+        var d = typeof document !== 'undefined' ? document : null;
+        if (!d || typeof d.getElementsByClassName !== 'function') return false;
+        var row = d.getElementsByClassName('PlayerToolbar-ContentRow')[0];
+        return row && row.style && row.style.visibility === 'hidden';
+      }
+
+      function updateDockPosition() {
+        var d = typeof document !== 'undefined' ? document : null;
+        if (!d) return;
+
+        var tb = d.getElementById('js-player-toolbar') || d.querySelector('.PlayerToolbar');
+        var vmenu = d.getElementById('ex-vtoolbar-menu');
+
+        if (isPlayerToolbarHidden() || !getToolbarContainer()) {
+          dockWrap.classList.add('ex-panel--floating');
+          var fp = getFloatingParent();
+          if (fp && dockWrap.parentNode !== fp) {
+            fp.appendChild(dockWrap);
+          }
+        }
+
+        if (dockWrap.classList.contains('ex-panel--floating')) {
+          if (tb && typeof tb.getBoundingClientRect === 'function') {
+            var tbRect = tb.getBoundingClientRect();
+            dockWrap.style.position = 'fixed';
+            dockWrap.style.bottom = Math.max(8, (window.innerHeight - tbRect.top + 8)) + 'px';
+            dockWrap.style.top = 'auto';
+            var dockWidth = dockWrap.offsetWidth || dockWrap.scrollWidth || 580;
+            var leftPos = tbRect.left + tbRect.width / 2 - dockWidth / 2;
+            if (vmenu && typeof vmenu.getBoundingClientRect === 'function') {
+              var vRect = vmenu.getBoundingClientRect();
+              leftPos = vRect.left + vRect.width / 2 - dockWidth / 2;
+            }
+            leftPos = Math.max(8, Math.min(leftPos, window.innerWidth - dockWidth - 8));
+            dockWrap.style.left = leftPos + 'px';
+            dockWrap.style.right = 'auto';
+          } else {
+            dockWrap.style.position = 'fixed';
+            dockWrap.style.bottom = '76px';
+            dockWrap.style.right = '12px';
+            dockWrap.style.left = 'auto';
+          }
+        } else {
+          var toolbarEl = d.querySelector('.PlayerToolbar');
+          dockWrap.style.position = 'absolute';
+          dockWrap.style.bottom = toolbarEl ? toolbarEl.offsetHeight + 'px' : '76px';
+          dockWrap.style.left = 'auto';
+          dockWrap.style.right = '0px';
+        }
+      }
+
       function openDock() {
         isDockOpen = true;
         if (dockWrap.classList && typeof dockWrap.classList.add === 'function') {
           dockWrap.classList.add('is-open');
         }
         dockWrap.style.display = 'flex';
-        var launcher = typeof document !== 'undefined' && typeof document.querySelector === 'function' ? document.querySelector('.miuix-ex-icon') : null;
+        updateDockPosition();
+
+        var launcher = typeof document !== 'undefined' && typeof document.querySelector === 'function' ? document.querySelector('.ex-icon, .miuix-ex-icon') : null;
         if (launcher && launcher.classList && typeof launcher.classList.add === 'function') {
           launcher.classList.add('is-active');
         }
@@ -3199,7 +3337,7 @@
           dockWrap.classList.remove('is-open');
         }
         dockWrap.style.display = 'none';
-        var launcher = typeof document !== 'undefined' && typeof document.querySelector === 'function' ? document.querySelector('.miuix-ex-icon') : null;
+        var launcher = typeof document !== 'undefined' && typeof document.querySelector === 'function' ? document.querySelector('.ex-icon, .miuix-ex-icon') : null;
         if (launcher && launcher.classList && typeof launcher.classList.remove === 'function') {
           launcher.classList.remove('is-active');
         }
@@ -3213,16 +3351,33 @@
         }
       }
 
-      // 3. Render 9 buttons
+      // 4. Render 9 buttons in itemsWrap
       DOCK_BUTTONS.forEach(function (btnDef) {
         var btn = document.createElement('div');
-        btn.className = 'miuix-dock-item';
+        btn.className = (btnDef.cls || btnDef.id) + ' miuix-dock-item';
         if (!btn.dataset) btn.dataset = {};
         btn.dataset.dockId = btnDef.id;
         btn.title = btnDef.title;
 
-        var iconSvg = icons.createSvg(btnDef.icon, 20);
-        btn.appendChild(iconSvg);
+        var a = document.createElement('a');
+        a.className = 'ex-panel__icon';
+        a.title = btnDef.title;
+        a.style.display = 'flex';
+        a.style.alignItems = 'center';
+        a.style.justifyContent = 'center';
+        a.style.width = '100%';
+        a.style.height = '100%';
+        a.appendChild(icons.createSvg(btnDef.icon, 32));
+
+        var tip = document.createElement('i');
+        tip.id = btnDef.id + '__tip';
+        tip.className = 'ex-panel__tip';
+        a.appendChild(tip);
+        btn.appendChild(a);
+
+        var itemIndicator = document.createElement('div');
+        itemIndicator.className = 'ex-panel__indicator miuix-dock-indicator';
+        btn.appendChild(itemIndicator);
 
         // 32px hover bridge (attached to button)
         var bridge = document.createElement('div');
@@ -3246,7 +3401,10 @@
         // Click events
         btn.addEventListener('click', function (e) {
           e.stopPropagation();
-          if (btnDef.hasPanel && registeredPanels.has(btnDef.id)) {
+          if (btnDef.id === 'ex-monitor') {
+            var rid = (window.$DATA && window.$DATA.ROOM && window.$DATA.ROOM.room_id) || window.room_id || window.rid || '60937';
+            window.open('https://www.douyuex.com/' + rid, '_blank');
+          } else if (btnDef.hasPanel && registeredPanels.has(btnDef.id)) {
             togglePanel(btnDef.id, btn);
           } else if (typeof opts.onItemClick === 'function') {
             opts.onItemClick(btnDef, btn);
@@ -3255,44 +3413,79 @@
           }
         });
 
-        dockWrap.appendChild(btn);
+        itemsWrap.appendChild(btn);
       });
 
       function mount(targetContainer) {
         var d = typeof document !== 'undefined' ? document : null;
         if (!d) return;
-        var c = targetContainer || opts.container || d.body;
+        var c = targetContainer || opts.container;
+        if (!c) {
+          var wealthBar = getToolbarContainer();
+          if (wealthBar && !isPlayerToolbarHidden()) {
+            c = wealthBar;
+          } else {
+            c = getFloatingParent();
+            dockWrap.classList.add('ex-panel--floating');
+          }
+        }
         if (c && !dockWrap.parentNode && typeof c.appendChild === 'function') {
-          c.appendChild(dockWrap);
+          if (c.firstChild) {
+            c.insertBefore(dockWrap, c.firstChild);
+          } else {
+            c.appendChild(dockWrap);
+          }
         }
       }
 
-      // 4. 挂载礼物栏红白精灵球入口 (.miuix-ex-icon)
+      // 5. 挂载礼物栏红白精灵球入口 (.ex-icon / .miuix-ex-icon)
       function mountLauncher(doc) {
         var d = doc || (typeof document !== 'undefined' ? document : null);
         if (!d) return;
 
         var wealthBar = d.querySelector('.PlayerToolbar-ContentCell .PlayerToolbar-Wealth') ||
-                         d.querySelector('.PlayerToolbar-Wealth') ||
-                         d.querySelector('.ToolbarGiftArea-container') ||
-                         d.querySelector('.PlayerToolbar');
-        if (!wealthBar || wealthBar.querySelector('.miuix-ex-icon')) return;
+                         d.querySelector('.PlayerToolbar-Wealth');
+        if (wealthBar && wealthBar.querySelector('.ex-icon, .miuix-ex-icon')) return;
 
         var iconBtn = d.createElement('div');
-        iconBtn.className = 'miuix-ex-icon';
-        iconBtn.title = 'DouyuEx-RL NEXT 控制中心 (点击展开/收起)';
-        iconBtn.appendChild(icons.createSvg('pokeball', 20));
+        iconBtn.className = 'ex-icon miuix-ex-icon';
+        iconBtn.title = 'DouyuEx-RL 控制中心 (点击展开/收起)';
+
+        var a = d.createElement('a');
+        a.title = 'DouyuEx-RL (点击展开/收起)';
+        a.style.display = 'flex';
+        a.style.alignItems = 'center';
+        a.style.justifyContent = 'center';
+        a.style.cursor = 'pointer';
+        a.appendChild(icons.createSvg('pokeball', 24));
+
+        var tip = d.createElement('i');
+        tip.id = 'ex-icon__tip';
+        tip.className = 'ex-panel__tip';
+        a.appendChild(tip);
+
+        iconBtn.appendChild(a);
 
         iconBtn.addEventListener('click', function (e) {
           e.stopPropagation();
           toggleDock();
         });
 
-        // 插入在财富/礼物栏头部
-        if (wealthBar.firstChild) {
-          wealthBar.insertBefore(iconBtn, wealthBar.firstChild);
+        if (wealthBar) {
+          if (wealthBar.firstChild) {
+            wealthBar.insertBefore(iconBtn, wealthBar.firstChild);
+          } else {
+            wealthBar.appendChild(iconBtn);
+          }
         } else {
-          wealthBar.appendChild(iconBtn);
+          var giftArea = d.querySelector('.ToolbarGiftArea-container');
+          if (giftArea) {
+            iconBtn.className += ' ToolbarGiftArea-backpack';
+            iconBtn.style.width = '52px';
+            giftArea.appendChild(iconBtn);
+          } else if (d.body) {
+            d.body.appendChild(iconBtn);
+          }
         }
       }
 
@@ -3321,7 +3514,7 @@
         clearCloseTimer();
         closeDock();
         if (dockWrap.parentNode) dockWrap.parentNode.removeChild(dockWrap);
-        var launcher = document.querySelector('.miuix-ex-icon');
+        var launcher = document.querySelector('.ex-icon, .miuix-ex-icon');
         if (launcher && launcher.parentNode) launcher.parentNode.removeChild(launcher);
         registeredPanels.clear();
       }
@@ -5476,6 +5669,37 @@
         });
       });
 
+      // 绑定送出打榜礼物事件
+      sendGiftCard.querySelector('#extool-sendgift-btn').addEventListener('click', async function () {
+        var giftId = sendGiftCard.querySelector('#extool-sendgift-id').value;
+        var cnt = Number(sendGiftCard.querySelector('#extool-sendgift-cnt').value) || 1;
+        var delay = Number(sendGiftCard.querySelector('#extool-sendgift-interval').value) || 0;
+        var rid = store.get('runtime.room.rid') || (window.room_id || window.rid || '60937');
+        if (!giftId) return miuix.Toast('请先选择要送出的礼物', 'warning');
+
+        var ok = confirm('确认向当前直播间送出 ' + cnt + ' 个礼物？');
+        if (!ok) return;
+
+        miuix.Toast('【打榜送礼】开始执行...', 'info');
+        try {
+          if (typeof window.Ut === 'function') {
+            for (var i = 0; i < cnt; i++) {
+              await window.Ut(giftId, 1, rid);
+              if (delay > 0) await new Promise(function (r) { setTimeout(r, delay); });
+            }
+            miuix.Toast('【打榜送礼】送出完成！', 'success');
+          } else {
+            for (var j = 0; j < cnt; j++) {
+              await backpack.sendBackpackProp(giftId, 1, rid);
+              if (delay > 0) await new Promise(function (r) { setTimeout(r, delay); });
+            }
+            miuix.Toast('【打榜送礼】送出完成！', 'success');
+          }
+        } catch (err) {
+          miuix.Toast('【打榜送礼】失败: ' + (err.message || '网络异常'), 'error');
+        }
+      });
+
       // 3. 背包送礼卡片 (L3-08 / extool__clearbag)
       var clearbagCard = document.createElement('div');
       clearbagCard.className = 'miuix-card extool__clearbag';
@@ -5511,6 +5735,30 @@
           clearbagCard.querySelector('#extool-clearbag-id').value = gift.id;
           miuix.Toast('已选择背包道具: ' + gift.name, 'info', 1200);
         });
+      });
+
+      // 绑定送出背包道具事件
+      clearbagCard.querySelector('#extool-clearbag-btn').addEventListener('click', async function () {
+        var propId = clearbagCard.querySelector('#extool-clearbag-id').value;
+        var cnt = Number(clearbagCard.querySelector('#extool-clearbag-cnt').value) || 1;
+        var rid = store.get('runtime.room.rid') || (window.room_id || window.rid || '60937');
+        if (!propId) return miuix.Toast('请先选择背包道具', 'warning');
+
+        var ok = confirm('确认向当前直播间送出 ' + cnt + ' 个背包道具？');
+        if (!ok) return;
+
+        miuix.Toast('【背包送礼】开始赠送...', 'info');
+        try {
+          if (typeof window.Ut === 'function') {
+            await window.Ut(propId, cnt, rid);
+            miuix.Toast('【背包送礼】赠送完成！', 'success');
+          } else {
+            await backpack.sendBackpackProp(propId, cnt, rid);
+            miuix.Toast('【背包送礼】赠送完成！', 'success');
+          }
+        } catch (err) {
+          miuix.Toast('【背包送礼】失败: ' + (err.message || '网络异常'), 'error');
+        }
       });
 
       // 4. 红包与宝箱卡片 (L3-09)
@@ -5566,11 +5814,28 @@
       });
 
       // 1. 弹幕投票 (L3-01)
+      var activeVoteSession = null;
       var voteAccordion = miuix.Accordion({
         id: 'vote__panel',
         title: '弹幕投票',
         actions: [
-          { label: '大屏看板', onClick: function () { miuix.Toast('已展开独立投票看板', 'info'); } }
+          {
+            label: '大屏看板',
+            onClick: function () {
+              if (!activeVoteSession) {
+                miuix.Toast('当前暂无进行中的投票，请先发起投票', 'info');
+                return;
+              }
+              var tallyText = Object.keys(activeVoteSession.tally).map(function (opt) {
+                return opt + ': ' + activeVoteSession.tally[opt] + ' 票';
+              }).join('\n');
+              miuix.Dialog({
+                mode: 'alert',
+                title: '【实时投票大屏看板】' + activeVoteSession.theme,
+                message: tallyText || '暂无投票数据'
+              });
+            }
+          }
         ],
         content: [
           (function () {
@@ -5580,12 +5845,56 @@
             box.style.gap = '6px';
             box.innerHTML = `
               <input type="text" id="vote__theme" class="miuix-input" placeholder="输入投票主题..." />
-              <input type="text" id="vote__options" class="miuix-input" placeholder="输入选项(空格分隔)..." />
-              <div style="display: flex; justify-content: space-between; align-items: center;">
-                <label style="font-size: 11px;"><input type="checkbox" id="vote__repeat" /> 允许重复投票</label>
-                <button type="button" class="miuix-btn miuix-btn-primary" style="padding: 3px 10px;">发起投票</button>
+              <input type="text" id="vote__options" class="miuix-input" placeholder="输入选项 (空格分隔，如: A B C)..." />
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px;">
+                <label style="display: flex; align-items: center; gap: 4px; font-size: 11.5px; cursor: pointer;">
+                  <input type="checkbox" id="vote__repeat" class="miuix-checkbox" />
+                  <span>允许重复投票</span>
+                </label>
+                <button type="button" id="vote__start_btn" class="miuix-btn miuix-btn-primary" style="padding: 3px 12px; font-size: 11.5px;">发起投票</button>
               </div>
             `;
+
+            var startBtn = box.querySelector('#vote__start_btn');
+            startBtn.addEventListener('click', function () {
+              var theme = box.querySelector('#vote__theme').value.trim();
+              var optionsStr = box.querySelector('#vote__options').value.trim();
+              var allowRepeat = box.querySelector('#vote__repeat').checked;
+
+              if (!theme) return miuix.Toast('请输入投票主题', 'warning');
+              var opts = optionsStr.split(/\s+/).filter(Boolean);
+              if (opts.length < 2) return miuix.Toast('请至少输入两个选项 (空格分隔)', 'warning');
+
+              var tally = {};
+              opts.forEach(function (o) { tally[o] = 0; });
+              activeVoteSession = {
+                theme: theme,
+                options: opts,
+                allowRepeat: allowRepeat,
+                tally: tally,
+                voters: new Set(),
+                startTime: Date.now()
+              };
+
+              // 开启弹幕监听
+              if (chatAdapter && typeof chatAdapter.onChat === 'function') {
+                chatAdapter.onChat(function (msg) {
+                  if (!activeVoteSession || !msg || !msg.text) return;
+                  if (!activeVoteSession.allowRepeat && msg.uid && activeVoteSession.voters.has(msg.uid)) return;
+                  var t = msg.text.trim().toUpperCase();
+                  opts.forEach(function (opt) {
+                    if (t === opt.toUpperCase() || t.includes(opt.toUpperCase())) {
+                      activeVoteSession.tally[opt]++;
+                      if (msg.uid) activeVoteSession.voters.add(msg.uid);
+                    }
+                  });
+                });
+              }
+
+              localStorage.setItem('ExSave_Vote', JSON.stringify({ theme: theme, options: opts, repeat: allowRepeat }));
+              miuix.Toast('【弹幕投票】已启动: ' + theme, 'success');
+            });
+
             return box;
           })()
         ]
@@ -5597,21 +5906,69 @@
         id: 'enter__panel',
         title: '进场欢迎',
         actions: [
-          { label: '导出', onClick: function () { miuix.Toast('已导出欢迎规则', 'info'); } },
-          { label: '导入', onClick: function () { miuix.Toast('已导入欢迎规则', 'info'); } }
+          {
+            label: '导出',
+            onClick: async function () {
+              var saved = localStorage.getItem('ExSave_Enter') || '[]';
+              try {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                  await navigator.clipboard.writeText(saved);
+                  miuix.Toast('欢迎规则已复制到剪贴板', 'success');
+                } else {
+                  miuix.Dialog({ mode: 'alert', title: '导出欢迎规则', message: saved });
+                }
+              } catch (e) {
+                miuix.Dialog({ mode: 'alert', title: '导出欢迎规则', message: saved });
+              }
+            }
+          },
+          {
+            label: '导入',
+            onClick: function () {
+              var input = prompt('请粘贴导出的欢迎规则 JSON 数组:');
+              if (!input) return;
+              try {
+                var parsed = JSON.parse(input);
+                if (Array.isArray(parsed)) {
+                  localStorage.setItem('ExSave_Enter', JSON.stringify(parsed));
+                  miuix.Toast('成功导入 ' + parsed.length + ' 条欢迎规则', 'success');
+                } else {
+                  miuix.Toast('格式不正确，需为 JSON 数组', 'error');
+                }
+              } catch (e) {
+                miuix.Toast('JSON 解析失败', 'error');
+              }
+            }
+          }
         ],
         content: [
           (function () {
             var box = document.createElement('div');
+            var savedRules = [];
+            try { savedRules = JSON.parse(localStorage.getItem('ExSave_Enter') || '[]'); } catch (e) {}
+            var defaultWord = savedRules.length && savedRules[0].word ? savedRules[0].word : '欢迎来到直播间！';
+            var defaultLevel = savedRules.length && savedRules[0].level ? savedRules[0].level : 10;
+
             box.innerHTML = `
               <div style="display: flex; gap: 6px; margin-bottom: 6px;">
-                <input type="number" id="enter__level" class="miuix-input" style="width: 60px;" placeholder="等级" value="10" />
-                <input type="text" id="enter__word" class="miuix-input" style="flex: 1;" placeholder="欢迎语内容..." />
+                <input type="number" id="enter__level" class="miuix-input" style="width: 60px;" placeholder="等级" value="${defaultLevel}" />
+                <input type="text" id="enter__word" class="miuix-input" style="flex: 1;" placeholder="欢迎语内容..." value="${defaultWord}" />
               </div>
               <div style="display: flex; justify-content: flex-end;">
-                <button type="button" class="miuix-btn miuix-btn-primary" style="padding: 3px 10px;">保存规则</button>
+                <button type="button" id="enter__save_btn" class="miuix-btn miuix-btn-primary" style="padding: 3px 12px; font-size: 11.5px;">保存规则</button>
               </div>
             `;
+
+            box.querySelector('#enter__save_btn').addEventListener('click', function () {
+              var lvl = Number(box.querySelector('#enter__level').value) || 1;
+              var word = box.querySelector('#enter__word').value.trim();
+              if (!word) return miuix.Toast('欢迎语不能为空', 'warning');
+              var rules = [{ level: lvl, word: word }];
+              localStorage.setItem('ExSave_Enter', JSON.stringify(rules));
+              store.set('danmaku.greeter.enterWord', word);
+              miuix.Toast('进场欢迎规则已保存！', 'success');
+            });
+
             return box;
           })()
         ]
@@ -5623,23 +5980,59 @@
         id: 'mute__panel',
         title: '关键词禁言',
         actions: [
-          { label: '名单', onClick: function () { miuix.Toast('查询禁言名单', 'info'); } },
-          { label: '导出', onClick: function () { miuix.Toast('已导出禁言规则', 'info'); } }
+          {
+            label: '名单',
+            onClick: function () {
+              var saved = localStorage.getItem('ExSave_Mute') || '{}';
+              miuix.Dialog({ mode: 'alert', title: '关键词禁言名单', message: saved });
+            }
+          },
+          {
+            label: '导出',
+            onClick: async function () {
+              var saved = localStorage.getItem('ExSave_Mute') || '{}';
+              try {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                  await navigator.clipboard.writeText(saved);
+                  miuix.Toast('禁言规则已复制到剪贴板', 'success');
+                } else {
+                  miuix.Dialog({ mode: 'alert', title: '导出禁言规则', message: saved });
+                }
+              } catch (e) {
+                miuix.Dialog({ mode: 'alert', title: '导出禁言规则', message: saved });
+              }
+            }
+          }
         ],
         content: [
           (function () {
             var box = document.createElement('div');
             box.innerHTML = `
-              <div style="display: flex; gap: 6px;">
-                <input type="text" class="miuix-input" style="flex: 1;" placeholder="输入违规关键词..." />
-                <select class="miuix-input" style="width: 75px;">
+              <div style="display: flex; gap: 6px; margin-bottom: 6px;">
+                <input type="text" id="mute__word" class="miuix-input" style="flex: 1;" placeholder="输入违规关键词..." />
+                <select id="mute__duration" class="miuix-input" style="width: 75px;">
                   <option value="1">1天</option>
                   <option value="3">3天</option>
                   <option value="7">7天</option>
                   <option value="30">30天</option>
                 </select>
               </div>
+              <div style="display: flex; justify-content: flex-end;">
+                <button type="button" id="mute__save_btn" class="miuix-btn miuix-btn-primary" style="padding: 3px 12px; font-size: 11.5px;">保存规则</button>
+              </div>
             `;
+
+            box.querySelector('#mute__save_btn').addEventListener('click', function () {
+              var word = box.querySelector('#mute__word').value.trim();
+              var dur = box.querySelector('#mute__duration').value;
+              if (!word) return miuix.Toast('违规词不能为空', 'warning');
+              var muteMap = {};
+              try { muteMap = JSON.parse(localStorage.getItem('ExSave_Mute') || '{}'); } catch (e) {}
+              muteMap[word] = { duration: dur, addedAt: Date.now() };
+              localStorage.setItem('ExSave_Mute', JSON.stringify(muteMap));
+              miuix.Toast('违规词 [' + word + '] 禁言规则已保存！', 'success');
+            });
+
             return box;
           })()
         ]
@@ -5651,15 +6044,60 @@
         id: 'gift__panel',
         title: '自动谢礼物',
         actions: [
-          { label: '导出', onClick: function () { miuix.Toast('已导出谢礼模板', 'info'); } },
-          { label: '导入', onClick: function () { miuix.Toast('已导入谢礼模板', 'info'); } }
+          {
+            label: '导出',
+            onClick: async function () {
+              var saved = localStorage.getItem('ExSave_Gift') || '{}';
+              try {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                  await navigator.clipboard.writeText(saved);
+                  miuix.Toast('谢礼模板已复制到剪贴板', 'success');
+                } else {
+                  miuix.Dialog({ mode: 'alert', title: '导出谢礼模板', message: saved });
+                }
+              } catch (e) {
+                miuix.Dialog({ mode: 'alert', title: '导出谢礼模板', message: saved });
+              }
+            }
+          },
+          {
+            label: '导入',
+            onClick: function () {
+              var input = prompt('请粘贴导出的谢礼模板 JSON:');
+              if (!input) return;
+              try {
+                var parsed = JSON.parse(input);
+                localStorage.setItem('ExSave_Gift', JSON.stringify(parsed));
+                miuix.Toast('谢礼模板导入成功', 'success');
+              } catch (e) {
+                miuix.Toast('JSON 解析失败', 'error');
+              }
+            }
+          }
         ],
         content: [
           (function () {
             var box = document.createElement('div');
+            var savedGift = {};
+            try { savedGift = JSON.parse(localStorage.getItem('ExSave_Gift') || '{}'); } catch (e) {}
+            var defaultTpl = savedGift.template || '感谢 {name} 送出的 {gift}！老板大气！';
+
             box.innerHTML = `
-              <input type="text" class="miuix-input" style="width: 100%;" placeholder="感谢文案模板 (支持 {name}, {gift})..." />
+              <div style="margin-bottom: 6px;">
+                <input type="text" id="gift__tpl_input" class="miuix-input" style="width: 100%;" placeholder="感谢文案模板 (支持 {name}, {gift})..." value="${defaultTpl}" />
+              </div>
+              <div style="display: flex; justify-content: flex-end;">
+                <button type="button" id="gift__save_btn" class="miuix-btn miuix-btn-primary" style="padding: 3px 12px; font-size: 11.5px;">保存模板</button>
+              </div>
             `;
+
+            box.querySelector('#gift__save_btn').addEventListener('click', function () {
+              var tpl = box.querySelector('#gift__tpl_input').value.trim();
+              if (!tpl) return miuix.Toast('感谢模板不能为空', 'warning');
+              localStorage.setItem('ExSave_Gift', JSON.stringify({ template: tpl }));
+              miuix.Toast('自动谢礼模板已保存！', 'success');
+            });
+
             return box;
           })()
         ]
@@ -5671,22 +6109,67 @@
         id: 'reply__panel',
         title: '关键词回复',
         actions: [
-          { label: '导出', onClick: function () { miuix.Toast('已导出回复规则', 'info'); } },
-          { label: '导入', onClick: function () { miuix.Toast('已导入回复规则', 'info'); } }
+          {
+            label: '导出',
+            onClick: async function () {
+              var saved = localStorage.getItem('ExSave_Reply') || '{}';
+              try {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                  await navigator.clipboard.writeText(saved);
+                  miuix.Toast('回复规则已复制到剪贴板', 'success');
+                } else {
+                  miuix.Dialog({ mode: 'alert', title: '导出回复规则', message: saved });
+                }
+              } catch (e) {
+                miuix.Dialog({ mode: 'alert', title: '导出回复规则', message: saved });
+              }
+            }
+          },
+          {
+            label: '导入',
+            onClick: function () {
+              var input = prompt('请粘贴导出的回复规则 JSON:');
+              if (!input) return;
+              try {
+                var parsed = JSON.parse(input);
+                localStorage.setItem('ExSave_Reply', JSON.stringify(parsed));
+                miuix.Toast('回复规则导入成功', 'success');
+              } catch (e) {
+                miuix.Toast('JSON 解析失败', 'error');
+              }
+            }
+          }
         ],
         content: [
           (function () {
             var box = document.createElement('div');
             box.innerHTML = `
               <div style="display: flex; gap: 6px; margin-bottom: 6px;">
-                <input type="text" class="miuix-input" style="width: 100px;" placeholder="触发词" />
-                <input type="text" class="miuix-input" style="flex: 1;" placeholder="回复内容..." />
+                <input type="text" id="reply__kw_input" class="miuix-input" style="width: 100px;" placeholder="触发词" />
+                <input type="text" id="reply__content_input" class="miuix-input" style="flex: 1;" placeholder="回复内容..." />
               </div>
               <div style="display: flex; justify-content: space-between; align-items: center;">
-                <span style="font-size: 11px; color: #64748b;">冷却 CD: 5秒</span>
-                <button type="button" class="miuix-btn miuix-btn-primary" style="padding: 3px 10px;">添加规则</button>
+                <div style="display: flex; align-items: center; gap: 4px; font-size: 11px; color: #64748b;">
+                  <span>CD(秒):</span>
+                  <input type="number" id="reply__cd_input" class="miuix-input" style="width: 45px; padding: 2px 4px;" value="5" min="1" />
+                </div>
+                <button type="button" id="reply__add_btn" class="miuix-btn miuix-btn-primary" style="padding: 3px 12px; font-size: 11.5px;">添加规则</button>
               </div>
             `;
+
+            box.querySelector('#reply__add_btn').addEventListener('click', function () {
+              var kw = box.querySelector('#reply__kw_input').value.trim();
+              var reply = box.querySelector('#reply__content_input').value.trim();
+              var cd = Number(box.querySelector('#reply__cd_input').value) || 5;
+
+              if (!kw || !reply) return miuix.Toast('触发词和回复内容均不能为空', 'warning');
+              var replyMap = {};
+              try { replyMap = JSON.parse(localStorage.getItem('ExSave_Reply') || '{}'); } catch (e) {}
+              replyMap[kw] = { reply: reply, cd: cd };
+              localStorage.setItem('ExSave_Reply', JSON.stringify(replyMap));
+              miuix.Toast('已添加回复规则: ' + kw + ' -> ' + reply, 'success');
+            });
+
             return box;
           })()
         ]
@@ -5809,6 +6292,110 @@
   });
 })();
 
+/* --- NEXT module: src/ui/modals/lottery_panel.js --- */
+// src/ui/modals/lottery_panel.js
+(function () {
+  'use strict';
+  if (!globalThis.DYEXRL_NEXT) return;
+
+  globalThis.DYEXRL_NEXT.registry.register('ui.modals.lotteryPanel', [
+    'ui.miuix',
+    'store.index',
+    'modules.radar.lottery'
+  ], function (miuix, store, lottery) {
+
+    function createLotteryPanel() {
+      var panel = miuix.Panel({
+        id: 'lottery-panel',
+        title: '全站抽奖',
+        subtitle: '大奖红包实时监控与开奖雷达'
+      });
+
+      // Card 1: 监控设置
+      var settingCard = document.createElement('div');
+      settingCard.className = 'miuix-card';
+      settingCard.innerHTML = `
+        <div class="miuix-card__header" style="display: flex; justify-content: space-between; align-items: center;">
+          <span class="miuix-card__title">雷达状态</span>
+          <span style="font-size: 11px; padding: 2px 6px; border-radius: 4px; background: rgba(16, 185, 129, 0.1); color: #10b981; font-weight: 600;">正在监听</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px;">
+          <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; font-size: 12px;">
+            <input type="checkbox" id="lottery-notify-switch" class="miuix-checkbox" />
+            <span>开启大奖浮动通知</span>
+          </label>
+          <button type="button" id="lottery-refresh-btn" class="miuix-btn miuix-btn--secondary" style="padding: 3px 10px; font-size: 11.5px;">刷新列表</button>
+        </div>
+      `;
+      panel.body.appendChild(settingCard);
+
+      store.bindCheckbox('#lottery-notify-switch', 'radar.notifyPrize');
+
+      // Card 2: 监控列表
+      var listCard = document.createElement('div');
+      listCard.className = 'miuix-card exlottery__wrap';
+      listCard.style.flex = '1';
+      listCard.style.display = 'flex';
+      listCard.style.flexDirection = 'column';
+      listCard.style.overflow = 'hidden';
+
+      var listHeader = document.createElement('div');
+      listHeader.className = 'miuix-card__header';
+      listHeader.innerHTML = '<span class="miuix-card__title">近期广播大奖</span>';
+      listCard.appendChild(listHeader);
+
+      var listBox = document.createElement('div');
+      listBox.id = 'lottery-list-box';
+      listBox.className = 'miuix-scrollable';
+      listBox.style.cssText = 'flex: 1; overflow-y: auto; max-height: 180px; padding: 4px 0; display: flex; flex-direction: column; gap: 6px;';
+      listCard.appendChild(listBox);
+
+      panel.body.appendChild(listCard);
+
+      function renderList() {
+        var prizes = lottery.getActivePrizes();
+        if (!prizes || prizes.length === 0) {
+          listBox.innerHTML = `
+            <div style="text-align: center; color: #94a3b8; font-size: 11.5px; padding: 24px 0;">
+              暂无进行中的全站大奖，雷达后台静默守护中...
+            </div>
+          `;
+          return;
+        }
+
+        listBox.innerHTML = prizes.map(function (p) {
+          return `
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 8px; background: rgba(0,0,0,0.02); border-radius: 6px; font-size: 11.5px;">
+              <div style="display: flex; flex-direction: column; gap: 2px;">
+                <span style="font-weight: 600; color: #0f172a;">${p.giftName || '超级大奖'}</span>
+                <span style="font-size: 10px; color: #64748b;">送礼人: ${p.sender || '观众'} · 房间: ${p.rid}</span>
+              </div>
+              <a href="https://www.douyu.com/${p.rid}" target="_blank" class="miuix-btn miuix-btn--primary" style="padding: 2px 8px; font-size: 11px; text-decoration: none;">上车</a>
+            </div>
+          `;
+        }).join('');
+      }
+
+      settingCard.querySelector('#lottery-refresh-btn').addEventListener('click', function () {
+        renderList();
+        miuix.Toast('抽奖雷达列表已刷新', 'info', 1000);
+      });
+
+      var origShow = panel.show;
+      panel.show = function (anchorEl) {
+        origShow(anchorEl);
+        renderList();
+      };
+
+      return panel;
+    }
+
+    return {
+      createLotteryPanel: createLotteryPanel
+    };
+  });
+})();
+
 /* --- NEXT module: src/ui/modals/popup_player_panel.js --- */
 // src/ui/modals/popup_player_panel.js
 (function () {
@@ -5892,8 +6479,58 @@
       loadBtn.addEventListener('click', function () {
         var url = roomInput.value.trim();
         if (!url) return miuix.Toast('请输入有效的房间号或直播地址', 'warning');
-        pipModule.togglePiP();
-        miuix.Toast('已启动同屏画中画', 'success');
+
+        // 1. 如果存在原版全局同屏播放器执行函数，优先无缝直通
+        if (typeof window.executePopupPlayer === 'function') {
+          window.executePopupPlayer(url);
+          miuix.Toast('已启动同屏播放', 'success');
+          return;
+        }
+
+        // 2. 提取房间号并建立纯净同屏画中画浮窗
+        var match = url.match(/(\d+)/);
+        var targetRid = match ? match[1] : url;
+
+        var randId = Date.now();
+        var exDiv = document.createElement('div');
+        exDiv.id = 'exVideoDiv' + randId;
+        exDiv.style.cssText = 'position: fixed; top: 100px; right: 24px; width: 480px; height: 320px; z-index: 999999; background: #000; border-radius: 12px; box-shadow: 0 12px 36px rgba(0,0,0,0.5); overflow: hidden; display: flex; flex-direction: column; border: 1px solid rgba(255,255,255,0.2);';
+
+        var header = document.createElement('div');
+        header.style.cssText = 'height: 32px; background: rgba(30,41,59,0.95); display: flex; align-items: center; justify-content: space-between; padding: 0 10px; cursor: move; color: #fff; font-size: 12px; user-select: none;';
+        header.innerHTML = '<span>同屏联播 · 房间 ' + targetRid + '</span><span id="exVideoClose' + randId + '" style="cursor: pointer; font-size: 16px; line-height: 1; padding: 2px 6px;">×</span>';
+        exDiv.appendChild(header);
+
+        var iframe = document.createElement('iframe');
+        iframe.src = 'https://www.douyu.com/' + targetRid + '?exid=chun';
+        iframe.style.cssText = 'flex: 1; width: 100%; border: none; background: #000;';
+        exDiv.appendChild(iframe);
+
+        document.body.appendChild(exDiv);
+
+        header.querySelector('#exVideoClose' + randId).addEventListener('click', function () {
+          exDiv.remove();
+        });
+
+        // 简易拖拽手柄
+        var isDragging = false, startX, startY, initLeft, initTop;
+        header.addEventListener('mousedown', function (e) {
+          isDragging = true;
+          startX = e.clientX;
+          startY = e.clientY;
+          var rect = exDiv.getBoundingClientRect();
+          initLeft = rect.left;
+          initTop = rect.top;
+        });
+        document.addEventListener('mousemove', function (e) {
+          if (!isDragging) return;
+          exDiv.style.left = (initLeft + e.clientX - startX) + 'px';
+          exDiv.style.top = (initTop + e.clientY - startY) + 'px';
+          exDiv.style.right = 'auto';
+        });
+        document.addEventListener('mouseup', function () { isDragging = false; });
+
+        miuix.Toast('已启动同屏播放: 房间 ' + targetRid, 'success');
       });
 
       return panel;
@@ -6452,6 +7089,7 @@
     'ui.modals.extoolPanel',
     'ui.modals.livetoolPanel',
     'ui.modals.bloopPanel',
+    'ui.modals.lotteryPanel',
     'ui.modals.popupPlayerPanel',
     'ui.modals.updatePanel',
     'ui.modals.mediaPanel',
@@ -6475,6 +7113,7 @@
     extoolPanel,
     livetoolPanel,
     bloopPanel,
+    lotteryPanel,
     popupPlayerPanel,
     updatePanel,
     mediaPanel,
@@ -6533,6 +7172,7 @@
             panelInstances.extool = extoolPanel.createExtoolPanel();
             panelInstances.livetool = livetoolPanel.createLivetoolPanel();
             panelInstances.bloop = bloopPanel.createBloopPanel();
+            panelInstances.lottery = lotteryPanel.createLotteryPanel();
             panelInstances.popup = popupPlayerPanel.createPopupPlayerPanel();
             panelInstances.update = updatePanel.createUpdatePanel();
             panelInstances.media = mediaPanel.createMediaPanel();
@@ -6551,12 +7191,12 @@
                   panelInstances.livetool.show(btnEl);
                 } else if (itemDef.id === 'bloop' && panelInstances.bloop) {
                   panelInstances.bloop.show(btnEl);
+                } else if (itemDef.id === 'ex-lottery' && panelInstances.lottery) {
+                  panelInstances.lottery.show(btnEl);
                 } else if (itemDef.id === 'popup-player' && panelInstances.popup) {
                   panelInstances.popup.show(btnEl);
                 } else if (itemDef.id === 'ex-update' && panelInstances.update) {
                   panelInstances.update.show(btnEl);
-                } else if (itemDef.id === 'ex-lottery') {
-                  miuix.Toast('全站抽奖雷达监听中', 'info');
                 } else if (itemDef.id === 'ex-monitor') {
                   var rid = store.get('runtime.room.rid') || '60937';
                   window.open('https://www.douyuex.com/' + rid, '_blank');
@@ -6572,6 +7212,7 @@
             dockInstance.registerPanel('extool', panelInstances.extool);
             dockInstance.registerPanel('livetool', panelInstances.livetool);
             dockInstance.registerPanel('bloop', panelInstances.bloop);
+            dockInstance.registerPanel('ex-lottery', panelInstances.lottery);
             dockInstance.registerPanel('popup-player', panelInstances.popup);
             dockInstance.registerPanel('ex-update', panelInstances.update);
 

@@ -133,13 +133,14 @@ test('Orchestrator: full bootstrap lifecycle wires migration, core, dock, and pa
     // 2. Check Dock is mounted in body
     const dock = app.getDockInstance();
     assert.ok(dock);
-    assert.strictEqual(dock.element.className, 'miuix-dock-wrap');
+    assert.ok(dock.element.className.includes('miuix-dock-wrap'));
 
     // 3. Check Panels are instantiated
     const panels = app.getPanels();
     assert.ok(panels.fans);
     assert.ok(panels.sign);
     assert.ok(panels.livetool);
+    assert.ok(panels.lottery);
     assert.ok(panels.media);
     assert.ok(panels.setting);
   } finally {

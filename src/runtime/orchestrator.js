@@ -21,6 +21,7 @@
     'ui.modals.extoolPanel',
     'ui.modals.livetoolPanel',
     'ui.modals.bloopPanel',
+    'ui.modals.lotteryPanel',
     'ui.modals.popupPlayerPanel',
     'ui.modals.updatePanel',
     'ui.modals.mediaPanel',
@@ -44,6 +45,7 @@
     extoolPanel,
     livetoolPanel,
     bloopPanel,
+    lotteryPanel,
     popupPlayerPanel,
     updatePanel,
     mediaPanel,
@@ -102,6 +104,7 @@
             panelInstances.extool = extoolPanel.createExtoolPanel();
             panelInstances.livetool = livetoolPanel.createLivetoolPanel();
             panelInstances.bloop = bloopPanel.createBloopPanel();
+            panelInstances.lottery = lotteryPanel.createLotteryPanel();
             panelInstances.popup = popupPlayerPanel.createPopupPlayerPanel();
             panelInstances.update = updatePanel.createUpdatePanel();
             panelInstances.media = mediaPanel.createMediaPanel();
@@ -120,12 +123,12 @@
                   panelInstances.livetool.show(btnEl);
                 } else if (itemDef.id === 'bloop' && panelInstances.bloop) {
                   panelInstances.bloop.show(btnEl);
+                } else if (itemDef.id === 'ex-lottery' && panelInstances.lottery) {
+                  panelInstances.lottery.show(btnEl);
                 } else if (itemDef.id === 'popup-player' && panelInstances.popup) {
                   panelInstances.popup.show(btnEl);
                 } else if (itemDef.id === 'ex-update' && panelInstances.update) {
                   panelInstances.update.show(btnEl);
-                } else if (itemDef.id === 'ex-lottery') {
-                  miuix.Toast('全站抽奖雷达监听中', 'info');
                 } else if (itemDef.id === 'ex-monitor') {
                   var rid = store.get('runtime.room.rid') || '60937';
                   window.open('https://www.douyuex.com/' + rid, '_blank');
@@ -141,6 +144,7 @@
             dockInstance.registerPanel('extool', panelInstances.extool);
             dockInstance.registerPanel('livetool', panelInstances.livetool);
             dockInstance.registerPanel('bloop', panelInstances.bloop);
+            dockInstance.registerPanel('ex-lottery', panelInstances.lottery);
             dockInstance.registerPanel('popup-player', panelInstances.popup);
             dockInstance.registerPanel('ex-update', panelInstances.update);
 

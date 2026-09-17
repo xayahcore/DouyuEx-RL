@@ -55,6 +55,7 @@
     "src/ui/modals/extool_panel.js",
     "src/ui/modals/livetool_panel.js",
     "src/ui/modals/bloop_panel.js",
+    "src/ui/modals/lottery_panel.js",
     "src/ui/modals/popup_player_panel.js",
     "src/ui/modals/update_panel.js",
     "src/ui/modals/media_panel.js",

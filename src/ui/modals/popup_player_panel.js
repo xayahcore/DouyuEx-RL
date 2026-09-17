@@ -80,8 +80,58 @@
       loadBtn.addEventListener('click', function () {
         var url = roomInput.value.trim();
         if (!url) return miuix.Toast('请输入有效的房间号或直播地址', 'warning');
-        pipModule.togglePiP();
-        miuix.Toast('已启动同屏画中画', 'success');
+
+        // 1. 如果存在原版全局同屏播放器执行函数，优先无缝直通
+        if (typeof window.executePopupPlayer === 'function') {
+          window.executePopupPlayer(url);
+          miuix.Toast('已启动同屏播放', 'success');
+          return;
+        }
+
+        // 2. 提取房间号并建立纯净同屏画中画浮窗
+        var match = url.match(/(\d+)/);
+        var targetRid = match ? match[1] : url;
+
+        var randId = Date.now();
+        var exDiv = document.createElement('div');
+        exDiv.id = 'exVideoDiv' + randId;
+        exDiv.style.cssText = 'position: fixed; top: 100px; right: 24px; width: 480px; height: 320px; z-index: 999999; background: #000; border-radius: 12px; box-shadow: 0 12px 36px rgba(0,0,0,0.5); overflow: hidden; display: flex; flex-direction: column; border: 1px solid rgba(255,255,255,0.2);';
+
+        var header = document.createElement('div');
+        header.style.cssText = 'height: 32px; background: rgba(30,41,59,0.95); display: flex; align-items: center; justify-content: space-between; padding: 0 10px; cursor: move; color: #fff; font-size: 12px; user-select: none;';
+        header.innerHTML = '<span>同屏联播 · 房间 ' + targetRid + '</span><span id="exVideoClose' + randId + '" style="cursor: pointer; font-size: 16px; line-height: 1; padding: 2px 6px;">×</span>';
+        exDiv.appendChild(header);
+
+        var iframe = document.createElement('iframe');
+        iframe.src = 'https://www.douyu.com/' + targetRid + '?exid=chun';
+        iframe.style.cssText = 'flex: 1; width: 100%; border: none; background: #000;';
+        exDiv.appendChild(iframe);
+
+        document.body.appendChild(exDiv);
+
+        header.querySelector('#exVideoClose' + randId).addEventListener('click', function () {
+          exDiv.remove();
+        });
+
+        // 简易拖拽手柄
+        var isDragging = false, startX, startY, initLeft, initTop;
+        header.addEventListener('mousedown', function (e) {
+          isDragging = true;
+          startX = e.clientX;
+          startY = e.clientY;
+          var rect = exDiv.getBoundingClientRect();
+          initLeft = rect.left;
+          initTop = rect.top;
+        });
+        document.addEventListener('mousemove', function (e) {
+          if (!isDragging) return;
+          exDiv.style.left = (initLeft + e.clientX - startX) + 'px';
+          exDiv.style.top = (initTop + e.clientY - startY) + 'px';
+          exDiv.style.right = 'auto';
+        });
+        document.addEventListener('mouseup', function () { isDragging = false; });
+
+        miuix.Toast('已启动同屏播放: 房间 ' + targetRid, 'success');
       });
 
       return panel;

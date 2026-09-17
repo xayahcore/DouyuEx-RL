@@ -96,6 +96,37 @@
         });
       });
 
+      // 绑定送出打榜礼物事件
+      sendGiftCard.querySelector('#extool-sendgift-btn').addEventListener('click', async function () {
+        var giftId = sendGiftCard.querySelector('#extool-sendgift-id').value;
+        var cnt = Number(sendGiftCard.querySelector('#extool-sendgift-cnt').value) || 1;
+        var delay = Number(sendGiftCard.querySelector('#extool-sendgift-interval').value) || 0;
+        var rid = store.get('runtime.room.rid') || (window.room_id || window.rid || '60937');
+        if (!giftId) return miuix.Toast('请先选择要送出的礼物', 'warning');
+
+        var ok = confirm('确认向当前直播间送出 ' + cnt + ' 个礼物？');
+        if (!ok) return;
+
+        miuix.Toast('【打榜送礼】开始执行...', 'info');
+        try {
+          if (typeof window.Ut === 'function') {
+            for (var i = 0; i < cnt; i++) {
+              await window.Ut(giftId, 1, rid);
+              if (delay > 0) await new Promise(function (r) { setTimeout(r, delay); });
+            }
+            miuix.Toast('【打榜送礼】送出完成！', 'success');
+          } else {
+            for (var j = 0; j < cnt; j++) {
+              await backpack.sendBackpackProp(giftId, 1, rid);
+              if (delay > 0) await new Promise(function (r) { setTimeout(r, delay); });
+            }
+            miuix.Toast('【打榜送礼】送出完成！', 'success');
+          }
+        } catch (err) {
+          miuix.Toast('【打榜送礼】失败: ' + (err.message || '网络异常'), 'error');
+        }
+      });
+
       // 3. 背包送礼卡片 (L3-08 / extool__clearbag)
       var clearbagCard = document.createElement('div');
       clearbagCard.className = 'miuix-card extool__clearbag';
@@ -131,6 +162,30 @@
           clearbagCard.querySelector('#extool-clearbag-id').value = gift.id;
           miuix.Toast('已选择背包道具: ' + gift.name, 'info', 1200);
         });
+      });
+
+      // 绑定送出背包道具事件
+      clearbagCard.querySelector('#extool-clearbag-btn').addEventListener('click', async function () {
+        var propId = clearbagCard.querySelector('#extool-clearbag-id').value;
+        var cnt = Number(clearbagCard.querySelector('#extool-clearbag-cnt').value) || 1;
+        var rid = store.get('runtime.room.rid') || (window.room_id || window.rid || '60937');
+        if (!propId) return miuix.Toast('请先选择背包道具', 'warning');
+
+        var ok = confirm('确认向当前直播间送出 ' + cnt + ' 个背包道具？');
+        if (!ok) return;
+
+        miuix.Toast('【背包送礼】开始赠送...', 'info');
+        try {
+          if (typeof window.Ut === 'function') {
+            await window.Ut(propId, cnt, rid);
+            miuix.Toast('【背包送礼】赠送完成！', 'success');
+          } else {
+            await backpack.sendBackpackProp(propId, cnt, rid);
+            miuix.Toast('【背包送礼】赠送完成！', 'success');
+          }
+        } catch (err) {
+          miuix.Toast('【背包送礼】失败: ' + (err.message || '网络异常'), 'error');
+        }
       });
 
       // 4. 红包与宝箱卡片 (L3-09)
