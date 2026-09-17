@@ -1692,13 +1692,16 @@
         if (!headers['Content-Type']) {
           headers['Content-Type'] = 'application/x-www-form-urlencoded';
         }
-        // Auto-inject ccn / dy-csrf-token if needed by routine
-        if (endpointId.startsWith('routine.')) {
-          headers['dy-csrf-token'] = creds.csrfToken;
+        if (headers['Content-Type'] === 'application/x-www-form-urlencoded') {
+          if (endpointId.startsWith('routine.')) {
+            headers['dy-csrf-token'] = creds.csrfToken;
+            if (typeof body === 'object' && body !== null && !body.ctn) {
+              body.ctn = creds.ccn;
+            }
+          }
           if (typeof body === 'object' && body !== null) {
-            if (!body.ctn) body.ctn = creds.ccn;
             body = serializeQuery(body);
-          } else if (typeof body === 'string' && !body.includes('ctn=')) {
+          } else if (typeof body === 'string' && endpointId.startsWith('routine.') && !body.includes('ctn=')) {
             body += (body.length > 0 ? '&' : '') + 'ctn=' + encodeURIComponent(creds.ccn);
           }
         }
@@ -1804,11 +1807,61 @@
       return false;
     }
 
+    var chatListeners = new Set();
+    var isObserverHooked = false;
+
+    function dispatchChat(msg) {
+      if (!msg) return;
+      chatListeners.forEach(function (fn) {
+        try { fn(msg); } catch (e) { console.error('[NEXT Chat] Listener error:', e); }
+      });
+    }
+
+    function initChatObserver() {
+      if (isObserverHooked || typeof document === 'undefined' || !document.body) return;
+      var chatContainer = document.querySelector('.Barrage-main') ||
+                          document.querySelector('.Barrage-list') ||
+                          document.querySelector('.layout-Player-chat');
+      if (!chatContainer) return;
+
+      var obs = new MutationObserver(function (mutations) {
+        mutations.forEach(function (mut) {
+          mut.addedNodes.forEach(function (node) {
+            if (node.nodeType !== 1) return;
+            var contentEl = node.querySelector('.Barrage-content') || node.querySelector('[class*=\"content\"]');
+            var nickEl = node.querySelector('.Barrage-nickName') || node.querySelector('.Barrage-nick') || node.querySelector('[class*=\"nick\"]');
+            var text = contentEl ? contentEl.textContent.trim() : node.textContent.trim();
+            var nickname = nickEl ? nickEl.textContent.trim() : '';
+            var uid = node.getAttribute('data-uid') || '';
+
+            if (text) {
+              dispatchChat({ text: text, nickname: nickname, uid: uid, node: node });
+            }
+          });
+        });
+      });
+
+      obs.observe(chatContainer, { childList: true, subtree: true });
+      isObserverHooked = true;
+    }
+
+    function onChat(fn) {
+      if (typeof fn === 'function') {
+        chatListeners.add(fn);
+        initChatObserver();
+      }
+      return function unsubscribe() {
+        chatListeners.delete(fn);
+      };
+    }
+
     return {
       getChatInput: getChatInput,
       getSendButton: getSendButton,
       setChatText: setChatText,
-      sendChatText: sendChatText
+      sendChatText: sendChatText,
+      onChat: onChat,
+      dispatchChat: dispatchChat
     };
   });
 })();
@@ -3278,11 +3331,21 @@
         var tb = d.getElementById('js-player-toolbar') || d.querySelector('.PlayerToolbar');
         var vmenu = d.getElementById('ex-vtoolbar-menu');
 
-        if (isPlayerToolbarHidden() || !getToolbarContainer()) {
+        var t = getToolbarContainer();
+        if (isPlayerToolbarHidden() || !t) {
           dockWrap.classList.add('ex-panel--floating');
           var fp = getFloatingParent();
           if (fp && dockWrap.parentNode !== fp) {
             fp.appendChild(dockWrap);
+          }
+        } else {
+          dockWrap.classList.remove('ex-panel--floating');
+          if (dockWrap.parentNode !== t) {
+            if (t.firstChild) {
+              t.insertBefore(dockWrap, t.firstChild);
+            } else {
+              t.appendChild(dockWrap);
+            }
           }
         }
 
@@ -3869,8 +3932,9 @@
       try {
         var res = await client.post('backpack.donate', {
           propId: propId,
-          count: count,
-          roomId: roomId
+          propCount: count,
+          roomId: roomId,
+          bizExt: JSON.stringify({ yzxq: {} })
         });
         isSending = false;
         return { success: true, data: res.data };
@@ -6508,27 +6572,33 @@
 
         document.body.appendChild(exDiv);
 
-        header.querySelector('#exVideoClose' + randId).addEventListener('click', function () {
-          exDiv.remove();
-        });
+        // 简易拖拽手柄 (规范生命周期，防止 document 事件泄漏)
+        var startX, startY, initLeft, initTop;
+        function onMouseMove(e) {
+          exDiv.style.left = (initLeft + e.clientX - startX) + 'px';
+          exDiv.style.top = (initTop + e.clientY - startY) + 'px';
+          exDiv.style.right = 'auto';
+        }
+        function onMouseUp() {
+          document.removeEventListener('mousemove', onMouseMove);
+          document.removeEventListener('mouseup', onMouseUp);
+        }
 
-        // 简易拖拽手柄
-        var isDragging = false, startX, startY, initLeft, initTop;
         header.addEventListener('mousedown', function (e) {
-          isDragging = true;
+          if (e.target.id === 'exVideoClose' + randId) return;
           startX = e.clientX;
           startY = e.clientY;
           var rect = exDiv.getBoundingClientRect();
           initLeft = rect.left;
           initTop = rect.top;
+          document.addEventListener('mousemove', onMouseMove);
+          document.addEventListener('mouseup', onMouseUp);
         });
-        document.addEventListener('mousemove', function (e) {
-          if (!isDragging) return;
-          exDiv.style.left = (initLeft + e.clientX - startX) + 'px';
-          exDiv.style.top = (initTop + e.clientY - startY) + 'px';
-          exDiv.style.right = 'auto';
+
+        header.querySelector('#exVideoClose' + randId).addEventListener('click', function () {
+          onMouseUp();
+          exDiv.remove();
         });
-        document.addEventListener('mouseup', function () { isDragging = false; });
 
         miuix.Toast('已启动同屏播放: 房间 ' + targetRid, 'success');
       });
@@ -7222,8 +7292,10 @@
               // 1. 挂载礼物栏红白精灵球入口 (.miuix-ex-icon)
               dockInstance.mountLauncher(doc);
 
-              // 2. 挂载 Dock 到 body
-              if (doc.body && !dockInstance.element.parentNode) {
+              // 2. 挂载 Dock
+              if (typeof dockInstance.mount === 'function') {
+                dockInstance.mount();
+              } else if (doc.body && !dockInstance.element.parentNode) {
                 doc.body.appendChild(dockInstance.element);
               }
 

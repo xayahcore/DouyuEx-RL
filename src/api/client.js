@@ -73,13 +73,16 @@
         if (!headers['Content-Type']) {
           headers['Content-Type'] = 'application/x-www-form-urlencoded';
         }
-        // Auto-inject ccn / dy-csrf-token if needed by routine
-        if (endpointId.startsWith('routine.')) {
-          headers['dy-csrf-token'] = creds.csrfToken;
+        if (headers['Content-Type'] === 'application/x-www-form-urlencoded') {
+          if (endpointId.startsWith('routine.')) {
+            headers['dy-csrf-token'] = creds.csrfToken;
+            if (typeof body === 'object' && body !== null && !body.ctn) {
+              body.ctn = creds.ccn;
+            }
+          }
           if (typeof body === 'object' && body !== null) {
-            if (!body.ctn) body.ctn = creds.ccn;
             body = serializeQuery(body);
-          } else if (typeof body === 'string' && !body.includes('ctn=')) {
+          } else if (typeof body === 'string' && endpointId.startsWith('routine.') && !body.includes('ctn=')) {
             body += (body.length > 0 ? '&' : '') + 'ctn=' + encodeURIComponent(creds.ccn);
           }
         }

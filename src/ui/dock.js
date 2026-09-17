@@ -157,11 +157,21 @@
         var tb = d.getElementById('js-player-toolbar') || d.querySelector('.PlayerToolbar');
         var vmenu = d.getElementById('ex-vtoolbar-menu');
 
-        if (isPlayerToolbarHidden() || !getToolbarContainer()) {
+        var t = getToolbarContainer();
+        if (isPlayerToolbarHidden() || !t) {
           dockWrap.classList.add('ex-panel--floating');
           var fp = getFloatingParent();
           if (fp && dockWrap.parentNode !== fp) {
             fp.appendChild(dockWrap);
+          }
+        } else {
+          dockWrap.classList.remove('ex-panel--floating');
+          if (dockWrap.parentNode !== t) {
+            if (t.firstChild) {
+              t.insertBefore(dockWrap, t.firstChild);
+            } else {
+              t.appendChild(dockWrap);
+            }
           }
         }
 

@@ -154,8 +154,10 @@
               // 1. 挂载礼物栏红白精灵球入口 (.miuix-ex-icon)
               dockInstance.mountLauncher(doc);
 
-              // 2. 挂载 Dock 到 body
-              if (doc.body && !dockInstance.element.parentNode) {
+              // 2. 挂载 Dock
+              if (typeof dockInstance.mount === 'function') {
+                dockInstance.mount();
+              } else if (doc.body && !dockInstance.element.parentNode) {
                 doc.body.appendChild(dockInstance.element);
               }
 

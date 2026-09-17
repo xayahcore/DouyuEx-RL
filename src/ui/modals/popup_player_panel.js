@@ -109,27 +109,33 @@
 
         document.body.appendChild(exDiv);
 
-        header.querySelector('#exVideoClose' + randId).addEventListener('click', function () {
-          exDiv.remove();
-        });
+        // 简易拖拽手柄 (规范生命周期，防止 document 事件泄漏)
+        var startX, startY, initLeft, initTop;
+        function onMouseMove(e) {
+          exDiv.style.left = (initLeft + e.clientX - startX) + 'px';
+          exDiv.style.top = (initTop + e.clientY - startY) + 'px';
+          exDiv.style.right = 'auto';
+        }
+        function onMouseUp() {
+          document.removeEventListener('mousemove', onMouseMove);
+          document.removeEventListener('mouseup', onMouseUp);
+        }
 
-        // 简易拖拽手柄
-        var isDragging = false, startX, startY, initLeft, initTop;
         header.addEventListener('mousedown', function (e) {
-          isDragging = true;
+          if (e.target.id === 'exVideoClose' + randId) return;
           startX = e.clientX;
           startY = e.clientY;
           var rect = exDiv.getBoundingClientRect();
           initLeft = rect.left;
           initTop = rect.top;
+          document.addEventListener('mousemove', onMouseMove);
+          document.addEventListener('mouseup', onMouseUp);
         });
-        document.addEventListener('mousemove', function (e) {
-          if (!isDragging) return;
-          exDiv.style.left = (initLeft + e.clientX - startX) + 'px';
-          exDiv.style.top = (initTop + e.clientY - startY) + 'px';
-          exDiv.style.right = 'auto';
+
+        header.querySelector('#exVideoClose' + randId).addEventListener('click', function () {
+          onMouseUp();
+          exDiv.remove();
         });
-        document.addEventListener('mouseup', function () { isDragging = false; });
 
         miuix.Toast('已启动同屏播放: 房间 ' + targetRid, 'success');
       });

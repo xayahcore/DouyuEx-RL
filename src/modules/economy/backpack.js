@@ -46,8 +46,9 @@
       try {
         var res = await client.post('backpack.donate', {
           propId: propId,
-          count: count,
-          roomId: roomId
+          propCount: count,
+          roomId: roomId,
+          bizExt: JSON.stringify({ yzxq: {} })
         });
         isSending = false;
         return { success: true, data: res.data };
