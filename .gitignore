@@ -1,0 +1,4 @@
+.zcode/
+.temp_commit_msg.txt
+node_modules/
+*.log

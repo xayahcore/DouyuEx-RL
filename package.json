@@ -1,12 +1,13 @@
 {
   "name": "douyuex-rl",
-  "version": "2026.09.15.01",
+  "version": "2026.09.18.01",
   "description": "DouyuEx-RL \u6597\u9c7c\u76f4\u64ad\u95f4\u589e\u5f3a\u63d2\u4ef6 (Reborn Lite)",
   "main": "DouyuEx_RL.user.js",
   "scripts": {
     "build": "node build.js",
     "watch": "node build.js --watch",
-    "release": "node release.js"
+    "release": "node release.js",
+    "test": "node tests/test_danmaku_blocked.js && node tests/test_built_bundle.js"
   },
   "keywords": [
     "douyu",

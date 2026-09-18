@@ -465,6 +465,20 @@
 
                 }
 
+                if (t === "chatmsg") {
+
+                    try {
+
+                        if (typeof window.__onDouyuExChatmsg === "function") {
+
+                            window.__onDouyuExChatmsg(part);
+
+                        }
+
+                    } catch (e) { }
+
+                }
+
                 if (t === "ranklist") {
 
                     try { handleRanklist(part); } catch (e) { log("ranklist 解析失败", e); }

@@ -778,7 +778,7 @@ function createPopupPlayerPanel() {
 }
 
 function createExUpdatePanel() {
-    var currentVer = (typeof P !== "undefined" && P) ? P : ((typeof GM_info !== "undefined" && GM_info.script && GM_info.script.version) ? GM_info.script.version : "2026.09.15.01");
+    var currentVer = (typeof P !== "undefined" && P) ? P : ((typeof GM_info !== "undefined" && GM_info.script && GM_info.script.version) ? GM_info.script.version : "2026.09.18.01");
     var existing = document.querySelector(".exupdate-panel");
     if (existing) {
         if (existing.dataset.version === currentVer) return;
@@ -1044,6 +1044,168 @@ function initDockFull(wrap) {
     }
 }
 
+
+
+/* ==================== 弹幕发送成功与系统屏蔽词检测系统 (DouyuEx SSOT) ==================== */
+function initDanmakuBlockedCheck() {
+    var pendingList = [];
+    var seqId = 0;
+
+    function getVal(str, start, end) {
+        var idx = str.indexOf(start);
+        if (idx === -1) return "";
+        var s = idx + start.length;
+        var e = str.indexOf(end, s);
+        return e !== -1 ? str.slice(s, e) : str.slice(s);
+    }
+
+    function handleChatmsgPacket(msg) {
+        if (!msg || typeof msg !== "string") return;
+        if (msg.indexOf("type@=chatmsg") === -1) return;
+
+        var txt = getVal(msg, "txt@=", "/");
+        if (!txt) return;
+
+        var senderUid = getVal(msg, "uid@=", "/");
+        var senderNick = getVal(msg, "nn@=", "/");
+
+        var myUid = (typeof I !== "undefined" && I) || (typeof x === "function" && x("acf_uid")) || (document.cookie.match(/(?:^|;\s*)acf_uid=([^;]+)/) || [])[1] || "";
+        var myNick = (typeof W !== "undefined" && W) || "";
+        if (!myNick && typeof x === "function") {
+            var cookieNick = x("acf_nickname");
+            if (cookieNick) {
+                try { myNick = decodeURIComponent(cookieNick); W = myNick; } catch (e) { }
+            }
+        }
+
+        var isSelf = false;
+        if (myUid && senderUid && senderUid === myUid) {
+            isSelf = true;
+        } else if (myNick && senderNick && senderNick === myNick) {
+            isSelf = true;
+        } else if (senderNick && pendingList.some(function(p) { return p.senderNick === senderNick; })) {
+            isSelf = true;
+            if (typeof W !== "undefined" && !W) W = senderNick;
+        }
+
+        if (!isSelf) return;
+
+        var cleanTxt = txt.replace(/\[DouyuEx图片[^\]]+\]/g, "").replace(/\s+/g, " ").trim();
+
+        for (var i = 0; i < pendingList.length; i++) {
+            var item = pendingList[i];
+            if (item.cleanText === cleanTxt && !item.confirmed) {
+                item.confirmed = true;
+                item.resolved = true;
+                if (item.timer) {
+                    clearTimeout(item.timer);
+                    item.timer = null;
+                }
+                // 若极端网络抖动在超时后才收到回执，自动自愈消除删除线与提示
+                if (item.contentEl && item.contentEl.style && item.contentEl.style.textDecoration && item.contentEl.style.textDecoration.indexOf("line-through") !== -1) {
+                    item.contentEl.style.textDecoration = "";
+                    item.contentEl.style.textDecorationLine = "";
+                    item.contentEl.style.textDecorationColor = "";
+                    var tip = item.node.querySelector(".ex-danmaku-blocked-tip");
+                    if (tip) tip.remove();
+                }
+                break;
+            }
+        }
+
+        var now = Date.now();
+        pendingList = pendingList.filter(function(p) { return !p.resolved || (now - p.createdAt < 15000); });
+    }
+
+    // 挂载全局接收钩子，主 WebSocket 旁听与 nl 代理连接双通道消费
+    window.__onDouyuExChatmsg = handleChatmsgPacket;
+
+    function markBlocked(item) {
+        item.resolved = true;
+        item.timer = null;
+        if (!item.contentEl || !item.contentEl.parentNode) return;
+
+        // 1. 添加原版删除线样式
+        item.contentEl.style.textDecoration = "line-through gray 1px";
+        item.contentEl.style.textDecorationLine = "line-through";
+        item.contentEl.style.textDecorationColor = "gray";
+
+        // 2. 避免重复添加标签
+        if (item.node.querySelector(".ex-danmaku-blocked-tip")) return;
+
+        // 3. 插入原版 (可能发送失败) 提示标签与悬停解释
+        var tip = document.createElement("span");
+        tip.className = "ex-danmaku-blocked-tip";
+        tip.textContent = "(可能发送失败)";
+        tip.style.marginLeft = "4px";
+        tip.style.color = "gray";
+        tip.style.fontSize = "9px";
+        tip.style.cursor = "pointer";
+        tip.title = "该条弹幕发送失败/可能被系统屏蔽，不会被其他人看到（可能会误判）";
+
+        item.contentEl.parentNode.insertBefore(tip, item.contentEl.nextSibling);
+    }
+
+    function checkAndTrackSelfDanmu(node) {
+        if (!node || node.nodeType !== 1) return;
+
+        var hasSelf = node.classList.contains("is-self") || node.querySelector(".is-self");
+        if (!hasSelf) return;
+
+        var contentEl = node.classList.contains("Barrage-content") ? node : node.querySelector(".Barrage-content");
+        if (!contentEl) return;
+
+        var rawText = (contentEl.innerText || contentEl.textContent || "").trim();
+        if (!rawText) return;
+
+        var cleanText = rawText.replace(/\[DouyuEx图片[^\]]+\]/g, "").replace(/\s+/g, " ").trim();
+
+        var nickEl = node.querySelector(".Barrage-nickName.is-self") || node.querySelector(".Barrage-nickName") || node.querySelector(".is-self");
+        var senderNick = nickEl ? (nickEl.innerText || nickEl.textContent || "").trim() : ((typeof W !== "undefined" && W) || "");
+        if (senderNick && typeof W !== "undefined" && (!W || W !== senderNick)) {
+            W = senderNick;
+        }
+
+        var item = {
+            id: ++seqId,
+            node: node,
+            contentEl: contentEl,
+            rawText: rawText,
+            cleanText: cleanText,
+            senderNick: senderNick,
+            createdAt: Date.now(),
+            resolved: false,
+            confirmed: false,
+            timer: null
+        };
+
+        // 800ms 敏捷超时判定：大幅压缩等待时延，若偶发网络抖动回执迟到，自愈机制将自动解除删除线
+        item.timer = setTimeout(function() {
+            if (!item.resolved && !item.confirmed) {
+                markBlocked(item);
+            }
+        }, 800);
+
+        pendingList.push(item);
+    }
+
+    var waitTimer = setInterval(function() {
+        var list = document.getElementById("js-barrage-list") || document.querySelector(".Barrage-list");
+        if (list) {
+            clearInterval(waitTimer);
+            var observer = new MutationObserver(function(mutations) {
+                for (var m = 0; m < mutations.length; m++) {
+                    var record = mutations[m];
+                    if (!record.addedNodes || record.addedNodes.length === 0) continue;
+                    for (var i = 0; i < record.addedNodes.length; i++) {
+                        checkAndTrackSelfDanmu(record.addedNodes[i]);
+                    }
+                }
+            });
+            observer.observe(list, { childList: true, subtree: false });
+        }
+    }, 1000);
+}
 
 
 function d(){var i=document.createElement("div"),l=(i.className="ChatToolBar-DanmakuTail",i.innerHTML='<div class="ChatToolBar-DanmakuTail-tip" title="弹幕小尾巴" ></div>',document.getElementsByClassName("ChatToolBar__left")[0]);l&&l.appendChild(i),(l=document.createElement("div")).className="ChatToolBar-DanmakuTail-Panel",(i=(document.getElementsByClassName("layout-Player-chat")[0]||document.body)),i.insertBefore(l,i.childNodes[0]),window.location.href.includes("/beta")||(l.style.bottom="140px"),l.innerHTML=`
@@ -1426,7 +1588,7 @@ function d(){var i=document.createElement("div"),l=(i.className="ChatToolBar-Dan
 
         </div>
 
-    `,l=document.getElementsByClassName("livetool")[0],l&&l.insertBefore(i,l.childNodes[0]),safeBind("#reply__export", "click",()=>{GM_setClipboard(JSON.stringify(A)),T("【关键词回复】导出完毕，已复制到剪贴板","success")}),safeBind("#reply__import", "click",()=>{Gr.prompt({title:"请输入json文本（会覆盖原来的设置）",okBtn:"确定",onConfirm:function(e){var t=document.getElementById("reply__select"),e=JSON.parse(e||"{}")||{};if("object"==typeof e){for(var o in A={...e},t.options.length=0,A)A.hasOwnProperty(o)&&t.options.add(new Option(o,""));ho()}T("【关键词回复】导入完毕","success")},onCancel:function(e){}})}),safeBind("#reply__switch", "click",()=>{go=String(safeEl("reply__time").value)||0;var o=safeEl("reply__switch").checked;mo=1==o;{let e=[],t=localStorage.getItem("ExSave_isReply");var n=(e=null!=t&&"rooms"in(n=JSON.parse(t))==1?n.rooms:e).indexOf(B),o=(1==mo?-1==n&&e.push(B):e.splice(n,1),{rooms:e});localStorage.setItem("ExSave_isReply",JSON.stringify(o))}o=safeEl("reply__time").value,localStorage.setItem("ExSave_ReplyCd",o)}),safeBind("#reply__title", "click",()=>{var e=document.getElementsByClassName("reply__panel")[0];"block"!=e.style.display?((e.style.display="block")==document.getElementsByClassName("mute__panel")[0].style.display&&(document.getElementsByClassName("mute__panel")[0].style.display="none"),"block"==document.getElementsByClassName("enter__panel")[0].style.display&&(document.getElementsByClassName("enter__panel")[0].style.display="none"),"block"==document.getElementsByClassName("gift__panel")[0].style.display&&(document.getElementsByClassName("gift__panel")[0].style.display="none"),"block"==document.getElementsByClassName("vote__panel")[0].style.display&&(document.getElementsByClassName("vote__panel")[0].style.display="none")):e.style.display="none"}),safeEl("reply__select").onclick=function(){var e,t;0!=this.options.length&&(e=this.options[this.selectedIndex].text,t=A[e].reply,safeEl("reply__word").value=e,safeEl("reply__reply").value=t)},safeBind("#reply__add", "click",()=>{var e=document.getElementById("reply__select"),t=safeEl("reply__word").value,o=safeEl("reply__reply").value;""!=t&&(A[t]={reply:o},e.options.add(new Option(t,"")),ho())}),safeBind("#reply__del", "click",()=>{var e=document.getElementById("reply__select"),t=e.options[e.selectedIndex].text;delete A[t],e.options.remove(e.selectedIndex),ho()}),i=localStorage.getItem("ExSave_Reply");if(null!=i){var h,f=JSON.parse(i),y=(A=f,document.getElementById("reply__select"));for(h in f)f.hasOwnProperty(h)&&y.options.add(new Option(h,""))}if(null!=(i=localStorage.getItem("ExSave_isReply"))){l=JSON.parse(i);let e=[];"rooms"in l==1&&(e=l.rooms),mo=-1!=e.indexOf(B)}else mo=!1;safeEl("reply__switch").checked=mo,null!=(i=localStorage.getItem("ExSave_ReplyCd"))&&(safeEl("reply__time").value=i);l=document.createElement("div"),l.className="livetool__Treasure",l.id="Ex_Geetest",i=document.getElementsByClassName("Barrage-main")[0];i&&i.insertBefore(l,i.childNodes[0]),setInterval(()=>{var e=Number(Xt/5*60).toFixed(0),t=(Xt=0,document.getElementsByClassName("ChatSend-txt")[0]),e=`弹幕时速：${e}条/分`;t.placeholder=e+" 按↑↓查看历史弹幕 视频ctrl+滚轮缩放",t.setAttribute("data-placeholder",e)},5e3),new q(".layout-Player-rankAll",!1,e=>{0<document.getElementsByClassName("RankAllMain-container").length&&0<Object.keys(so.all).length&&co("all",document.querySelectorAll(".layout-Player-rankAll .ChatRankWeek-listItem--nickname"))}),(async()=>{W=await K();let e=setInterval(()=>{void 0!==document.getElementById("js-barrage-list")&&(clearInterval(e),new q("#js-barrage-list",!1,e=>{if(!(e.length<=0||e[0].addedNodes.length<=0)){let n=e[0].addedNodes[0];if(0<n.getElementsByClassName("is-self").length){e=n.getElementsByClassName("Barrage-content");if(e&&0!==e.length){let o=e[0].innerText.trim();clearTimeout(Zt),Zt=setTimeout(()=>{var e,t;""!==Jt&&""!==o&&(e=el(Jt)).txt&&(e.txt.includes("[DouyuEx图片")&&(e.txt=e.txt.replace(/\[DouyuEx图片[^\]]+\]/g,"").trim()),e.txt.replace(/\s+/g," ")!==o.replace(/\s+/g," "))&&((e=n.getElementsByClassName("Barrage-content")[0]).style.textDecoration="line-through gray 1px",e)&&e.parentNode&&e.parentNode.insertBefore(((t=document.createElement("span")).textContent="(可能发送失败)",t.style.marginLeft="4px",t.style.color="gray",t.style.fontSize="9px",t.style.cursor="point",t.title="该条弹幕发送失败，不会被其他人看到（可能会误判）",t),e.nextSibling)},300)}}}}))},1e3)})(),safeBind(".livetool-icon", "click",function(){ee("直播间工具")}),new nl(B,e=>{if("rss"==N(i=e)){let e=v(i,"rid@=","/");var t=v(i,"ss@=","/"),i=v(i,"ivl@=","/");"1"==t&&"0"==i&&X("开播提醒","直播间："+e+"开播了，点我签到",()=>{$n(e)})}(async t=>{if(0!=no&&"chatmsg"==N(t)){var o=v(t,"uid@=","/");if(o!=I){var n,i=v(t,"nn@=","/"),a=v(t,"txt@=","/");let e=!1;for(n in L)if(""!=n)if(-1!=n.indexOf("re(")?(s=v(n,"re(",")="),1<(d=n.split("=")).length&&(d=d[1],0<(s=new RegExp(s,"g").exec(a)).length)&&(e=s[0]==d)):e=-1!=String(a).indexOf(n),1==e){var r,l,s=L[n].count,d=L[n].time;io.hasOwnProperty(i)?(r=Number(io[i].count)+1,s<=r?(await lo(B,i,d),X("禁言信息","【"+i+"】已被禁言"+d+"分钟\n弹幕："+a,()=>{}),l={id:i,uid:o,barrage:a,time:d,count:1,ts:String(k("yyyy年MM月dd日hh时mm分ss秒 ",new Date))},ao.push(l),io[i].count=0):io[i].count=String(r)):s<=1?(await lo(B,i,d),X("禁言信息","【"+i+"】已被禁言"+d+"分钟\n弹幕："+a,()=>{}),l={id:i,uid:o,barrage:a,time:d,count:1,ts:String(k("yyyy年MM月dd日hh时mm分ss秒 ",new Date))},ao.push(l)):io[i]={uid:o,count:1};break}}}})(e);var o,n,a,t=e;if(0!=mo&&"chatmsg"==N(t)){var i=v(t,"uid@=","/");if(i!=I){var r,l,s=v(t,"nn@=","/"),d=v(t,"txt@=","/");let e=!1;for(r in A)if(""!=r)if(-1!=r.indexOf("re(")?(c=v(r,"re(",")="),1<(l=r.split("=")).length&&(l=l[1],0<(c=new RegExp(c,"g").exec(d)).length)&&(e=c[0]==l)):e=-1!=String(d).indexOf(r),1==e){var c=A[r].reply;c=String(c).replace(/<id>/g,s),c=String(c).replace(/<txt>/g,d),0==uo&&(we(c),0<go)&&(uo=!0,setTimeout(()=>{uo=!1},1e3*go));break}}}i=e,0!=to&&("dgb"===(p=N(i))?v(i,"uid@=","/")!=I&&(o=v(i,"nn@=","/"),a=v(i,"gfid@=","/"),n=v(i,"gfcnt@=","/"),a in M)&&(a=M[a].reply,a=String(a).replace(/<id>/g,o),we(a=String(a).replace(/<cnt>/g,n))):"dfobc"!==p&&"dfrbc"!==p||v(i,"uid@=","/")!=I&&(o=v(i,"nick@=","/"),(n="dfobc"===p?"开通钻粉":"续费钻粉")in M)&&(a=M[n].reply,a=String(a).replace(/<id>/g,o),we(a=String(a).replace(/<cnt>/g,"1"))));var i=e;if(0!=St&&"tsboxb"==N(i)){var p=v(i,"ot@=","/");let e=v(i,"rpid@=","/"),t=v(i,"rid@=","/"),o=x("dy_did");i=1e3*(Number(p)-Math.floor(Date.now()/1e3))+Mt(),fo++;p=document.createElement("div");let n="Ex_Geetest_no"+String(fo);p.id=n,document.getElementById("Ex_Geetest").appendChild(p),setTimeout(()=>{yo(t,e,o,n)},i)}var i=e;if(0!=Kt&&"uenter"==N(i)){var m=v(i,"uid@=","/");if(m!=I){var u,g=v(i,"nn@=","/"),h=v(i,"level@=","/");for(u of S)if(Number(h)>=Number(u.level)){we(String(u.word).replace(/<id>/g,g));break}}}m=e,0!=bo&&"chatmsg"==N(m)&&(i=v(m,"uid@=","/"),m=v(m,"txt@=","/"),Eo?Object(wo).hasOwnProperty(m)&&(wo[m].num++,_o++,Io()):0==Object(xo).hasOwnProperty(i)&&Object(wo).hasOwnProperty(m)&&(xo[i]=0,wo[m].num++,_o++,Io())),"chatmsg"==N(e)&&Xt++,"ranklist"==N(i=e)&&((i=el(i)).list_day&&(so.day=po(i.list_day),co("day",document.querySelectorAll(".layout-Player-rank .ChatDayRank .ChatRankWeek-listItem--nickname"))),i.list&&(so.week=po(i.list),co("week",document.querySelectorAll(".layout-Player-rank .ChatRankWeek .ChatRankWeek-listItem--nickname"))),i.list_all&&(so.all=po(i.list_all)),co()),"chatmsg"==N(i=e)&&i.includes(W)&&(Jt=i),"oni"==N(i=e)&&(i=v(i,"vn@=","/"))&&(j.noble_count=i,e=document.getElementById("real-audience__noble"))&&(e.innerText=sn(i))});{let s=setInterval(()=>{if(E([".right-e7ea5d",".right-17e251"])){clearInterval(s),V=document.querySelector(".layout-Player-videoEntity video"),document.getElementsByClassName("disable-23f484")[0].innerHTML="DouyuEx-RL_"+P;var e=document.createElement("div"),t=(e.id="ex-vtoolbar-menu",e.className="vtoolbar-menu",e.innerHTML=`
+    `,l=document.getElementsByClassName("livetool")[0],l&&l.insertBefore(i,l.childNodes[0]),safeBind("#reply__export", "click",()=>{GM_setClipboard(JSON.stringify(A)),T("【关键词回复】导出完毕，已复制到剪贴板","success")}),safeBind("#reply__import", "click",()=>{Gr.prompt({title:"请输入json文本（会覆盖原来的设置）",okBtn:"确定",onConfirm:function(e){var t=document.getElementById("reply__select"),e=JSON.parse(e||"{}")||{};if("object"==typeof e){for(var o in A={...e},t.options.length=0,A)A.hasOwnProperty(o)&&t.options.add(new Option(o,""));ho()}T("【关键词回复】导入完毕","success")},onCancel:function(e){}})}),safeBind("#reply__switch", "click",()=>{go=String(safeEl("reply__time").value)||0;var o=safeEl("reply__switch").checked;mo=1==o;{let e=[],t=localStorage.getItem("ExSave_isReply");var n=(e=null!=t&&"rooms"in(n=JSON.parse(t))==1?n.rooms:e).indexOf(B),o=(1==mo?-1==n&&e.push(B):e.splice(n,1),{rooms:e});localStorage.setItem("ExSave_isReply",JSON.stringify(o))}o=safeEl("reply__time").value,localStorage.setItem("ExSave_ReplyCd",o)}),safeBind("#reply__title", "click",()=>{var e=document.getElementsByClassName("reply__panel")[0];"block"!=e.style.display?((e.style.display="block")==document.getElementsByClassName("mute__panel")[0].style.display&&(document.getElementsByClassName("mute__panel")[0].style.display="none"),"block"==document.getElementsByClassName("enter__panel")[0].style.display&&(document.getElementsByClassName("enter__panel")[0].style.display="none"),"block"==document.getElementsByClassName("gift__panel")[0].style.display&&(document.getElementsByClassName("gift__panel")[0].style.display="none"),"block"==document.getElementsByClassName("vote__panel")[0].style.display&&(document.getElementsByClassName("vote__panel")[0].style.display="none")):e.style.display="none"}),safeEl("reply__select").onclick=function(){var e,t;0!=this.options.length&&(e=this.options[this.selectedIndex].text,t=A[e].reply,safeEl("reply__word").value=e,safeEl("reply__reply").value=t)},safeBind("#reply__add", "click",()=>{var e=document.getElementById("reply__select"),t=safeEl("reply__word").value,o=safeEl("reply__reply").value;""!=t&&(A[t]={reply:o},e.options.add(new Option(t,"")),ho())}),safeBind("#reply__del", "click",()=>{var e=document.getElementById("reply__select"),t=e.options[e.selectedIndex].text;delete A[t],e.options.remove(e.selectedIndex),ho()}),i=localStorage.getItem("ExSave_Reply");if(null!=i){var h,f=JSON.parse(i),y=(A=f,document.getElementById("reply__select"));for(h in f)f.hasOwnProperty(h)&&y.options.add(new Option(h,""))}if(null!=(i=localStorage.getItem("ExSave_isReply"))){l=JSON.parse(i);let e=[];"rooms"in l==1&&(e=l.rooms),mo=-1!=e.indexOf(B)}else mo=!1;safeEl("reply__switch").checked=mo,null!=(i=localStorage.getItem("ExSave_ReplyCd"))&&(safeEl("reply__time").value=i);l=document.createElement("div"),l.className="livetool__Treasure",l.id="Ex_Geetest",i=document.getElementsByClassName("Barrage-main")[0];i&&i.insertBefore(l,i.childNodes[0]),setInterval(()=>{var e=Number(Xt/5*60).toFixed(0),t=(Xt=0,document.getElementsByClassName("ChatSend-txt")[0]),e=`弹幕时速：${e}条/分`;t.placeholder=e+" 按↑↓查看历史弹幕 视频ctrl+滚轮缩放",t.setAttribute("data-placeholder",e)},5e3),new q(".layout-Player-rankAll",!1,e=>{0<document.getElementsByClassName("RankAllMain-container").length&&0<Object.keys(so.all).length&&co("all",document.querySelectorAll(".layout-Player-rankAll .ChatRankWeek-listItem--nickname"))}),initDanmakuBlockedCheck(),safeBind(".livetool-icon", "click",function(){ee("直播间工具")}),new nl(B,e=>{if("rss"==N(i=e)){let e=v(i,"rid@=","/");var t=v(i,"ss@=","/"),i=v(i,"ivl@=","/");"1"==t&&"0"==i&&X("开播提醒","直播间："+e+"开播了，点我签到",()=>{$n(e)})}(async t=>{if(0!=no&&"chatmsg"==N(t)){var o=v(t,"uid@=","/");if(o!=I){var n,i=v(t,"nn@=","/"),a=v(t,"txt@=","/");let e=!1;for(n in L)if(""!=n)if(-1!=n.indexOf("re(")?(s=v(n,"re(",")="),1<(d=n.split("=")).length&&(d=d[1],0<(s=new RegExp(s,"g").exec(a)).length)&&(e=s[0]==d)):e=-1!=String(a).indexOf(n),1==e){var r,l,s=L[n].count,d=L[n].time;io.hasOwnProperty(i)?(r=Number(io[i].count)+1,s<=r?(await lo(B,i,d),X("禁言信息","【"+i+"】已被禁言"+d+"分钟\n弹幕："+a,()=>{}),l={id:i,uid:o,barrage:a,time:d,count:1,ts:String(k("yyyy年MM月dd日hh时mm分ss秒 ",new Date))},ao.push(l),io[i].count=0):io[i].count=String(r)):s<=1?(await lo(B,i,d),X("禁言信息","【"+i+"】已被禁言"+d+"分钟\n弹幕："+a,()=>{}),l={id:i,uid:o,barrage:a,time:d,count:1,ts:String(k("yyyy年MM月dd日hh时mm分ss秒 ",new Date))},ao.push(l)):io[i]={uid:o,count:1};break}}}})(e);var o,n,a,t=e;if(0!=mo&&"chatmsg"==N(t)){var i=v(t,"uid@=","/");if(i!=I){var r,l,s=v(t,"nn@=","/"),d=v(t,"txt@=","/");let e=!1;for(r in A)if(""!=r)if(-1!=r.indexOf("re(")?(c=v(r,"re(",")="),1<(l=r.split("=")).length&&(l=l[1],0<(c=new RegExp(c,"g").exec(d)).length)&&(e=c[0]==l)):e=-1!=String(d).indexOf(r),1==e){var c=A[r].reply;c=String(c).replace(/<id>/g,s),c=String(c).replace(/<txt>/g,d),0==uo&&(we(c),0<go)&&(uo=!0,setTimeout(()=>{uo=!1},1e3*go));break}}}i=e,0!=to&&("dgb"===(p=N(i))?v(i,"uid@=","/")!=I&&(o=v(i,"nn@=","/"),a=v(i,"gfid@=","/"),n=v(i,"gfcnt@=","/"),a in M)&&(a=M[a].reply,a=String(a).replace(/<id>/g,o),we(a=String(a).replace(/<cnt>/g,n))):"dfobc"!==p&&"dfrbc"!==p||v(i,"uid@=","/")!=I&&(o=v(i,"nick@=","/"),(n="dfobc"===p?"开通钻粉":"续费钻粉")in M)&&(a=M[n].reply,a=String(a).replace(/<id>/g,o),we(a=String(a).replace(/<cnt>/g,"1"))));var i=e;if(0!=St&&"tsboxb"==N(i)){var p=v(i,"ot@=","/");let e=v(i,"rpid@=","/"),t=v(i,"rid@=","/"),o=x("dy_did");i=1e3*(Number(p)-Math.floor(Date.now()/1e3))+Mt(),fo++;p=document.createElement("div");let n="Ex_Geetest_no"+String(fo);p.id=n,document.getElementById("Ex_Geetest").appendChild(p),setTimeout(()=>{yo(t,e,o,n)},i)}var i=e;if(0!=Kt&&"uenter"==N(i)){var m=v(i,"uid@=","/");if(m!=I){var u,g=v(i,"nn@=","/"),h=v(i,"level@=","/");for(u of S)if(Number(h)>=Number(u.level)){we(String(u.word).replace(/<id>/g,g));break}}}m=e,0!=bo&&"chatmsg"==N(m)&&(i=v(m,"uid@=","/"),m=v(m,"txt@=","/"),Eo?Object(wo).hasOwnProperty(m)&&(wo[m].num++,_o++,Io()):0==Object(xo).hasOwnProperty(i)&&Object(wo).hasOwnProperty(m)&&(xo[i]=0,wo[m].num++,_o++,Io())),"chatmsg"==N(e)&&Xt++,"ranklist"==N(i=e)&&((i=el(i)).list_day&&(so.day=po(i.list_day),co("day",document.querySelectorAll(".layout-Player-rank .ChatDayRank .ChatRankWeek-listItem--nickname"))),i.list&&(so.week=po(i.list),co("week",document.querySelectorAll(".layout-Player-rank .ChatRankWeek .ChatRankWeek-listItem--nickname"))),i.list_all&&(so.all=po(i.list_all)),co()),"chatmsg"==N(i=e)&&(typeof window.__onDouyuExChatmsg==="function"&&window.__onDouyuExChatmsg(i),i.includes(W)&&(Jt=i)),"oni"==N(i=e)&&(i=v(i,"vn@=","/"))&&(j.noble_count=i,e=document.getElementById("real-audience__noble"))&&(e.innerText=sn(i))});{let s=setInterval(()=>{if(E([".right-e7ea5d",".right-17e251"])){clearInterval(s),V=document.querySelector(".layout-Player-videoEntity video"),document.getElementsByClassName("disable-23f484")[0].innerHTML="DouyuEx-RL_"+P;var e=document.createElement("div"),t=(e.id="ex-vtoolbar-menu",e.className="vtoolbar-menu",e.innerHTML=`
 
         <button type="button" class="vtoolbar-menu__trigger" title="DouyuEx-RL Ver${P}" aria-expanded="false" aria-haspopup="true">
 
