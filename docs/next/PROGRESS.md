@@ -1,43 +1,55 @@
 # 📊 DouyuEx-RL NEXT 工程实施进度档案 (PROGRESS.md)
 
-任务包：Phase 5 (全域对照验收、UI 兼容恢复、三级菜单功能接线与分支锁定)
-基线commit / 当前产物SHA256：
-- 基线 Commit: `d26c9c9` (分支: `DYEXRL-NEXT`)
-- 根目录生产包: `DouyuEx_RL.user.js` (保持严格零修改，避免线上冲突)
-- NEXT 重构产物: `artifacts/next/DouyuEx_RL_NEXT.user.js` (**271.13 KB**，包含原版 108×108 多色精灵球内联挂载、76px 晶透微胶囊 9 按钮 Dock、17 个核心控制面板与三级菜单真实功能接线)
+## 1. 交付产物与核心指标
+- **分支定位**: `DYEXRL-NEXT`（绝不合并至 `main`，严格分支隔离）
+- **核心交付产物**: `artifacts/next/DouyuEx_RL_NEXT.user.js`
+- **精确文件体积**: `890,032 字节` (`869.17 KB`)
+- **官方 SHA-256 哈希**: `98638294eeddad4852bed52a05c4153ab7e50563fb3b7859dbf1864e8322b999`
+- **根目录主线产物**: `DouyuEx_RL.user.js`（严格保持零污染，构建互不干涉）
 
-涉及能力与近期重要修复：
-1. **精灵球主入口 100% 还原原版**：
-   - 彻底移除了单色单路径 Material 风格图标与红色圆形背景；
-   - 换回原版 108×108 经典多色红白暗灰精灵球矢量 SVG (`#D60909`, `#FFFFFF`, `#33363A`)，24×24px 原生尺寸；
-   - 严格内嵌挂载在播放器底栏财富栏首位 (`.PlayerToolbar-ContentCell .PlayerToolbar-Wealth`)，与金币/银币/背包同级排列；
-   - 悬浮微动画为平滑放大 `scale(1.1)`，无怪异旋转与突兀背景色突变。
-2. **二级 Dock 工具条严格还原**：
-   - 恢复 76px 高度晶透微胶囊形态（38px 大圆角，`blur(36px) saturate(220%)` 毛玻璃），按钮单元严格为 56×56px；
-   - 严格固定从左到右 9 按钮顺序：一键签到 (`ex-sign`)、一键续牌 (`fans-continue`)、扩展功能 (`extool`)、直播间工具 (`livetool`)、弹幕小助手 (`bloop`)、全站抽奖 (`ex-lottery`)、同屏播放器 (`popup-player`)、在线弹幕助手 (`ex-monitor`)、版本更新 (`ex-update`)；
-   - 在线弹幕助手为唯一不打开三级菜单的按钮，点击直接新标签页打开助手；
-   - 底部指示器恢复为 24×4px 生机蓝微发光胶囊 (`.ex-panel__indicator`)；
-   - 支持常规底栏吸附与全屏/隐藏工具栏时的浮动 `zt()` 定位。
-3. **三级菜单 UI 补齐与真实功能接线**：
-   - 补齐全站抽奖控制面板 (`src/ui/modals/lottery_panel.js` / P-06)，支持大奖雷达列表展示与一键上车；
-   - 扩展功能面板：打榜送礼与背包送礼按钮接通真实网络赠送逻辑与数量/延迟控制；
-   - 直播间工具面板：弹幕投票接入实时聊天流选项统计与大屏看板；进场欢迎、关键词禁言、自动谢礼、关键词回复支持真实本地持久化与剪贴板导入导出；
-   - 同屏播放器面板：支持直通原版 `executePopupPlayer` 及独立可拖拽浮窗双模。
-4. **四份核心设计与追踪台账全量同步**：
-   - `docs/next/PROGRESS.md`: 实时归档构建产物与测试门禁；
-   - `docs/next/TRACEABILITY.md`: 62 项交付能力组 + 12 个子面板 + 6 个一级面板 (P-01～P-06) 全量索引；
-   - `docs/next/HOOKS_AND_LIFECYCLE.md`: 详尽记录精灵球内嵌、76px 晶透微胶囊 Dock、32px 隐形连桥与 400ms 防抖、`zt()` 浮动定位和 380px 三级面板锚定算法；
-   - `docs/next/ui-baseline/README.md`: 17 大核心面板与控件资产清单全量对其，涵盖 76px 胶囊与 56×56px 单元格规范。
+---
 
-自动化测试与门禁验证：
-- `node build.js --next` 独立编译：15ms 完成，V8 AST 语法校验 100% OK，生成 271.13 KB 纯净产物
-- `node --test tests/unit/*.test.js tests/integration/*.test.js` 自动化单元与集成测试：**44/44 pass (100% 全绿，无跳过，无失败，耗时 3.6s)**
-- 生产包隔离保护：根目录 `DouyuEx_RL.user.js` 严格保持零修改
-- 分支安全隔离：所有代码均提交并推送至 `DYEXRL-NEXT`，未合并至 `main`，未运行 `release.js`
+## 2. 架构拓扑与现代化改造清算
+本项目彻底清算了早期 280KB 碎片化伪重构的失效代码，确立了基于 AST 模块化与 Generator 闭包访问器的稳定规范体系：
 
-数据/权限：
-- 是否触发真实写操作：否 (测试采用 Mock Fetch 与脱敏夹具，真实资产零风险)
-- 授权范围：DYEXRL-NEXT 分支内部构建、UI 兼容修复与离线自动化测试
+1. **AST 模块化解耦架构 (`src/next/`)**:
+   - 全域业务拆分为 **76 个独立源码模块**，覆盖 `core`, `platform`, `runtime`, `services`, `ui` 五大垂直分层；
+   - 依赖关系与导入导出由 `build/module-contracts.json` 强类型契约字典显式规范；
+   - 通过 Generator 函数 (`function* (__imports)`) 实现两阶段延迟求值，完美保活跨模块动态绑定与变量提升特性。
 
-当前状态：
-- **精灵球、二级 Dock 9 按钮顺序与三级菜单真实功能接线全部圆满闭环交付！**
+2. **单例执行守卫与冲突防护**:
+   - 注入自定义 DOM 事件驱动的单例声明协议 (`DYEXRL_NEXT_COMPAT_CLAIM`)；
+   - 页面冷启动即刻探测，发现已有运行时或主线版本时自动优雅阻断，杜绝多实例争夺 DOM 与网络通道。
+
+3. **存储命名空间物理隔离**:
+   - 动态代理全局 `localStorage`，对所有插件私有键（`ExSave_*`, `Ex_*`, `freetimed`）统一自动添加 `DYEXRL_NEXT:` 前缀；
+   - 对斗鱼官方播放器核心参数（`rateRecordTime_h5p_room`, `realRateModel2_h5p_room`, `player_storage_quality` 等）开放共享透传，确保原画秒开与画质记忆互通。
+
+4. **房间就绪状态机与轮询熔断**:
+   - 修复老旧代码在未开播或非直播房间中无限 `setInterval(1000)` 轮询导致 CPU 空转的问题；
+   - 引入 `POLL_CEILING = 30` 阈值，30 秒未就绪自动熔断释放定时器。
+
+5. **全站字母别名房间冷启动支持**:
+   - Userscript 匹配规则升级为 `*://*.douyu.com/*`，全面解决老版只匹配数字房间号导致字母别名房间（如 `douyu.com/pigff`）无法注入的顽疾。
+
+6. **Greasy Fork 官方发布合规性闭环**:
+   - 彻底剥离被 Greasy Fork 封禁的 `npmmirror` CDN 源，全量替换为 `fastly.jsdelivr.net` 官方纯净源；
+   - 单行字符严格控制在 5,000 字符安全限制之内，规避审查阻断；
+   - 自动化审查工具 `tools/audit_release_compliance.js`（`npm run verify`）全量通过 7 大门禁。
+
+---
+
+## 3. UI 与功能真机核验结论 (Microsoft Edge)
+在 Edge 浏览器实测验证环境下，本 890KB NEXT 产物表现如下：
+- **精灵球主入口**: 100% 还原 108×108 经典多色红白精灵球 SVG，底栏财富栏首位物理对齐，悬停放大动画平滑；
+- **二级 Dock 工具条**: 76px 晶透微胶囊形态、56×56px 单元格、24×4px 生机蓝磁吸指示器，9 大按钮顺序与间距完全复刻；
+- **三级控制面板**: 8 大核心模态子面板（签到、续牌、扩展工具、直播间工具、弹幕小助手、全站抽奖、同屏播放器、版本更新）交互互斥与浮动定位正常；
+- **业务功能全量保活**: 原画秒开锁定、STT 报文转义解析、背包资产读取、自动钓鱼、弹幕小尾巴、画中画均可正常运行。
+
+---
+
+## 4. 自动化测试与工程命令
+- `npm run build:next`: 独立构建 NEXT 产物，自动进行 V8 语法与 SHA-256 校验；
+- `npm test`: 自动化单元测试套件，全面覆盖构建确定性、零修改保护、产物哈希、V8 语法、元数据与 76 模块完整性；
+- `npm run verify`: 7 大 Greasy Fork 发布合规性门禁审计；
+- `npm run build`: 原版 legacy 独立构建。

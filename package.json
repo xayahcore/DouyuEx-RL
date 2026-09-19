@@ -5,7 +5,10 @@
   "main": "DouyuEx_RL.user.js",
   "scripts": {
     "build": "node build.js",
+    "build:next": "node build.js --next",
     "watch": "node build.js --watch",
+    "test": "node --test tests/unit/*.test.js",
+    "verify": "node tools/audit_release_compliance.js",
     "release": "node release.js"
   },
   "keywords": [

@@ -75,70 +75,8 @@ function buildLegacy() {
 }
 
 function buildNext() {
-    console.log('[Build-NEXT] 开始编译 DouyuEx-RL NEXT ...');
-    const startTime = Date.now();
-    const manifestPath = path.join(ROOT_DIR, 'build', 'next-manifest.json');
-    if (!fs.existsSync(manifestPath)) {
-        console.error('[Build-NEXT] 找不到清单文件: ' + manifestPath);
-        process.exit(1);
-    }
-
-    let manifest;
-    try {
-        manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
-    } catch (e) {
-        console.error('[Build-NEXT] 清单 JSON 解析失败:', e.message);
-        process.exit(1);
-    }
-
-    const metaPath = path.join(ROOT_DIR, manifest.meta || 'src/meta_next.js');
-    if (!fs.existsSync(metaPath)) {
-        console.error('[Build-NEXT] 找不到元数据文件: ' + metaPath);
-        process.exit(1);
-    }
-    const metaCode = fs.readFileSync(metaPath, 'utf8').trim();
-
-    // 校验文件列表
-    const fileList = manifest.files || [];
-    const seen = new Set();
-    let bodyCode = '';
-    for (const relFile of fileList) {
-        if (seen.has(relFile)) {
-            console.error('[Build-NEXT] 清单中存在重复文件: ' + relFile);
-            process.exit(1);
-        }
-        seen.add(relFile);
-        const fullPath = path.join(ROOT_DIR, relFile);
-        if (!fs.existsSync(fullPath)) {
-            console.error('[Build-NEXT] 找不到源文件: ' + fullPath);
-            process.exit(1);
-        }
-        bodyCode += `/* --- NEXT module: ${relFile} --- */\n` + fs.readFileSync(fullPath, 'utf8').trim() + '\n\n';
-    }
-
-    const finalCode = `${metaCode}\n\n${bodyCode}`;
-
-    // V8 编译语法核验
-    try {
-        new vm.Script(finalCode);
-        console.log(`[Verify-NEXT] 语法核验通过 (V8 校验 100% OK) - 耗时 ${Date.now() - startTime}ms`);
-    } catch (err) {
-        console.error('[Verify-NEXT] 语法核验失败:', err.message, '\nStack:', err.stack);
-        process.exit(1);
-    }
-
-    // 原子写入: 先写临时文件，核验后再 rename
-    const outputPath = path.join(ROOT_DIR, manifest.output || 'artifacts/next/DouyuEx_RL_NEXT.user.js');
-    const outputDir = path.dirname(outputPath);
-    if (!fs.existsSync(outputDir)) {
-        fs.mkdirSync(outputDir, { recursive: true });
-    }
-    const tempPath = outputPath + '.tmp';
-    fs.writeFileSync(tempPath, finalCode, 'utf8');
-    fs.renameSync(tempPath, outputPath);
-
-    const sizeKB = (Buffer.byteLength(finalCode, 'utf8') / 1024).toFixed(2);
-    console.log(`[Build-NEXT] 成功生成: ${outputPath} (${sizeKB} KB)`);
+    const { buildNext: doBuild } = require('./build/compatibility');
+    return doBuild();
 }
 
 const isNext = process.argv.includes('--next');

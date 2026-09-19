@@ -60,14 +60,32 @@ DouyuEx-RL/
 ```
 
 ```bash
-# 本地单次编译核验
+# 本地单次编译核验 (生产主线包)
 npm run build   # 或 node build.js
+
+# NEXT 重构版本独立编译 (artifacts/next/DouyuEx_RL_NEXT.user.js)
+npm run build:next
+
+# 运行自动化单元测试套件
+npm test
+
+# 运行 Greasy Fork 发布合规性审查 (7 大门禁)
+npm run verify
 
 # 热重载监听模式 (保存即自动编译)
 npm run watch
 ```
 
-> 📖 **深入底层机制与开发者手册**：请参阅 [docs/MAINTENANCE.md](docs/MAINTENANCE.md)。
+### 🔮 DouyuEx-RL NEXT (下一代架构分支)
+
+`DYEXRL-NEXT` 分支是针对下一代架构的纯净重构与现代化升级：
+- **AST 模块化拓扑**：全域拆分为 76 个独立源码模块（`src/next/`），采用强类型契约字典（`build/module-contracts.json`）与 Generator 两阶段求值，保持模块解耦与动态绑定；
+- **单例执行守卫**：内置 `DYEXRL_NEXT_COMPAT_CLAIM` DOM 事件探测机制，防范多版本并发运行冲突；
+- **存储物理隔离**：自动挂载 `DYEXRL_NEXT:` 键名前缀代理，既保持插件自身配置完全独立，又透明透传官方播放器核心偏好；
+- **全站字母房间冷启动**：更新匹配通配符为 `*://*.douyu.com/*`，无缝支持字母别名直播间冷启动注入；
+- **合规性门禁全面过审**：剔除受限 CDN 源，统一指向 jsDelivr 官方源，100% 通过 Greasy Fork 7 大发布门禁。
+
+> 📖 **深入底层机制与开发者手册**：请参阅 [docs/MAINTENANCE.md](docs/MAINTENANCE.md) 与 [docs/next/PROGRESS.md](docs/next/PROGRESS.md)。
 
 ---
 

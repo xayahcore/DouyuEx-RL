@@ -1,0 +1,1575 @@
+{
+  "src/next/runtime/registry.js": {
+    "imports": {
+      "clearSubPanelTimer": "src/next/ui/panel-position.js"
+    },
+    "exports": [
+      "createNextDockOwner",
+      "nextDockOwners",
+      "nextFeatures",
+      "teardownNextDock"
+    ]
+  },
+  "src/next/core/quality.js": {
+    "imports": {},
+    "exports": []
+  },
+  "src/next/core/rank_engine.js": {
+    "imports": {},
+    "exports": []
+  },
+  "src/next/runtime/room-hooks.js": {
+    "imports": {
+      "_": "src/next/services/utilities.js",
+      "bn": "src/next/services/page-cleanup.js",
+      "clearInterval": "@platform",
+      "DomMutationSubscription": "src/next/platform/dom-observers.js",
+      "E": "src/next/services/utilities.js",
+      "GM_deleteValue": "@platform",
+      "GM_info": "@platform",
+      "GM_listValues": "@platform",
+      "GM_registerMenuCommand": "@platform",
+      "GM_xmlhttpRequest": "@platform",
+      "Ko": "src/next/services/preferences.js",
+      "Kr": "src/next/platform/script-hooks.js",
+      "localStorage": "src/next/runtime/start.js",
+      "Qr": "src/next/platform/script-hooks.js",
+      "setInterval": "@platform",
+      "T": "src/next/services/utilities.js",
+      "Un": "src/next/services/danmaku-filters.js",
+      "unsafeWindow": "@platform",
+      "Wr": "src/next/platform/script-hooks.js",
+      "Wt": "src/next/services/room-actions.js",
+      "Xr": "src/next/platform/script-hooks.js",
+      "Yr": "src/next/platform/script-hooks.js",
+      "Yt": "src/next/services/room-actions.js",
+      "Zr": "src/next/platform/script-hooks.js"
+    },
+    "exports": [
+      "EXURL",
+      "ExLoadLib",
+      "P",
+      "installRoomHooks"
+    ]
+  },
+  "src/next/ui/bindings.js": {
+    "imports": {
+      "DOCK_DEFS": "src/next/ui/icons.js",
+      "nextDockOwners": "src/next/runtime/registry.js"
+    },
+    "exports": [
+      "safeBind",
+      "safeEl"
+    ]
+  },
+  "src/next/ui/gift-picker.js": {
+    "imports": {
+      "B": "src/next/services/session.js",
+      "fetchCurrentRoomGifts": "src/next/services/gifts.js",
+      "fetchUserBackpackGifts": "src/next/services/gifts.js",
+      "setTimeout": "@platform"
+    },
+    "exports": [
+      "openGiftPicker"
+    ]
+  },
+  "src/next/ui/panel-header.js": {
+    "imports": {
+      "clearSubPanelTimer": "src/next/ui/panel-position.js",
+      "scheduleSubPanelClose": "src/next/ui/panel-position.js",
+      "updateDockActiveIndicator": "src/next/ui/panel-position.js"
+    },
+    "exports": [
+      "ensureMiuixPanelHeader"
+    ]
+  },
+  "src/next/ui/panel-position.js": {
+    "imports": {
+      "clearTimeout": "@platform",
+      "DOCK_DEFS": "src/next/ui/icons.js",
+      "setTimeout": "@platform"
+    },
+    "exports": [
+      "anchorPanelToButton",
+      "clearSubPanelTimer",
+      "scheduleSubPanelClose",
+      "updateDockActiveIndicator"
+    ]
+  },
+  "src/next/ui/icons.js": {
+    "imports": {
+      "P": "src/next/runtime/room-hooks.js"
+    },
+    "exports": [
+      "DOCK_DEFS"
+    ]
+  },
+  "src/next/ui/panels/fans.js": {
+    "imports": {
+      "b": "src/next/services/utilities.js",
+      "B": "src/next/services/session.js",
+      "ensureMiuixPanelHeader": "src/next/ui/panel-header.js",
+      "fetch": "@platform",
+      "localStorage": "src/next/runtime/start.js",
+      "nextFeatures": "src/next/runtime/registry.js",
+      "pt": "src/next/services/fans.js",
+      "safeBind": "src/next/ui/bindings.js",
+      "T": "src/next/services/utilities.js",
+      "Ut": "src/next/services/room-actions.js"
+    },
+    "exports": [
+      "createFansContinuePanel",
+      "executeFansContinue",
+      "updateFansContinuePanel"
+    ]
+  },
+  "src/next/ui/panels/sign.js": {
+    "imports": {
+      "ensureMiuixPanelHeader": "src/next/ui/panel-header.js",
+      "executeSignEngine": "src/next/services/sign-engine.js",
+      "localStorage": "src/next/runtime/start.js",
+      "nextFeatures": "src/next/runtime/registry.js",
+      "safeBind": "src/next/ui/bindings.js",
+      "T": "src/next/services/utilities.js",
+      "Wn": "src/next/services/danmaku-filters.js"
+    },
+    "exports": [
+      "createSignPanel"
+    ]
+  },
+  "src/next/ui/panels/popup.js": {
+    "imports": {
+      "D": "src/next/services/danmaku-renderer.js",
+      "E": "src/next/services/utilities.js",
+      "en": "src/next/services/danmaku-renderer.js",
+      "ensureMiuixPanelHeader": "src/next/ui/panel-header.js",
+      "ExLoadLib": "src/next/runtime/room-hooks.js",
+      "EXURL": "src/next/runtime/room-hooks.js",
+      "fetch": "@platform",
+      "GM_xmlhttpRequest": "@platform",
+      "nextFeatures": "src/next/runtime/registry.js",
+      "on": "src/next/services/danmaku-renderer.js",
+      "rn": "src/next/services/danmaku-renderer.js",
+      "safeBind": "src/next/ui/bindings.js",
+      "T": "src/next/services/utilities.js",
+      "tn": "src/next/services/danmaku-renderer.js",
+      "updateDockActiveIndicator": "src/next/ui/panel-position.js",
+      "v": "src/next/services/utilities.js"
+    },
+    "exports": [
+      "createPopupPlayerPanel",
+      "executePopupPlayer"
+    ]
+  },
+  "src/next/ui/panels/update.js": {
+    "imports": {
+      "ensureMiuixPanelHeader": "src/next/ui/panel-header.js",
+      "fetch": "@platform",
+      "GM_getValue": "@platform",
+      "GM_info": "@platform",
+      "GM_openInTab": "@platform",
+      "GM_setValue": "@platform",
+      "GM_xmlhttpRequest": "@platform",
+      "isNewerVersion": "src/next/services/version.js",
+      "P": "src/next/runtime/room-hooks.js"
+    },
+    "exports": [
+      "createExUpdatePanel"
+    ]
+  },
+  "src/next/ui/dock.js": {
+    "imports": {
+      "clearSubPanelTimer": "src/next/ui/panel-position.js",
+      "createExUpdatePanel": "src/next/ui/panels/update.js",
+      "createFansContinuePanel": "src/next/ui/panels/fans.js",
+      "createNextDockOwner": "src/next/runtime/registry.js",
+      "createPopupPlayerPanel": "src/next/ui/panels/popup.js",
+      "createSignPanel": "src/next/ui/panels/sign.js",
+      "DOCK_DEFS": "src/next/ui/icons.js",
+      "initVersionLifecycleNotice": "src/next/services/version.js",
+      "nextDockOwners": "src/next/runtime/registry.js",
+      "nextFeatures": "src/next/runtime/registry.js",
+      "P": "src/next/runtime/room-hooks.js",
+      "scheduleSubPanelClose": "src/next/ui/panel-position.js"
+    },
+    "exports": [
+      "handleDockAction",
+      "initDockFull",
+      "triggerFansContinue"
+    ]
+  },
+  "src/next/ui/room/backpack.js": {
+    "imports": {
+      "b": "src/next/services/utilities.js",
+      "B": "src/next/services/session.js",
+      "clearTimeout": "@platform",
+      "de": "src/next/services/automation.js",
+      "DomMutationSubscription": "src/next/platform/dom-observers.js",
+      "E": "src/next/services/utilities.js",
+      "pt": "src/next/services/fans.js",
+      "safeBind": "src/next/ui/bindings.js",
+      "se": "src/next/services/automation.js",
+      "T": "src/next/services/utilities.js",
+      "Ut": "src/next/services/room-actions.js"
+    },
+    "exports": [
+      "mountBackpackControls"
+    ]
+  },
+  "src/next/ui/room/video-toolbar.js": {
+    "imports": {
+      "_": "src/next/services/utilities.js",
+      "_r": "src/next/services/chat-state.js",
+      "B": "src/next/services/session.js",
+      "bindCamera": "src/next/services/video-tools.js",
+      "Br": "src/next/services/chat-state.js",
+      "ca": "src/next/services/room-preferences.js",
+      "clearInterval": "@platform",
+      "cr": "src/next/services/chat-state.js",
+      "Cr": "src/next/services/chat-state.js",
+      "DomMutationSubscription": "src/next/platform/dom-observers.js",
+      "E": "src/next/services/utilities.js",
+      "er": "src/next/services/chat-state.js",
+      "Er": "src/next/services/chat-state.js",
+      "ExLoadLib": "src/next/runtime/room-hooks.js",
+      "EXURL": "src/next/runtime/room-hooks.js",
+      "F": "src/next/services/chat-state.js",
+      "fr": "src/next/services/chat-state.js",
+      "G": "src/next/services/chat-state.js",
+      "Ge": "src/next/services/automation.js",
+      "gr": "src/next/services/chat-state.js",
+      "H": "src/next/services/chat-state.js",
+      "hr": "src/next/services/chat-state.js",
+      "Hr": "src/next/platform/flv-player.js",
+      "ir": "src/next/services/chat-state.js",
+      "Ir": "src/next/services/chat-state.js",
+      "Ja": "src/next/services/chat-state.js",
+      "ji": "src/next/services/room-preferences.js",
+      "ka": "src/next/services/room-preferences.js",
+      "Ka": "src/next/services/chat-state.js",
+      "kr": "src/next/services/chat-state.js",
+      "le": "src/next/services/accounts.js",
+      "Li": "src/next/services/video-tools.js",
+      "localStorage": "src/next/runtime/start.js",
+      "O": "src/next/services/room-preferences.js",
+      "openEnhancedPip": "src/next/services/pip/window.js",
+      "or": "src/next/services/chat-state.js",
+      "P": "src/next/runtime/room-hooks.js",
+      "pr": "src/next/services/chat-state.js",
+      "qa": "src/next/services/chat-state.js",
+      "Qa": "src/next/services/chat-state.js",
+      "qr": "src/next/platform/request.js",
+      "qt": "src/next/services/room-actions.js",
+      "requestAnimationFrame": "@platform",
+      "rr": "src/next/services/chat-state.js",
+      "safeBind": "src/next/ui/bindings.js",
+      "safeEl": "src/next/ui/bindings.js",
+      "T": "src/next/services/utilities.js",
+      "tr": "src/next/services/chat-state.js",
+      "Tr": "src/next/services/chat-state.js",
+      "U": "src/next/services/batch-danmaku.js",
+      "ua": "src/next/services/room-preferences.js",
+      "Ua": "src/next/services/chat-state.js",
+      "unsafeWindow": "@platform",
+      "ur": "src/next/services/chat-state.js",
+      "V": "src/next/services/chat-state.js",
+      "va": "src/next/services/room-preferences.js",
+      "vr": "src/next/services/chat-state.js",
+      "vtoolbarChevronSvg": "src/next/services/chat-state.js",
+      "wa": "src/next/services/room-preferences.js",
+      "Wa": "src/next/services/chat-state.js",
+      "wr": "src/next/services/chat-state.js",
+      "Xa": "src/next/services/chat-state.js",
+      "xr": "src/next/services/chat-state.js",
+      "Ya": "src/next/services/chat-state.js",
+      "yr": "src/next/services/chat-state.js",
+      "Za": "src/next/services/chat-state.js",
+      "Zi": "src/next/services/room-preferences.js"
+    },
+    "exports": [
+      "mountVideoToolbar"
+    ]
+  },
+  "src/next/ui/room/player-menu.js": {
+    "imports": {
+      "clearInterval": "@platform",
+      "clearTimeout": "@platform",
+      "DomMutationSubscription": "src/next/platform/dom-observers.js",
+      "E": "src/next/services/utilities.js",
+      "fn": "src/next/services/page-cleanup.js",
+      "Ft": "src/next/services/room-actions.js",
+      "gn": "src/next/services/page-cleanup.js",
+      "hn": "src/next/services/page-cleanup.js",
+      "Ht": "src/next/services/room-actions.js",
+      "localStorage": "src/next/runtime/start.js",
+      "pn": "src/next/services/music.js",
+      "safeBind": "src/next/ui/bindings.js",
+      "te": "src/next/services/utilities.js",
+      "U": "src/next/services/batch-danmaku.js",
+      "yn": "src/next/services/page-cleanup.js"
+    },
+    "exports": [
+      "mountPlayerMenu"
+    ]
+  },
+  "src/next/ui/room/barrage-settings.js": {
+    "imports": {
+      "Ae": "src/next/services/automation.js",
+      "Ce": "src/next/services/automation.js",
+      "clearInterval": "@platform",
+      "DomMutationSubscription": "src/next/platform/dom-observers.js",
+      "Ie": "src/next/services/automation.js",
+      "Le": "src/next/services/automation.js",
+      "Me": "src/next/services/automation.js",
+      "Ne": "src/next/services/automation.js",
+      "safeEl": "src/next/ui/bindings.js",
+      "Se": "src/next/services/automation.js",
+      "Te": "src/next/services/automation.js",
+      "we": "src/next/services/automation.js"
+    },
+    "exports": [
+      "mountBarrageSettings"
+    ]
+  },
+  "src/next/ui/room/danmaku-search.js": {
+    "imports": {
+      "clearInterval": "@platform",
+      "DomMutationSubscription": "src/next/platform/dom-observers.js",
+      "localStorage": "src/next/runtime/start.js",
+      "qe": "src/next/services/automation.js",
+      "Qr": "src/next/platform/script-hooks.js",
+      "safeBind": "src/next/ui/bindings.js",
+      "Ve": "src/next/services/automation.js"
+    },
+    "exports": [
+      "mountDanmakuSearch"
+    ]
+  },
+  "src/next/ui/room/last-live.js": {
+    "imports": {
+      "clearInterval": "@platform",
+      "k": "src/next/services/utilities.js"
+    },
+    "exports": [
+      "mountLastLiveOverlay"
+    ]
+  },
+  "src/next/services/blocked-danmaku.js": {
+    "imports": {
+      "clearInterval": "@platform",
+      "clearTimeout": "@platform",
+      "I": "src/next/services/session.js",
+      "setInterval": "@platform",
+      "setTimeout": "@platform",
+      "W": "src/next/services/session.js",
+      "x": "src/next/services/utilities.js"
+    },
+    "exports": [
+      "initDanmakuBlockedCheck"
+    ]
+  },
+  "src/next/ui/room/shell.js": {
+    "imports": {
+      "_": "src/next/services/utilities.js",
+      "$o": "src/next/services/preferences.js",
+      "At": "src/next/services/room-actions.js",
+      "B": "src/next/services/session.js",
+      "DomMutationSubscription": "src/next/platform/dom-observers.js",
+      "Dt": "src/next/services/room-actions.js",
+      "E": "src/next/services/utilities.js",
+      "et": "src/next/services/fans.js",
+      "Gt": "src/next/services/room-actions.js",
+      "initDockFull": "src/next/ui/dock.js",
+      "Jo": "src/next/services/preferences.js",
+      "jt": "src/next/services/room-actions.js",
+      "Ko": "src/next/services/preferences.js",
+      "localStorage": "src/next/runtime/start.js",
+      "openFeaturePanel": "src/next/ui/panel-dispatch.js",
+      "Ot": "src/next/services/room-actions.js",
+      "P": "src/next/runtime/room-hooks.js",
+      "Pt": "src/next/services/room-actions.js",
+      "Qo": "src/next/services/preferences.js",
+      "qt": "src/next/services/room-actions.js",
+      "safeBind": "src/next/ui/bindings.js",
+      "safeEl": "src/next/ui/bindings.js",
+      "T": "src/next/services/utilities.js",
+      "tl": "src/next/services/batch-danmaku.js",
+      "U": "src/next/services/batch-danmaku.js",
+      "Ue": "src/next/services/automation.js",
+      "Xo": "src/next/services/preferences.js",
+      "Zo": "src/next/services/preferences.js"
+    },
+    "exports": [
+      "mountRoomShell"
+    ]
+  },
+  "src/next/ui/room/room-controls.js": {
+    "imports": {
+      "_": "src/next/services/utilities.js",
+      "advanceRoomMusic": "src/next/services/music.js",
+      "B": "src/next/services/session.js",
+      "clearInterval": "@platform",
+      "DomMutationSubscription": "src/next/platform/dom-observers.js",
+      "E": "src/next/services/utilities.js",
+      "fetch": "@platform",
+      "Ge": "src/next/services/automation.js",
+      "j": "src/next/services/music.js",
+      "le": "src/next/services/accounts.js",
+      "ln": "src/next/services/music.js",
+      "localStorage": "src/next/runtime/start.js",
+      "mountBackpackControls": "src/next/ui/room/backpack.js",
+      "qn": "src/next/services/danmaku-filters.js",
+      "refreshRoomMusic": "src/next/services/music.js",
+      "safeBind": "src/next/ui/bindings.js",
+      "U": "src/next/services/batch-danmaku.js",
+      "vn": "src/next/services/yuba.js",
+      "xn": "src/next/services/yuba.js"
+    },
+    "exports": [
+      "mountRoomControls"
+    ]
+  },
+  "src/next/ui/room/lottery.js": {
+    "imports": {
+      "_": "src/next/services/utilities.js",
+      "B": "src/next/services/session.js",
+      "clearTimeout": "@platform",
+      "D": "src/next/services/danmaku-renderer.js",
+      "E": "src/next/services/utilities.js",
+      "en": "src/next/services/danmaku-renderer.js",
+      "fetch": "@platform",
+      "GM_xmlhttpRequest": "@platform",
+      "handleDockAction": "src/next/ui/dock.js",
+      "Lo": "src/next/services/lottery.js",
+      "localStorage": "src/next/runtime/start.js",
+      "Mo": "src/next/services/lottery.js",
+      "No": "src/next/services/lottery.js",
+      "on": "src/next/services/danmaku-renderer.js",
+      "openFeaturePanel": "src/next/ui/panel-dispatch.js",
+      "rn": "src/next/services/danmaku-renderer.js",
+      "safeBind": "src/next/ui/bindings.js",
+      "So": "src/next/services/lottery.js",
+      "T": "src/next/services/utilities.js",
+      "tn": "src/next/services/danmaku-renderer.js",
+      "To": "src/next/services/lottery.js",
+      "v": "src/next/services/utilities.js"
+    },
+    "exports": [
+      "mountLotteryPanel"
+    ]
+  },
+  "src/next/ui/room/live-tools.js": {
+    "imports": {
+      "_o": "src/next/services/lottery.js",
+      "$n": "src/next/services/danmaku-filters.js",
+      "$t": "src/next/services/lottery.js",
+      "A": "src/next/services/lottery.js",
+      "ao": "src/next/services/lottery.js",
+      "B": "src/next/services/session.js",
+      "bo": "src/next/services/lottery.js",
+      "Bo": "src/next/services/lottery.js",
+      "clearTimeout": "@platform",
+      "co": "src/next/services/lottery.js",
+      "DomMutationSubscription": "src/next/platform/dom-observers.js",
+      "E": "src/next/services/utilities.js",
+      "el": "src/next/services/batch-danmaku.js",
+      "ensureMiuixPanelHeader": "src/next/ui/panel-header.js",
+      "eo": "src/next/services/lottery.js",
+      "Eo": "src/next/services/lottery.js",
+      "fetch": "@platform",
+      "fo": "src/next/services/lottery.js",
+      "GM_setClipboard": "@platform",
+      "GM_xmlhttpRequest": "@platform",
+      "go": "src/next/services/lottery.js",
+      "Gr": "src/next/platform/dom-templates.js",
+      "ho": "src/next/services/lottery.js",
+      "I": "src/next/services/session.js",
+      "initDanmakuBlockedCheck": "src/next/services/blocked-danmaku.js",
+      "io": "src/next/services/lottery.js",
+      "Io": "src/next/services/lottery.js",
+      "j": "src/next/services/music.js",
+      "Jt": "src/next/services/lottery.js",
+      "k": "src/next/services/utilities.js",
+      "ko": "src/next/services/lottery.js",
+      "Kt": "src/next/services/lottery.js",
+      "L": "src/next/services/lottery.js",
+      "lo": "src/next/services/lottery.js",
+      "localStorage": "src/next/runtime/start.js",
+      "M": "src/next/services/lottery.js",
+      "mo": "src/next/services/lottery.js",
+      "mountVideoToolbar": "src/next/ui/room/video-toolbar.js",
+      "Mt": "src/next/services/room-actions.js",
+      "N": "src/next/services/lottery.js",
+      "nl": "src/next/platform/cron.js",
+      "no": "src/next/services/lottery.js",
+      "oo": "src/next/services/lottery.js",
+      "openFeaturePanel": "src/next/ui/panel-dispatch.js",
+      "po": "src/next/services/lottery.js",
+      "ro": "src/next/services/lottery.js",
+      "S": "src/next/services/lottery.js",
+      "safeBind": "src/next/ui/bindings.js",
+      "safeEl": "src/next/ui/bindings.js",
+      "sn": "src/next/services/music.js",
+      "so": "src/next/services/lottery.js",
+      "St": "src/next/services/room-actions.js",
+      "T": "src/next/services/utilities.js",
+      "to": "src/next/services/lottery.js",
+      "uo": "src/next/services/lottery.js",
+      "v": "src/next/services/utilities.js",
+      "vo": "src/next/services/lottery.js",
+      "W": "src/next/services/session.js",
+      "we": "src/next/services/automation.js",
+      "wo": "src/next/services/lottery.js",
+      "x": "src/next/services/utilities.js",
+      "X": "src/next/services/utilities.js",
+      "xo": "src/next/services/lottery.js",
+      "Xt": "src/next/services/lottery.js",
+      "yo": "src/next/services/lottery.js"
+    },
+    "exports": [
+      "mountLiveToolsPanel"
+    ]
+  },
+  "src/next/ui/room/extension-tools.js": {
+    "imports": {
+      "_t": "src/next/services/gifts.js",
+      "at": "src/next/services/fans.js",
+      "b": "src/next/services/utilities.js",
+      "B": "src/next/services/session.js",
+      "Bt": "src/next/services/room-actions.js",
+      "clearInterval": "@platform",
+      "ct": "src/next/services/fans.js",
+      "Ct": "src/next/services/room-actions.js",
+      "dt": "src/next/services/fans.js",
+      "Et": "src/next/services/room-actions.js",
+      "fetch": "@platform",
+      "fo": "src/next/services/lottery.js",
+      "it": "src/next/services/fans.js",
+      "kt": "src/next/services/room-actions.js",
+      "localStorage": "src/next/runtime/start.js",
+      "lt": "src/next/services/fans.js",
+      "mountPlayerMenu": "src/next/ui/room/player-menu.js",
+      "mt": "src/next/services/fans.js",
+      "Mt": "src/next/services/room-actions.js",
+      "nt": "src/next/services/fans.js",
+      "openFeaturePanel": "src/next/ui/panel-dispatch.js",
+      "openGiftPicker": "src/next/ui/gift-picker.js",
+      "ot": "src/next/services/fans.js",
+      "pn": "src/next/services/music.js",
+      "rt": "src/next/services/fans.js",
+      "sa": "src/next/services/room-preferences.js",
+      "safeBind": "src/next/ui/bindings.js",
+      "safeEl": "src/next/ui/bindings.js",
+      "st": "src/next/services/fans.js",
+      "St": "src/next/services/room-actions.js",
+      "T": "src/next/services/utilities.js",
+      "tt": "src/next/services/fans.js",
+      "Tt": "src/next/services/room-actions.js",
+      "unsafeWindow": "@platform",
+      "ut": "src/next/services/fans.js",
+      "Ut": "src/next/services/room-actions.js",
+      "w": "src/next/services/utilities.js",
+      "x": "src/next/services/utilities.js",
+      "yo": "src/next/services/lottery.js"
+    },
+    "exports": [
+      "mountExtensionToolsPanel"
+    ]
+  },
+  "src/next/ui/room/bloop.js": {
+    "imports": {
+      "_e": "src/next/services/automation.js",
+      "be": "src/next/services/automation.js",
+      "ce": "src/next/services/automation.js",
+      "clearTimeout": "@platform",
+      "Ee": "src/next/services/automation.js",
+      "fe": "src/next/services/automation.js",
+      "ge": "src/next/services/automation.js",
+      "he": "src/next/services/automation.js",
+      "ke": "src/next/services/automation.js",
+      "localStorage": "src/next/runtime/start.js",
+      "me": "src/next/services/automation.js",
+      "mn": "src/next/services/page-cleanup.js",
+      "openFeaturePanel": "src/next/ui/panel-dispatch.js",
+      "pe": "src/next/services/automation.js",
+      "pn": "src/next/services/music.js",
+      "safeBind": "src/next/ui/bindings.js",
+      "safeEl": "src/next/ui/bindings.js",
+      "U": "src/next/services/batch-danmaku.js",
+      "ue": "src/next/services/automation.js",
+      "un": "src/next/services/page-cleanup.js",
+      "ve": "src/next/services/automation.js",
+      "xe": "src/next/services/automation.js",
+      "ye": "src/next/services/automation.js"
+    },
+    "exports": [
+      "mountBloopPanel"
+    ]
+  },
+  "src/next/ui/room/player-bindings.js": {
+    "imports": {
+      "$": "src/next/services/utilities.js",
+      "B": "src/next/services/session.js",
+      "C": "src/next/services/automation.js",
+      "clearInterval": "@platform",
+      "De": "src/next/services/automation.js",
+      "Do": "src/next/services/spending.js",
+      "DomMutationSubscription": "src/next/platform/dom-observers.js",
+      "E": "src/next/services/utilities.js",
+      "En": "src/next/services/danmaku-filters.js",
+      "fetch": "@platform",
+      "findMonthlySpendingControl": "src/next/services/spending.js",
+      "GM_cookie": "@platform",
+      "GM_getValue": "@platform",
+      "GM_setValue": "@platform",
+      "I": "src/next/services/session.js",
+      "ie": "src/next/services/accounts.js",
+      "loadMonthlySpending": "src/next/services/spending.js",
+      "localStorage": "src/next/runtime/start.js",
+      "mountBarrageSettings": "src/next/ui/room/barrage-settings.js",
+      "mountDanmakuSearch": "src/next/ui/room/danmaku-search.js",
+      "mountLastLiveOverlay": "src/next/ui/room/last-live.js",
+      "ne": "src/next/services/accounts.js",
+      "oe": "src/next/services/accounts.js",
+      "Oe": "src/next/services/automation.js",
+      "Pe": "src/next/services/automation.js",
+      "PointerGestureBinding": "src/next/platform/dom-observers.js",
+      "Qr": "src/next/platform/script-hooks.js",
+      "re": "src/next/services/accounts.js",
+      "Re": "src/next/services/automation.js",
+      "refreshFansMedalCache": "src/next/services/automation.js",
+      "renderMonthlySpending": "src/next/services/spending.js",
+      "Ro": "src/next/services/spending.js",
+      "safeBind": "src/next/ui/bindings.js",
+      "safeEl": "src/next/ui/bindings.js",
+      "setDanmakuVolume": "src/next/services/chat-state.js",
+      "T": "src/next/services/utilities.js",
+      "triggerFansContinue": "src/next/ui/dock.js",
+      "unsafeWindow": "@platform",
+      "Wn": "src/next/services/danmaku-filters.js",
+      "ze": "src/next/services/automation.js"
+    },
+    "exports": [
+      "mountRoomPlayerBindings"
+    ]
+  },
+  "src/next/ui/room/mount.js": {
+    "imports": {
+      "clearInterval": "@platform",
+      "clearTimeout": "@platform",
+      "mountBloopPanel": "src/next/ui/room/bloop.js",
+      "mountExtensionToolsPanel": "src/next/ui/room/extension-tools.js",
+      "mountLiveToolsPanel": "src/next/ui/room/live-tools.js",
+      "mountLotteryPanel": "src/next/ui/room/lottery.js",
+      "mountRoomControls": "src/next/ui/room/room-controls.js",
+      "mountRoomPlayerBindings": "src/next/ui/room/player-bindings.js",
+      "mountRoomShell": "src/next/ui/room/shell.js",
+      "setInterval": "@platform",
+      "setTimeout": "@platform",
+      "stopTaskHeartbeat": "src/next/runtime/heartbeat.js",
+      "teardownNextDock": "src/next/runtime/registry.js"
+    },
+    "exports": [
+      "activeRoomMount",
+      "createRoomLifetime",
+      "mountRoom",
+      "unmountRoom"
+    ]
+  },
+  "src/next/runtime/heartbeat.js": {
+    "imports": {
+      "claimLevelTasks": "src/next/services/room-actions.js",
+      "clearInterval": "@platform",
+      "setInterval": "@platform"
+    },
+    "exports": [
+      "startTaskHeartbeat",
+      "stopTaskHeartbeat"
+    ]
+  },
+  "src/next/ui/styles.js": {
+    "imports": {},
+    "exports": [
+      "y"
+    ]
+  },
+  "src/next/ui/panel-dispatch.js": {
+    "imports": {
+      "anchorPanelToButton": "src/next/ui/panel-position.js",
+      "createExUpdatePanel": "src/next/ui/panels/update.js",
+      "ensureMiuixPanelHeader": "src/next/ui/panel-header.js",
+      "updateDockActiveIndicator": "src/next/ui/panel-position.js"
+    },
+    "exports": [
+      "openFeaturePanel"
+    ]
+  },
+  "src/next/services/sign-engine.js": {
+    "imports": {
+      "$n": "src/next/services/danmaku-filters.js",
+      "ai": "src/next/services/video-timestamps.js",
+      "b": "src/next/services/utilities.js",
+      "B": "src/next/services/session.js",
+      "fetch": "@platform",
+      "GM_xmlhttpRequest": "@platform",
+      "m": "src/next/services/session.js",
+      "T": "src/next/services/utilities.js",
+      "To": "src/next/services/lottery.js",
+      "w": "src/next/services/utilities.js"
+    },
+    "exports": [
+      "executeSignEngine"
+    ]
+  },
+  "src/next/services/session.js": {
+    "imports": {
+      "unsafeWindow": "@platform",
+      "v": "src/next/services/utilities.js",
+      "x": "src/next/services/utilities.js"
+    },
+    "exports": [
+      "B",
+      "I",
+      "W",
+      "Y",
+      "m",
+      "n",
+      "readRoomIdentity",
+      "t"
+    ]
+  },
+  "src/next/services/utilities.js": {
+    "imports": {
+      "ExLoadLib": "src/next/runtime/room-hooks.js",
+      "EXURL": "src/next/runtime/room-hooks.js",
+      "fetch": "@platform",
+      "GM_openInTab": "@platform",
+      "setTimeout": "@platform"
+    },
+    "exports": [
+      "$",
+      "E",
+      "J",
+      "Q",
+      "T",
+      "X",
+      "_",
+      "a",
+      "b",
+      "k",
+      "l",
+      "te",
+      "v",
+      "w",
+      "x"
+    ]
+  },
+  "src/next/services/accounts.js": {
+    "imports": {
+      "an": "src/next/services/danmaku-renderer.js",
+      "B": "src/next/services/session.js",
+      "D": "src/next/services/danmaku-renderer.js",
+      "E": "src/next/services/utilities.js",
+      "f": "src/next/services/danmaku-renderer.js",
+      "GM_cookie": "@platform",
+      "GM_getValue": "@platform",
+      "GM_setValue": "@platform",
+      "on": "src/next/services/danmaku-renderer.js",
+      "qr": "src/next/platform/request.js",
+      "T": "src/next/services/utilities.js",
+      "tn": "src/next/services/danmaku-renderer.js"
+    },
+    "exports": [
+      "ae",
+      "ie",
+      "le",
+      "ne",
+      "oe",
+      "re"
+    ]
+  },
+  "src/next/services/automation.js": {
+    "imports": {
+      "_": "src/next/services/utilities.js",
+      "a": "src/next/services/utilities.js",
+      "activeRoomMount": "src/next/ui/room/mount.js",
+      "B": "src/next/services/session.js",
+      "ExLoadLib": "src/next/runtime/room-hooks.js",
+      "EXURL": "src/next/runtime/room-hooks.js",
+      "fetch": "@platform",
+      "GM_setClipboard": "@platform",
+      "GM_xmlhttpRequest": "@platform",
+      "lo": "src/next/services/lottery.js",
+      "localStorage": "src/next/runtime/start.js",
+      "qr": "src/next/platform/request.js",
+      "setTimeout": "@platform",
+      "T": "src/next/services/utilities.js"
+    },
+    "exports": [
+      "Ae",
+      "C",
+      "Ce",
+      "De",
+      "Ee",
+      "Ge",
+      "Ie",
+      "Le",
+      "Me",
+      "Ne",
+      "Oe",
+      "Pe",
+      "Re",
+      "Se",
+      "Te",
+      "Ue",
+      "Ve",
+      "We",
+      "Ye",
+      "_e",
+      "be",
+      "ce",
+      "de",
+      "fe",
+      "ge",
+      "he",
+      "ke",
+      "me",
+      "pe",
+      "qe",
+      "refreshFansMedalCache",
+      "se",
+      "ue",
+      "ve",
+      "we",
+      "xe",
+      "ye",
+      "ze"
+    ]
+  },
+  "src/next/services/player-controls.js": {
+    "imports": {
+      "clearInterval": "@platform",
+      "Dr": "src/next/platform/dom-observers.js",
+      "GM_setClipboard": "@platform",
+      "J": "src/next/services/utilities.js",
+      "jr": "src/next/services/lottery-page.js",
+      "k": "src/next/services/utilities.js",
+      "l": "src/next/services/utilities.js",
+      "Lr": "src/next/platform/dom-observers.js",
+      "roomRouteLifetime": "src/next/runtime/router.js",
+      "setTimeout": "@platform",
+      "T": "src/next/services/utilities.js",
+      "unsafeWindow": "@platform",
+      "We": "src/next/services/automation.js",
+      "Ye": "src/next/services/automation.js"
+    },
+    "exports": [
+      "$e",
+      "Xe"
+    ]
+  },
+  "src/next/services/fans.js": {
+    "imports": {
+      "B": "src/next/services/session.js",
+      "fetch": "@platform",
+      "localStorage": "src/next/runtime/start.js",
+      "T": "src/next/services/utilities.js",
+      "w": "src/next/services/utilities.js"
+    },
+    "exports": [
+      "at",
+      "ct",
+      "dt",
+      "et",
+      "it",
+      "lt",
+      "mt",
+      "nt",
+      "ot",
+      "pt",
+      "rt",
+      "st",
+      "tt",
+      "ut"
+    ]
+  },
+  "src/next/services/gifts.js": {
+    "imports": {
+      "B": "src/next/services/session.js",
+      "fetch": "@platform",
+      "GM_xmlhttpRequest": "@platform",
+      "unsafeWindow": "@platform"
+    },
+    "exports": [
+      "_t",
+      "fetchCurrentRoomGifts",
+      "fetchUserBackpackGifts"
+    ]
+  },
+  "src/next/services/room-actions.js": {
+    "imports": {
+      "_": "src/next/services/utilities.js",
+      "B": "src/next/services/session.js",
+      "clearTimeout": "@platform",
+      "D": "src/next/services/danmaku-renderer.js",
+      "en": "src/next/services/danmaku-renderer.js",
+      "fetch": "@platform",
+      "GM_getValue": "@platform",
+      "GM_setValue": "@platform",
+      "localStorage": "src/next/runtime/start.js",
+      "PointerGestureBinding": "src/next/platform/dom-observers.js",
+      "Q": "src/next/services/utilities.js",
+      "T": "src/next/services/utilities.js",
+      "w": "src/next/services/utilities.js",
+      "Y": "src/next/services/session.js"
+    },
+    "exports": [
+      "At",
+      "Bt",
+      "Ct",
+      "Dt",
+      "Et",
+      "Ft",
+      "Gt",
+      "Ht",
+      "It",
+      "Mt",
+      "Ot",
+      "Pt",
+      "St",
+      "Tt",
+      "Ut",
+      "Wt",
+      "Yt",
+      "claimLevelTasks",
+      "jt",
+      "kt",
+      "qt"
+    ]
+  },
+  "src/next/services/lottery.js": {
+    "imports": {
+      "fetch": "@platform",
+      "GM_xmlhttpRequest": "@platform",
+      "localStorage": "src/next/runtime/start.js",
+      "m": "src/next/services/session.js",
+      "T": "src/next/services/utilities.js",
+      "unsafeWindow": "@platform",
+      "v": "src/next/services/utilities.js"
+    },
+    "exports": [
+      "$t",
+      "A",
+      "Bo",
+      "Eo",
+      "Io",
+      "Jt",
+      "Kt",
+      "L",
+      "Lo",
+      "M",
+      "Mo",
+      "N",
+      "No",
+      "S",
+      "So",
+      "To",
+      "Xt",
+      "_o",
+      "ao",
+      "bo",
+      "co",
+      "eo",
+      "fo",
+      "go",
+      "ho",
+      "io",
+      "ko",
+      "lo",
+      "mo",
+      "no",
+      "oo",
+      "po",
+      "ro",
+      "so",
+      "to",
+      "uo",
+      "vo",
+      "wo",
+      "xo",
+      "yo"
+    ]
+  },
+  "src/next/services/spending.js": {
+    "imports": {
+      "fetch": "@platform",
+      "I": "src/next/services/session.js",
+      "localStorage": "src/next/runtime/start.js",
+      "setTimeout": "@platform"
+    },
+    "exports": [
+      "Do",
+      "Ro",
+      "findMonthlySpendingControl",
+      "loadMonthlySpending",
+      "renderMonthlySpending"
+    ]
+  },
+  "src/next/services/preferences.js": {
+    "imports": {
+      "localStorage": "src/next/runtime/start.js",
+      "tl": "src/next/services/batch-danmaku.js"
+    },
+    "exports": [
+      "$o",
+      "Jo",
+      "Ko",
+      "Qo",
+      "Xo",
+      "Zo"
+    ]
+  },
+  "src/next/services/danmaku-renderer.js": {
+    "imports": {
+      "B": "src/next/services/session.js",
+      "E": "src/next/services/utilities.js",
+      "ExLoadLib": "src/next/runtime/room-hooks.js",
+      "EXURL": "src/next/runtime/room-hooks.js",
+      "GM_setClipboard": "@platform",
+      "qr": "src/next/platform/request.js",
+      "T": "src/next/services/utilities.js",
+      "Ur": "src/next/platform/request.js",
+      "Vr": "src/next/platform/request.js"
+    },
+    "exports": [
+      "D",
+      "an",
+      "en",
+      "f",
+      "on",
+      "rn",
+      "tn"
+    ]
+  },
+  "src/next/services/music.js": {
+    "imports": {
+      "B": "src/next/services/session.js",
+      "fetch": "@platform",
+      "fn": "src/next/services/page-cleanup.js",
+      "GM_xmlhttpRequest": "@platform",
+      "k": "src/next/services/utilities.js",
+      "localStorage": "src/next/runtime/start.js",
+      "mn": "src/next/services/page-cleanup.js",
+      "Q": "src/next/services/utilities.js"
+    },
+    "exports": [
+      "advanceRoomMusic",
+      "j",
+      "ln",
+      "pn",
+      "refreshRoomMusic",
+      "sn"
+    ]
+  },
+  "src/next/services/page-cleanup.js": {
+    "imports": {
+      "tl": "src/next/services/batch-danmaku.js"
+    },
+    "exports": [
+      "bn",
+      "fn",
+      "gn",
+      "hn",
+      "mn",
+      "un",
+      "yn"
+    ]
+  },
+  "src/next/services/yuba.js": {
+    "imports": {
+      "DomMutationSubscription": "src/next/platform/dom-observers.js",
+      "fetch": "@platform",
+      "tl": "src/next/services/batch-danmaku.js",
+      "unsafeWindow": "@platform"
+    },
+    "exports": [
+      "_n",
+      "vn",
+      "wn",
+      "xn"
+    ]
+  },
+  "src/next/services/danmaku-filters.js": {
+    "imports": {
+      "clearInterval": "@platform",
+      "DomMutationSubscription": "src/next/platform/dom-observers.js",
+      "executeSignEngine": "src/next/services/sign-engine.js",
+      "fetch": "@platform",
+      "GM_xmlhttpRequest": "@platform",
+      "localStorage": "src/next/runtime/start.js",
+      "m": "src/next/services/session.js",
+      "n": "src/next/services/session.js",
+      "requestAnimationFrame": "@platform",
+      "setInterval": "@platform",
+      "t": "src/next/services/session.js",
+      "tl": "src/next/services/batch-danmaku.js",
+      "U": "src/next/services/batch-danmaku.js"
+    },
+    "exports": [
+      "$n",
+      "En",
+      "Un",
+      "Wn",
+      "qn"
+    ]
+  },
+  "src/next/services/video-timestamps.js": {
+    "imports": {
+      "clearInterval": "@platform",
+      "clearTimeout": "@platform",
+      "fetch": "@platform",
+      "GM_xmlhttpRequest": "@platform",
+      "J": "src/next/services/utilities.js",
+      "k": "src/next/services/utilities.js",
+      "m": "src/next/services/session.js",
+      "v": "src/next/services/utilities.js"
+    },
+    "exports": [
+      "ai",
+      "mountVideoTimestamps"
+    ]
+  },
+  "src/next/services/video-tools.js": {
+    "imports": {
+      "clearInterval": "@platform",
+      "clearTimeout": "@platform",
+      "createRoomLifetime": "src/next/ui/room/mount.js",
+      "ExLoadLib": "src/next/runtime/room-hooks.js",
+      "EXURL": "src/next/runtime/room-hooks.js",
+      "k": "src/next/services/utilities.js",
+      "localStorage": "src/next/runtime/start.js",
+      "roomRouteLifetime": "src/next/runtime/router.js",
+      "T": "src/next/services/utilities.js",
+      "tl": "src/next/services/batch-danmaku.js",
+      "U": "src/next/services/batch-danmaku.js",
+      "V": "src/next/services/chat-state.js"
+    },
+    "exports": [
+      "Li",
+      "Mi",
+      "bindCamera"
+    ]
+  },
+  "src/next/services/room-preferences.js": {
+    "imports": {
+      "cancelAnimationFrame": "@platform",
+      "clearInterval": "@platform",
+      "clearTimeout": "@platform",
+      "DomMutationSubscription": "src/next/platform/dom-observers.js",
+      "It": "src/next/services/room-actions.js",
+      "ja": "src/next/services/pip/state.js",
+      "La": "src/next/services/chat-actions.js",
+      "localStorage": "src/next/runtime/start.js",
+      "Na": "src/next/services/chat-actions.js",
+      "openEnhancedPip": "src/next/services/pip/window.js",
+      "pendingPipOwner": "src/next/services/pip/window.js",
+      "pipMergeGroups": "src/next/services/pip/state.js",
+      "requestAnimationFrame": "@platform",
+      "resetPipMergeState": "src/next/services/chat-actions.js",
+      "resetPipPacketState": "src/next/services/chat-actions.js",
+      "setTimeout": "@platform",
+      "T": "src/next/services/utilities.js",
+      "unsafeWindow": "@platform"
+    },
+    "exports": [
+      "$i",
+      "O",
+      "Oi",
+      "Pi",
+      "Zi",
+      "ca",
+      "closeEnhancedPip",
+      "da",
+      "ea",
+      "ji",
+      "ka",
+      "pipPreferences",
+      "recapturePipStream",
+      "returnToPipSource",
+      "sa",
+      "syncPipPlayback",
+      "ta",
+      "ua",
+      "va",
+      "wa",
+      "zi"
+    ]
+  },
+  "src/next/services/pip/packet-dedup.js": {
+    "imports": {
+      "pipDedupCapacity": "src/next/services/pip/state.js",
+      "pipDedupWindowMs": "src/next/services/pip/state.js",
+      "pipPacketTimes": "src/next/services/pip/state.js"
+    },
+    "exports": [
+      "isRepeatedPipPacket"
+    ]
+  },
+  "src/next/services/pip/packet-parser.js": {
+    "imports": {
+      "pipPreferences": "src/next/services/room-preferences.js"
+    },
+    "exports": [
+      "parsePipChatPacket"
+    ]
+  },
+  "src/next/services/pip/merge-rules.js": {
+    "imports": {
+      "pipMergeGroups": "src/next/services/pip/state.js"
+    },
+    "exports": [
+      "findPipMergeKey"
+    ]
+  },
+  "src/next/services/pip/packet-dispatch.js": {
+    "imports": {
+      "findPipMergeKey": "src/next/services/pip/merge-rules.js",
+      "I": "src/next/services/session.js",
+      "isRepeatedPipPacket": "src/next/services/pip/packet-dedup.js",
+      "parsePipChatPacket": "src/next/services/pip/packet-parser.js",
+      "pipMergeGroups": "src/next/services/pip/state.js",
+      "pipPreferences": "src/next/services/room-preferences.js",
+      "refreshPipCombos": "src/next/services/chat-actions.js",
+      "renderPipDanmaku": "src/next/services/chat-actions.js"
+    },
+    "exports": [
+      "dispatchPipPacket"
+    ]
+  },
+  "src/next/services/pip/markup.js": {
+    "imports": {},
+    "exports": [
+      "pipMarkup0",
+      "renderPipMarkup0",
+      "renderPipMarkup1"
+    ]
+  },
+  "src/next/services/pip/persistence.js": {
+    "imports": {
+      "localStorage": "src/next/runtime/start.js",
+      "pipPreferences": "src/next/services/room-preferences.js"
+    },
+    "exports": [
+      "persistPipPreferences",
+      "restorePipPreferences"
+    ]
+  },
+  "src/next/services/pip/window.js": {
+    "imports": {
+      "$i": "src/next/services/room-preferences.js",
+      "activeRoomMount": "src/next/ui/room/mount.js",
+      "B": "src/next/services/session.js",
+      "clearInterval": "@platform",
+      "clearTimeout": "@platform",
+      "closeEnhancedPip": "src/next/services/room-preferences.js",
+      "createRoomLifetime": "src/next/ui/room/mount.js",
+      "Ct": "src/next/services/room-actions.js",
+      "da": "src/next/services/room-preferences.js",
+      "dispatchPipPacket": "src/next/services/pip/packet-dispatch.js",
+      "ea": "src/next/services/room-preferences.js",
+      "It": "src/next/services/room-actions.js",
+      "ja": "src/next/services/pip/state.js",
+      "La": "src/next/services/chat-actions.js",
+      "Na": "src/next/services/chat-actions.js",
+      "nl": "src/next/platform/cron.js",
+      "Oi": "src/next/services/room-preferences.js",
+      "persistPipPreferences": "src/next/services/pip/persistence.js",
+      "Pi": "src/next/services/room-preferences.js",
+      "pipMarkup0": "src/next/services/pip/markup.js",
+      "pipMergeGroups": "src/next/services/pip/state.js",
+      "pipPreferences": "src/next/services/room-preferences.js",
+      "recapturePipStream": "src/next/services/room-preferences.js",
+      "refreshPipCombos": "src/next/services/chat-actions.js",
+      "renderPipDanmaku": "src/next/services/chat-actions.js",
+      "renderPipMarkup0": "src/next/services/pip/markup.js",
+      "renderPipMarkup1": "src/next/services/pip/markup.js",
+      "resetPipMergeState": "src/next/services/chat-actions.js",
+      "resetPipPacketState": "src/next/services/chat-actions.js",
+      "restorePipPreferences": "src/next/services/pip/persistence.js",
+      "returnToPipSource": "src/next/services/room-preferences.js",
+      "sa": "src/next/services/room-preferences.js",
+      "syncPipPlayback": "src/next/services/room-preferences.js",
+      "T": "src/next/services/utilities.js",
+      "ta": "src/next/services/room-preferences.js",
+      "Tt": "src/next/services/room-actions.js",
+      "zi": "src/next/services/room-preferences.js"
+    },
+    "exports": [
+      "openEnhancedPip",
+      "pendingPipOwner"
+    ]
+  },
+  "src/next/services/pip/state.js": {
+    "imports": {},
+    "exports": [
+      "Oa",
+      "ja",
+      "pipDedupCapacity",
+      "pipDedupWindowMs",
+      "pipMergeGroups",
+      "pipPacketTimes",
+      "za"
+    ]
+  },
+  "src/next/services/chat-actions.js": {
+    "imports": {
+      "Oa": "src/next/services/pip/state.js",
+      "Oi": "src/next/services/room-preferences.js",
+      "pipMergeGroups": "src/next/services/pip/state.js",
+      "pipPacketTimes": "src/next/services/pip/state.js",
+      "pipPreferences": "src/next/services/room-preferences.js",
+      "za": "src/next/services/pip/state.js"
+    },
+    "exports": [
+      "La",
+      "Na",
+      "refreshPipCombos",
+      "renderPipDanmaku",
+      "resetPipMergeState",
+      "resetPipPacketState"
+    ]
+  },
+  "src/next/services/chat-state.js": {
+    "imports": {
+      "clearTimeout": "@platform",
+      "et": "src/next/services/fans.js",
+      "setTimeout": "@platform",
+      "tl": "src/next/services/batch-danmaku.js",
+      "U": "src/next/services/batch-danmaku.js"
+    },
+    "exports": [
+      "Br",
+      "Cr",
+      "Er",
+      "F",
+      "G",
+      "H",
+      "Ir",
+      "Ja",
+      "Ka",
+      "Qa",
+      "Tr",
+      "Ua",
+      "V",
+      "Wa",
+      "Xa",
+      "Ya",
+      "Za",
+      "_r",
+      "cr",
+      "er",
+      "fr",
+      "gr",
+      "hr",
+      "ir",
+      "kr",
+      "or",
+      "pr",
+      "qa",
+      "rr",
+      "setDanmakuVolume",
+      "tr",
+      "ur",
+      "vr",
+      "vtoolbarChevronSvg",
+      "wr",
+      "xr",
+      "yr"
+    ]
+  },
+  "src/next/platform/dom-observers.js": {
+    "imports": {
+      "clearTimeout": "@platform",
+      "J": "src/next/services/utilities.js",
+      "setTimeout": "@platform",
+      "unsafeWindow": "@platform"
+    },
+    "exports": [
+      "DomMutationSubscription",
+      "Dr",
+      "Lr",
+      "PointerGestureBinding"
+    ]
+  },
+  "src/next/services/lottery-page.js": {
+    "imports": {
+      "fetch": "@platform",
+      "setTimeout": "@platform"
+    },
+    "exports": [
+      "jr"
+    ]
+  },
+  "src/next/services/danmaku-history.js": {
+    "imports": {
+      "Fr": "src/next/platform/md5.js",
+      "g": "src/next/platform/md5.js",
+      "h": "src/next/platform/md5.js",
+      "p": "src/next/platform/md5.js",
+      "u": "src/next/platform/md5.js"
+    },
+    "exports": [
+      "Or"
+    ]
+  },
+  "src/next/platform/md5.js": {
+    "imports": {
+      "clearInterval": "@platform",
+      "n": "src/next/services/session.js",
+      "setInterval": "@platform",
+      "setTimeout": "@platform",
+      "t": "src/next/services/session.js"
+    },
+    "exports": [
+      "Fr",
+      "g",
+      "h",
+      "p",
+      "u"
+    ]
+  },
+  "src/next/platform/flv-player.js": {
+    "imports": {},
+    "exports": [
+      "Hr"
+    ]
+  },
+  "src/next/platform/dom-templates.js": {
+    "imports": {},
+    "exports": [
+      "Gr"
+    ]
+  },
+  "src/next/platform/request.js": {
+    "imports": {
+      "GM_xmlhttpRequest": "@platform",
+      "Or": "src/next/services/danmaku-history.js",
+      "x": "src/next/services/utilities.js"
+    },
+    "exports": [
+      "Ur",
+      "Vr",
+      "qr"
+    ]
+  },
+  "src/next/platform/script-hooks.js": {
+    "imports": {
+      "GM_xmlhttpRequest": "@platform"
+    },
+    "exports": [
+      "Kr",
+      "Qr",
+      "Wr",
+      "Xr",
+      "Yr",
+      "Zr"
+    ]
+  },
+  "src/next/services/batch-danmaku.js": {
+    "imports": {},
+    "exports": [
+      "U",
+      "el",
+      "ol",
+      "tl"
+    ]
+  },
+  "src/next/platform/cron.js": {
+    "imports": {
+      "a": "src/next/services/utilities.js",
+      "clearInterval": "@platform",
+      "clearTimeout": "@platform",
+      "ol": "src/next/services/batch-danmaku.js",
+      "setInterval": "@platform",
+      "setTimeout": "@platform"
+    },
+    "exports": [
+      "nl"
+    ]
+  },
+  "src/next/services/version.js": {
+    "imports": {
+      "fetch": "@platform",
+      "GM_getValue": "@platform",
+      "GM_setValue": "@platform",
+      "GM_xmlhttpRequest": "@platform",
+      "P": "src/next/runtime/room-hooks.js",
+      "setTimeout": "@platform",
+      "unsafeWindow": "@platform"
+    },
+    "exports": [
+      "initVersionLifecycleNotice",
+      "isNewerVersion"
+    ]
+  },
+  "src/next/runtime/router.js": {
+    "imports": {
+      "_n": "src/next/services/yuba.js",
+      "$e": "src/next/services/player-controls.js",
+      "ae": "src/next/services/accounts.js",
+      "B": "src/next/services/session.js",
+      "bn": "src/next/services/page-cleanup.js",
+      "clearInterval": "@platform",
+      "closeEnhancedPip": "src/next/services/room-preferences.js",
+      "createRoomLifetime": "src/next/ui/room/mount.js",
+      "GM_cookie": "@platform",
+      "GM_getValue": "@platform",
+      "GM_setValue": "@platform",
+      "installRoomHooks": "src/next/runtime/room-hooks.js",
+      "k": "src/next/services/utilities.js",
+      "Mi": "src/next/services/video-tools.js",
+      "mountRoom": "src/next/ui/room/mount.js",
+      "mountVideoTimestamps": "src/next/services/video-timestamps.js",
+      "readRoomIdentity": "src/next/services/session.js",
+      "startTaskHeartbeat": "src/next/runtime/heartbeat.js",
+      "unmountRoom": "src/next/ui/room/mount.js",
+      "unsafeWindow": "@platform",
+      "v": "src/next/services/utilities.js",
+      "wn": "src/next/services/yuba.js",
+      "Xe": "src/next/services/player-controls.js",
+      "y": "src/next/ui/styles.js"
+    },
+    "exports": [
+      "installNavigation",
+      "roomRouteLifetime",
+      "stopNavigation"
+    ]
+  },
+  "src/next/runtime/adapters.js": {
+    "imports": {
+      "_": "src/next/services/utilities.js",
+      "B": "src/next/services/session.js",
+      "createSignPanel": "src/next/ui/panels/sign.js",
+      "executeFansContinue": "src/next/ui/panels/fans.js",
+      "executePopupPlayer": "src/next/ui/panels/popup.js",
+      "executeSignEngine": "src/next/services/sign-engine.js",
+      "installNavigation": "src/next/runtime/router.js",
+      "nextFeatures": "src/next/runtime/registry.js",
+      "nextRuntime": "src/next/runtime/start.js",
+      "openFeaturePanel": "src/next/ui/panel-dispatch.js",
+      "So": "src/next/services/lottery.js",
+      "startTaskHeartbeat": "src/next/runtime/heartbeat.js",
+      "stopNavigation": "src/next/runtime/router.js",
+      "stopTaskHeartbeat": "src/next/runtime/heartbeat.js",
+      "teardownNextDock": "src/next/runtime/registry.js",
+      "updateFansContinuePanel": "src/next/ui/panels/fans.js"
+    },
+    "exports": []
+  },
+  "src/next/entry.js": {
+    "imports": {
+      "installNavigation": "src/next/runtime/router.js"
+    },
+    "exports": []
+  }
+}

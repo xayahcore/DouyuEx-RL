@@ -1,58 +1,116 @@
-# DouyuEx-RL 全量代码审计与 NEXT 重构图谱交付报告
+# 📋 DouyuEx-RL NEXT 任务竣工单 (TASK_REPORT.md)
 
-- **报告生成时间**：2026-09-16
-- **审计基线版本**：`v2026.09.15.01`
-- **代码规模统计**：`src/` 源码共 11 个模块文件，7,970 行；单文件产物 `DouyuEx_RL.user.js` 约 7,814 行 (~600 KB)
-- **交付目标定位**：全量重构从 0 构筑 NEXT 版本的先导全景审计，零遗漏标记全域功能、物理位置、官方 API、DOM 选择器与存储字典。
-- **本地审计全书落盘路径**：[docs/AUDIT_REPORT_NEXT.md](docs/AUDIT_REPORT_NEXT.md)
-
----
-
-## 一、 核心审计成果概括
-
-本次审计采用自底向上、逐行穿透分析，100% 覆盖了 DouyuEx-RL 的全量代码。主要成果包括：
-
-1. **底层协议级与核心引擎全解构**：
-   - **极速最高画质系统 (`src/core/quality.js`)**：梳理出黄金 12 秒状态机保护窗、6 大 LocalStorage 官方偏好硬化键、`preloadStreamUrlPromise` 预载流掐断、`getLegacyFirstStream` 拦截、Fetch 与 XHR 双路 `/betard/` 响应改写与 `rate=0` 传参劫持。
-   - **现代加密榜单数据引擎 (`src/core/rank_engine.js`)**：完整还原 WebSocket 挂钩机制、STT 序列化双重转义解码算法（`sttFlat`、`sttParse`）、日/周/月/总榜 Map 数据集、`valueRightOffset: 22px` 避让箭头注入算法及事件驱动渲染机制。
-
-2. **底座装甲与六大路由场景全景覆盖**：
-   - **底座装甲 (`src/modules/01_setup.js`)**：`GracefulP2PBlocker` WebRTC 假原型防 P2P 上传且免控制台报错；`WeakMap` XHR 上下文关联杜绝内存泄漏；动态按需加载器 `ExLoadLib`；全局设置一键清空与更新检查菜单。
-   - **六大场景路由拓扑 (`src/modules/06_router.js`)**：直播间主模式、鱼吧已关闭板块解除限制、跨域 Clean 管道、passport 账号切换管道、同屏纯净 iframe 模式、粉丝牌佩戴满 300 天日期精确统计。
-
-3. **视图层与交互系统体系化梳理**：
-   - **Level 2 Dock 声明式装配 (`src/modules/02_dom_ui.js`)**：9 大核心功能图标 + 1 个收起按钮纯静态声明式挂载；
-   - **Level 3 MIUIX 吸顶控制台**：高度统一锁定 370px，粘性吸顶 Header（`backdrop-filter: blur(28px)`），Hover Bridge 18px 隐形连桥与 180ms 防抖，Dock 磁吸指示器；
-   - **Level 5 大礼物选择器**：540×410px 居中模态，双流聚合（房间在播礼物 + 官方 140+ 通用礼物 + 背包现场直探）与实时搜索；
-   - **全局安全绑定 `safeBind`**：为异步 DOM 装载防御机制。
-   - **样式注入引擎 (`src/modules/04_styles.js`)**：MIUIX 晶透变量体系、极细 4px 滚动条、夜间模式、全域广告与商业死重类名拦截池。
-
-4. **业务服务层十大体系全部 40+ 细分功能逐一盘点 (`src/modules/05_services.js`)**：
-   - **自动化签到矩阵**：Web 端、鱼吧、房间签到，星推活动任务打满（浏览、3个直播间签到、口令弹幕、关注指定参赛房间后 1.8 秒安全取关闭环）；
-   - **增强画中画**：基于 `DocumentPictureInPicture` 独立浏览器小窗，独立 Canvas 弹幕渲染，画中画内直接打字发弹幕；
-   - **同屏播放器**：支持 Flv.js 纯视频流与 iframe 双模式，支持斗鱼、虎牙、B站多路同屏联播；
-   - **弹幕套件**：Bloop 弹幕发送小助手、循环变色、舔狗骚话模式、弹幕小尾巴、聊天区 +1 跟风、弹幕作者快捷卡片；
-   - **数据与运营挂机**：弹幕时速雷达、无限弹幕本地收藏、录播弹幕导出 Excel / ASS 字幕、自动钓鱼、抢宝箱/抢红包、背包清空与礼物置换、多账号跨域热切换。
-
-5. **契约化字典整理**：
-   - 提取了 13 项官方 API 接口清单（请求方法、URL、Payload、鉴权 Cookie）；
-   - 梳理了 12 项本地 LocalStorage / GM_Storage 键名字典。
+**任务主题**: DYEXRL-NEXT 分支深度治理、失效文件清理与 890KB 规范基准重构闭环  
+**竣工日期**: 2026-09-18  
+**执行分支**: `DYEXRL-NEXT` (严格分支隔离，保持主线 `main` 与根目录生产包 `DouyuEx_RL.user.js` 零污染)  
+**标准产物**: `artifacts/next/DouyuEx_RL_NEXT.user.js` (890,032 字节，SHA-256: `98638294eeddad4852bed52a05c4153ab7e50563fb3b7859dbf1864e8322b999`)
 
 ---
 
-## 二、 交付文件清单
+## 一、 文件变动与清理清单
 
-| 文件路径 | 状态 | 说明 |
-| :--- | :---: | :--- |
-| `D:\DouyuEx-RL\docs\AUDIT_REPORT_NEXT.md` | 已就绪 | 《DouyuEx-RL 全量功能图谱与逐行代码审计全书》本体文档 |
-| `D:\DouyuEx-RL\TASK_REPORT.md` | 已就绪 | 本项目根目录交付总结报告 |
-| `C:\Users\10276\Desktop\TASK_REPORT.md` | 已就绪 | 桌面端实时同步备份交付报告 |
+### 1. 物理清理的失效与无用文件 (已连根拔除)
+- 早期 280KB 碎片化伪重构模块：
+  - `src/adapters/` (chat.js, player.js, room.js)
+  - `src/api/` (client.js)
+  - `src/core/p2p_blocker.js`
+  - `src/index_next.js`
+  - `src/modules/` (danmaku/, economy/, media/, radar/, system/, vod/, ui/enhancements.js)
+  - `src/platform/` (capabilities.js, credentials.js, page_bridge.js, script_bridge.js, transport.js)
+  - `src/router/` (index.js)
+  - `src/runtime/` (events.js, namespace.js, orchestrator.js, scope.js)
+  - `src/store/` (index.js, migrator.js, schema.js, storage.js)
+  - `src/ui/` (dock.js, gift_picker.js, icons.js, miuix.js, tokens.js, modals/*)
+  - `tests/fixtures/` (全部失效测试脱敏数据)
+  - `tests/unit/` 中针对失效 280KB 伪重构编写的 mock 测试脚本 (12 个测试文件)
+
+### 2. 规范落地的新增与重构文件
+- **`src/next/` (78 个核心原生源码文件)**:
+  - `src/next/runtime/start.js`: 启动单例声明 (`DYEXRL_NEXT_COMPAT_CLAIM`) 与存储代理 (`DYEXRL_NEXT:`)
+  - `src/next/runtime/end.js`: 运行时闭包尾部
+  - `src/next/runtime/runner.js`: AST 模块链接器与运行时加载调度器
+  - `src/next/runtime/` (registry.js, room-hooks.js, router.js, adapters.js, heartbeat.js)
+  - `src/next/core/` (quality.js, rank_engine.js)
+  - `src/next/platform/` (cron.js, dom-observers.js, dom-templates.js, flv-player.js, md5.js, request.js, script-hooks.js)
+  - `src/next/services/` (35 个核心业务服务模块，涵盖 session, utilities, accounts, automation, player-controls, fans, gifts, room-actions, lottery 等)
+  - `src/next/services/pip/` (8 个画中画子模块：window, persistence, packet-rules, merge-rules, dedup, parser, dispatch)
+  - `src/next/ui/` (26 个独立 UI 装配模块与面板：dock, icons, gift-picker, bindings, panel-header, panel-position, panels/fans, panels/popup, panels/sign 等)
+  - `src/next/entry.js`: 业务总装配入口
+- **`build/` (现代化确定性构建管线)**:
+  - `build/compatibility.js`: 采用二进制无损拼接与严格契约校验的 NEXT 构建器
+  - `build/module-contracts.json`: 76 模块依赖与导出强类型契约字典 (48.8 KB)
+  - `build/next-manifest.json`: NEXT 模块依赖序列清单
+- **`tools/` (发布审计管线)**:
+  - `tools/audit_release_compliance.js`: 7 大 Greasy Fork 发布合规门禁审计脚本
+- **`tests/unit/` (自动化测试套件)**:
+  - `tests/unit/build.test.js`: 构建确定性与根目录零修改防护测试
+  - `tests/unit/next-artifact.test.js`: 产物完整性、SHA-256、V8 语法、元数据、单例与 76 模块全量契约测试
+- **配置文件与文档**:
+  - `build.js`: 接入 `--next` 编译分发
+  - `package.json`: 注册 `build:next`, `test`, `verify` 核心指令
+  - `src/meta_next.js`: 升级 `@match *://*.douyu.com/*` 并全面接入 jsDelivr CDN
+  - `docs/next/PROGRESS.md`: 同步 890KB 规范交付数据与实测台账
+  - `README.md`: 增补 NEXT 架构与构建使用指南
 
 ---
 
-## 三、 NEXT 版本重构启动建议
+## 二、 核心实现与架构改动说明
 
-1. **工程化现代化**：引入 TypeScript 与 Vite/Rollup 构建流水线，替换现有的纯文本拼接；
-2. **轻量状态驱动**：建立 Store 响应式模型，解耦 DOM 探测；
-3. **接口契约类型化**：将审计全书中整理的 13 项官方接口直接转为 TS 强类型定义；
-4. **组件拆分解耦**：将巨型 `02_dom_ui.js` 和 `05_services.js` 拆分为独立 TS 组件与服务。
+1. **AST 模块化解耦与原生落地**:
+   - 彻底告别单文件混杂，将整套业务完整解构为 76 个细粒度模块并物理落盘于 `src/next/`；
+   - 通过 Generator 函数 (`function* (__imports)`) 与两阶段初始化机制，完美实现跨模块活绑定与函数/变量提升支持。
+2. **单例与存储安全双重加固**:
+   - `DYEXRL_NEXT_COMPAT_CLAIM` DOM 事件握手协议，杜绝多脚本并发竞争与重复渲染；
+   - `localStorage` 全域前缀代理 (`DYEXRL_NEXT:`) 确保插件配置绝对隔离，同时官方核心推流记忆（`h5p_room`）完全互通。
+3. **全站房间别名冷启动与就绪防假死**:
+   - 匹配通配符扩展至 `*://*.douyu.com/*`，字母别名房间直接生效；
+   - 引入 30 秒轮询上限 (`POLL_CEILING = 30`)，避免未开播房间定时器持续空转。
+4. **全量 Greasy Fork 发布合规**:
+   - 剔除受限 CDN 源，全量替换为 `fastly.jsdelivr.net`；
+   - 单行字符严格约束在 5,000 字符限制内，全流程自动化脚本拦截。
+
+---
+
+## 三、 本地构建与验证结果
+
+### 1. NEXT 独立构建 (`node build.js --next`)
+```text
+[Build-NEXT] 正在编译 DouyuEx-RL NEXT (890KB 规范构建)...
+[Verify-NEXT] V8 语法核验通过 (耗时 26ms)
+[Build-NEXT] 成功构建 NEXT 产物: D:\DouyuEx-RL\artifacts\next\DouyuEx_RL_NEXT.user.js (890032 bytes, 869.17 KB)
+[Build-NEXT] 产物 SHA-256: 98638294eeddad4852bed52a05c4153ab7e50563fb3b7859dbf1864e8322b999 (100% 字节对齐通过)
+```
+
+### 2. 自动化单元测试 (`npm test`)
+```text
+✔ Build NEXT: deterministic output between two consecutive runs (263ms)
+✔ Build NEXT: does not modify root DouyuEx_RL.user.js (118ms)
+✔ NEXT Artifact: exact byte size and SHA-256 verification (2.4ms)
+✔ NEXT Artifact: V8 Script syntax compilation with zero errors (11.4ms)
+✔ NEXT Artifact: Userscript metadata header compliance (3.5ms)
+✔ NEXT Artifact: Singleton claim guard and isolated localStorage proxy (3.2ms)
+✔ NEXT Artifact: 76 linked module definitions and contracts completeness (17.7ms)
+
+ℹ tests 7 | pass 7 | fail 0 | duration_ms 484ms
+```
+
+### 3. Greasy Fork 7 大合规门禁审计 (`npm run verify`)
+```text
+=== DouyuEx-RL NEXT Greasy Fork 发布合规性审查 ===
+
+✅ [Gate 1] UserScript 元数据头完整性验证通过
+✅ [Gate 2] 外部 CDN 依赖合规 (共 6 个依赖均来自官方 jsDelivr 白名单)
+✅ [Gate 3] 行长度审查通过 (最大行长度: 3822 字符，全部 <= 5000)
+✅ [Gate 4] V8 原生 Script 语法核验 100% 通过，无语法错误
+✅ [Gate 5] URL 匹配规则支持全站及字母房间别名冷启动 (*://*.douyu.com/*)
+✅ [Gate 6] 单例执行守卫 (DYEXRL_NEXT_COMPAT_CLAIM) 校验通过
+✅ [Gate 7] 存储前缀隔离代理 (DYEXRL_NEXT:) 校验通过
+
+审查完成: 🎉 全部合规门禁通过！
+```
+
+### 4. 根目录主线产物零修改保护
+- `DouyuEx_RL.user.js` 保持完全未修改，生产包与 NEXT 分支完全解耦。
+
+---
+*本报告已严格执行根目录与桌面目录双路同步备份交付。*
