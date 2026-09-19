@@ -1,38 +1,38 @@
 # 📋 DouyuEx-RL NEXT 任务竣工单 (TASK_REPORT.md)
 
-**任务主题**: 稳健小步推进：重写 4 个简单独立模块 (preferences/batch-danmaku/panel-header/registry) 达成累计 24/76 模块重塑  
+**任务主题**: 彻底清退冗余历史夜间模式死重 & 稳步推进 24/76 模块现代强语义重塑  
 **竣工日期**: 2026-09-18  
 **执行分支**: `DYEXRL-NEXT` (严格分支隔离，保持主线 `main` 与根目录生产包 `DouyuEx_RL.user.js` 零污染)  
-**标准产物**: `artifacts/next/DouyuEx_RL_NEXT.user.js` (902,580 字节，SHA-256: `e11218ed634e10ce1357e14d532d80dd429bb16029ab4868a347930df03992a9`)
+**标准产物**: `artifacts/next/DouyuEx_RL_NEXT.user.js` (900,636 字节，SHA-256: `f77a561ffed156cb47810fc84a0fe24c588ae380d6ffa8b9e5e91abb52e4a4f0`)
 
 ---
 
-## 一、 稳健渐进重构实施进展
+## 一、 冗余功能彻底清退 (历史夜间模式优雅退役)
 
-依据用户“先多重写几个简单模块”的指示，本批次严格遵循“契约守恒、小步快跑、单改单测”的原则，重塑了 4 个低耦合、无隐式依赖的简单模块：
+响应用户关于“日间夜间模式斗鱼网页已经自带了，完全是一个冗余功能”的明确定位，我们对该历史遗留功能进行了彻底审计与安全清退：
 
-1. **`src/next/services/preferences.js` (38行，夜间模式)**：
-   - 规范化夜间模式月亮/太阳 SVG 图标，消灭混淆逻辑，规范持久化与 CSS 注入；
-2. **`src/next/services/batch-danmaku.js` (73行，STT 解包与封包纯工具)**：
+1. **历史背景与现状审计**：
+   - 该功能属于 2020 年斗鱼尚无原生夜间模式时的远古扩展；
+   - 现代斗鱼全站（网页版、播放器、底栏）已自带官方暗黑模式，原作者在早期版本中其实就已经将真实 CSS 样式挖空（仅保留 `/* [DouyuEx-Lite] 夜间样式已剥离 */` 注释占位）；
+   - 但代码中依旧残留了 2.6 KB 的日月 SVG 矢量图形、`ExSave_Mode` 持久化读写、顶栏 DOM 节点生成与 iframe 监听等无意义空耗代码；
+2. **彻底清退与契约安全保活**：
+   - 物理清除了 `src/next/services/preferences.js` 中所有大型 SVG 字符串，将 `Xo`, `Ko`, `$o` 转换为轻量无害的空操作函数；
+   - 确保下游契约（`room-hooks.js`, `shell.js`）调用时 100% 正常运行，既彻底根除了冗余性能损耗，又杜绝了任何潜在报错；
+   - 成功为包体减负约 2 KB。
+
+---
+
+## 二、 稳健渐进重构实施进展 (累计 24 个模块现代强语义重塑)
+
+本批次稳步重构了 4 个简单独立模块：
+1. **`src/next/services/preferences.js` (夜间模式死重清退)**：
+   - 彻底清空冗余 SVG 与空样式注入，安全退役；
+2. **`src/next/services/batch-danmaku.js` (STT 协议工具库)**：
    - 0 外部依赖纯函数模块，重写 STT 报文递归反序列化 (`el`)、TCP/WS 二进制封包 (`ol`) 与样式注入 (`tl`)；
-3. **`src/next/ui/panel-header.js` (79行，吸顶 Header 规范)**：
-   - 规范化 3 级控制台右上角吸顶顶栏，统一规范滚动条起始点为顶栏下方，消除漏缝；
-4. **`src/next/runtime/registry.js` (57行，特性注册表)**：
+3. **`src/next/ui/panel-header.js` (吸顶 Header 规范)**：
+   - 规范化 3 级控制台右上角吸顶顶栏，统一下拉滚动条起始点为顶栏下方，消除漏缝；
+4. **`src/next/runtime/registry.js` (特性注册表)**：
    - 规范化单例特性注册表调度器与 Dock 生命周期安全卸载管理。
-
----
-
-## 二、 当前稳定运行的 24 个现代 ES6+ 强语义模块清单
-
-当前产物保持 100% 完整功能，并稳定运行以下 24 个完全现代化的 ES6+ 模块：
-- **版本与感知**：`services/version.js`（Semver 比较与 async/await fetch）
-- **画中画完整弹幕管道**：`services/pip/` 8个独立微模块（`packet-dedup.js`, `persistence.js`, `merge-rules.js`, `packet-parser.js`, `packet-dispatch.js`, `state.js`, `markup.js`, `window.js`）
-- **定时与调度**：`runtime/heartbeat.js`（60秒经验心跳）, `platform/cron.js`（WebSocket 弹幕代理长连接）
-- **页面与交互**：`ui/room/last-live.js`（开播卡片）, `ui/bindings.js`（安全事件装甲）, `entry.js`（业务入口调度）
-- **工具与控制台**：`services/video-timestamps.js`（录播时间戳）, `ui/panels/update.js`（版本更新控制台）, `services/spending.js`（当月消费明细）
-- **核心算法**：`platform/md5.js`（RFC 1321 MD5 变换）
-- **一键续牌业务线**：`services/fans.js`（粉丝牌与背包底层服务）, `ui/panels/fans.js`（380px 一键续牌三级控制台）
-- **最新完成的 4 个简单模块**：`services/preferences.js`、`services/batch-danmaku.js`、`ui/panel-header.js`、`runtime/registry.js`
 
 ---
 
@@ -41,23 +41,23 @@
 ### 1. 独立编译 (`node build.js --next`)
 ```text
 [Build-NEXT] 正在编译 DouyuEx-RL NEXT (890KB 规范构建)...
-[Verify-NEXT] V8 语法核验通过 (耗时 30ms)
-[Build-NEXT] 成功构建 NEXT 产物: D:\DouyuEx-RL\artifacts\next\DouyuEx_RL_NEXT.user.js (902580 bytes, 881.43 KB)
-[Build-NEXT] 产物 SHA-256: e11218ed634e10ce1357e14d532d80dd429bb16029ab4868a347930df03992a9 (100% 字节对齐通过)
+[Verify-NEXT] V8 语法核验通过 (耗时 27ms)
+[Build-NEXT] 成功构建 NEXT 产物: D:\DouyuEx-RL\artifacts\next\DouyuEx_RL_NEXT.user.js (900636 bytes, 879.53 KB)
+[Build-NEXT] 产物 SHA-256: f77a561ffed156cb47810fc84a0fe24c588ae380d6ffa8b9e5e91abb52e4a4f0 (100% 字节对齐通过)
 ```
 
 ### 2. 自动化单元测试 (`npm test`)
 ```text
-✔ Build NEXT: deterministic output between two consecutive runs (261ms)
-✔ Build NEXT: does not modify root DouyuEx_RL.user.js (130ms)
+✔ Build NEXT: deterministic output between two consecutive runs (255ms)
+✔ Build NEXT: does not modify root DouyuEx_RL.user.js (118ms)
 ✔ NEXT Artifact: exact byte size and SHA-256 verification (2.4ms)
-✔ NEXT Artifact: V8 Script syntax compilation with zero errors (12.6ms)
-✔ NEXT Artifact: Userscript metadata header compliance (4.5ms)
-✔ NEXT Artifact: Singleton claim guard and isolated localStorage proxy (4.2ms)
-✔ NEXT Artifact: 76 linked module definitions and contracts completeness (17.7ms)
-✔ NEXT Runtime: full cold-start simulation with zero TDZ / ReferenceError (22.0ms)
+✔ NEXT Artifact: V8 Script syntax compilation with zero errors (13.6ms)
+✔ NEXT Artifact: Userscript metadata header compliance (4.4ms)
+✔ NEXT Artifact: Singleton claim guard and isolated localStorage proxy (4.3ms)
+✔ NEXT Artifact: 76 linked module definitions and contracts completeness (16.2ms)
+✔ NEXT Runtime: full cold-start simulation with zero TDZ / ReferenceError (22.5ms)
 
-ℹ tests 8 | pass 8 | fail 0 | duration_ms 496ms
+ℹ tests 8 | pass 8 | fail 0 | duration_ms 483ms
 ```
 
 ### 3. Greasy Fork 7 大发布合规门禁审计 (`npm run verify`)
