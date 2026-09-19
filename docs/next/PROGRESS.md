@@ -3,13 +3,21 @@
 ## 1. 交付产物与核心指标
 - **分支定位**: `DYEXRL-NEXT`（绝不合并至 `main`，严格分支隔离）
 - **核心交付产物**: `artifacts/next/DouyuEx_RL_NEXT.user.js`
-- **精确文件体积**: `890,032 字节` (`869.17 KB`)
-- **官方 SHA-256 哈希**: `98638294eeddad4852bed52a05c4153ab7e50563fb3b7859dbf1864e8322b999`
+- **精确文件体积**: `891,648 字节` (`870.75 KB`)
+- **官方 SHA-256 哈希**: `43c14ac58c31cf5833ccf084194f284de66677f5791db44d8f7a3e05877d406b`
 - **根目录主线产物**: `DouyuEx_RL.user.js`（严格保持零污染，构建互不干涉）
 
 ---
 
-## 2. 架构拓扑与现代化改造清算
+## 2. 渐进式绞杀重构实施进展 (Phase 1 启动)
+已完成全量 76 个 AST 模块三梯队深度评估（详见 [docs/next/MIGRATION_TIERS_EVALUATION.md](docs/next/MIGRATION_TIERS_EVALUATION.md)），并圆满完成第一梯队首批 3 个零风险模块的 100% 现代 ES6+ 重写：
+1. `src/next/services/version.js`：消灭老式 `var` 和同步 XHR 回调，引入语义化 Semver 比较算法与 `async/await fetch` 现代化超时控制，彻底消除全局 window 污染；
+2. `src/next/services/pip/packet-dedup.js`：彻底消灭单字母混淆参数（`e, t, o, n, i`），建立语义化滑窗去重状态机（`packetKey`, `currentTimeMs`, `lastSeenTimeMs`），保护容量溢出与自动驱逐；
+3. `src/next/services/pip/persistence.js`：规范化 LocalStorage JSON 安全反序列化与双向落盘容错。
+
+---
+
+## 3. 架构拓扑与现代化改造清算
 本项目彻底清算了早期 280KB 碎片化伪重构的失效代码，确立了基于 AST 模块化与 Generator 闭包访问器的稳定规范体系：
 
 1. **AST 模块化解耦架构 (`src/next/`)**:
