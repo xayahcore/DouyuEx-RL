@@ -3,13 +3,21 @@
 ## 1. 交付产物与核心指标
 - **分支定位**: `DYEXRL-NEXT`（绝不合并至 `main`，严格分支隔离）
 - **核心交付产物**: `artifacts/next/DouyuEx_RL_NEXT.user.js`
-- **精确文件体积**: `895,532 字节` (`874.54 KB`)
-- **官方 SHA-256 哈希**: `d89afd1b5de61be23d0d3b6cdabef25865448007eec1f7ccbd9736dc1b95091d`
+- **精确文件体积**: `895,946 字节` (`874.95 KB`)
+- **官方 SHA-256 哈希**: `683a8b7000d3ecfb396c12c2d785157903e73752a86073781d18607b54006c77`
 - **根目录主线产物**: `DouyuEx_RL.user.js`（严格保持零污染，构建互不干涉）
 
 ---
 
-## 2. 渐进式绞杀重构实施进展 (第一梯队 100% + 第二梯队大集群攻坚，累计完成 53/76 模块 🎉)
+## 2. 核心架构缺陷排查与修复 (修复 TDZ 暂时死区导致脚本冷启动失效)
+针对用户反馈的“脚本直接失效”，进行了端到端沙盒仿真与调用栈分析，排查出致命根因并彻底根治：
+- **缺陷根因 (Temporal Dead Zone)**：在重构 `src/next/services/utilities.js` 时，将原本提升的单字母函数声明（如 `function v(...)`）写成了 `const v = extractBetween;`。由于 `src/next/services/session.js`（第 34 模块）在依赖解析时先于 `utilities.js`（第 35 模块）执行并调用了 `__imports.v`，`const v` 尚处于暂时性死区 (TDZ)，直接抛出未捕获异常 `ReferenceError: Cannot access 'v' before initialization`，导致整个油猴脚本在冷启动阶段静默崩溃；
+- **根治方案**：将 `utilities.js` 中所有导出的别名统一声明为标准提升函数（如 `function v(str, p, s) { return extractBetween(str, p, s); }`、`function b(ms) { return sleep(ms); }`），恢复函数声明在生成器闭包顶层的完全提升特性；
+- **机械化防线增补**：在 `tests/unit/next-runtime.test.js` 中新增了完整的浏览器沙盒冷启动与导航初始化模拟测试，纳入 `npm test` 必过门禁，确保未来任何 TDZ 陷阱均无法逃逸出 CI。
+
+---
+
+## 3. 渐进式绞杀重构实施进展 (第一梯队 100% + 第二梯队大集群攻坚，累计完成 53/76 模块 🎉)
 依据 [docs/next/MIGRATION_TIERS_EVALUATION.md](docs/next/MIGRATION_TIERS_EVALUATION.md) 确立的工程体系，现已高密度完成 **53 个核心 AST 物理模块**（占全域 69.7%）的现代化 ES6+ 语法清洗与强语义重构：
 
 ### Phase 1: 第一梯队 18 个外围工具与独立模块 (100% 满贯竣工)

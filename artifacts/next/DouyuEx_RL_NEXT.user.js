@@ -9171,7 +9171,7 @@ yield {"$": { get: () => $, set: value => { $ = value; } },
 function sleep(ms) {
   return new Promise(resolve => (0, __imports.setTimeout)(resolve, ms));
 }
-const b = sleep;
+function b(ms) { return sleep(ms); }
 
 /**
  * 将秒数格式化为中文时长描述 (如: 1小时23分45秒)
@@ -9197,7 +9197,7 @@ function formatDurationChinese(seconds) {
   if (hour > 0) result = `${hour}小时` + result;
   return result;
 }
-const Q = formatDurationChinese;
+function Q(sec) { return formatDurationChinese(sec); }
 
 /**
  * 将秒数格式化为标准时间码 (hh:mm:ss)
@@ -9223,7 +9223,7 @@ function formatDurationClock(seconds) {
   const hStr = String(hour).padStart(2, "0");
   return `${hStr}:${mStr}:${sStr}`;
 }
-const J = formatDurationClock;
+function J(sec) { return formatDurationClock(sec); }
 
 /**
  * 正则提取字符串中两个标记之间的内容
@@ -9237,7 +9237,7 @@ function extractBetween(str, prefix, suffix) {
   const match = str.match(new RegExp(prefix + "(.*?)" + suffix));
   return Boolean(match) && match[1];
 }
-const v = extractBetween;
+function v(str, p, s) { return extractBetween(str, p, s); }
 
 /**
  * 安全读取指定 Cookie 键的值
@@ -9253,7 +9253,7 @@ function getCookie(name) {
     return null;
   }
 }
-const x = getCookie;
+function x(name) { return getCookie(name); }
 
 /**
  * 获取或生成 3 小时有效期的 acf_ccn 安全凭据
@@ -9269,7 +9269,7 @@ function generateCcnToken() {
   }
   return ccn;
 }
-const w = generateCcnToken;
+function w() { return generateCcnToken(); }
 
 /**
  * 弹出顶部浮动毛玻璃 NoticeJs 提示胶囊
@@ -9285,7 +9285,7 @@ function showToast(message, type = "success", options = {}) {
     console.log(`[Toast ${type}] ${message}`);
   }
 }
-const T = showToast;
+function T(msg, type, opt) { return showToast(msg, type, opt); }
 
 /**
  * 新标签页打开指定 URL
@@ -9295,7 +9295,7 @@ const T = showToast;
 function openInNewTab(url, active = true) {
   (0, __imports.GM_openInTab)(url, { active });
 }
-const _ = openInNewTab;
+function _(url, active) { return openInNewTab(url, active); }
 
 /**
  * 跨浏览器安全关闭当前窗口
@@ -9343,7 +9343,7 @@ function formatDate(fmt, dateObj) {
   }
   return res;
 }
-const k = formatDate;
+function k(fmt, d) { return formatDate(fmt, d); }
 
 /**
  * 获取范围内的随机整数 [min, max)
@@ -9354,7 +9354,7 @@ const k = formatDate;
 function getRandomInt(min, max) {
   return Math.floor(Math.random() * (max - min) + min);
 }
-const a = getRandomInt;
+function a(min, max) { return getRandomInt(min, max); }
 
 /**
  * 发送系统级桌面通知 (HTML5 Notification)
@@ -9374,7 +9374,7 @@ function showDesktopNotification(title, body, onClick) {
     });
   }
 }
-const X = showDesktopNotification;
+function X(title, body, cb) { return showDesktopNotification(title, body, cb); }
 
 /**
  * 获取输入框的光标字符位置
@@ -9398,7 +9398,7 @@ function getTextareaCursorPosition(el) {
   }
   return pos;
 }
-const $ = getTextareaCursorPosition;
+function $(el) { return getTextareaCursorPosition(el); }
 
 /**
  * 导出数据为 Excel 文件并自动触发下载
@@ -9443,7 +9443,7 @@ function exportToExcel(headers, rows, filename = "download.xlsx") {
     } catch {}
   }, 1500);
 }
-const l = exportToExcel;
+function l(h, r, f) { return exportToExcel(h, r, f); }
 
 /**
  * 触发全局窗口 Resize 布局重排事件
@@ -9451,7 +9451,7 @@ const l = exportToExcel;
 function triggerWindowResize() {
   window.dispatchEvent(new Event("resize"));
 }
-const te = triggerWindowResize;
+function te() { return triggerWindowResize(); }
 
 /**
  * 多候选选择器匹配首个存在的 DOM 元素
@@ -9466,7 +9466,7 @@ function queryFirstMatch(selectors) {
   }
   return null;
 }
-const E = queryFirstMatch;
+function E(sel) { return queryFirstMatch(sel); }
 
 }
 ,

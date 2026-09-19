@@ -4,7 +4,7 @@
   "mode": "working-tree",
   "meta": "src/meta_next.js",
   "output": "artifacts/next/DouyuEx_RL_NEXT.user.js",
-  "expectedSha256": "d89afd1b5de61be23d0d3b6cdabef25865448007eec1f7ccbd9736dc1b95091d",
+  "expectedSha256": "683a8b7000d3ecfb396c12c2d785157903e73752a86073781d18607b54006c77",
   "files": [
     "src/next/runtime/start.js",
     "src/next/runtime/registry.js",

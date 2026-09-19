@@ -1,13 +1,29 @@
 # 📋 DouyuEx-RL NEXT 任务竣工单 (TASK_REPORT.md)
 
-**任务主题**: 第二梯队大集群推进战役告捷：累计完成 53/76 模块 100% 现代 ES6+ 语法清洗与强语义重构 (全域完成率 69.7%)  
+**任务主题**: 根治冷启动 TDZ 暂时死区失效故障 & 累计完成 53/76 模块 100% 现代 ES6+ 语法重塑  
 **竣工日期**: 2026-09-18  
 **执行分支**: `DYEXRL-NEXT` (严格分支隔离，保持主线 `main` 与根目录生产包 `DouyuEx_RL.user.js` 零污染)  
-**标准产物**: `artifacts/next/DouyuEx_RL_NEXT.user.js` (895,532 字节，SHA-256: `d89afd1b5de61be23d0d3b6cdabef25865448007eec1f7ccbd9736dc1b95091d`)
+**标准产物**: `artifacts/next/DouyuEx_RL_NEXT.user.js` (895,946 字节，SHA-256: `683a8b7000d3ecfb396c12c2d785157903e73752a86073781d18607b54006c77`)
 
 ---
 
-## 一、 第二梯队大集群推进全景战报
+## 一、 核心故障排查与彻底根治 (解决“脚本直接失效”)
+
+针对您反馈的“脚本直接失效”，我们立即启动了端到端沙盒仿真与调用栈排查，查明了隐秘致命的根因并予以彻底根除：
+
+1. **故障根因 (Temporal Dead Zone, 暂时死区)**：
+   - 在重构 `src/next/services/utilities.js` 时，将原本可提升的单字母函数（如 `function v(...)`）写成了词法绑定 `const v = extractBetween;`；
+   - 在 AST 模块链接器初始化阶段，`src/next/services/session.js`（第 34 模块）比 `utilities.js`（第 35 模块）先执行第二阶段。当 `session.js` 调用 `__imports.v` 提取房间 ID 时，`utilities.js` 的 `const v` 尚处于 TDZ（暂时死区）；
+   - JavaScript 引擎抛出未捕获异常：`ReferenceError: Cannot access 'v' before initialization`，导致整个油猴脚本在执行到第二行时瞬间崩溃终止，未输出任何界面；
+2. **根治方案**：
+   - 将 `utilities.js` 中所有导出的兼容别名（`v, b, Q, J, x, w, T, _, k, a, X, $, l, te, E`）统一恢复为具名的提升函数（如 `function v(str, p, s) { return extractBetween(str, p, s); }`）；
+   - 彻底消灭了词法声明产生的 TDZ，确保无论模块按何种顺序解析，函数声明永远在函数闭包顶层完全就绪；
+3. **新增机械化防线**：
+   - 在 `tests/unit/next-runtime.test.js` 中新增了完整的浏览器沙盒冷启动与导航初始化模拟测试，通过 8/8 自动化单元测试，确保未来任何冷启动死锁或 TDZ 均会被自动化门禁阻断。
+
+---
+
+## 二、 第二梯队大集群推进全景战报
 
 响应用户“在保证质量前提下多改一点、大步推进”的指示，本轮连续高密度攻坚了第二梯队三大集团军中的核心业务切片，单回合内**一次性重构清洗了多达 33 个模块**！
 
@@ -71,22 +87,23 @@
 ### 1. 独立编译 (`node build.js --next`)
 ```text
 [Build-NEXT] 正在编译 DouyuEx-RL NEXT (890KB 规范构建)...
-[Verify-NEXT] V8 语法核验通过 (耗时 28ms)
-[Build-NEXT] 成功构建 NEXT 产物: D:\DouyuEx-RL\artifacts\next\DouyuEx_RL_NEXT.user.js (895532 bytes, 874.54 KB)
-[Build-NEXT] 产物 SHA-256: d89afd1b5de61be23d0d3b6cdabef25865448007eec1f7ccbd9736dc1b95091d (100% 字节对齐通过)
+[Verify-NEXT] V8 语法核验通过 (耗时 29ms)
+[Build-NEXT] 成功构建 NEXT 产物: D:\DouyuEx-RL\artifacts\next\DouyuEx_RL_NEXT.user.js (895946 bytes, 874.95 KB)
+[Build-NEXT] 产物 SHA-256: 683a8b7000d3ecfb396c12c2d785157903e73752a86073781d18607b54006c77 (100% 字节对齐通过)
 ```
 
 ### 2. 自动化单元测试 (`npm test`)
 ```text
-✔ Build NEXT: deterministic output between two consecutive runs (257ms)
-✔ Build NEXT: does not modify root DouyuEx_RL.user.js (121ms)
-✔ NEXT Artifact: exact byte size and SHA-256 verification (3.3ms)
-✔ NEXT Artifact: V8 Script syntax compilation with zero errors (12.4ms)
-✔ NEXT Artifact: Userscript metadata header compliance (4.0ms)
-✔ NEXT Artifact: Singleton claim guard and isolated localStorage proxy (3.5ms)
-✔ NEXT Artifact: 76 linked module definitions and contracts completeness (17.1ms)
+✔ Build NEXT: deterministic output between two consecutive runs (297ms)
+✔ Build NEXT: does not modify root DouyuEx_RL.user.js (141ms)
+✔ NEXT Artifact: exact byte size and SHA-256 verification (4.5ms)
+✔ NEXT Artifact: V8 Script syntax compilation with zero errors (15.7ms)
+✔ NEXT Artifact: Userscript metadata header compliance (6.2ms)
+✔ NEXT Artifact: Singleton claim guard and isolated localStorage proxy (4.4ms)
+✔ NEXT Artifact: 76 linked module definitions and contracts completeness (19.1ms)
+✔ NEXT Runtime: full cold-start simulation with zero TDZ / ReferenceError (28.8ms)
 
-ℹ tests 7 | pass 7 | fail 0 | duration_ms 482ms
+ℹ tests 8 | pass 8 | fail 0 | duration_ms 557ms
 ```
 
 ### 3. Greasy Fork 7 大发布合规门禁审计 (`npm run verify`)
