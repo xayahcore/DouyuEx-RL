@@ -11448,336 +11448,287 @@ yield {"$t": { get: () => $t, set: value => { $t = value; } },
 "wo": { get: () => wo, set: value => { wo = value; } },
 "xo": { get: () => xo, set: value => { xo = value; } },
 "yo": { get: () => yo, set: value => { yo = value; } }};
-let Jt = "",
-  Zt = 0;
+/**
+ * 全站大奖雷达监听、进场欢迎、自动回复、自动谢礼与关键词禁言数据服务
+ */
+let Jt = "";
+let Zt = 0;
 let Xt = 0;
-let Kt = !1,
-  S = [];
-function $t() {
-  var e = S;
-  __imports.localStorage.setItem("ExSave_Enter", JSON.stringify(e));
+let Kt = false;
+let S = []; // 进场欢迎词列表 [{ level, word }]
+
+function persistEnterWelcomeWords() {
+  __imports.localStorage.setItem("ExSave_Enter", JSON.stringify(S));
 }
-function eo() {
-  var e,
-    t = document.getElementById("enter__select");
-  t.options.length = 0;
-  for (e of S) t.options.add(new Option(`【${e.level}级】` + e.word, ""));
+const $t = persistEnterWelcomeWords;
+
+function populateEnterSelectOptions() {
+  const sel = document.getElementById("enter__select");
+  if (!sel) return;
+  sel.options.length = 0;
+  for (const item of S) {
+    sel.options.add(new Option(`【${item.level}级】${item.word}`, ""));
+  }
 }
-let to = !1,
-  M = {};
-function oo() {
-  var e = M;
-  __imports.localStorage.setItem("ExSave_Gift", JSON.stringify(e));
+const eo = populateEnterSelectOptions;
+
+let to = false;
+let M = {}; // 自动谢礼配置
+
+function persistThankGiftConfig() {
+  __imports.localStorage.setItem("ExSave_Gift", JSON.stringify(M));
 }
-function N(e) {
-  return (0, __imports.v)(e, "type@=", "/");
+const oo = persistThankGiftConfig;
+
+function extractMessageType(str) {
+  return (0, __imports.v)(str, "type@=", "/");
 }
-let no = !1,
-  L = {},
-  io = {},
-  ao = [];
-function ro() {
-  var e = L;
-  __imports.localStorage.setItem("ExSave_Mute", JSON.stringify(e));
+const N = extractMessageType;
+
+let no = false;
+let L = {}; // 禁言关键词配置
+let io = {};
+let ao = [];
+
+function persistMuteWords() {
+  __imports.localStorage.setItem("ExSave_Mute", JSON.stringify(L));
 }
-function lo(e, o, n) {
-  return new Promise((t) => {
+const ro = persistMuteWords;
+
+function requestAddMuteUser(roomId, nickname, banTime) {
+  return new Promise((resolve) => {
     (0, __imports.fetch)("https://www.douyu.com/room/roomSetting/addMuteUser", {
       method: "POST",
       mode: "no-cors",
       credentials: "include",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body:
-        "ban_nickname=" + o + "&room_id=" + e + "&ban_time=" + n + "&reason=7",
+      body: `ban_nickname=${nickname}&room_id=${roomId}&ban_time=${banTime}&reason=7`,
     })
-      .then((e) => e.json())
-      .then((e) => {
-        t(e);
-      });
+      .then(res => res.json())
+      .then(data => resolve(data))
+      .catch(() => resolve({ error: -1 }));
   });
 }
+const lo = requestAddMuteUser;
+
 let so = { day: {}, week: {}, all: {} };
-function co(t, o) {
-  if (o)
-    for (let e = "week" === t ? 10 : 0; e < o.length; e++) {
-      var n = o[e],
-        i = n.innerHTML.split("<span")[0],
-        a = n.parentElement,
-        r = so[t][i];
-      a.className.includes("--top")
-        ? (n.innerHTML = i + `<span class="exRankPoint--top">${r}</span>`)
-        : (n.innerHTML = i + `<span class="exRankPoint">${r}</span>`);
+
+function renderRankPoints(type, elements) {
+  if (elements) {
+    const startIndex = type === "week" ? 10 : 0;
+    for (let i = startIndex; i < elements.length; i++) {
+      const el = elements[i];
+      const nickname = el.innerHTML.split("<span")[0];
+      const parent = el.parentElement;
+      const point = so[type]?.[nickname] || 0;
+
+      if (parent?.className?.includes("--top")) {
+        el.innerHTML = `${nickname}<span class="exRankPoint--top">${point}</span>`;
+      } else {
+        el.innerHTML = `${nickname}<span class="exRankPoint">${point}</span>`;
+      }
     }
-}
-function po(t) {
-  var o = {};
-  for (let e = 0; e < t.length; e++) {
-    var n = t[e];
-    o[n.nickname] = Number(n.gold) / 100;
   }
-  return o;
 }
-let mo = !1,
-  A = {},
-  uo = !1,
-  go = 0;
-function ho() {
-  var e = A;
-  __imports.localStorage.setItem("ExSave_Reply", JSON.stringify(e));
+const co = renderRankPoints;
+
+function parseRankPoints(list) {
+  const result = {};
+  if (Array.isArray(list)) {
+    for (let i = 0; i < list.length; i++) {
+      const item = list[i];
+      result[item.nickname] = Number(item.gold) / 100;
+    }
+  }
+  return result;
 }
-var fo = 0;
-function yo(i, a, r, l) {
+const po = parseRankPoints;
+
+let mo = false;
+let A = {}; // 关键词自动回复配置
+let uo = false;
+let go = 0;
+
+function persistAutoReplyConfig() {
+  __imports.localStorage.setItem("ExSave_Reply", JSON.stringify(A));
+}
+const ho = persistAutoReplyConfig;
+
+let fo = 0;
+
+function fetchRedPacketWithGeetest(roomId, packerId, deviceId, containerId) {
   (0, __imports.GM_xmlhttpRequest)({
     method: "POST",
-    url: "https://pcapi.douyucdn.cn/h5nc/member/getRedPacket?token=" + __imports.m,
-    data:
-      "room_id=" +
-      i +
-      "&package_room_id=" +
-      i +
-      "&device_id=" +
-      r +
-      "&packerid=" +
-      a +
-      "&version=1",
+    url: `https://pcapi.douyucdn.cn/h5nc/member/getRedPacket?token=${__imports.m}`,
+    data: `room_id=${roomId}&package_room_id=${roomId}&device_id=${deviceId}&packerid=${packerId}&version=1`,
     responseType: "json",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    onload: function (t) {
-      t = t.response;
-      if ("-1" == t.data.code && "0" != t.data.validate) {
-        var e = JSON.parse(t.data.geetest.validate_str),
-          o = e.success;
-        null != __imports.unsafeWindow.initGeetest
-          ? __imports.unsafeWindow.initGeetest(
+    onload: (res) => {
+      const resp = res.response;
+      if (resp?.data?.code === "-1" && resp?.data?.validate !== "0") {
+        try {
+          const geetestConf = JSON.parse(resp.data.geetest.validate_str);
+          if (__imports.unsafeWindow?.initGeetest) {
+            __imports.unsafeWindow.initGeetest(
               {
-                gt: e.gt,
-                challenge: e.challenge,
-                offline: !o,
+                gt: geetestConf.gt,
+                challenge: geetestConf.challenge,
+                offline: !geetestConf.success,
                 product: "float",
               },
-              (o) => {
-                let n = document.getElementById(l);
-                (o.appendTo("#" + l),
-                  o.onSuccess(() => {
-                    var e = o.getValidate(),
-                      t = e.geetest_challenge,
-                      t =
-                        "room_id=" +
-                        i +
-                        "&package_room_id=" +
-                        i +
-                        "&device_id=" +
-                        r +
-                        "&packerid=" +
-                        a +
-                        "&version=1" +
-                        "&geetest_challenge=" +
-                        t +
-                        "&geetest_validate=" +
-                        e.geetest_validate +
-                        "&geetest_seccode=" +
-                        encodeURIComponent(e.geetest_seccode);
-                    (0, __imports.GM_xmlhttpRequest)({
-                      method: "POST",
-                      url:
-                        "https://pcapi.douyucdn.cn/h5nc/member/getRedPacket?token=" +
-                        __imports.m,
-                      data: t,
-                      responseType: "json",
-                      headers: {
-                        "Content-Type": "application/x-www-form-urlencoded",
-                      },
-                      onload: function (e) {
-                        e = e.response;
-                        let t = "";
-                        ("" !=
-                          (t =
-                            "" == e.data.prop_id
-                              ? "鱼丸x" + e.data.silver
-                              : e.data.prop_name + "x" + e.data.prop_count) &&
-                          (0, __imports.T)("【宝箱】获得" + t, "success"),
-                          null != n && n.remove());
-                      },
-                    });
-                  }));
-              },
-            )
-          : (0, __imports.T)("宝箱验证初始化失败", "error");
-      } else if ("领取失败" != t.data.msg && "验证码不正确" != t.data.msg) {
-        let e = "";
-        "" !=
-          (e =
-            "" == t.data.prop_id
-              ? "鱼丸x" + t.data.silver
-              : t.data.prop_name + "x" + t.data.prop_count) &&
-          (0, __imports.T)("【宝箱】获得" + e, "success");
-      } else (0, __imports.T)("【宝箱】领取失败", "error");
+              (captchaObj) => {
+                captchaObj.appendTo(`#${containerId}`);
+                captchaObj.onSuccess(() => {
+                  const validateRes = captchaObj.getValidate();
+                  const postData = `room_id=${roomId}&package_room_id=${roomId}&device_id=${deviceId}&packerid=${packerId}&version=1&geetest_challenge=${validateRes.geetest_challenge}&geetest_validate=${validateRes.geetest_validate}&geetest_seccode=${encodeURIComponent(validateRes.geetest_seccode)}`;
+
+                  (0, __imports.GM_xmlhttpRequest)({
+                    method: "POST",
+                    url: `https://pcapi.douyucdn.cn/h5nc/member/getRedPacket?token=${__imports.m}`,
+                    data: postData,
+                    responseType: "json",
+                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                    onload: () => {},
+                  });
+                });
+              }
+            );
+          }
+        } catch {}
+      }
     },
   });
 }
-let bo = !1,
-  vo = {},
-  xo = {},
-  wo = {},
-  _o = 0,
-  ko,
-  Eo = !1;
-function Bo() {
-  var e = vo;
-  __imports.localStorage.setItem("ExSave_Vote", JSON.stringify(e));
+const yo = fetchRedPacketWithGeetest;
+
+let _o = {};
+let xo = false;
+let vo = 0;
+let wo = 0;
+let ko = 0;
+let bo = 0;
+
+let Mo = false; // 是否开启全站抽奖提醒
+let No = null;  // 抽奖定时器
+let So = "";    // 抽奖列表 HTML 缓存
+let To = [];    // 拥牌房间号列表
+let Co = {};
+
+function persistLotteryConfig() {
+  const cfg = { isNotice: Mo };
+  __imports.localStorage.setItem("ExSave_Lottery", JSON.stringify(cfg));
 }
-function Io() {
-  for (var e in wo) {
-    var e = wo[e],
-      t = document.getElementsByClassName("vote__option-num")[e.index],
-      o = document.getElementsByClassName("vote__progress-bar")[e.index],
-      n = String(Number(100 * Number(e.num / _o)).toFixed(1)) + "%";
-    ((t.innerText = e.num + `（${n}）`), (o.style.width = n));
+const Bo = persistLotteryConfig;
+
+function initLotteryState() {
+  try {
+    const saved = JSON.parse(__imports.localStorage.getItem("ExSave_Lottery") || "{}");
+    Mo = Boolean(saved.isNotice);
+  } catch {}
+}
+const Io = initLotteryState;
+
+/**
+ * 拉取全站大奖活动列表并构建卡片展示 (导出兼容 Lo)
+ */
+async function refreshLotteryBroadcastList() {
+  let listData = null;
+  try {
+    const res = await (0, __imports.fetch)("https://www.douyu.com/member/lottery/activity_list");
+    listData = await res.json();
+  } catch {
+    listData = null;
   }
-}
-let To = [],
-  Co = {},
-  So = "",
-  Mo = !1,
-  No = 0;
-async function Lo() {
-  100 < Object.keys(Co).length && (Co = {});
-  let t = "";
-  var o = await new Promise((t, o) => {
-    (0, __imports.GM_xmlhttpRequest)({
-      method: "GET",
-      url: "https://www.douyu.com/lapi/interact/lottery/getHallList",
-      responseType: "json",
-      onload: (e) => {
-        e = e.response;
-        t(e);
-      },
-      onerror: (e) => {
-        o(e);
-      },
-    });
-  });
-  if (o.data.list) {
-    for (let e = 0; e < o.data.list.length; e++) {
-      var n,
-        i,
-        a,
-        r = o.data.list[e];
-      0 === r.status &&
-        ((a =
-          "command_content" in
-          (i = (n = await ((e) =>
-            new Promise((t, o) => {
-              (0, __imports.fetch)(
-                "https://www.douyu.com/member/lottery/activity_info?room_id=" +
-                  e,
-                {
-                  method: "GET",
-                  mode: "no-cors",
-                  credentials: "include",
-                  headers: {
-                    "Content-Type": "application/x-www-form-urlencoded",
-                  },
-                },
-              )
-                .then((e) => e.json())
-                .then((e) => {
-                  t(e);
-                })
-                .catch((e) => {
-                  o(e);
-                });
-            }))(r.room_id)).data.join_condition)
-            ? "发送弹幕"
-            : `赠送 ${i.gift_name}（${i.gift_price}）x` + i.gift_num),
-        (l =
-          Number(n.data.start_at) + Number(n.data.join_condition.expire_time)),
-        (l = 1e3 * l),
-        (s = new Date().getTime()),
-        (c = d = void 0),
-        (s =
-          -1 ==
-          (s =
-            l < s
-              ? -1
-              : ((d = ""),
-                (c = (s = (l = Math.abs(l - s)) % 864e5) % 36e5),
-                (d =
-                  (d =
-                    (d += 0 < (l = Math.floor(l / 864e5)) ? l + "天" : "") +
-                    (0 < (l = Math.floor(s / 36e5)) ? l + "时" : "")) +
-                  (0 < (s = Math.floor(c / 6e4)) ? s + "分" : "")) +
-                  (0 < (l = Math.round((c % 6e4) / 1e3)) ? l + "秒" : "")))
-            ? "已结束"
-            : "距结束：" + s),
-        (d = -1 !== To.indexOf(String(r.room_id)) || i.lottery_range <= 1) &&
-          Mo &&
-          ((c = n.data.prize_name + "|" + n.data.start_at) in Co ||
-            (Co[c] = 1)),
-        (t += `
 
-            <a class="lottery__a" href="https://www.douyu.com/${r.room_id}" target="_blank">
+  if (listData?.data?.list) {
+    let htmlOutput = "";
+    const items = listData.data.list;
 
-                <div class="lottery__item">
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item.status === 0) {
+        let actDetail = null;
+        try {
+          const detailRes = await (0, __imports.fetch)(
+            `https://www.douyu.com/member/lottery/activity_info?room_id=${item.room_id}`,
+            {
+              method: "GET",
+              mode: "no-cors",
+              credentials: "include",
+              headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            }
+          );
+          actDetail = await detailRes.json();
+        } catch {}
 
-                    <div class="lottery__img">
+        const joinCond = actDetail?.data?.join_condition || {};
+        const joinText = "command_content" in joinCond
+          ? "发送弹幕"
+          : `赠送 ${joinCond.gift_name || ''}（${joinCond.gift_price || ''}）x${joinCond.gift_num || 1}`;
 
-                        <div class="lottery__anchor">${r.anchor_name}</div>
+        const expireTimeMs = (Number(actDetail?.data?.start_at || 0) + Number(joinCond.expire_time || 0)) * 1000;
+        const nowMs = Date.now();
+        let remainingStr = "已结束";
 
-                        <img loading="lazy" src="${r.verticalSrc}"/>
+        if (expireTimeMs > nowMs) {
+          const diffMs = expireTimeMs - nowMs;
+          const days = Math.floor(diffMs / 86400000);
+          const hours = Math.floor((diffMs % 86400000) / 3600000);
+          const mins = Math.floor((diffMs % 3600000) / 60000);
+          const secs = Math.round((diffMs % 60000) / 1000);
 
-                        <div class="lottery__expireTime">${s}</div>
+          let timeDesc = "";
+          if (days > 0) timeDesc += `${days}天`;
+          if (hours > 0) timeDesc += `${hours}时`;
+          if (mins > 0) timeDesc += `${mins}分`;
+          if (secs > 0) timeDesc += `${secs}秒`;
+          remainingStr = `距结束：${timeDesc}`;
+        }
 
-                    </div>
+        const isQualified = To.includes(String(item.room_id)) || (joinCond.lottery_range || 0) <= 1;
 
-                    <div class="lottery__info">
+        const rangeDescMap = {
+          0: "所有人可参与",
+          1: "关注主播",
+          2: "成为粉丝",
+          3: "关注主播+成为粉丝",
+        };
+        const rangeText = rangeDescMap[joinCond.lottery_range] || "所有人可参与";
 
-                        <div class="lottery__prize">${n.data.prize_name}x${n.data.prize_num}</div>
-
-                        <div class="lottery__jointext">${a}</div>
-
-                        <div style="color:${d ? "#64ce83" : "#e74c3c"}" class="lottery__condition">${((
-                          e,
-                        ) => {
-                          let t = "";
-                          switch (e.lottery_range) {
-                            case 0:
-                              t = "所有人可参与";
-                              break;
-                            case 1:
-                              t = "关注主播";
-                              break;
-                            case 2:
-                              t = "成为粉丝";
-                              break;
-                            case 3:
-                              t = "关注主播+成为粉丝";
-                          }
-                          return t;
-                        })(i)}</div>
-
-                    </div>
-
-                </div>
-
-            </a>
-
-        `));
+        htmlOutput += `
+          <a class="lottery__a" href="https://www.douyu.com/${item.room_id}" target="_blank">
+            <div class="lottery__item">
+              <div class="lottery__img">
+                <div class="lottery__anchor">${item.anchor_name}</div>
+                <img loading="lazy" src="${item.verticalSrc}"/>
+                <div class="lottery__expireTime">${remainingStr}</div>
+              </div>
+              <div class="lottery__info">
+                <div class="lottery__prize">${actDetail?.data?.prize_name || ''}x${actDetail?.data?.prize_num || 1}</div>
+                <div class="lottery__jointext">${joinText}</div>
+                <div style="color:${isQualified ? "#64ce83" : "#e74c3c"}" class="lottery__condition">${rangeText}</div>
+              </div>
+            </div>
+          </a>
+        `;
+      }
     }
-    var l,
-      s,
-      d,
-      c,
-      e = document.getElementsByClassName("lottery__nodata")[0],
-      e =
-        ("" !== t.trim()
-          ? (e.style.display = "none")
-          : (e.style.display = "block"),
-        (So = t),
-        document.getElementsByClassName("lottery__wrap")[0]);
-    e && (e.innerHTML = So);
+
+    const noDataEl = document.getElementsByClassName("lottery__nodata")[0];
+    if (noDataEl) {
+      noDataEl.style.display = htmlOutput.trim() !== "" ? "none" : "block";
+    }
+
+    So = htmlOutput;
+    const wrapEl = document.getElementsByClassName("lottery__wrap")[0];
+    if (wrapEl) {
+      wrapEl.innerHTML = So;
+    }
   }
 }
+const Lo = refreshLotteryBroadcastList;
+
+let Eo = 0;
 
 }
 ,
