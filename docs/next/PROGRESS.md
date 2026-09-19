@@ -3,14 +3,21 @@
 ## 1. 交付产物与核心指标
 - **分支定位**: `DYEXRL-NEXT`（绝不合并至 `main`，严格分支隔离）
 - **核心交付产物**: `artifacts/next/DouyuEx_RL_NEXT.user.js`
-- **精确文件体积**: `893,823 字节` (`872.87 KB`)
-- **官方 SHA-256 哈希**: `ad39dbdc140b00e45bdcd3ab205af42d88bb18dc08cf56a8b0df462c0edb44cd`
+- **精确文件体积**: `896,475 字节` (`875.46 KB`)
+- **官方 SHA-256 哈希**: `9869b1b2db1f965ecc74b7c9d494953f93049fef3f74940e9181080f9dd290e1`
 - **根目录主线产物**: `DouyuEx_RL.user.js`（严格保持零污染，构建互不干涉）
 
 ---
 
-## 2. 渐进式绞杀重构实施进展 (第一梯队 18 个模块 100% 满贯竣工 🎉)
-已完成全量 76 个 AST 模块三梯队深度评估（详见 [docs/next/MIGRATION_TIERS_EVALUATION.md](docs/next/MIGRATION_TIERS_EVALUATION.md)），并圆满完成第一梯队全部 **18 个零风险模块**（完成率 100%）的现代 ES6+ 语法清洗与强语义重构：
+## 2. 渐进式绞杀重构实施进展 (第一梯队 100% 满贯 + 第二梯队首开战报 🎉)
+全量 76 个 AST 模块三梯队深度评估已落地（详见 [docs/next/MIGRATION_TIERS_EVALUATION.md](docs/next/MIGRATION_TIERS_EVALUATION.md)），累计已完成 **20 个模块**的现代 ES6+ 语法清洗与强语义重构：
+
+### Phase 1: 第一梯队 18 个零风险外围模块 (100% 满贯竣工)
+涵盖版本感知 (`version.js`)、画中画全套 (`pip/` 8个微模块)、经验心跳 (`heartbeat.js`)、开播卡片 (`last-live.js`)、安全绑定 (`bindings.js`)、录播时间戳 (`video-timestamps.js`)、更新控制台 (`update.js`)、当月消费 (`spending.js`)、弹幕长连接 (`cron.js`) 与算法库 (`md5.js`)。
+
+### Phase 2: 第二梯队业务领域切片试水 (首开得胜：一键续牌业务线)
+1. `src/next/services/fans.js`：现代重构粉丝牌与背包资产底层服务，规范化背包道具拉取 (`pt`)、自动钓鱼提竿 (`rt`)、钓鱼主页获取 (`ct`)、全屏与原画配置判断；
+2. `src/next/ui/panels/fans.js`：现代重构 380×370px 一键续牌三级控制面板与执行流水线 (`executeFansContinue`)，规范化荧光棒可用量判定、粉丝牌列表解析、250ms 逐房间安全延时赠送与实时面板徽章/资产回显 (`updateFansContinuePanel`)。
 1. `src/next/services/version.js`：规范 Semver 比较算法与 `async/await fetch` 异步超时控制，消灭全局污染；
 2. `src/next/services/pip/packet-dedup.js`：彻底消灭单字母混淆参数（`e, t, o, n, i`），规范滑窗去重状态机；
 3. `src/next/services/pip/persistence.js`：规范化 LocalStorage JSON 安全反序列化与双向落盘容错；
