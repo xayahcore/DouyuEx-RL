@@ -3,14 +3,14 @@
 ## 1. 交付产物与核心指标
 - **分支定位**: `DYEXRL-NEXT`（绝不合并至 `main`，严格分支隔离）
 - **核心交付产物**: `artifacts/next/DouyuEx_RL_NEXT.user.js`
-- **精确文件体积**: `891,298 字节` (`870.41 KB`)
-- **官方 SHA-256 哈希**: `362dcae1b8af362af8771f862c85748e90d103c83cf869d956f3270dd758d7ba`
+- **精确文件体积**: `894,372 字节` (`873.41 KB`)
+- **官方 SHA-256 哈希**: `6a4cdcdce1aee8dab04a42871e643f0674b237c11dc77145295bd3794e1bd626`
 - **根目录主线产物**: `DouyuEx_RL.user.js`（严格保持零污染，构建互不干涉）
 
 ---
 
-## 2. 渐进式绞杀重构实施进展 (第一梯队累计 14 模块现代重写)
-已完成全量 76 个 AST 模块三梯队深度评估（详见 [docs/next/MIGRATION_TIERS_EVALUATION.md](docs/next/MIGRATION_TIERS_EVALUATION.md)），并圆满完成第一梯队累计 **14 个零风险模块**（进度 ~78%）的 100% 现代 ES6+ 语法清洗与强语义重构：
+## 2. 渐进式绞杀重构实施进展 (第一梯队累计 16 模块现代重写，进度 ~89%)
+已完成全量 76 个 AST 模块三梯队深度评估（详见 [docs/next/MIGRATION_TIERS_EVALUATION.md](docs/next/MIGRATION_TIERS_EVALUATION.md)），并圆满完成第一梯队累计 **16 个零风险模块**（进度 ~89%）的 100% 现代 ES6+ 语法清洗与强语义重构：
 1. `src/next/services/version.js`：规范 Semver 比较算法与 `async/await fetch` 异步超时控制，消灭全局污染；
 2. `src/next/services/pip/packet-dedup.js`：彻底消灭单字母混淆参数（`e, t, o, n, i`），规范滑窗去重状态机；
 3. `src/next/services/pip/persistence.js`：规范化 LocalStorage JSON 安全反序列化与双向落盘容错；
@@ -24,7 +24,9 @@
 11. `src/next/ui/bindings.js`：规范化 `safeBind` / `safeEl` 全局安全事件绑定装甲，防范 DOM 报错与 Dock 重复绑定；
 12. `src/next/entry.js`：规范化总业务入口调度；
 13. `src/next/services/video-timestamps.js`：重构录播视频时间戳换算与悬停预览标签，消除混淆命名；
-14. `src/next/ui/panels/update.js`：现代重构版本更新三级控制台，规范化按钮多态状态机（我已收到/检查更新/正在检查/已是最新/前往更新）。
+14. `src/next/ui/panels/update.js`：现代重构版本更新三级控制台，规范化按钮多态状态机（我已收到/检查更新/正在检查/已是最新/前往更新）；
+15. `src/next/services/spending.js`：现代重构当月消费与鱼翅明细感知服务，消灭混淆变量（`Ao, Do, jo, Po, zo, Oo, Ro, Fo, Vo, qo, Uo, Wo`），结构化分页拉取与跨天缓存更新；
+16. `src/next/platform/cron.js`：现代 ES6+ 语法重塑 `DanmakuProxyWebSocketClient` 弹幕代理长连接客户端，规范化心跳保活、指数退避重连与定时器幂等清理。
 
 ---
 
