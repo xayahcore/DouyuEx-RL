@@ -4,24 +4,34 @@ yield {"Fr": { get: () => Fr, set: value => { Fr = value; } },
 "h": { get: () => h, set: value => { h = value; } },
 "p": { get: () => p, set: value => { p = value; } },
 "u": { get: () => u, set: value => { u = value; } }};
-function Rr(e, t, o, n, i, a) {
-  return Fr(((t = Fr(Fr(t, e), Fr(n, a))) << i) | (t >>> (32 - i)), o);
+/**
+ * 标准 MD5 算法核心变换操作与 NoticeJs 弹窗组件打包
+ * 导出兼容接口:
+ *   Fr: 32位整数加法溢出截断 (safeAdd)
+ *   p:  Round 1 变换操作 (FF)
+ *   u:  Round 2 变换操作 (GG)
+ *   g:  Round 3 变换操作 (HH)
+ *   h:  Round 4 变换操作 (II)
+ */
+function Rr(q, a, b, x, s, t) {
+  return Fr(((b = Fr(Fr(b, q), Fr(x, t))) << s) | (b >>> (32 - s)), a);
 }
-function p(e, t, o, n, i, a, r) {
-  return Rr((t & o) | (~t & n), e, t, i, a, r);
+function p(a, b, c, d, x, s, ac) {
+  return Rr((b & c) | (~b & d), a, b, x, s, ac);
 }
-function u(e, t, o, n, i, a, r) {
-  return Rr((t & n) | (o & ~n), e, t, i, a, r);
+function u(a, b, c, d, x, s, ac) {
+  return Rr((b & d) | (c & ~d), a, b, x, s, ac);
 }
-function g(e, t, o, n, i, a, r) {
-  return Rr(t ^ o ^ n, e, t, i, a, r);
+function g(a, b, c, d, x, s, ac) {
+  return Rr(b ^ c ^ d, a, b, x, s, ac);
 }
-function h(e, t, o, n, i, a, r) {
-  return Rr(o ^ (t | ~n), e, t, i, a, r);
+function h(a, b, c, d, x, s, ac) {
+  return Rr(c ^ (b | ~d), a, b, x, s, ac);
 }
-function Fr(e, t) {
-  var o = (65535 & e) + (65535 & t);
-  return ((e = (e >> 16) + (t >> 16) + (o >> 16)) << 16) | (65535 & o);
+function Fr(x, y) {
+  const lsw = (x & 0xffff) + (y & 0xffff);
+  const msw = (x >> 16) + (y >> 16) + (lsw >> 16);
+  return (msw << 16) | (lsw & 0xffff);
 }
 ((__imports.n = "undefined" != typeof self ? self : this),
   (__imports.t = function () {

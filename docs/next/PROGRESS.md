@@ -3,14 +3,14 @@
 ## 1. 交付产物与核心指标
 - **分支定位**: `DYEXRL-NEXT`（绝不合并至 `main`，严格分支隔离）
 - **核心交付产物**: `artifacts/next/DouyuEx_RL_NEXT.user.js`
-- **精确文件体积**: `894,372 字节` (`873.41 KB`)
-- **官方 SHA-256 哈希**: `6a4cdcdce1aee8dab04a42871e643f0674b237c11dc77145295bd3794e1bd626`
+- **精确文件体积**: `893,823 字节` (`872.87 KB`)
+- **官方 SHA-256 哈希**: `ad39dbdc140b00e45bdcd3ab205af42d88bb18dc08cf56a8b0df462c0edb44cd`
 - **根目录主线产物**: `DouyuEx_RL.user.js`（严格保持零污染，构建互不干涉）
 
 ---
 
-## 2. 渐进式绞杀重构实施进展 (第一梯队累计 16 模块现代重写，进度 ~89%)
-已完成全量 76 个 AST 模块三梯队深度评估（详见 [docs/next/MIGRATION_TIERS_EVALUATION.md](docs/next/MIGRATION_TIERS_EVALUATION.md)），并圆满完成第一梯队累计 **16 个零风险模块**（进度 ~89%）的 100% 现代 ES6+ 语法清洗与强语义重构：
+## 2. 渐进式绞杀重构实施进展 (第一梯队 18 个模块 100% 满贯竣工 🎉)
+已完成全量 76 个 AST 模块三梯队深度评估（详见 [docs/next/MIGRATION_TIERS_EVALUATION.md](docs/next/MIGRATION_TIERS_EVALUATION.md)），并圆满完成第一梯队全部 **18 个零风险模块**（完成率 100%）的现代 ES6+ 语法清洗与强语义重构：
 1. `src/next/services/version.js`：规范 Semver 比较算法与 `async/await fetch` 异步超时控制，消灭全局污染；
 2. `src/next/services/pip/packet-dedup.js`：彻底消灭单字母混淆参数（`e, t, o, n, i`），规范滑窗去重状态机；
 3. `src/next/services/pip/persistence.js`：规范化 LocalStorage JSON 安全反序列化与双向落盘容错；
@@ -19,14 +19,16 @@
 6. `src/next/services/pip/packet-dispatch.js`：彻底消灭单字母参数，清晰分流全量飘屏、单条模式与连击合并；
 7. `src/next/services/pip/state.js`：结构化状态容器，添加字段注释与生命周期说明；
 8. `src/next/services/pip/markup.js`：规范化画中画样式与骨架 HTML 模板生成；
-9. `src/next/runtime/heartbeat.js`：规范 60 秒全局经验心跳调度，确保幂等启停；
-10. `src/next/ui/room/last-live.js`：重写未开播卡片与人类友好相对时间计算器，规范 DOM 树装配与淡出动画；
-11. `src/next/ui/bindings.js`：规范化 `safeBind` / `safeEl` 全局安全事件绑定装甲，防范 DOM 报错与 Dock 重复绑定；
-12. `src/next/entry.js`：规范化总业务入口调度；
-13. `src/next/services/video-timestamps.js`：重构录播视频时间戳换算与悬停预览标签，消除混淆命名；
-14. `src/next/ui/panels/update.js`：现代重构版本更新三级控制台，规范化按钮多态状态机（我已收到/检查更新/正在检查/已是最新/前往更新）；
-15. `src/next/services/spending.js`：现代重构当月消费与鱼翅明细感知服务，消灭混淆变量（`Ao, Do, jo, Po, zo, Oo, Ro, Fo, Vo, qo, Uo, Wo`），结构化分页拉取与跨天缓存更新；
-16. `src/next/platform/cron.js`：现代 ES6+ 语法重塑 `DanmakuProxyWebSocketClient` 弹幕代理长连接客户端，规范化心跳保活、指数退避重连与定时器幂等清理。
+9. `src/next/services/pip/window.js`：现代 ES6+ 彻底重塑画中画小窗主控制器，消除 25 个单字母混淆变量，规范化小窗视频播放、弹幕双向互动、设置拖拽面板与 WebSocket 销毁；
+10. `src/next/runtime/heartbeat.js`：规范 60 秒全局经验心跳调度，确保幂等启停；
+11. `src/next/ui/room/last-live.js`：重写未开播卡片与人类友好相对时间计算器，规范 DOM 树装配与淡出动画；
+12. `src/next/ui/bindings.js`：规范化 `safeBind` / `safeEl` 全局安全事件绑定装甲，防范 DOM 报错与 Dock 重复绑定；
+13. `src/next/entry.js`：规范化总业务入口调度；
+14. `src/next/services/video-timestamps.js`：重构录播视频时间戳换算与悬停预览标签，消除混淆命名；
+15. `src/next/ui/panels/update.js`：现代重构版本更新三级控制台，规范化按钮多态状态机（我已收到/检查更新/正在检查/已是最新/前往更新）；
+16. `src/next/services/spending.js`：现代重构当月消费与鱼翅明细感知服务，消灭混淆变量（`Ao, Do, jo, Po, zo, Oo, Ro, Fo, Vo, qo, Uo, Wo`），结构化分页拉取与跨天缓存更新；
+17. `src/next/platform/cron.js`：现代 ES6+ 语法重塑 `DanmakuProxyWebSocketClient` 弹幕代理长连接客户端，规范化心跳保活、指数退避重连与定时器幂等清理；
+18. `src/next/platform/md5.js`：规范 RFC 1321 MD5 4-Round 核心变换（safeAdd/FF/GG/HH/II）与 NoticeJs 模态包装，补齐强类型 JSDoc 算法注解。
 
 ---
 
