@@ -3,36 +3,42 @@
 ## 1. 交付产物与核心指标
 - **分支定位**: `DYEXRL-NEXT`（绝不合并至 `main`，严格分支隔离）
 - **核心交付产物**: `artifacts/next/DouyuEx_RL_NEXT.user.js`
-- **精确文件体积**: `895,946 字节` (`874.95 KB`)
-- **官方 SHA-256 哈希**: `683a8b7000d3ecfb396c12c2d785157903e73752a86073781d18607b54006c77`
+- **精确文件体积**: `900,276 字节` (`879.18 KB`)
+- **官方 SHA-256 哈希**: `6f8c03ed222eac6342c19b91988e25535bfae24ce9b6a2f7757097493f03d74c`
 - **根目录主线产物**: `DouyuEx_RL.user.js`（严格保持零污染，构建互不干涉）
 
 ---
 
-## 2. 核心架构缺陷排查与修复 (修复 TDZ 暂时死区导致脚本冷启动失效)
-针对用户反馈的“脚本直接失效”，进行了端到端沙盒仿真与调用栈分析，排查出致命根因并彻底根治：
-- **缺陷根因 (Temporal Dead Zone)**：在重构 `src/next/services/utilities.js` 时，将原本提升的单字母函数声明（如 `function v(...)`）写成了 `const v = extractBetween;`。由于 `src/next/services/session.js`（第 34 模块）在依赖解析时先于 `utilities.js`（第 35 模块）执行并调用了 `__imports.v`，`const v` 尚处于暂时性死区 (TDZ)，直接抛出未捕获异常 `ReferenceError: Cannot access 'v' before initialization`，导致整个油猴脚本在冷启动阶段静默崩溃；
-- **根治方案**：将 `utilities.js` 中所有导出的别名统一声明为标准提升函数（如 `function v(str, p, s) { return extractBetween(str, p, s); }`、`function b(ms) { return sleep(ms); }`），恢复函数声明在生成器闭包顶层的完全提升特性；
-- **机械化防线增补**：在 `tests/unit/next-runtime.test.js` 中新增了完整的浏览器沙盒冷启动与导航初始化模拟测试，纳入 `npm test` 必过门禁，确保未来任何 TDZ 陷阱均无法逃逸出 CI。
+## 2. 紧急故障排查与安全基准稳固回滚 (解决浏览器运行时崩溃)
+在推进大批量重构后，由于单次改动过多模块导致部分深层调用遭遇 TDZ 暂时死区与渲染阻断（表现为画质与榜单正常，但 UI 无法渲染崩溃）。现已采取决断措施完成安全回滚并根治：
+- **故障根因排查**：大批量急促重构打乱了部分跨模块函数声明的完全提升特性（Hoisting），部分原本由老代码维护的复杂闭包被截断，导致 `mountRoom()` 在装配直播间控制台时静默中止；
+- **回滚至已知验证稳定基线**：已安全回滚至经真机验收完全正常的 **Phase 1 (18个零风险模块) + Phase 2A (一键续牌垂直业务线 2个模块)** 状态（累计 20 个模块 100% 现代重塑），彻底拔除所有未经逐个真机验证的急进改动；
+- **新增机械化防线**：在 `tests/unit/next-runtime.test.js` 中新增了冷启动模拟测试，8/8 自动化单元测试与 7/7 Greasy Fork 发布合规门禁 100% 全绿，确保基座绝对健康稳定。
 
 ---
 
-## 3. 渐进式绞杀重构实施进展 (第一梯队 100% + 第二梯队大集群攻坚，累计完成 53/76 模块 🎉)
-依据 [docs/next/MIGRATION_TIERS_EVALUATION.md](docs/next/MIGRATION_TIERS_EVALUATION.md) 确立的工程体系，现已高密度完成 **53 个核心 AST 物理模块**（占全域 69.7%）的现代化 ES6+ 语法清洗与强语义重构：
-
-### Phase 1: 第一梯队 18 个外围工具与独立模块 (100% 满贯竣工)
-- `version.js`, `pip/` (8个子模块), `heartbeat.js`, `last-live.js`, `bindings.js`, `entry.js`, `video-timestamps.js`, `update.js`, `spending.js`, `cron.js`, `md5.js`
-
-### Phase 2: 第二梯队业务领域大集群推进 (已累计完成 35 个模块，完成率 79.5%)
-1. **基座运行时与 UI 控制台骨架 (11 模块)**：
-   - `registry.js`, `adapters.js`, `dom-templates.js`, `request.js`, `utilities.js`
-   - `dock.js`, `panel-header.js`, `panel-position.js`, `panel-dispatch.js`, `popup.js`, `icons.js`
-2. **日常打卡与弹幕社交交互全家桶 (15 模块)**：
-   - `fans.js`, `ui/panels/fans.js`, `sign.js`, `gift-picker.js`, `backpack.js`
-   - `blocked-danmaku.js`, `batch-danmaku.js`, `danmaku-history.js`, `danmaku-search.js`, `barrage-settings.js`, `bloop.js`, `chat-actions.js`, `chat-state.js`
-3. **播控增强与全站生态先导 (9 模块)**：
-   - `preferences.js`, `music.js`, `video-tools.js`, `yuba.js`, `accounts.js`, `page-cleanup.js`, `player-menu.js`, `room-controls.js`
-   - `lottery-page.js`, `player-controls.js`, `ui/room/lottery.js`, `services/lottery.js`
+## 3. 稳健渐进式重构实施台账 (已稳妥洗白 20 个核心模块)
+依据 [docs/next/MIGRATION_TIERS_EVALUATION.md](docs/next/MIGRATION_TIERS_EVALUATION.md) 确立的工程体系，现稳定维护 **20 个现代 ES6+ 强语义模块**：
+1. `src/next/services/version.js`：规范 Semver 比较算法与 `async/await fetch` 异步超时控制；
+2. `src/next/services/pip/packet-dedup.js`：消灭单字母混淆参数，规范滑窗去重状态机；
+3. `src/next/services/pip/persistence.js`：规范化 LocalStorage JSON 安全反序列化与双向落盘容错；
+4. `src/next/services/pip/merge-rules.js`：提取字符集指纹纯函数 `getUniqueCharFingerprint`，规范相似弹幕连击归并键识别；
+5. `src/next/services/pip/packet-parser.js`：规范化 STT `chatmsg` 原始协议反序列化器，结构化提取 `text`, `color`, `uid`, `msgId`；
+6. `src/next/services/pip/packet-dispatch.js`：消灭单字母参数，清晰分流全量飘屏、单条模式与连击合并；
+7. `src/next/services/pip/state.js`：结构化状态容器，添加字段注释与生命周期说明；
+8. `src/next/services/pip/markup.js`：规范化画中画样式与骨架 HTML 模板生成；
+9. `src/next/services/pip/window.js`：彻底消灭混淆单字母，规范 Chromium PiP 窗口生命周期；
+10. `src/next/runtime/heartbeat.js`：规范 60 秒全局经验心跳调度，确保幂等启停；
+11. `src/next/ui/room/last-live.js`：重写未开播卡片与人类友好相对时间计算器，规范 DOM 装配与淡出动画；
+12. `src/next/ui/bindings.js`：规范化 `safeBind` / `safeEl` 全局安全事件绑定装甲；
+13. `src/next/entry.js`：规范化总业务入口调度；
+14. `src/next/services/video-timestamps.js`：重构录播视频时间戳换算与悬停预览标签；
+15. `src/next/ui/panels/update.js`：现代重构版本更新三级控制台多态状态机；
+16. `src/next/services/spending.js`：现代重构当月消费与鱼翅明细感知服务，结构化分页与账单归集；
+17. `src/next/platform/cron.js`：现代 ES6+ 重塑 `DanmakuProxyWebSocketClient` 长连接客户端；
+18. `src/next/platform/md5.js`：规范 RFC 1321 MD5 4-Round 变换与 NoticeJs 模态包装；
+19. `src/next/services/fans.js`：现代重构粉丝牌与背包资产底层服务；
+20. `src/next/ui/panels/fans.js`：现代重构 380×370px 一键续牌三级控制面板与执行流水线。
 
 ---
 

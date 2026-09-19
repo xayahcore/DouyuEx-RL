@@ -1,207 +1,254 @@
 function* (__imports) {
 yield {"jr": { get: () => jr, set: value => { jr = value; } }};
-/**
- * HLS / M3U8 多线程分片并发下载与视频拼接下载器 (导出兼容 jr)
- */
-function HlsVideoDownloader() {
-  const self = this;
-
-  /**
-   * TS 视频分片并发批量下载状态机
-   */
-  function SegmentDownloadTask(urlList, onComplete, startIndex, accumulatedChunks) {
-    const task = this;
-    this.aborted = false;
-    this.threadNum = 10;
-    this.step = 0;
-
-    (function batchFetch(urls, resolveAll, currentIdx, chunks) {
-      const promiseBatch = [];
-      for (let t = 0; t < task.threadNum; t++) {
-        const segUrl = urls[currentIdx + t];
-        if (!segUrl) {
-          promiseBatch.push(Promise.resolve());
-          break;
-        }
-
-        promiseBatch.push(
-          (0, __imports.fetch)(segUrl).catch(() => {
-            return (0, __imports.fetch)(segUrl).catch(() => {
-              return (0, __imports.fetch)(segUrl);
-            });
-          })
-        );
-      }
-
-      task.step = promiseBatch.length;
-
-      Promise.all(promiseBatch)
-        .then((responses) => {
-          const validResponses = responses.filter(r => r && typeof r.blob === "function");
-          return Promise.all(validResponses.map(r => r.blob()));
-        })
-        .then((blobs) => {
-          const bufferPromises = blobs.map((blob, offset) => {
-            return new Promise((res) => {
-              const reader = new FileReader();
-              reader.readAsArrayBuffer(new Blob([blob], { type: "octet/stream" }));
-              reader.addEventListener("loadend", () => {
-                res(reader.result);
-                if (typeof task.onprogress === "function") {
-                  const currentSegment = currentIdx + offset + 1;
-                  const totalSegments = urls.length;
-                  const totalDownloadedBytes = chunks.reduce((sum, chunk) => sum + (chunk?.byteLength || 0), 0);
-
-                  task.onprogress({
-                    segment: currentSegment,
-                    total: totalSegments,
-                    percentage: ((currentSegment / totalSegments) * 100).toFixed(3),
-                    downloaded: formatByteSize(totalDownloadedBytes),
-                    status: "Downloading...",
-                  });
-                }
+function jr() {
+  var l = this;
+  function s(e, t, o, n) {
+    var s = this;
+    ((this.aborted = !1),
+      (this.threadNum = 10),
+      (this.step = 0),
+      (function n(a, i, r, l) {
+        let e = [];
+        for (let t = 0; t < s.threadNum; t++) {
+          if (!a[r + t]) {
+            e.push(Promise.resolve());
+            break;
+          }
+          e.push(
+            (0, __imports.fetch)(a[r + t]).catch((e) => {
+              (0, __imports.fetch)(a[r + t]).catch((e) => {
+                (0, __imports.fetch)(a[r + t]);
               });
-            });
-          });
-          return Promise.all(bufferPromises);
-        })
-        .then((loadedBuffers) => {
-          for (let i = 0; i < loadedBuffers.length; i++) {
-            chunks.push(loadedBuffers[i]);
-          }
-          const nextStep = task.step;
-
-          if (task.aborted) {
-            if (typeof task.aborted === "function") task.aborted();
-          } else if (urls[currentIdx + nextStep]) {
-            if (task.ie) {
-              (0, __imports.setTimeout)(() => {
-                batchFetch(urls, resolveAll, currentIdx + nextStep, chunks);
-              }, 500);
-            } else {
-              batchFetch(urls, resolveAll, currentIdx + nextStep, chunks);
-            }
-          } else {
-            resolveAll(chunks);
-          }
-        })
-        .catch((err) => {
-          if (typeof task.onerror === "function") {
-            task.onerror(`下载 TS 分片时异常 (index: ${currentIdx}): ${err}`);
-          }
-        });
-    })(urlList, onComplete, startIndex, accumulatedChunks);
-  }
-
-  function formatByteSize(bytes) {
-    const units = [
-      { divider: 1e18, suffix: "EB" },
-      { divider: 1e15, suffix: "PB" },
-      { divider: 1e12, suffix: "TB" },
-      { divider: 1e9, suffix: "GB" },
-      { divider: 1e6, suffix: "MB" },
-      { divider: 1e3, suffix: "kB" },
-    ];
-    for (const unit of units) {
-      if (bytes >= unit.divider) {
-        return (bytes / unit.divider).toString().split(".")[0] + unit.suffix;
-      }
-    }
-    return String(bytes);
-  }
-
-  this.ie = navigator.appVersion.toString().includes(".NET");
-  this.ios = Boolean(navigator.platform && /iPad|iPhone|iPod/.test(navigator.platform));
-
-  /**
-   * 启动下载 M3U8 并封装导出视频
-   */
-  this.start = function (m3u8Url, options = {}) {
-    let activeTask = null;
-    const callbacks = { progress: null, finished: null, error: null, aborted: null };
-
-    const emitEvent = (type, payload) => {
-      if (typeof callbacks[type] === "function") callbacks[type](payload);
-    };
-
-    if (self.ios) {
-      emitEvent("error", "iOS 平台暂不支持分片合并下载");
-      return;
-    }
-
-    const controller = {
-      on(event, handler) {
-        if (event in callbacks) callbacks[event] = handler;
-        return controller;
-      },
-      abort() {
-        if (activeTask) {
-          activeTask.aborted = () => emitEvent("aborted");
+            }),
+          );
         }
-      },
-    };
-
-    new Promise((resolve, reject) => {
-      const parsedUrl = new URL(m3u8Url);
-      (0, __imports.fetch)(m3u8Url)
-        .then(res => res.text())
-        .then((m3u8Content) => {
-          const lines = m3u8Content.split(/\r?\n/);
-          const tsLines = lines.filter(line => line.includes(".ts"));
-
-          if (tsLines.length === 0) {
-            const err = "无效的 M3U8 播放列表文件";
-            reject(err);
-            emitEvent("error", err);
-            return;
-          }
-
-          const resolvedTsUrls = tsLines.map((tsLine) => {
-            if (tsLine.startsWith("http") || tsLine.startsWith("ftp")) {
-              return tsLine;
-            }
-            return `${parsedUrl.protocol}//${parsedUrl.host}${parsedUrl.pathname}/./../${tsLine}`;
+        s.step = e.length;
+        Promise.all(e)
+          .then(function (e) {
+            return c(
+              d(e, function (e) {
+                return e && e.blob;
+              }),
+              function (e) {
+                return e.blob();
+              },
+            );
+          })
+          .then(function (e) {
+            return Promise.all(e);
+          })
+          .then(function (e) {
+            ((e = c(e, function (n, i) {
+              return new Promise(function (t, e) {
+                var o = new FileReader();
+                (o.readAsArrayBuffer(new Blob([n], { type: "octet/stream" })),
+                  o.addEventListener("loadend", function (e) {
+                    (t(o.result),
+                      s.onprogress &&
+                        s.onprogress({
+                          segment: r + i + 1,
+                          total: a.length,
+                          percentage: (((r + i + 1) / a.length) * 100).toFixed(
+                            3,
+                          ),
+                          downloaded: m(
+                            +p(
+                              c(l, function (e) {
+                                return e.byteLength;
+                              }),
+                              function (e, t) {
+                                return e + t;
+                              },
+                              0,
+                            ),
+                          ),
+                          status: "Downloading...",
+                        }));
+                  }));
+              });
+            })),
+              Promise.all(e).then(function (e) {
+                for (var t = 0; t < e.length; t++) l.push(e[t]);
+                let o = s.step;
+                (a[r + 2],
+                  s.aborted
+                    ? ((l = null), s.aborted())
+                    : a[r + o]
+                      ? s.ie
+                        ? (0, __imports.setTimeout)(function () {
+                            n(a, i, r + o, l);
+                          }, 500)
+                        : n(a, i, r + o, l)
+                      : i(l));
+              }));
+          })
+          .catch(function (e) {
+            s.onerror &&
+              s.onerror(
+                "Something went wrong when downloading ts file, nr. " +
+                  r +
+                  ": " +
+                  e,
+              );
           });
-
-          activeTask = new SegmentDownloadTask(resolvedTsUrls, (chunkBuffers) => {
-            const finalBlob = new Blob(chunkBuffers, { type: "octet/stream" });
-            emitEvent("progress", { status: "Processing..." });
-
-            if (options.returnBlob) {
-              emitEvent("finished", { status: "Successfully downloaded video", data: finalBlob });
-              resolve(finalBlob);
-            } else {
-              const filename = options.filename || "video.mp4";
-              if (self.ie) {
-                window.navigator.msSaveBlob(finalBlob, filename);
-              } else {
-                emitEvent("progress", { status: "Sending video to browser..." });
-                const anchor = document.createElement("a");
-                anchor.href = URL.createObjectURL(finalBlob);
-                anchor.download = filename;
-                anchor.style.display = "none";
-                document.body.appendChild(anchor);
-                anchor.click();
-                anchor.remove();
+      })(e, t, o, n));
+  }
+  function d(e, t) {
+    for (var o = [], n = 0; n < e.length; n++) t(e[n], n) && o.push(e[n]);
+    return o;
+  }
+  function c(e, t) {
+    for (var o = e.slice(0), n = 0; n < e.length; n++) o[n] = t(e[n], n);
+    return o;
+  }
+  function p(e, o, t) {
+    var n = t;
+    return (
+      e.forEach(function (e, t) {
+        ((e = +o(n, e, t)), (n = e));
+      }),
+      n
+    );
+  }
+  function m(e) {
+    for (
+      var t = [
+          { divider: 1e18, suffix: "EB" },
+          { divider: 1e15, suffix: "PB" },
+          { divider: 1e12, suffix: "TB" },
+          { divider: 1e9, suffix: "GB" },
+          { divider: 1e6, suffix: "MB" },
+          { divider: 1e3, suffix: "kB" },
+        ],
+        o = 0;
+      o < t.length;
+      o++
+    )
+      if (e >= t[o].divider)
+        return (
+          (e / t[o].divider).toString().toString().split(".")[0] + t[o].suffix
+        );
+    return e.toString();
+  }
+  ((this.ie = 0 < navigator.appVersion.toString().indexOf(".NET")),
+    (this.ios =
+      navigator.platform && /iPad|iPhone|iPod/.test(navigator.platform)),
+    (this.start = function (e, i) {
+      i = i || {};
+      var a,
+        o,
+        n = { progress: null, finished: null, error: null, aborted: null };
+      function r(e, t) {
+        e && n[e] && n[e](t);
+      }
+      return l.ios
+        ? r("error", "Downloading on IOS is not supported.")
+        : ((o = {
+            on: function (e, t) {
+              switch (e) {
+                case "progress":
+                  n.progress = t;
+                  break;
+                case "finished":
+                  n.finished = t;
+                  break;
+                case "error":
+                  n.error = t;
+                  break;
+                case "aborted":
+                  n.aborted = t;
               }
-              emitEvent("finished", { status: "Successfully downloaded video", data: finalBlob });
-              resolve(finalBlob);
-            }
-          }, 0, []);
-
-          activeTask.onprogress = (prog) => {
-            emitEvent("progress", prog);
-          };
-        })
-        .catch((err) => {
-          emitEvent("error", `解析 M3U8 失败: ${err}`);
-        });
-    });
-
-    return controller;
-  };
+              return o;
+            },
+            abort: function () {
+              a &&
+                (a.aborted = function () {
+                  r("aborted");
+                });
+            },
+          }),
+          new Promise(function (o, t) {
+            var n = new URL(e);
+            (0, __imports.fetch)(e)
+              .then(function (e) {
+                return e.text();
+              })
+              .then(function (e) {
+                if (
+                  !(e = c(
+                    (e = d(e.split(/(\r\n|\r|\n)/gi), function (e) {
+                      return -1 < e.indexOf(".ts");
+                    })),
+                    function (e, t) {
+                      return 0 === e.indexOf("http") || 0 === e.indexOf("ftp")
+                        ? e
+                        : n.protocol +
+                            "//" +
+                            n.host +
+                            n.pathname +
+                            "/./../" +
+                            e;
+                    },
+                  )).length
+                )
+                  return (
+                    t("Invalid m3u8 playlist"),
+                    r("error", "Invalid m3u8 playlist")
+                  );
+                (a = new s(
+                  e,
+                  function (e) {
+                    var t;
+                    ((e = new Blob(e, { type: "octet/stream" })),
+                      r("progress", { status: "Processing..." }),
+                      i.returnBlob
+                        ? (r("finished", {
+                            status: "Successfully downloaded video",
+                            data: e,
+                          }),
+                          o(e))
+                        : l.ios ||
+                          (l.ie
+                            ? (r("progress", {
+                                status:
+                                  "Sending video to Internet Explorer... this may take a while depending on your device's performance.",
+                              }),
+                              window.navigator.msSaveBlob(
+                                e,
+                                (i && i.filename) || "video.mp4",
+                              ))
+                            : (r("progress", {
+                                status: "Sending video to browser...",
+                              }),
+                              ((t = document.createElementNS(
+                                "http://www.w3.org/1999/xhtml",
+                                "a",
+                              )).href = URL.createObjectURL(e)),
+                              (t.download = (i && i.filename) || "video.mp4"),
+                              (t.style.display = "none"),
+                              document.body.appendChild(t),
+                              t.click(),
+                              r("finished", {
+                                status: "Successfully downloaded video",
+                                data: e,
+                              }),
+                              o(e))));
+                  },
+                  0,
+                  [],
+                )).onprogress = function (e) {
+                  r("progress", e);
+                };
+              })
+              .catch(function (e) {
+                r(
+                  "error",
+                  "Something went wrong when downloading m3u8 playlist: " + e,
+                );
+              });
+          }),
+          o);
+    }));
 }
-
-const jr = HlsVideoDownloader;
 
 }

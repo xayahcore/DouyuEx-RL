@@ -6,132 +6,220 @@ yield {"bn": { get: () => bn, set: value => { bn = value; } },
 "mn": { get: () => mn, set: value => { mn = value; } },
 "un": { get: () => un, set: value => { un = value; } },
 "yn": { get: () => yn, set: value => { yn = value; } }};
-/**
- * 页面全域广告、商业死重类名拦截与清爽弹幕净化样式库
- */
-let mn = 0; // 弹幕精简化状态: 0 = 完整, 1 = 纯文本精简
-let gn = 0; // 页面布局清爽开关状态
-
-/**
- * 激活纯净弹幕前缀与图标剥离样式 (导出兼容 un)
- */
-function applyCleanBarrageStyle() {
-  (0, __imports.tl)(
+let mn = 0;
+function un() {
+  ((0, __imports.tl)(
     "Ex_Style_RefreshBarrage",
     `
-      .UserCsgoGameDataMedal, .Barrage-honor, .Barrage-listItem .Barrage-icon,
-      .Barrage-listItem .FansMedal.is-made, .Barrage-listItem .RoomLevel,
-      .Barrage-listItem .Motor, .Barrage-listItem .ChatAchievement,
-      .Barrage-listItem .Barrage-hiIcon, .Barrage-listItem .Medal,
-      .Barrage-listItem .MatchSystemTeamMedal, .Barrage-listItem .Baby,
-      .FansMedalWrap {
-        display: none !important;
-      }
-    `
+
+    .UserCsgoGameDataMedal,.Barrage-honor,.Barrage-listItem .Barrage-icon,.Barrage-listItem .FansMedal.is-made,.Barrage-listItem .RoomLevel,.Barrage-listItem .Motor,.Barrage-listItem .ChatAchievement,.Barrage-listItem .Barrage-hiIcon,.Barrage-listItem .Medal,.Barrage-listItem .MatchSystemTeamMedal{display:none !important;}
+
+    /*.Barrage-listItem .UserLevel{display:none !important;}*/
+
+    .Barrage-listItem .Baby{display:none !important;}
+
+    .FansMedalWrap{display:none !important;}
+
+    `,
+  ),
+    (mn = 1),
+    document.getElementById("refresh-barrage").classList.add("ex-active"),
+    (document.getElementById("refresh-barrage__text").style.color = "#fff"),
+    (document.getElementById("refresh-barrage__text").innerText = "前缀"));
+  var e = document.getElementById("refresh-barrage__svg");
+  e &&
+    (e = e.getElementsByTagName("path")[0]) &&
+    e.setAttribute("fill", "#ffffff");
+}
+let gn = 0;
+function hn(e) {
+  var t = document.getElementById("ex-refresh-switch"),
+    o = document.getElementById("ex-refresh-switch-circle");
+  t &&
+    o &&
+    (e
+      ? ((t.style.background = "#f60"), (o.style.left = "14px"))
+      : ((t.style.background = "rgba(255,255,255,0.3)"),
+        (o.style.left = "2px")));
+}
+function fn() {
+  return (
+    "hidden" ==
+    document.getElementsByClassName("PlayerToolbar-ContentRow")[0].style
+      .visibility
   );
-
-  mn = 1;
-  const btn = document.getElementById("refresh-barrage");
-  if (btn) btn.classList.add("ex-active");
-
-  const text = document.getElementById("refresh-barrage__text");
-  if (text) {
-    text.style.color = "#fff";
-    text.innerText = "前缀";
-  }
-
-  const svgPath = document.getElementById("refresh-barrage__svg")?.getElementsByTagName("path")[0];
-  if (svgPath) svgPath.setAttribute("fill", "#ffffff");
 }
-const un = applyCleanBarrageStyle;
-
-/**
- * 更新清爽模式开关滑块视觉状态 (导出兼容 hn)
- * @param {boolean} isChecked
- */
-function updateRefreshSwitchState(isChecked) {
-  const switchBox = document.getElementById("ex-refresh-switch");
-  const switchCircle = document.getElementById("ex-refresh-switch-circle");
-  if (switchBox && switchCircle) {
-    if (isChecked) {
-      switchBox.style.background = "#f60";
-      switchCircle.style.left = "14px";
-    } else {
-      switchBox.style.background = "rgba(255,255,255,0.3)";
-      switchCircle.style.left = "2px";
-    }
-  }
-}
-const hn = updateRefreshSwitchState;
-
-/**
- * 检查底栏工具行是否已隐藏 (导出兼容 fn)
- * @returns {boolean}
- */
-function isToolbarContentRowHidden() {
-  const row = document.getElementsByClassName("PlayerToolbar-ContentRow")[0];
-  return Boolean(row && row.style.visibility === "hidden");
-}
-const fn = isToolbarContentRowHidden;
-
-/**
- * 注入视频播放区 PK 与点赞动效屏蔽样式 (导出兼容 yn)
- */
-function applyVideoOverlayCleanStyle() {
+function yn() {
   (0, __imports.tl)(
     "Ex_Style_VideoRefresh",
     `
-      .PELact, .pushTower-wrapper-gf1HG, .PkView-9f6a2c, .MorePk,
-      .RandomPKBar, .LiveRoomLoopVideo, .LiveRoomDianzan,
-      .maiMaitView-68e80c, .PkView {
-        display: none !important;
-      }
-    `
+
+    .PELact,.pushTower-wrapper-gf1HG,.PkView-9f6a2c,.MorePk,.RandomPKBar,.LiveRoomLoopVideo,.LiveRoomDianzan,.maiMaitView-68e80c,.PkView{display:none !important;}
+
+    `,
   );
 }
-const yn = applyVideoOverlayCleanStyle;
-
-/**
- * 注入全站商业横幅、悬浮弹窗与广告物理拦截样式 (导出兼容 bn)
- */
-function applyAdblockAndCleanupStyles() {
+function bn() {
   (0, __imports.tl)(
     "Ex_Style_RemoveAD",
     `
-      .ScreenBannerAd, .XinghaiAd, .CustomGroupGuide, .FudaiGiftToolBarTips,
-      .UserInfo-tryEnterHiddenLead, .BargainingKit, .AnchorPocketTips, .FishShopTip,
-      .FollowGuide, #js-bottom-right-cloudGame, .CloudGameLink, .RoomText-icon-horn,
-      .RoomText-list, .Search-ad, .RedEnvelopAd, .noHandlerAd-0566b9, .PcDiversion,
-      .DropMenuList-ad, .DropPane-ad, .WXTipsBox, .igl_bg-b0724a, .closure-ab91fb,
-      .VideoAboveVivoAd, .css-widgetWrapper-EdVVC, .watermark-442a18, .FollowGuide-FadeOut,
-      .MatchSystemChatRoomEntry-roomTabs, .FansMedalDialog-normal, .GameLauncher,
-      .recommendAD-54569e, .recommendApp-0e23eb, .Title-ad, .Bottom-ad, .SignBarrage,
-      .corner-ad-495ade, .SignBaseComponent-sign-ad, .SuperFansBubble, .is-noLogin,
-      .PlayerToolbar-signCont, #js-widget, .Frawdroom, .HeaderGif-right, .HeaderGif-left,
-      .liveos-workspace, .BattleShipTips, .LastLiveTime, .recommendView-3e8b62,
-      .TurntableLottery-actTips, .feedback-e27241, .FansMedalEnter-maxFlag,
-      .GuessGameMiniPanelB-wrapper, .ZoomTip, .PlayerToolbar-couponInfo,
-      .AroundStarsActTips-actTips, .AroundStarsMoonBoxTips, .AroundStarsPlanetTips,
-      .InteractPlayWithEnter-enterTips1, .SharePanel, .CommonShareToolkit,
-      .mask1-63237a, .mask2-a8df6e, .panel1-1484c9, .panel2-5ece0e,
-      .IconCardAdCard, .IconCardAd, .CloseVideoPlayerAd, .IconCardAdBoundsBox,
-      .room-top-banner-box, .LadderNav, #js-bottom-right-recommendAd,
-      .aside-top-uspension-box, .bacpCommonKeFu, .ClosingRecommend,
-      .ClosingRecommend *, .werbungContainer__2sv7h, #js-player-asideTopSuspension,
-      .Search-Panel-Advert {
-        display: none !important;
-      }
 
-      .Barrage-topFloater { z-index: 999; }
-      .danmuAuthor-3d7b4a, .danmuContent-25f266 { overflow: initial; }
-      .Header-follow-listBox { max-height: 640px !important; }
-      #js-barrage-list-parent { scrollbar-width: none; -ms-overflow-style: none; width: 98%; height: 100%; }
-      #js-barrage-list-parent::-webkit-scrollbar { display: none; }
-      #js-barrage-extend-container { display: var(--enter-display, none) !important; }
-      #js-player-asideMain { top: 0 !important; }
-    `
+    .ScreenBannerAd,.XinghaiAd,.CustomGroupGuide,.FudaiGiftToolBarTips,.UserInfo-tryEnterHiddenLead,.BargainingKit,.AnchorPocketTips,.FishShopTip,.FollowGuide,#js-bottom-right-cloudGame,.CloudGameLink,.RoomText-icon-horn,.RoomText-list,.Search-ad,.RedEnvelopAd,.noHandlerAd-0566b9,.PcDiversion,.DropMenuList-ad,.DropPane-ad,.WXTipsBox,.igl_bg-b0724a,.closure-ab91fb,.VideoAboveVivoAd,.css-widgetWrapper-EdVVC,.watermark-442a18,.FollowGuide-FadeOut,.MatchSystemChatRoomEntry-roomTabs,.FansMedalDialog-normal,.GameLauncher,.recommendAD-54569e,.recommendApp-0e23eb,.Title-ad,.Bottom-ad,.SignBarrage,.corner-ad-495ade,.SignBaseComponent-sign-ad,.SuperFansBubble,.is-noLogin,.PlayerToolbar-signCont,#js-widget,.Frawdroom,.HeaderGif-right,.HeaderGif-left,.liveos-workspace{display:none !important;}
+
+    .Barrage-topFloater{z-index:999}
+
+    .danmuAuthor-3d7b4a, .danmuContent-25f266{overflow: initial}
+
+    .BattleShipTips{display:none !important;}
+
+    .LastLiveTime,.recommendView-3e8b62{display:none !important;}
+
+    .TurntableLottery-actTips{display:none !important;}
+
+    .feedback-e27241{display:none !important;}
+
+    .FansMedalEnter-maxFlag{display:none !important;}
+
+    .Header-follow-listBox{max-height:640px !important;}
+
+
+
+    .GuessGameMiniPanelB-wrapper{display:none !important;}
+
+
+
+    .ZoomTip{display:none !important;}
+
+
+
+    /*福利券*/
+
+    .PlayerToolbar-couponInfo{display:none !important;}
+
+    /*太空探险tips*/
+
+    .AroundStarsActTips-actTips,.AroundStarsMoonBoxTips,.AroundStarsPlanetTips{display:none !important;}
+
+    /*优化页面*/
+
+    #js-barrage-list-parent{scrollbar-width: none;-ms-overflow-style: none;width:98%;height:100%}
+
+    #js-barrage-list-parent::-webkit-scrollbar{display: none;}
+
+    /*陪玩*/
+
+    .InteractPlayWithEnter-enterTips1{display:none !important;}
+
+
+
+    /*恢复emoji彩色 chrome加粗情况下emoji会变灰，需要找一个fontweight起始值在500的字体库才可以兼容*/
+
+
+
+    /*右侧分享*/
+
+    .SharePanel,.CommonShareToolkit{
+
+        display: none!important;
+
+    }
+
+    /*去除还在电脑面前的mask*/
+
+    .mask1-63237a,.mask2-a8df6e,.panel1-1484c9,.panel2-5ece0e{
+
+        display: none!important;
+
+    }
+
+    /*左侧悬浮二维码广告*/
+
+    .IconCardAdCard{
+
+        display: none!important;
+
+    }
+
+    /*视频右侧的游戏手柄按钮AD*/
+
+    .IconCardAd {
+
+        display: none!important;
+
+    }
+
+    /*视频区视频广告*/
+
+    .CloseVideoPlayerAd,.IconCardAdBoundsBox{
+
+        display: none!important;
+
+    }
+
+    /*直播间顶部广告*/
+
+    .room-top-banner-box {
+
+        display: none!important;
+
+    }
+
+    /*弹幕框底部进场弹幕信息*/
+
+    #js-barrage-extend-container {
+
+        display: none!important;
+
+        display: var(--enter-display, none) !important;
+
+    }
+
+    /*直播间右侧广告*/
+
+    .LadderNav {
+
+        display: none!important;
+
+    }
+
+    #js-bottom-right-recommendAd {
+
+        display: none!important;
+
+    }
+
+    /*弹幕框顶部广告*/
+
+    .aside-top-uspension-box {
+
+        display: none!important;
+
+    }
+
+    #js-player-asideMain {
+
+        top: 0!important;
+
+    }
+
+    /*右下角联系客服*/
+
+    .bacpCommonKeFu {
+
+        display: none!important;
+
+    }
+
+
+
+    .ClosingRecommend,.ClosingRecommend *,.werbungContainer__2sv7h{display:none !important;}
+
+    #js-player-asideTopSuspension{display:none !important;}
+
+    .Search-Panel-Advert{display:none !important;}
+
+    `,
   );
 }
-const bn = applyAdblockAndCleanupStyles;
 
 }

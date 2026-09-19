@@ -2,217 +2,118 @@ function* (__imports) {
 yield {"Ur": { get: () => Ur, set: value => { Ur = value; } },
 "Vr": { get: () => Vr, set: value => { Vr = value; } },
 "qr": { get: () => qr, set: value => { qr = value; } }};
-/**
- * 跨平台直播流请求管理网关 (包含斗鱼/B站/虎牙解析器与中止控制器)
- */
-
-/**
- * 创建具备生命周期所有者绑定与取消管理的直播流请求操作对象
- * @param {Function} callback - 成功回调
- * @param {Array} failureArgs - 失败回调传参
- * @param {object} [owner] - 生命周期管理者
- * @returns {object}
- */
-function createStreamRequest(callback, failureArgs, owner) {
-  let isStopped = false;
-  const pendingHandles = new Set();
-
+// Stream lookups are read operations (including Douyu's POST). Never retry them
+// implicitly. Ownership is explicit: multi-room user players may outlive a room.
+function createStreamRequest(callback, failure, owner) {
+  let stopped = false;
+  const pending = new Set();
   const operation = {
     abort() {
-      if (isStopped) return;
-      isStopped = true;
-      for (const handle of pendingHandles) {
-        try { handle.abort?.(); } catch {}
+      if (stopped) return;
+      stopped = true;
+      for (const handle of pending) {
+        try { handle.abort?.(); } catch (_) {}
       }
-      pendingHandles.clear();
+      pending.clear();
     },
     finish(...args) {
-      if (isStopped || owner?.disposed) return;
-      isStopped = true;
-      pendingHandles.clear();
+      if (stopped || owner?.disposed) return;
+      stopped = true;
+      pending.clear();
       callback(...args);
     },
-    request(options, parseResponse) {
-      if (isStopped || owner?.disposed) return;
-      let reqHandle = null;
-      let isSettled = false;
-
-      const settle = (action) => (resp) => {
-        if (isSettled || isStopped || owner?.disposed) return;
-        isSettled = true;
-        pendingHandles.delete(reqHandle);
-        action(resp);
+    request(options, parse) {
+      if (stopped || owner?.disposed) return;
+      let handle, settled = false;
+      const settle = action => response => {
+        if (settled || stopped || owner?.disposed) return;
+        settled = true;
+        pending.delete(handle);
+        action(response);
       };
-
-      const fail = () => operation.finish(...failureArgs);
-
+      const fail = () => operation.finish(...failure);
       try {
-        reqHandle = (0, __imports.GM_xmlhttpRequest)({
+        handle = (0, __imports.GM_xmlhttpRequest)({
           ...options,
           timeout: 15000,
-          onload: settle((resp) => {
-            let continuation;
+          onload: settle(response => {
+            let result;
             try {
-              if (resp.status && (resp.status < 200 || resp.status >= 300)) {
-                throw new Error(`HTTP Error: ${resp.status}`);
-              }
-              continuation = parseResponse(resp.response);
-            } catch {
-              fail();
-              return;
-            }
-            if (typeof continuation === 'function') {
-              continuation();
-            }
+              if (response.status && (response.status < 200 || response.status >= 300)) throw new Error('HTTP failure');
+              result = parse(response.response);
+            } catch (_) { fail(); return; }
+            // Parsing returns a continuation so consumer exceptions aren't retried.
+            result();
           }),
-          onerror: settle(fail),
-          ontimeout: settle(fail),
-          onabort: settle(fail),
+          onerror: settle(fail), ontimeout: settle(fail), onabort: settle(fail),
         });
-
-        if (!isSettled && !isStopped && reqHandle) {
-          pendingHandles.add(reqHandle);
-        }
-      } catch {
-        fail();
-      }
+        if (!settled && !stopped && handle) pending.add(handle);
+      } catch (_) { fail(); }
     },
   };
-
-  if (owner) {
-    owner.own(() => operation.abort());
-  }
+  if (owner) owner.own(() => operation.abort());
   return operation;
 }
-
-/**
- * B站直播间推流直链解析 (导出兼容 Vr)
- * @param {string|number} roomId
- * @param {string|number} qualityKey
- * @param {any} unusedParam
- * @param {Function} onFinish
- * @param {object} [owner]
- */
-function resolveBilibiliStreamUrl(roomId, qualityKey, unusedParam, onFinish, owner) {
-  const qualityMap = { '1': '80', '2': '150', '3': '250', '4': '400', '5': '20000' };
-  const qn = qualityMap[qualityKey] || '80';
-  const operation = createStreamRequest(onFinish, [''], owner);
-
+function Vr(e, t, o, a, owner) {
+  const quality = { '1': '80', '2': '150', '3': '250', '4': '400', '5': '20000' }[t] || '80';
+  const operation = createStreamRequest(a, [''], owner);
   operation.request({
     method: 'GET',
-    url: `https://api.live.bilibili.com/xlive/web-room/v2/index/getRoomPlayInfo?room_id=${roomId}&platform=web&qn=${qn}&protocol=0,1&format=0,1,2&codec=0,1`,
+    url: `https://api.live.bilibili.com/xlive/web-room/v2/index/getRoomPlayInfo?room_id=${e}&platform=web&qn=${quality}&protocol=0,1&format=0,1,2&codec=0,1`,
     responseType: 'json',
-  }, (resp) => {
-    const data = resp?.data;
-    let playUrl = '';
-
-    if (resp?.code && resp.code !== 0) {
-      return () => operation.finish('');
+  }, response => {
+    const data = response?.data;
+    let url = '';
+    if (response?.code && response.code !== 0) return () => operation.finish('');
+    for (const stream of data?.playurl_info?.playurl?.stream || []) {
+      const codec = stream.format?.[0]?.codec?.[0], info = codec?.url_info?.[0];
+      if (String(stream.protocol_name).includes('stream') && info?.host && codec.base_url)
+        url = info.host + codec.base_url + (info.extra || '');
     }
-
-    const streamList = data?.playurl_info?.playurl?.stream || [];
-    for (const stream of streamList) {
-      const codec = stream.format?.[0]?.codec?.[0];
-      const info = codec?.url_info?.[0];
-      if (String(stream.protocol_name).includes('stream') && info?.host && codec?.base_url) {
-        playUrl = info.host + codec.base_url + (info.extra || '');
-      }
-    }
-
-    if (data?.durl?.[0]?.url) {
-      playUrl = data.durl[0].url;
-    }
-
-    return () => operation.finish(playUrl);
+    if (data?.durl) url = data.durl[0]?.url || '';
+    return () => operation.finish(url);
   });
-
   return operation;
 }
-const Vr = resolveBilibiliStreamUrl;
-
-/**
- * 斗鱼官方 H5PlayV1 推流与安全加密解析 (导出兼容 qr)
- * @param {string|number} roomId
- * @param {boolean} isVideoWithAudio
- * @param {any} unusedParam
- * @param {string|number} rate
- * @param {Function} onFinish
- * @param {object} [owner]
- */
-function resolveDouyuH5StreamUrl(roomId, isVideoWithAudio, unusedParam, rate, onFinish, owner) {
-  const deviceId = (0, __imports.x)('dy_did') || '10000000000000000000000000001501';
-  const operation = createStreamRequest(onFinish, ['None'], owner);
-
-  // 1. 获取斗鱼 websec 加密公钥与种子
+function qr(i, a, e, r, l, owner) {
+  const did = (0, __imports.x)('dy_did') || '10000000000000000000000000001501';
+  const operation = createStreamRequest(l, ['None'], owner);
   operation.request({
     method: 'GET',
-    url: `https://www.douyu.com/wgapi/livenc/liveweb/websec/getEncryption?did=${deviceId}`,
+    url: 'https://www.douyu.com/wgapi/livenc/liveweb/websec/getEncryption?did=' + did,
     responseType: 'json',
-  }, (resp) => {
-    if (resp?.error !== 0 || !resp.data) {
-      return () => operation.finish('None');
-    }
-
-    const encData = resp.data;
-    const timestampSec = Math.round(Date.now() / 1000);
-    let hash = encData.rand_str;
-
-    for (let count = 0; count < encData.enc_time; count++) {
-      hash = (0, __imports.Or)(hash + encData.key);
-    }
-
-    const auth = (0, __imports.Or)(hash + encData.key + (encData.is_special === 1 ? '' : `${roomId}${timestampSec}`));
-    const rateParam = rate == '1428' ? '-1' : rate;
-
-    // 2. 发起主线获取直播流请求
+  }, response => {
+    if (response?.error !== 0 || !response.data) return () => operation.finish('None');
+    const data = response.data, tt = Math.round(Date.now() / 1000);
+    let hash = data.rand_str;
+    for (let count = 0; count < data.enc_time; count++) hash = (0, __imports.Or)(hash + data.key);
+    const auth = (0, __imports.Or)(hash + data.key + (data.is_special === 1 ? '' : '' + i + tt));
     return () => operation.request({
       method: 'POST',
-      url: `https://www.douyu.com/lapi/live/getH5PlayV1/${roomId}`,
-      data: `enc_data=${encData.enc_data}&tt=${timestampSec}&did=${deviceId}&auth=${auth}&cdn=&rate=${rateParam}&hevc=0&fa=0&ive=0`,
+      url: 'https://www.douyu.com/lapi/live/getH5PlayV1/' + i,
+      data: `enc_data=${data.enc_data}&tt=${tt}&did=${did}&auth=${auth}&cdn=&rate=${r == '1428' ? '-1' : r}&hevc=0&fa=0&ive=0`,
       responseType: 'json',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    }, (result) => {
+    }, result => {
       const data = result?.data;
-      const rawUrl = (result?.error === 0 && data?.rtmp_url && data?.rtmp_live)
-        ? `${data.rtmp_url}/${data.rtmp_live}`
-        : null;
-
-      let finalUrl = 'None';
-      if (rawUrl) {
-        finalUrl = isVideoWithAudio ? rawUrl : `${rawUrl}&only-audio=1`;
-      }
-
-      return () => operation.finish(finalUrl);
+      const url = result?.error === 0 && data?.rtmp_url && data?.rtmp_live
+        ? data.rtmp_url + '/' + data.rtmp_live : null;
+      return () => operation.finish(url ? (a ? url : url + '&only-audio=1') : 'None');
     });
   });
-
   return operation;
 }
-const qr = resolveDouyuH5StreamUrl;
-
-/**
- * 虎牙直播间推流直链解析 (导出兼容 Ur)
- * @param {string|number} roomId
- * @param {any} unusedParam
- * @param {Function} onFinish
- * @param {object} [owner]
- */
-function resolveHuyaStreamUrl(roomId, unusedParam, onFinish, owner) {
-  const operation = createStreamRequest(onFinish, ['', '房间未开播或请求失败'], owner);
-
+function Ur(e, t, n, owner) {
+  const operation = createStreamRequest(n, ['', '房间未开播或请求失败'], owner);
   operation.request({
     method: 'GET',
-    url: `https://mp.huya.com/cache.php?m=Live&do=profileRoom&roomid=${roomId}`,
+    url: 'https://mp.huya.com/cache.php?m=Live&do=profileRoom&roomid=' + e,
     responseType: 'json',
-  }, (resp) => {
-    const rawUrl = resp?.data?.stream?.flv?.multiLine?.[0]?.url;
-    const playUrl = rawUrl ? rawUrl.replace(/^http:/, 'https:') : '';
-    const errHint = playUrl ? '' : '房间暂未开播';
-    return () => operation.finish(playUrl, errHint);
+  }, response => {
+    const url = response?.data?.stream?.flv?.multiLine?.[0]?.url;
+    return () => operation.finish(url ? url.replace(/^http:/, 'https:') : '', url ? '' : '房间暂未开播');
   });
-
   return operation;
 }
-const Ur = resolveHuyaStreamUrl;
 
 }

@@ -78,62 +78,35 @@ yield {"createNextDockOwner": { get: () => createNextDockOwner, set: value => { 
 "nextDockOwners": { get: () => nextDockOwners },
 "nextFeatures": { get: () => nextFeatures },
 "teardownNextDock": { get: () => teardownNextDock, set: value => { teardownNextDock = value; } }};
-/**
- * NEXT 特性注册表与 Dock 生命周期管理中枢
- */
-
-/**
- * 单例特性调度注册表
- */
+// Feature registry owns Dock dispatch and binding lifetimes in its private module.
+// Service actions are explicit live imports; remaining jobs still require reload.
 const nextFeatures = (() => {
   const features = new Map();
   return Object.freeze({
     register(id, adapter) {
-      if (features.has(id)) throw new Error(`[DouyuEx NEXT] 重复注册功能特性: ${id}`);
+      if (features.has(id)) throw new Error('Duplicate feature: ' + id);
       features.set(id, Object.freeze(adapter));
     },
     invoke(id, action, ...args) {
       const adapter = features.get(id);
-      if (!adapter || typeof adapter[action] !== 'function') {
-        throw new Error(`[DouyuEx NEXT] 未知功能动作: ${id}.${action}`);
-      }
+      if (!adapter || typeof adapter[action] !== 'function') throw new Error('Unknown feature action: ' + id + '.' + action);
       return adapter[action](...args);
     },
-    list() {
-      return [...features].map(([id, adapter]) => ({
-        id,
-        panel: adapter.panel || null,
-        actions: Object.keys(adapter).filter(k => typeof adapter[k] === 'function')
-      }));
-    }
+    list() { return [...features].map(([id, adapter]) => ({ id, panel: adapter.panel || null, actions: Object.keys(adapter).filter(key => typeof adapter[key] === 'function') })); }
   });
 })();
-
-/**
- * 记录活跃 Dock 容器与其生命周期托管者
- */
 const nextDockOwners = new Map();
-
-/**
- * 为 Dock 容器创建生命周期托管者 (支持属性还原与事件解绑)
- * @param {HTMLElement} wrap - Dock 外层容器
- * @returns {object}
- */
 function createNextDockOwner(wrap) {
   const cleanups = [];
   let disposed = false;
-
   const owner = {
     property(target, key, value) {
       const descriptor = Object.getOwnPropertyDescriptor(target, key);
       target[key] = value;
       cleanups.push(() => {
-        if (target[key] !== value) return; // 避免撤销更新的属性赋值
-        if (descriptor) {
-          Object.defineProperty(target, key, descriptor);
-        } else {
-          delete target[key];
-        }
+        if (target[key] !== value) return; // Do not undo a newer owner's replacement.
+        if (descriptor) Object.defineProperty(target, key, descriptor);
+        else delete target[key];
       });
     },
     listen(target, event, listener) {
@@ -148,14 +121,9 @@ function createNextDockOwner(wrap) {
       (0, __imports.clearSubPanelTimer)();
     }
   };
-
   nextDockOwners.set(wrap, owner);
   return owner;
 }
-
-/**
- * 逆向安全卸载所有已挂载的 Dock 容器
- */
 function teardownNextDock() {
   [...nextDockOwners.values()].forEach(owner => owner.dispose());
   (0, __imports.clearSubPanelTimer)();
@@ -2022,97 +1990,94 @@ function safeBind(target, ev, fn, owner) {
 "src/next/ui/gift-picker.js":
 function* (__imports) {
 yield {"openGiftPicker": { get: () => openGiftPicker, set: value => { openGiftPicker = value; } }};
-/**
- * 5 级拟态大礼物选择器 (540×410px 居中模态视窗，双 Tab 专属与背包直探)
- * @param {'room'|'backpack'} type - 初始激活选项卡
- * @param {Function} onSelect - 选择回调 (giftObj) => void
- */
 function openGiftPicker(type, onSelect) {
-  const oldModal = document.querySelector(".ex-gift-picker-modal");
+  var oldModal = document.querySelector(".ex-gift-picker-modal");
   if (oldModal) oldModal.remove();
-  const oldMask = document.querySelector(".ex-gift-picker-mask");
+  var oldMask = document.querySelector(".ex-gift-picker-mask");
   if (oldMask) oldMask.remove();
 
-  const mask = document.createElement("div");
+  var mask = document.createElement("div");
   mask.className = "ex-gift-picker-mask";
   document.body.appendChild(mask);
 
-  const modal = document.createElement("div");
+  var modal = document.createElement("div");
   modal.className = "ex-gift-picker-modal miuix-modal-in";
   modal.innerHTML = `
-    <div class="ex-gift-picker__header">
-      <div class="ex-gift-picker__tabs">
-        <button type="button" class="ex-gift-picker__tab" id="tab-room-gifts">全部礼物</button>
-        <button type="button" class="ex-gift-picker__tab" id="tab-bag-gifts">背包礼物</button>
-      </div>
-      <input type="text" class="ex-gift-picker__search" id="ex-gift-picker-search" placeholder="搜索礼物名称..." />
-      <button type="button" class="ex-gift-picker__close" title="关闭">×</button>
-    </div>
-    <div class="ex-gift-picker__body">
-      <div class="ex-gift-grid" id="ex-gift-grid">
-        <div style="grid-column: 1 / -1; text-align: center; color: #94a3b8; padding: 40px 0; font-size: 13px;">正在加载礼物池...</div>
-      </div>
-    </div>
-  `;
+        <div class="ex-gift-picker__header">
+            <div class="ex-gift-picker__tabs">
+                <button type="button" class="ex-gift-picker__tab" id="tab-room-gifts">全部礼物</button>
+                <button type="button" class="ex-gift-picker__tab" id="tab-bag-gifts">背包礼物</button>
+            </div>
+            <input type="text" class="ex-gift-picker__search" id="ex-gift-picker-search" placeholder="搜索礼物名称..." />
+            <button type="button" class="ex-gift-picker__close" title="关闭">×</button>
+        </div>
+        <div class="ex-gift-picker__body">
+            <div class="ex-gift-grid" id="ex-gift-grid">
+                <div style="grid-column: 1 / -1; text-align: center; color: #94a3b8; padding: 40px 0; font-size: 13px;">正在加载礼物池...</div>
+            </div>
+        </div>
+    `;
 
   document.body.appendChild(modal);
 
-  const grid = modal.querySelector("#ex-gift-grid");
-  const tabRoom = modal.querySelector("#tab-room-gifts");
-  const tabBag = modal.querySelector("#tab-bag-gifts");
-  const searchInput = modal.querySelector("#ex-gift-picker-search");
-  const closeBtn = modal.querySelector(".ex-gift-picker__close");
+  var grid = modal.querySelector("#ex-gift-grid");
+  var tabRoom = modal.querySelector("#tab-room-gifts");
+  var tabBag = modal.querySelector("#tab-bag-gifts");
+  var searchInput = modal.querySelector("#ex-gift-picker-search");
+  var closeBtn = modal.querySelector(".ex-gift-picker__close");
 
-  let currentPool = [];
+  var currentPool = [];
 
-  const closeModal = () => {
+  function closeModal() {
     document.removeEventListener("keydown", onKeyDown);
     modal.classList.remove("miuix-modal-in");
     modal.classList.add("miuix-modal-out");
     mask.style.opacity = "0";
-    (0, __imports.setTimeout)(() => {
+    (0, __imports.setTimeout)(function () {
       if (modal.parentNode) modal.parentNode.removeChild(modal);
       if (mask.parentNode) mask.parentNode.removeChild(mask);
     }, 160);
-  };
+  }
 
-  const onKeyDown = (e) => {
-    if (e.key === "Escape") closeModal();
-  };
+  function onKeyDown(e) {
+    if (e.key === "Escape") {
+      closeModal();
+    }
+  }
   document.addEventListener("keydown", onKeyDown);
 
-  closeBtn.addEventListener("click", (e) => {
+  closeBtn.addEventListener("click", function (e) {
     e.stopPropagation();
     closeModal();
   });
-  mask.addEventListener("click", (e) => {
+  mask.addEventListener("click", function (e) {
     e.stopPropagation();
     closeModal();
   });
 
-  const renderGifts = (gifts) => {
+  function renderGifts(gifts) {
     if (!grid) return;
     grid.innerHTML = "";
     if (!gifts || gifts.length === 0) {
-      const emptyText = (tabBag && tabBag.classList.contains("is-active"))
-        ? "当前背包暂无道具（可前往直播间完成任务领取）"
-        : "暂无匹配礼物";
+      var emptyText =
+        tabBag && tabBag.classList.contains("is-active")
+          ? "当前背包暂无道具（可前往直播间完成任务领取）"
+          : "暂无匹配礼物";
       grid.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; color: #94a3b8; padding: 40px 0; font-size: 13px;">${emptyText}</div>`;
       return;
     }
-
-    const frag = document.createDocumentFragment();
-    gifts.forEach((g) => {
-      const cell = document.createElement("div");
+    var frag = document.createDocumentFragment();
+    gifts.forEach(function (g) {
+      var cell = document.createElement("div");
       cell.className = "ex-gift-cell";
       cell.setAttribute("data-gid", g.id);
-      cell.title = `${g.name || ""} (${g.priceText || ""})`;
+      cell.title = (g.name || "") + " (" + (g.priceText || "") + ")";
       cell.innerHTML = `
-        <img class="ex-gift-cell__img" src="${g.icon || ""}" loading="lazy" onerror="this.style.opacity='0.2'" />
-        <div class="ex-gift-cell__name">${g.name || "未知礼物"}</div>
-        <div class="ex-gift-cell__price">${g.priceText || ""}</div>
-      `;
-      cell.addEventListener("click", (e) => {
+                <img class="ex-gift-cell__img" src="${g.icon || ""}" loading="lazy" onerror="this.style.opacity='0.2'" />
+                <div class="ex-gift-cell__name">${g.name || "未知礼物"}</div>
+                <div class="ex-gift-cell__price">${g.priceText || ""}</div>
+            `;
+      cell.addEventListener("click", function (e) {
         e.stopPropagation();
         closeModal();
         if (typeof onSelect === "function") {
@@ -2122,46 +2087,53 @@ function openGiftPicker(type, onSelect) {
       frag.appendChild(cell);
     });
     grid.appendChild(frag);
-  };
+  }
 
-  const filterAndRender = () => {
-    const kw = searchInput?.value ? searchInput.value.trim().toLowerCase() : "";
+  function filterAndRender() {
+    var kw =
+      searchInput && searchInput.value
+        ? searchInput.value.trim().toLowerCase()
+        : "";
     if (!kw) {
       renderGifts(currentPool);
     } else {
-      const filtered = currentPool.filter((g) =>
-        (g.name && g.name.toLowerCase().includes(kw)) ||
-        (g.id && String(g.id).includes(kw))
-      );
+      var filtered = currentPool.filter(function (g) {
+        return (
+          (g.name && g.name.toLowerCase().indexOf(kw) !== -1) ||
+          (g.id && String(g.id).indexOf(kw) !== -1)
+        );
+      });
       renderGifts(filtered);
     }
-  };
+  }
 
   if (searchInput) {
     searchInput.addEventListener("input", filterAndRender);
   }
 
-  const loadRoomGifts = () => {
+  function loadRoomGifts() {
     if (!grid) return;
-    grid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: #94a3b8; padding: 40px 0; font-size: 13px;">正在加载房间官方礼物...</div>';
+    grid.innerHTML =
+      '<div style="grid-column: 1 / -1; text-align: center; color: #94a3b8; padding: 40px 0; font-size: 13px;">正在加载房间官方礼物...</div>';
     if (searchInput) searchInput.value = "";
-    (0, __imports.fetchCurrentRoomGifts)(__imports.B, (gifts) => {
+    (0, __imports.fetchCurrentRoomGifts)(__imports.B, function (gifts) {
       currentPool = gifts || [];
       filterAndRender();
     });
-  };
+  }
 
-  const loadBackpackGifts = () => {
+  function loadBackpackGifts() {
     if (!grid) return;
-    grid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: #94a3b8; padding: 40px 0; font-size: 13px;">正在加载背包资产礼物...</div>';
+    grid.innerHTML =
+      '<div style="grid-column: 1 / -1; text-align: center; color: #94a3b8; padding: 40px 0; font-size: 13px;">正在加载背包资产礼物...</div>';
     if (searchInput) searchInput.value = "";
-    (0, __imports.fetchUserBackpackGifts)(__imports.B, (gifts) => {
+    (0, __imports.fetchUserBackpackGifts)(__imports.B, function (gifts) {
       currentPool = gifts || [];
       filterAndRender();
     });
-  };
+  }
 
-  tabRoom.addEventListener("click", (e) => {
+  tabRoom.addEventListener("click", function (e) {
     e.stopPropagation();
     if (tabRoom.classList.contains("is-active")) return;
     tabRoom.classList.add("is-active");
@@ -2169,7 +2141,7 @@ function openGiftPicker(type, onSelect) {
     loadRoomGifts();
   });
 
-  tabBag.addEventListener("click", (e) => {
+  tabBag.addEventListener("click", function (e) {
     e.stopPropagation();
     if (tabBag.classList.contains("is-active")) return;
     tabBag.classList.add("is-active");
@@ -2187,7 +2159,6 @@ function openGiftPicker(type, onSelect) {
     loadRoomGifts();
   }
 }
-
 window.openGiftPicker = openGiftPicker;
 
 }
@@ -2195,46 +2166,42 @@ window.openGiftPicker = openGiftPicker;
 "src/next/ui/panel-header.js":
 function* (__imports) {
 yield {"ensureMiuixPanelHeader": { get: () => ensureMiuixPanelHeader, set: value => { ensureMiuixPanelHeader = value; } }};
-/**
- * DouyuEx-RL 3级控制台吸顶 Header 规范与 Flex 结构塑形
- * 严格对齐: Flex 上下硬解构除缝、Hover Bridge 隐形连桥与右上角关闭动作
- */
+/* ==================== DouyuEx-RL 3级控制台右上角吸顶顶栏 ==================== */
 function ensureMiuixPanelHeader(el, title) {
   if (!el) return;
   el.classList.add("miuix-modal");
 
   // 隐藏可能存在的原生粗糙关闭按钮与旧标题栏/功能栏
-  const oldCloses = el.querySelectorAll(
-    ".extool__close, .livetool__close, .bloop__close, #vote__result-close, .ChatToolBar-DanmakuTail-title, .lottery__func"
+  var oldCloses = el.querySelectorAll(
+    ".extool__close, .livetool__close, .bloop__close, #vote__result-close, .ChatToolBar-DanmakuTail-title, .lottery__func",
   );
-  oldCloses.forEach((c) => {
+  oldCloses.forEach(function (c) {
     c.style.setProperty("display", "none", "important");
   });
 
-  // 1. 确保标准吸顶 Header
-  let header = el.querySelector(".miuix-modal__header");
+  var header = el.querySelector(".miuix-modal__header");
   if (!header) {
     header = document.createElement("div");
     header.className = "miuix-modal__header";
     header.innerHTML = `
-      <div class="miuix-modal__title-box">
-        <span class="miuix-modal__title">${title}</span>
-      </div>
-      <button type="button" class="miuix-modal__close" title="关闭面板" aria-label="关闭">×</button>
-    `;
+            <div class="miuix-modal__title-box">
+                <span class="miuix-modal__title">${title}</span>
+            </div>
+            <button type="button" class="miuix-modal__close" title="关闭面板" aria-label="关闭">×</button>
+        `;
     el.insertBefore(header, el.firstChild);
   } else {
-    const titleEl = header.querySelector(".miuix-modal__title");
+    var titleEl = header.querySelector(".miuix-modal__title");
     if (titleEl) titleEl.textContent = title;
-    const badge = header.querySelector(".miuix-modal__badge");
+    var badge = header.querySelector(".miuix-modal__badge");
     if (badge) badge.remove();
   }
 
-  // 2. 绑定关闭按钮动作 (关闭面板并重置 Dock 指示灯)
-  const closeBtn = header.querySelector(".miuix-modal__close");
+  // 无论是否新创建，无条件为关闭按钮绑定高优先级关闭事件
+  var closeBtn = header.querySelector(".miuix-modal__close");
   if (closeBtn) {
     closeBtn.innerHTML = "×";
-    closeBtn.onclick = (e) => {
+    closeBtn.onclick = function (e) {
       e.stopPropagation();
       el.style.removeProperty("display");
       el.style.setProperty("display", "none", "important");
@@ -2244,39 +2211,35 @@ function ensureMiuixPanelHeader(el, title) {
     };
   }
 
-  // 3. 滚动条起始点统一规约在 Header 正下方：所有非 Header 节点封装进 .miuix-modal__body
-  let body = el.querySelector(":scope > .miuix-modal__body");
+  // 滚动条起始点统一规定在顶栏下方：将所有非 Header 内容封装进 .miuix-modal__body
+  var body = el.querySelector(":scope > .miuix-modal__body");
   if (!body) {
     body = document.createElement("div");
     body.className = "miuix-modal__body";
     el.appendChild(body);
   }
-
-  const nodesToMove = [];
-  for (let i = 0; i < el.childNodes.length; i++) {
-    const node = el.childNodes[i];
+  var nodesToMove = [];
+  for (var i = 0; i < el.childNodes.length; i++) {
+    var node = el.childNodes[i];
     if (node !== header && node !== body) {
       nodesToMove.push(node);
     }
   }
-  nodesToMove.forEach(n => body.appendChild(n));
+  nodesToMove.forEach(function (n) {
+    body.appendChild(n);
+  });
 
-  // 4. 悬浮连桥双向保护
+  // 悬浮连桥双向保护
   if (!el.dataset.hoverBridgeBound) {
     el.dataset.hoverBridgeBound = "1";
-    el.addEventListener("mouseenter", () => {
-      if (typeof __imports.clearSubPanelTimer === "function") {
-        (0, __imports.clearSubPanelTimer)();
-      }
+    el.addEventListener("mouseenter", function () {
+      if (typeof __imports.clearSubPanelTimer === "function") (0, __imports.clearSubPanelTimer)();
     });
-    el.addEventListener("mouseleave", () => {
-      if (typeof __imports.scheduleSubPanelClose === "function") {
-        (0, __imports.scheduleSubPanelClose)();
-      }
+    el.addEventListener("mouseleave", function () {
+      if (typeof __imports.scheduleSubPanelClose === "function") (0, __imports.scheduleSubPanelClose)();
     });
   }
 }
-
 window.ensureMiuixPanelHeader = ensureMiuixPanelHeader;
 
 }
@@ -2287,106 +2250,80 @@ yield {"anchorPanelToButton": { get: () => anchorPanelToButton, set: value => { 
 "clearSubPanelTimer": { get: () => clearSubPanelTimer, set: value => { clearSubPanelTimer = value; } },
 "scheduleSubPanelClose": { get: () => scheduleSubPanelClose, set: value => { scheduleSubPanelClose = value; } },
 "updateDockActiveIndicator": { get: () => updateDockActiveIndicator, set: value => { updateDockActiveIndicator = value; } }};
-/**
- * DouyuEx-RL 三级面板悬停防抖连桥与 24×4px 磁吸指示器定位中枢
- */
-let subPanelCloseTimer = null;
-
-/**
- * 清除延迟收起定时器
- */
+/* ==================== DouyuEx-RL 悬浮防抖连桥与指示器状态管理 ==================== */
+var subPanelCloseTimer = null;
 function clearSubPanelTimer() {
   if (subPanelCloseTimer) {
     (0, __imports.clearTimeout)(subPanelCloseTimer);
     subPanelCloseTimer = null;
   }
 }
-
-/**
- * 计划 400ms 后收起所有打开的三级子面板
- */
 function scheduleSubPanelClose() {
   clearSubPanelTimer();
-  subPanelCloseTimer = (0, __imports.setTimeout)(() => {
+  subPanelCloseTimer = (0, __imports.setTimeout)(function () {
     closeAllSubPanels();
   }, 400);
 }
-
-/**
- * 立即关闭所有三级子控制台并熄灭指示灯
- */
 function closeAllSubPanels() {
   clearSubPanelTimer();
-  const panels = document.querySelectorAll(
-    ".miuix-modal, .extool, .livetool, .bloop, .exlottery, .ChatToolBar-DanmakuTail-Panel, .fans-continue-panel, .popup-player-panel"
+  var panels = document.querySelectorAll(
+    ".miuix-modal, .extool, .livetool, .bloop, .exlottery, .ChatToolBar-DanmakuTail-Panel, .fans-continue-panel, .popup-player-panel",
   );
-  panels.forEach((p) => {
+  panels.forEach(function (p) {
     p.style.removeProperty("display");
     p.style.setProperty("display", "none", "important");
   });
   updateDockActiveIndicator();
 }
-
-/**
- * 更新 Dock 栏对应按钮的生机蓝激活指示胶囊 (.ex-panel__indicator)
- * @param {string} [activeCls] - 当前激活的按钮类名
- */
 function updateDockActiveIndicator(activeCls) {
-  const wrap = document.querySelector(".ex-panel__wrap");
+  var wrap = document.querySelector(".ex-panel__wrap");
   if (!wrap) return;
-
-  for (let i = 0; i < __imports.DOCK_DEFS.length; i++) {
-    const item = wrap.querySelector(`.${__imports.DOCK_DEFS[i].cls}`);
-    if (item) {
-      item.classList.remove("ex-dock-active", "is-active");
-    }
+  for (var i = 0; i < __imports.DOCK_DEFS.length; i++) {
+    var item = wrap.querySelector("." + __imports.DOCK_DEFS[i].cls);
+    if (item) item.classList.remove("ex-dock-active", "is-active");
   }
-
   if (activeCls) {
-    const target = wrap.querySelector(`.${activeCls}`);
-    if (target) {
-      target.classList.add("ex-dock-active", "is-active");
-    }
+    var target = wrap.querySelector("." + activeCls);
+    if (target) target.classList.add("ex-dock-active", "is-active");
   }
 }
-
-// 导出至主上下文
 window.clearSubPanelTimer = clearSubPanelTimer;
 window.scheduleSubPanelClose = scheduleSubPanelClose;
 window.closeAllSubPanels = closeAllSubPanels;
 window.updateDockActiveIndicator = updateDockActiveIndicator;
 
-/**
- * 三级控制台物理锚定算法：固定 380px 宽度，水平居中对齐按钮，悬停于按钮正上方 12px
- * @param {HTMLElement} panel - 控制台模态容器
- * @param {HTMLElement} [btnEl] - 关联的 Dock 按钮
- */
 function anchorPanelToButton(panel, btnEl) {
   if (!panel) return;
-
-  let targetBtn = btnEl;
-  if (!targetBtn) {
-    if (panel.classList.contains("extool")) targetBtn = document.querySelector(".extool-icon");
-    else if (panel.classList.contains("livetool")) targetBtn = document.querySelector(".livetool-icon");
-    else if (panel.classList.contains("bloop")) targetBtn = document.querySelector(".bloop-icon");
-    else if (panel.classList.contains("ex-lottery") || panel.classList.contains("lottery__wrap") || panel.querySelector(".lottery__wrap"))
-      targetBtn = document.querySelector(".ex-lottery");
-    else if (panel.classList.contains("fans-continue-panel")) targetBtn = document.querySelector(".fans-continue");
-    else if (panel.classList.contains("popup-player-panel")) targetBtn = document.querySelector(".popup-player");
-    else if (panel.classList.contains("exupdate-panel")) targetBtn = document.querySelector(".ex-update");
+  if (!btnEl) {
+    if (panel.classList.contains("extool"))
+      btnEl = document.querySelector(".extool-icon");
+    else if (panel.classList.contains("livetool"))
+      btnEl = document.querySelector(".livetool-icon");
+    else if (panel.classList.contains("bloop"))
+      btnEl = document.querySelector(".bloop-icon");
+    else if (
+      panel.classList.contains("ex-lottery") ||
+      panel.classList.contains("lottery__wrap") ||
+      panel.querySelector(".lottery__wrap")
+    )
+      btnEl = document.querySelector(".ex-lottery");
+    else if (panel.classList.contains("fans-continue-panel"))
+      btnEl = document.querySelector(".fans-continue");
+    else if (panel.classList.contains("popup-player-panel"))
+      btnEl = document.querySelector(".popup-player");
+    else if (panel.classList.contains("exupdate-panel"))
+      btnEl = document.querySelector(".ex-update");
   }
-
   if (panel.parentElement !== document.body) {
     document.body.appendChild(panel);
   }
-
-  const panelWidth = 380; // 三级面板规范统一 380px 宽度
+  var panelWidth = 380; // 三级面板推荐固定舒适宽度
   panel.style.width = panelWidth + "px";
-  let left = (window.innerWidth - panelWidth) / 2;
-  let bottom = 90;
+  var left = (window.innerWidth - panelWidth) / 2;
+  var bottom = 90;
 
-  if (targetBtn && typeof targetBtn.getBoundingClientRect === "function") {
-    const rect = targetBtn.getBoundingClientRect();
+  if (btnEl && typeof btnEl.getBoundingClientRect === "function") {
+    var rect = btnEl.getBoundingClientRect();
     if (rect.width > 0 || rect.left > 0) {
       left = rect.left + rect.width / 2 - panelWidth / 2;
       left = Math.max(12, Math.min(window.innerWidth - panelWidth - 12, left));
@@ -2395,10 +2332,10 @@ function anchorPanelToButton(panel, btnEl) {
   }
 
   panel.style.setProperty("position", "fixed", "important");
-  panel.style.setProperty("width", `${panelWidth}px`, "important");
-  panel.style.setProperty("max-width", `${panelWidth}px`, "important");
-  panel.style.setProperty("left", `${left}px`, "important");
-  panel.style.setProperty("bottom", `${bottom}px`, "important");
+  panel.style.setProperty("width", panelWidth + "px", "important");
+  panel.style.setProperty("max-width", panelWidth + "px", "important");
+  panel.style.setProperty("left", left + "px", "important");
+  panel.style.setProperty("bottom", bottom + "px", "important");
   panel.style.setProperty("right", "auto", "important");
   panel.style.setProperty("top", "auto", "important");
   panel.style.setProperty("z-index", "100000", "important");
@@ -2406,7 +2343,6 @@ function anchorPanelToButton(panel, btnEl) {
   panel.style.setProperty("flex-direction", "column", "important");
   panel.classList.add("miuix-modal-in");
 }
-
 window.anchorPanelToButton = anchorPanelToButton;
 
 }
@@ -2688,159 +2624,151 @@ function createFansContinuePanel() {
 "src/next/ui/panels/sign.js":
 function* (__imports) {
 yield {"createSignPanel": { get: () => createSignPanel, set: value => { createSignPanel = value; } }};
-/**
- * 一键签到 380×370px 独立控制台 (createSignPanel)
- * 支持 5 大日常任务自由勾选、持久化状态记忆与实时日志滚动
- */
 function createSignPanel() {
   if (document.querySelector(".sign-panel")) return;
+  var p = document.createElement("div");
+  p.className = "sign-panel miuix-modal";
+  p.innerHTML = `
+        <div class="fans-panel__card">
+            <div class="fans-panel__card-header">
+                <span class="fans-panel__card-title">签到选项</span>
+                <span style="font-size: 11px; color: #64748b;">按需勾选日常任务</span>
+            </div>
+            <div class="sign-options-list">
+                <label class="sign-option-item">
+                    <input type="checkbox" id="sign_opt_room" class="sign-checkbox" data-key="room">
+                    <div class="sign-option-text">
+                        <span class="sign-option-title">房间与粉丝牌签到</span>
+                        <span class="sign-option-desc">为所有关注/拥牌房间赠送亲密度</span>
+                    </div>
+                </label>
+                <label class="sign-option-item">
+                    <input type="checkbox" id="sign_opt_client" class="sign-checkbox" data-key="client">
+                    <div class="sign-option-text">
+                        <span class="sign-option-title">客户端模拟签到</span>
+                        <span class="sign-option-desc">模拟手机客户端领取每日免费礼盒</span>
+                    </div>
+                </label>
+                <label class="sign-option-item">
+                    <input type="checkbox" id="sign_opt_yuba" class="sign-checkbox" data-key="yuba">
+                    <div class="sign-option-text">
+                        <span class="sign-option-title">关注鱼吧签到</span>
+                        <span class="sign-option-desc">关注的所有鱼吧一键打卡领经验</span>
+                    </div>
+                </label>
+                <label class="sign-option-item">
+                    <input type="checkbox" id="sign_opt_stardiscover" class="sign-checkbox" data-key="stardiscover">
+                    <div class="sign-option-text">
+                        <span class="sign-option-title">星推日常任务</span>
+                        <span class="sign-option-desc">打卡/口令弹幕/关注任务(完成自动安全取关)</span>
+                    </div>
+                </label>
+                <label class="sign-option-item">
+                    <input type="checkbox" id="sign_opt_fanshome" class="sign-checkbox" data-key="fanshome">
+                    <div class="sign-option-text">
+                        <span class="sign-option-title">粉丝家园与钻粉联赛</span>
+                        <span class="sign-option-desc">粉丝家园打卡与钻粉日常领奖</span>
+                    </div>
+                </label>
+            </div>
+        </div>
 
-  const panel = document.createElement("div");
-  panel.className = "sign-panel miuix-modal";
-  panel.innerHTML = `
-    <div class="fans-panel__card">
-      <div class="fans-panel__card-header">
-        <span class="fans-panel__card-title">签到选项</span>
-        <span style="font-size: 11px; color: #64748b;">按需勾选日常任务</span>
-      </div>
-      <div class="sign-options-list">
-        <label class="sign-option-item">
-          <input type="checkbox" id="sign_opt_room" class="sign-checkbox" data-key="room">
-          <div class="sign-option-text">
-            <span class="sign-option-title">房间与粉丝牌签到</span>
-            <span class="sign-option-desc">为所有关注/拥牌房间赠送亲密度</span>
-          </div>
-        </label>
-        <label class="sign-option-item">
-          <input type="checkbox" id="sign_opt_client" class="sign-checkbox" data-key="client">
-          <div class="sign-option-text">
-            <span class="sign-option-title">客户端模拟签到</span>
-            <span class="sign-option-desc">模拟手机客户端领取每日免费礼盒</span>
-          </div>
-        </label>
-        <label class="sign-option-item">
-          <input type="checkbox" id="sign_opt_yuba" class="sign-checkbox" data-key="yuba">
-          <div class="sign-option-text">
-            <span class="sign-option-title">关注鱼吧签到</span>
-            <span class="sign-option-desc">关注的所有鱼吧一键打卡领经验</span>
-          </div>
-        </label>
-        <label class="sign-option-item">
-          <input type="checkbox" id="sign_opt_stardiscover" class="sign-checkbox" data-key="stardiscover">
-          <div class="sign-option-text">
-            <span class="sign-option-title">星推日常任务</span>
-            <span class="sign-option-desc">打卡/口令弹幕/关注任务(完成自动安全取关)</span>
-          </div>
-        </label>
-        <label class="sign-option-item">
-          <input type="checkbox" id="sign_opt_fanshome" class="sign-checkbox" data-key="fanshome">
-          <div class="sign-option-text">
-            <span class="sign-option-title">粉丝家园与钻粉联赛</span>
-            <span class="sign-option-desc">粉丝家园打卡与钻粉日常领奖</span>
-          </div>
-        </label>
-      </div>
-    </div>
+        <div class="fans-panel__card">
+            <div class="fans-panel__card-header">
+                <span class="fans-panel__card-title">执行状态</span>
+                <span class="sign-status-tag" id="sign-status-tag">就绪</span>
+            </div>
+            <div class="sign-log-box" id="sign-log-box">
+                勾选上方选项后，点击下方按钮开始签到。
+            </div>
+        </div>
 
-    <div class="fans-panel__card">
-      <div class="fans-panel__card-header">
-        <span class="fans-panel__card-title">执行状态</span>
-        <span class="sign-status-tag" id="sign-status-tag">就绪</span>
-      </div>
-      <div class="sign-log-box" id="sign-log-box">
-        勾选上方选项后，点击下方按钮开始签到。
-      </div>
-    </div>
-
-    <div class="fans-panel__action-wrap">
-      <button type="button" class="ex-btn-primary fans-panel__submit-btn" id="sign-panel-start-btn">
-        开始签到
-      </button>
-    </div>
-  `;
-
-  document.body.appendChild(panel);
-  (0, __imports.ensureMiuixPanelHeader)(panel, "一键签到");
+        <div class="fans-panel__action-wrap">
+            <button type="button" class="ex-btn-primary fans-panel__submit-btn" id="sign-panel-start-btn">
+                开始签到
+            </button>
+        </div>
+    `;
+  document.body.appendChild(p);
+  (0, __imports.ensureMiuixPanelHeader)(p, "一键签到");
 
   // 状态与配置持久化
-  const defaultSignConfig = {
+  var defCfg = {
     room: true,
     client: true,
     yuba: true,
     fanshome: true,
     stardiscover: true,
   };
-
-  let currentConfig = { ...defaultSignConfig };
+  var currentCfg = defCfg;
   try {
-    const saved = JSON.parse(__imports.localStorage.getItem("ExSave_SignConfig") || "{}");
-    if (saved && typeof saved === "object") {
-      currentConfig = Object.assign({}, defaultSignConfig, saved);
-    }
-  } catch {}
+    var saved = JSON.parse(__imports.localStorage.getItem("ExSave_SignConfig"));
+    if (saved && typeof saved === "object")
+      currentCfg = Object.assign({}, defCfg, saved);
+  } catch (e) {}
 
-  const checkboxes = panel.querySelectorAll(".sign-checkbox");
-  checkboxes.forEach((cb) => {
-    const key = cb.getAttribute("data-key");
-    if (key && typeof currentConfig[key] !== "undefined") {
-      cb.checked = Boolean(currentConfig[key]);
+  var cbs = p.querySelectorAll(".sign-checkbox");
+  cbs.forEach(function (cb) {
+    var key = cb.getAttribute("data-key");
+    if (key && typeof currentCfg[key] !== "undefined") {
+      cb.checked = !!currentCfg[key];
     }
-    cb.addEventListener("change", () => {
-      currentConfig[key] = cb.checked;
+    cb.addEventListener("change", function () {
+      currentCfg[key] = this.checked;
       try {
-        __imports.localStorage.setItem("ExSave_SignConfig", JSON.stringify(currentConfig));
-      } catch {}
+        __imports.localStorage.setItem("ExSave_SignConfig", JSON.stringify(currentCfg));
+      } catch (e) {}
     });
   });
 
-  (0, __imports.safeBind)("#sign-panel-start-btn", "click", async (e) => {
+  (0, __imports.safeBind)("#sign-panel-start-btn", "click", async function (e) {
     e.stopPropagation();
-    const startBtn = document.getElementById("sign-panel-start-btn");
-    const logBox = document.getElementById("sign-log-box");
-    const statusTag = document.getElementById("sign-status-tag");
+    var btn = document.getElementById("sign-panel-start-btn");
+    var logBox = document.getElementById("sign-log-box");
+    var statusTag = document.getElementById("sign-status-tag");
 
-    if (startBtn) startBtn.disabled = true;
+    if (btn) btn.disabled = true;
     if (statusTag) {
       statusTag.textContent = "正在执行";
       statusTag.style.color = "#ff7700";
     }
     if (logBox) logBox.innerHTML = "正在启动已选签到任务...<br>";
 
-    const logs = [];
-    const appendLog = (msg, isSuccess) => {
+    var logs = [];
+    function appendLog(msg, isSuccess) {
       logs.push(msg);
       if (logBox) {
-        logBox.innerHTML = logs.map(l => `• ${l}`).join("<br>");
+        logBox.innerHTML = logs
+          .map(function (l) {
+            return "• " + l;
+          })
+          .join("<br>");
         logBox.scrollTop = logBox.scrollHeight;
       }
-      if (typeof __imports.T === "function") {
-        (0, __imports.T)(msg, isSuccess ? "success" : "info");
-      }
-    };
+      if (typeof __imports.T === "function") (0, __imports.T)(msg, isSuccess ? "success" : "info");
+    }
 
     try {
       if (typeof __imports.executeSignEngine === "function") {
-        await __imports.nextFeatures.invoke('ex-sign', 'execute', currentConfig, appendLog);
+        await __imports.nextFeatures.invoke('ex-sign', 'execute', currentCfg, appendLog);
       } else if (typeof __imports.Wn === "function") {
-        await (0, __imports.Wn)(currentConfig);
+        await (0, __imports.Wn)(currentCfg);
       }
-
       if (statusTag) {
         statusTag.textContent = "已完成";
         statusTag.style.color = "#10b981";
       }
     } catch (err) {
-      appendLog(`签到执行异常: ${err?.message || "未知错误"}`, false);
+      appendLog("签到执行异常: " + (err.message || "未知错误"), false);
       if (statusTag) {
         statusTag.textContent = "异常中止";
         statusTag.style.color = "#ef4444";
       }
     } finally {
-      if (startBtn) startBtn.disabled = false;
+      if (btn) btn.disabled = false;
     }
   });
 }
-
 window.createSignPanel = createSignPanel;
 
 }
@@ -2849,239 +2777,212 @@ window.createSignPanel = createSignPanel;
 function* (__imports) {
 yield {"createPopupPlayerPanel": { get: () => createPopupPlayerPanel, set: value => { createPopupPlayerPanel = value; } },
 "executePopupPlayer": { get: () => executePopupPlayer, set: value => { executePopupPlayer = value; } }};
-/**
- * 同屏联播控制器与 380×370px 独立控制面板
- * 支持无弹幕极速流 (FLV.js 直播流直连) 与全功能有弹幕 (iframe 嵌入) 双模式
- */
-
-/**
- * 启动同屏播放视窗
- * @param {string} url - 目标直播流或房间地址
- * @param {boolean} isNoIframe - 是否为无 iframe 纯流模式
- */
 function executePopupPlayer(url, isNoIframe) {
-  const targetUrl = url ? url.trim() : "";
-  if (!targetUrl) {
+  var t = url ? url.trim() : "";
+  if (!t) {
     (0, __imports.T)("请输入直播间或直播流地址", "error");
     return;
   }
-
   if (typeof __imports.ExLoadLib === "function" && typeof __imports.EXURL !== "undefined") {
     (0, __imports.ExLoadLib)(__imports.EXURL.flv);
   }
-
-  const isDirectStream = targetUrl.length > 150 && (
-    targetUrl.startsWith("http://") ||
-    targetUrl.startsWith("https://") ||
-    targetUrl.includes(".flv") ||
-    targetUrl.includes(".m3u8")
-  );
-
-  if (isDirectStream) {
-    (0, __imports.rn)(__imports.D.length, targetUrl);
+  var a;
+  let isStream =
+    150 < t.length &&
+    (t.startsWith("http://") ||
+      t.startsWith("https://") ||
+      t.includes(".flv") ||
+      t.includes(".m3u8"));
+  if (isStream) {
+    (0, __imports.rn)(__imports.D.length, t);
   } else if (isNoIframe) {
-    // 纯流模式：按平台解析真实房间号与流地址
-    if (targetUrl.includes("douyu.com")) {
-      const mountDouyu = (roomId) => {
-        (0, __imports.en)(__imports.D.length, roomId, "Douyu");
+    if (-1 != t.indexOf("douyu.com")) {
+      a = (e) => {
+        (0, __imports.en)(__imports.D.length, e, "Douyu");
       };
-
-      (0, __imports.fetch)(targetUrl, {
+      (0, __imports.fetch)(t, {
         method: "GET",
         mode: "no-cors",
         cache: "default",
         credentials: "include",
       })
-        .then(res => res.text())
-        .then(htmlText => {
-          const doc = new DOMParser().parseFromString(htmlText, "text/html");
-          const htmlContent = doc.getElementsByTagName("html")[0]?.innerHTML || "";
-          const roomIdMarker = "$ROOM.room_id =";
-          const markerIdx = htmlContent.indexOf(roomIdMarker);
-          let extractedRid = "";
-
-          if (markerIdx > 0) {
-            const start = markerIdx + roomIdMarker.length;
-            const end = htmlContent.indexOf(";", start);
-            extractedRid = htmlContent.substring(start, end).trim();
-          } else {
-            extractedRid = (0, __imports.v)(htmlContent, "roomID:", ",") || "";
-            if (!extractedRid) {
-              const canonicalLink = doc.querySelector('link[rel="canonical"]');
-              if (canonicalLink) {
-                const href = canonicalLink.getAttribute("href") || "";
-                extractedRid = href.split("/").pop().trim();
-              }
-            }
-          }
-
-          if (/^[0-9]+$/.test(extractedRid)) {
-            mountDouyu(extractedRid);
-          } else {
-            (0, __imports.T)("获取直播间失败，请检查直播间地址是否正确！", "error");
-          }
+        .then((e) => e.text())
+        .then((e) => {
+          var doc = new DOMParser().parseFromString(e, "text/html");
+          var html = doc.getElementsByTagName("html")[0].innerHTML;
+          var o = "$ROOM.room_id =".length,
+            n = html.indexOf("$ROOM.room_id =");
+          let rid = "";
+          0 < n
+            ? (rid = (rid = html.substring(
+                n + o,
+                html.indexOf(";", n + o),
+              )).trim())
+            : (rid = (0, __imports.v)(html, "roomID:", ","))
+              ? (rid = rid.trim())
+              : (n = doc.querySelector('link[rel="canonical"]')) &&
+                ((o = n.getAttribute("href")),
+                (rid = o.split("/").pop().trim()));
+          /^[0-9]+$/.test(rid)
+            ? a(rid)
+            : (0, __imports.T)("获取直播间失败，请检查直播间地址是否正确！", "error");
         })
-        .catch(err => {
-          console.debug("[DouyuEx NEXT] 解析斗鱼同屏房间号异常:", err);
+        .catch((e) => {
+          console.log("请求失败!", e);
         });
-    } else if (targetUrl.includes("bilibili.com")) {
-      const parts = targetUrl.split("/");
-      const rawId = parts[parts.length - 1];
-      const mountBilibili = (realRoomId) => {
-        (0, __imports.en)(__imports.D.length, realRoomId, "Bilibili");
-      };
-
+    } else if (-1 != t.indexOf("bilibili.com")) {
+      var r = t,
+        l = (e) => {
+          (0, __imports.en)(__imports.D.length, e, "Bilibili");
+        };
+      r = (r = r.split("/"))[r.length - 1];
       (0, __imports.GM_xmlhttpRequest)({
         method: "GET",
-        url: `https://api.live.bilibili.com/room/v1/Room/room_init?id=${rawId}`,
+        url: "https://api.live.bilibili.com/room/v1/Room/room_init?id=" + r,
         responseType: "json",
-        onload: (res) => {
-          const realId = res.response?.data?.room_id;
-          if (realId) {
-            mountBilibili(realId);
-          }
+        onload: function (e) {
+          e = e.response;
+          l(e.data.room_id);
         },
       });
-    } else if (targetUrl.includes("huya.com")) {
-      (0, __imports.en)(__imports.D.length, targetUrl, "Huya");
+    } else if (-1 != t.indexOf("huya.com")) {
+      (0, __imports.en)(__imports.D.length, t, "Huya");
     } else {
-      (0, __imports.rn)(__imports.D.length, targetUrl);
+      (0, __imports.rn)(__imports.D.length, t);
     }
   } else {
-    // iframe 有弹幕全功能模式 (仅支持斗鱼)
-    const slotIdx = __imports.D.length;
-    if (!String(targetUrl).includes("douyu.com")) {
+    var r = __imports.D.length;
+    if (-1 == String(t).indexOf("douyu.com")) {
       (0, __imports.T)("有弹幕模式仅支持斗鱼直播", "error");
-      return;
-    }
-
-    const segments = String(targetUrl).split("/");
-    const roomId = segments[segments.length - 1];
-
-    const container = document.createElement("div");
-    container.id = `exVideoDiv${slotIdx}`;
-    container.rid = roomId;
-    container.className = "exVideoDiv";
-    container.innerHTML = `
-      <div class='exVideoInfo' id='exVideoInfo${slotIdx}'>
-        <span class='exVideoRID' id='exVideoRID${slotIdx}' style='color:white'>斗鱼 - ${roomId}</span>
-        <a><div class='exVideoClose' id='exVideoClose${slotIdx}'>X</div></a>
-      </div>
-      <iframe class='exVideoPlayer' id='exVideoPlayer${slotIdx}' src="${targetUrl}?exid=chun"></iframe>
-      <div class='exVideoScale' id='exVideoScale${slotIdx}'></div>
-    `;
-
-    const mainLayout = (0, __imports.E)([".layout-Main", ".playerWrap__8wGvw", ".live-next-body"]);
-    if (mainLayout) {
-      mainLayout.insertBefore(container, mainLayout.childNodes[0]);
-    }
-
-    (0, __imports.on)(slotIdx);
-    (0, __imports.tn)(slotIdx);
-
-    if (slotIdx > __imports.D.length - 1) {
-      __imports.D.push("iframe");
     } else {
-      __imports.D[slotIdx] = "iframe";
-    }
-
-    const curDiv = document.getElementById(`exVideoDiv${slotIdx}`);
-    const curClose = document.getElementById(`exVideoClose${slotIdx}`);
-
-    if (curClose) {
-      curClose.onclick = () => {
-        __imports.D[slotIdx]?.destroy?.();
-        curDiv?.remove();
-      };
-    }
-
-    if (curDiv) {
-      curDiv.onclick = (e) => {
-        e.stopPropagation();
-        e.preventDefault();
-        for (let i = 0; i < __imports.D.length; i++) {
-          const item = document.getElementById(`exVideoDiv${i}`);
-          if (item) {
-            item.style.zIndex = i === slotIdx ? 1016 : 1428;
+      var i = String(t).split("/"),
+        rid = i[i.length - 1];
+      var o = document.createElement("div"),
+        n = "";
+      o.id = "exVideoDiv" + String(r);
+      o.rid = rid;
+      o.className = "exVideoDiv";
+      n =
+        (n =
+          (n =
+            (n +=
+              "<div class='exVideoInfo' id='exVideoInfo" +
+              String(r) +
+              "'><span class='exVideoRID' id='exVideoRID" +
+              String(r) +
+              "' style='color:white'>斗鱼 - " +
+              rid +
+              "</span>") +
+            "<a><div class='exVideoClose' id='exVideoClose" +
+            String(r) +
+            "'>X</div></a></div>") +
+          "<iframe class='exVideoPlayer' id='exVideoPlayer" +
+          String(r) +
+          "' src=" +
+          t +
+          "?exid=chun></iframe>") +
+        "<div class='exVideoScale' id='exVideoScale" +
+        String(r) +
+        "'></div>";
+      o.innerHTML = n;
+      var target = (0, __imports.E)([".layout-Main", ".playerWrap__8wGvw", ".live-next-body"]);
+      if (target) target.insertBefore(o, target.childNodes[0]);
+      (0, __imports.on)(r);
+      (0, __imports.tn)(r);
+      r > __imports.D.length - 1 ? __imports.D.push("iframe") : (__imports.D[r] = "iframe");
+      let curDiv = document.getElementById("exVideoDiv" + String(r));
+      let curClose = document.getElementById("exVideoClose" + String(r));
+      if (curClose) {
+        curClose.onclick = function () {
+          __imports.D[r].destroy();
+          curDiv.remove();
+        };
+      }
+      if (curDiv) {
+        curDiv.onclick = function (e) {
+          e.stopPropagation();
+          e.preventDefault();
+          for (let idx = 0; idx < __imports.D.length; idx++) {
+            var item = document.getElementById("exVideoDiv" + String(idx));
+            if (item) {
+              idx == r
+                ? (item.style.zIndex = 1016)
+                : (item.style.zIndex = 1428);
+            }
           }
-        }
-      };
+        };
+      }
     }
   }
 }
 
-/**
- * 组装并挂载同屏播放器三级控制台 (380×370px)
- */
 function createPopupPlayerPanel() {
   if (document.querySelector(".popup-player-panel")) return;
+  var p = document.createElement("div");
+  p.className = "popup-player-panel miuix-modal";
+  p.innerHTML = `
+        <div class="popup-panel__card">
+                <div class="popup-panel__card-header">
+                    <span class="popup-panel__card-title">直播流或房间地址</span>
+                    <button type="button" class="popup-panel__paste-btn" id="popup-panel-paste">粘贴</button>
+                </div>
+                <div class="popup-panel__input-box">
+                    <input type="text" id="popup-panel-url" value="https://www.douyu.com/4042402" placeholder="支持斗鱼/虎牙/B站房间号或直播流" />
+                </div>
+            </div>
 
-  const panel = document.createElement("div");
-  panel.className = "popup-player-panel miuix-modal";
-  panel.innerHTML = `
-    <div class="popup-panel__card">
-      <div class="popup-panel__card-header">
-        <span class="popup-panel__card-title">直播流或房间地址</span>
-        <button type="button" class="popup-panel__paste-btn" id="popup-panel-paste">粘贴</button>
-      </div>
-      <div class="popup-panel__input-box">
-        <input type="text" id="popup-panel-url" value="https://www.douyu.com/4042402" placeholder="支持斗鱼/虎牙/B站房间号或直播流" />
-      </div>
-    </div>
+            <div class="popup-panel__card">
+                <div class="popup-panel__card-header">
+                    <span class="popup-panel__card-title">同屏播放模式</span>
+                </div>
+                <div class="popup-panel__seg-switch">
+                    <label class="popup-panel__seg-item">
+                        <input type="radio" name="popup_player_mode" value="noiframe" checked />
+                        <span class="popup-panel__seg-thumb">无弹幕极速流 (推荐)</span>
+                    </label>
+                    <label class="popup-panel__seg-item">
+                        <input type="radio" name="popup_player_mode" value="iframe" />
+                        <span class="popup-panel__seg-thumb">全功能有弹幕</span>
+                    </label>
+                </div>
+            </div>
 
-    <div class="popup-panel__card">
-      <div class="popup-panel__card-header">
-        <span class="popup-panel__card-title">同屏播放模式</span>
-      </div>
-      <div class="popup-panel__seg-switch">
-        <label class="popup-panel__seg-item">
-          <input type="radio" name="popup_player_mode" value="noiframe" checked />
-          <span class="popup-panel__seg-thumb">无弹幕极速流 (推荐)</span>
-        </label>
-        <label class="popup-panel__seg-item">
-          <input type="radio" name="popup_player_mode" value="iframe" />
-          <span class="popup-panel__seg-thumb">全功能有弹幕</span>
-        </label>
-      </div>
-    </div>
+            <div class="popup-panel__action-wrap">
+                <button type="button" class="ex-btn-primary popup-panel__submit-btn" id="popup-panel-start-btn">
+                    载入同屏流
+                </button>
+            </div>
+        </div>
+    `;
+  var container =
+    document.getElementsByClassName("layout-Player-chat")[0] || document.body;
+  if (container) container.insertBefore(p, container.childNodes[0]);
+  (0, __imports.ensureMiuixPanelHeader)(p, "同屏播放器");
 
-    <div class="popup-panel__action-wrap">
-      <button type="button" class="ex-btn-primary popup-panel__submit-btn" id="popup-panel-start-btn">
-        载入同屏流
-      </button>
-    </div>
-  `;
-
-  const mountParent = document.getElementsByClassName("layout-Player-chat")[0] || document.body;
-  if (mountParent) {
-    mountParent.insertBefore(panel, mountParent.childNodes[0]);
-  }
-  (0, __imports.ensureMiuixPanelHeader)(panel, "同屏播放器");
-
-  // 绑定剪贴板快速粘贴
-  (0, __imports.safeBind)("#popup-panel-paste", "click", async (e) => {
+  (0, __imports.safeBind)("#popup-panel-paste", "click", async function (e) {
     e.stopPropagation();
     try {
-      const clipText = await navigator.clipboard.readText();
-      if (clipText) {
-        const urlInput = document.getElementById("popup-panel-url");
-        if (urlInput) urlInput.value = clipText.trim();
+      var text = await navigator.clipboard.readText();
+      if (text) {
+        var inp = document.getElementById("popup-panel-url");
+        if (inp) inp.value = text.trim();
         (0, __imports.T)("已从剪贴板粘贴直播流地址", "success");
       }
-    } catch {
+    } catch (err) {
       (0, __imports.T)("请允许读取剪贴板权限或手动粘贴", "info");
     }
   });
 
-  // 绑定启动按钮动作
-  (0, __imports.safeBind)("#popup-panel-start-btn", "click", (e) => {
+  (0, __imports.safeBind)("#popup-panel-start-btn", "click", function (e) {
     e.stopPropagation();
-    const urlInput = document.getElementById("popup-panel-url");
-    const streamUrl = urlInput ? urlInput.value.trim() : "";
-    const isNoIframe = document.querySelector('input[name="popup_player_mode"][value="noiframe"]')?.checked ?? true;
-
-    __imports.nextFeatures.invoke('popup-player', 'execute', streamUrl, isNoIframe);
-    panel.style.setProperty("display", "none", "important");
+    var urlInp = document.getElementById("popup-panel-url");
+    var val = urlInp ? urlInp.value.trim() : "";
+    var isNoIframe =
+      document.querySelector(
+        'input[name="popup_player_mode"][value="noiframe"]',
+      )?.checked ?? true;
+    __imports.nextFeatures.invoke('popup-player', 'execute', val, isNoIframe);
+    p.style.setProperty("display", "none", "important");
     (0, __imports.updateDockActiveIndicator)();
   });
 }
@@ -3244,113 +3145,63 @@ function* (__imports) {
 yield {"handleDockAction": { get: () => handleDockAction, set: value => { handleDockAction = value; } },
 "initDockFull": { get: () => initDockFull, set: value => { initDockFull = value; } },
 "triggerFansContinue": { get: () => triggerFansContinue, set: value => { triggerFansContinue = value; } }};
-/**
- * DouyuEx-RL Level 2 Dock 控制器 (76px 晶透微胶囊与 9 大按钮交互装配系统)
- */
-
-/**
- * 处理 Dock 按钮悬停事件
- * @param {string} cls - 按钮类名
- * @param {HTMLElement} btnEl - 按钮 DOM 节点
- */
 function handleDockHover(cls, btnEl) {
   (0, __imports.clearSubPanelTimer)();
   return __imports.nextFeatures.invoke(cls, 'open', true, btnEl);
 }
-
-/**
- * 处理 Dock 按钮点击事件 (互斥呼出/关闭对应三级控制台)
- * @param {string} cls - 按钮类名
- * @param {HTMLElement} [btnEl] - 按钮 DOM 节点
- */
 function handleDockAction(cls, btnEl) {
   (0, __imports.clearSubPanelTimer)();
-  const targetBtn = btnEl || document.querySelector(`.${cls}`);
-  return __imports.nextFeatures.invoke(cls, 'open', false, targetBtn);
+  return __imports.nextFeatures.invoke(cls, 'open', false, btnEl || document.querySelector('.' + cls));
 }
-
-/**
- * 外部快捷触发一键续牌
- */
 function triggerFansContinue() {
   return handleDockAction('fans-continue');
 }
-
-/**
- * 初始化并装配完整 Level 2 Dock 栏
- * @param {HTMLElement} wrap - Dock 外层容器 (.ex-panel__wrap)
- */
 function initDockFull(wrap) {
   if (!wrap || __imports.nextDockOwners.has(wrap)) return;
-
-  // SPA 换房重新挂载时，销毁已断开连接的旧 Dock 节点监听与补丁
-  for (const [node, owner] of __imports.nextDockOwners) {
-    if (!node.isConnected) {
-      owner.dispose();
-    }
-  }
-
+  // A remounted room must not retain listeners or insertion patches on detached Dock nodes.
+  for (const [node, owner] of __imports.nextDockOwners) if (!node.isConnected) owner.dispose();
   const owner = (0, __imports.createNextDockOwner)(wrap);
-
   try {
-    // 1. 初始化预备子控制台
     (0, __imports.createFansContinuePanel)();
     (0, __imports.createSignPanel)();
     (0, __imports.createPopupPlayerPanel)();
     (0, __imports.createExUpdatePanel)();
-
-    // 2. 绑定连桥防抖
     owner.listen(wrap, 'mouseenter', __imports.clearSubPanelTimer);
     owner.listen(wrap, 'mouseleave', __imports.scheduleSubPanelClose);
-
-    // 3. 装配 9 大固定顺序按钮单元 (56×56px 晶透微胶囊)
     for (const def of __imports.DOCK_DEFS) {
-      let el = wrap.querySelector(`.${def.cls}`);
+      let el = wrap.querySelector('.' + def.cls);
       if (!el) {
         el = document.createElement('div');
         el.className = def.cls;
         el.innerHTML = def.inner.replace("'+P+'", __imports.P);
         wrap.appendChild(el);
       }
-
-      // 挂载 24×4px 生机蓝磁吸指示器
       if (!el.querySelector('.ex-panel__indicator')) {
         const indicator = document.createElement('div');
         indicator.className = 'ex-panel__indicator';
         el.appendChild(indicator);
       }
-
       el.style.cursor = 'pointer';
       owner.property(el, 'onmouseenter', () => handleDockHover(def.cls, el));
       owner.property(el, 'onmouseleave', __imports.scheduleSubPanelClose);
-
-      const onClickHandler = (event) => {
-        event.stopPropagation();
-        handleDockAction(def.cls, el);
-      };
-      owner.property(el, 'onclick', onClickHandler);
-
-      const linkEl = el.querySelector('a');
-      if (linkEl) {
-        owner.property(linkEl, 'onclick', onClickHandler);
-      }
+      const click = event => { event.stopPropagation(); handleDockAction(def.cls, el); };
+      owner.property(el, 'onclick', click);
+      const link = el.querySelector('a');
+      if (link) owner.property(link, 'onclick', click);
     }
-
-    // 4. 接管 insertBefore 防范老代码重复插入 Dock 单元
-    const originalInsertBefore = wrap.insertBefore;
-    owner.property(wrap, 'insertBefore', function (node, reference) {
-      const def = __imports.DOCK_DEFS.find(item => node?.classList?.contains(item.cls));
-      const existing = def && wrap.querySelector(`.${def.cls}`);
-      return existing || originalInsertBefore.call(wrap, node, reference);
+    const original = wrap.insertBefore;
+    owner.property(wrap, 'insertBefore', function(node, reference) {
+      // Only deduplicate owned Dock classes. Never interpret arbitrary className as CSS.
+      const def = __imports.DOCK_DEFS.find(item => node && node.classList && node.classList.contains(item.cls));
+      const existing = def && wrap.querySelector('.' + def.cls);
+      return existing || original.call(wrap, node, reference);
     });
-
-    // 5. 触发版本更新检查
-    if (typeof __imports.initVersionLifecycleNotice === 'function') {
-      (0, __imports.initVersionLifecycleNotice)();
-    }
-  } catch (err) {
+    // The original fallback addEventListener bindings doubled parent clicks.
+    // The property handlers above are the single Dock dispatch path.
+    if (typeof __imports.initVersionLifecycleNotice === 'function') (0, __imports.initVersionLifecycleNotice)();
+  } catch (error) {
     owner.dispose();
-    throw err;
+    throw error;
   }
 }
 
@@ -3359,138 +3210,122 @@ function initDockFull(wrap) {
 "src/next/ui/room/backpack.js":
 function* (__imports) {
 yield {"mountBackpackControls": { get: () => mountBackpackControls, set: value => { mountBackpackControls = value; } }};
-/**
- * 播放器底栏背包控件装配 (资产价值统计、到期倒计时与一键清空背包)
- * @param {object} owner - 房间装配生命周期托管者
- */
+// Room assembly section; dependencies are captured per mount, in original order.
 function mountBackpackControls(owner) {
-  const enterBtn = (0, __imports.E)([".BackpackButton", "#js-backpack-enter"]);
-  if (!enterBtn) return;
-
-  owner.listen(enterBtn, "click", () => {
-    owner.timeout(() => {
-      if (__imports.de) {
-        __imports.de.closeHook?.();
-        __imports.de = null;
-      }
-      const initialItemsCount = document.querySelectorAll(".ToolbarBackpack-giftItem").length;
-      __imports.de = new __imports.DomMutationSubscription(".BackpackExpandPanel-giftListWrap", true, () => {
-        if (initialItemsCount !== document.querySelectorAll(".ToolbarBackpack-giftItem").length) {
-          enterBtn.click();
-          enterBtn.click();
-        }
-      }, owner);
-    }, 500);
-
-    (0, __imports.clearTimeout)(__imports.se);
-    __imports.se = owner.timeout(() => {
-      const isExpand = Boolean(document.getElementsByClassName("BackpackExpandPanel")[0]);
-      const backpackRoot = (0, __imports.E)([".Backpack.JS_Backpack", ".BackpackExpandPanel"]);
-      if (!backpackRoot) return;
-
-      (0, __imports.pt)(__imports.B, (res) => {
-        const list = res?.data?.list || [];
-        if (list.length === 0) return;
-
-        let totalValuableCents = 0;
-        let totalIntimate = 0;
-
-        const findItems = (selectors) => {
-          for (const sel of selectors) {
-            const matches = typeof sel === "string" ? document.querySelectorAll(sel) : sel;
-            if (matches && matches.length > 0) return matches;
-          }
-          return [];
-        };
-
-        const domPropItems = findItems([".Backpack-prop", ".ToolbarBackpack-giftItem"]);
-
-        for (let i = 0; i < list.length; i++) {
-          const item = list[i];
-          const domEl = domPropItems[i];
-          const isValuable = item.isValuable;
-          const expiry = item.expiry;
-          const price = item.price;
-          const intimate = item.intimate;
-          const count = item.count;
-
-          if (isValuable === "1") {
-            totalValuableCents += Number(price) * Number(count);
-          }
-          totalIntimate += Number(intimate) * Number(count);
-
-          if (domEl) {
-            const badge = document.createElement("div");
-            badge.className = "bag-info";
-            if (isExpand) {
-              badge.style.left = "8px";
-              badge.style.bottom = "auto";
-            }
-            badge.innerHTML = String(expiry - 1);
-            domEl.insertBefore(badge, domEl.childNodes[0]);
-          }
-        }
-
-        const headerEl = (0, __imports.E)([
-          ".BackpackHeader-extInfo",
-          ".BackpackExpandPanel-backpackHeader",
-        ]);
-
-        if (headerEl) {
-          const totalValYuan = (totalValuableCents / 100).toFixed(2);
-          if (isExpand) {
-            headerEl.innerHTML += `
-              <span style="width: 100%; display: flex; justify-content: space-between; align-items: center; flex: 1; margin-left: 12px;">
-                <span>
-                  <span>总价值:</span>
-                  <span>￥${totalValYuan}</span>
-                  <span>总亲密度:</span>
-                  <span>${totalIntimate}</span>
-                </span>
-                <span class="bag-button" id="Backpack__clearbag" style="background: rgb(70, 171, 255) !important; color: white !important;">清空背包</span>
-              </span>
-            `;
-          } else {
-            headerEl.innerHTML = `
-              <span style="float: left">总价值：${totalValYuan} 总亲密度：${totalIntimate}<span class="bag-button" id="Backpack__clearbag">清空背包</span></span>
-            ` + headerEl.innerHTML;
-          }
-
-          (0, __imports.safeBind)("#Backpack__clearbag", "click", () => {
-            if (confirm("确认清空？")) {
-              (0, __imports.T)("【清空背包】执行中...", "info");
-              (0, __imports.pt)(__imports.B, (backpackData) => {
-                (async (dataObj, currentRoom) => {
-                  const giftList = dataObj?.data?.list || [];
-                  if (giftList.length > 0) {
-                    for (let i = 0; i < giftList.length; i++) {
-                      const propId = giftList[i].id;
-                      const propCount = giftList[i].count;
-                      const hasBatch = Object.keys(giftList[i].batchInfo || {}).length > 0;
-
-                      if (hasBatch) {
-                        await (0, __imports.b)(100);
-                        (0, __imports.Ut)(propId, propCount, currentRoom);
-                      } else {
-                        for (let c = 0; c < propCount; c++) {
-                          await (0, __imports.b)(100);
-                          (0, __imports.Ut)(propId, 1, currentRoom);
-                        }
-                      }
-                    }
-                    (0, __imports.T)("【清空背包】执行完毕！", "success");
-                  } else {
-                    (0, __imports.T)("背包礼物为空", "error");
-                  }
-                })(backpackData, __imports.B);
-              });
-            }
+    let o = (0, __imports.E)([".BackpackButton", "#js-backpack-enter"]);
+    o &&
+      owner.listen(o, "click", function () {
+        (owner.timeout(() => {
+          __imports.de && (__imports.de.closeHook(), (__imports.de = null));
+          let t = document.querySelectorAll(".ToolbarBackpack-giftItem").length;
+          __imports.de = new __imports.DomMutationSubscription(".BackpackExpandPanel-giftListWrap", !0, (e) => {
+            t !=
+              document.querySelectorAll(".ToolbarBackpack-giftItem").length &&
+              (o.click(), o.click());
           }, owner);
-        }
+        }, 500),
+          (0, __imports.clearTimeout)(__imports.se),
+          (__imports.se = owner.timeout(() => {
+            let p = !!document.getElementsByClassName("BackpackExpandPanel")[0];
+            (0, __imports.E)([".Backpack.JS_Backpack", ".BackpackExpandPanel"]) &&
+              (0, __imports.pt)(__imports.B, (n) => {
+                var i = n.data.list.length;
+                if (0 < i) {
+                  let t = 0,
+                    o = 0;
+                  for (let e = 0; e < i; e++) {
+                    var a = ((e) => {
+                        for (var t of e) {
+                          let e = [];
+                          if (
+                            0 <
+                            (e =
+                              "string" == typeof t
+                                ? document.querySelectorAll(t)
+                                : t).length
+                          )
+                            return e;
+                        }
+                        return [];
+                      })([".Backpack-prop", ".ToolbarBackpack-giftItem"])[e],
+                      r = n.data.list[e].isValuable,
+                      l = n.data.list[e].expiry,
+                      s = n.data.list[e].price,
+                      d = n.data.list[e].intimate,
+                      c = n.data.list[e].count,
+                      r =
+                        ("1" == r && (t += Number(s) * Number(c)),
+                        (o += Number(d) * Number(c)),
+                        document.createElement("div"));
+                    ((r.className = "bag-info"),
+                      p && ((r.style.left = "8px"), (r.style.bottom = "auto")),
+                      (r.innerHTML = l - 1),
+                      a.insertBefore(r, a.childNodes[0]));
+                  }
+                  var e = (0, __imports.E)([
+                    ".BackpackHeader-extInfo",
+                    ".BackpackExpandPanel-backpackHeader",
+                  ]);
+                  (p
+                    ? (e.innerHTML =
+                        e.innerHTML +
+                        `<span style="width: 100%;display: flex;justify-content: space-between;align-items: center;flex: 1;margin-left: 12px;">
+
+                                <span>
+
+                                    <span>总价值:</span>
+
+                                    <span>￥${String(Number(t / 100).toFixed(2))}</span>
+
+                                    <span>总亲密度:</span>
+
+                                    <span>${String(o)}</span>
+
+                                </span>
+
+                                <span class="bag-button" id="Backpack__clearbag" style="background: rgb(70, 171, 255) !important;color: white !important;">清空背包</span>
+
+                            </span>`)
+                    : (e.innerHTML =
+                        '<span style="float: left">总价值：' +
+                        String(Number(t / 100).toFixed(2)) +
+                        " 总亲密度：" +
+                        String(o) +
+                        '<span class="bag-button" id="Backpack__clearbag">清空背包</span></span>' +
+                        e.innerHTML),
+                    (0, __imports.safeBind)("#Backpack__clearbag", "click", () => {
+                      1 == confirm("确认清空？") &&
+                        ((0, __imports.T)("【清空背包】执行中...", "info"),
+                        (0, __imports.pt)(__imports.B, (e) => {
+                          (async (n, i) => {
+                            var t = n.data.list.length;
+                            if (0 < t) {
+                              for (let e = 0; e < t; e++) {
+                                let t = n.data.list[e].id,
+                                  o = n.data.list[e].count;
+                                if (
+                                  0 <
+                                  Object.keys(n.data.list[e].batchInfo).length
+                                )
+                                  await (0, __imports.b)(100).then(() => {
+                                    (0, __imports.Ut)(t, o, i);
+                                  });
+                                else
+                                  for (let e = 0; e < o; e++)
+                                    await (0, __imports.b)(100).then(() => {
+                                      (0, __imports.Ut)(t, 1, i);
+                                    });
+                              }
+                              (0, __imports.T)("【清空背包】执行完毕！", "success");
+                            } else (0, __imports.T)("背包礼物为空", "error");
+                          })(e, __imports.B);
+                        }));
+                    }, owner));
+                }
+              });
+          }, 500)));
       });
-    }, 500);
-  });
-}
+  }
 
 }
 ,
@@ -4404,462 +4239,402 @@ function mountVideoToolbar(owner) {
 "src/next/ui/room/player-menu.js":
 function* (__imports) {
 yield {"mountPlayerMenu": { get: () => mountPlayerMenu, set: value => { mountPlayerMenu = value; } }};
-/**
- * 播放器右下角控制菜单扩展与悬浮“隐藏礼物栏”胶囊按钮控制器
- * @param {object} owner - 房间装配生命周期托管者
- */
+// Room assembly section; dependencies are captured per mount, in original order.
 function mountPlayerMenu(owner) {
-  const pollTimer = owner.interval(() => {
-    if ((0, __imports.E)([".right-e7ea5d", ".right-17e251"])) {
-      (0, __imports.clearInterval)(pollTimer);
+    let d = owner.interval(() => {
+      if ((0, __imports.E)([".right-e7ea5d", ".right-17e251"])) {
+        (0, __imports.clearInterval)(d);
+        {
+          let e = document.createElement("li"),
+            t =
+              ((e.id = "refresh-video"),
+              (e.innerText = "隐藏礼物栏"),
+              document.getElementsByClassName("menu-da2a9e")[0]);
+          (t.insertBefore(e, t.childNodes[t.childNodes.length - 1]),
+            !document.getElementById("refresh-video3") &&
+              (((e = document.createElement("div")).id = "refresh-video3"),
+              (e.title = "点击隐藏礼物栏"),
+              (e.innerHTML = `<div style="display:flex;align-items:center;gap:6px;">
 
-      // 1. 在右键菜单中插入“隐藏礼物栏”选项
-      const menuParent = document.getElementsByClassName("menu-da2a9e")[0];
-      if (menuParent) {
-        const menuItem = document.createElement("li");
-        menuItem.id = "refresh-video";
-        menuItem.innerText = "隐藏礼物栏";
-        menuParent.insertBefore(menuItem, menuParent.childNodes[menuParent.childNodes.length - 1]);
-      }
-
-      // 2. 在播放器浮层注入悬浮胶囊按钮 (#refresh-video3)
-      if (!document.getElementById("refresh-video3")) {
-        const floatPill = document.createElement("div");
-        floatPill.id = "refresh-video3";
-        floatPill.title = "点击隐藏礼物栏";
-        floatPill.innerHTML = `
-          <div style="display:flex;align-items:center;gap:6px;">
             <div style="font-size:12px;">隐藏礼物栏</div>
+
             <div id="ex-refresh-switch" style="width:26px;height:14px;background:rgba(255,255,255,0.3);border-radius:7px;position:relative;transition:background 0.3s;">
-              <div id="ex-refresh-switch-circle" style="width:10px;height:10px;background:#fff;border-radius:50%;position:absolute;top:2px;left:2px;transition:left 0.3s, background 0.3s;"></div>
+
+                <div id="ex-refresh-switch-circle" style="width:10px;height:10px;background:#fff;border-radius:50%;position:absolute;top:2px;left:2px;transition:left 0.3s, background 0.3s;"></div>
+
             </div>
-          </div>
-        `;
-        floatPill.style.cssText = "position:absolute;left:18px;bottom:58px;padding:0 10px;height:28px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55);color:#fff;z-index:9999;cursor:pointer;user-select:none;opacity:0;transform:scale(.9);transition:opacity .15s ease,transform .15s ease,background-color .15s ease,box-shadow .3s ease;pointer-events:none;";
 
-        const playerDialog = document.getElementById("js-player-dialog");
-        if (playerDialog) {
-          playerDialog.insertBefore(floatPill, playerDialog.childNodes[0]);
+        </div>`),
+              (e.style =
+                "position:absolute;left:18px;bottom:58px;padding:0 10px;height:28px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55);color:#fff;z-index:9999;cursor:pointer;user-select:none;opacity:0;transform:scale(.9);transition:opacity .15s ease,transform .15s ease,background-color .15s ease,box-shadow .3s ease;pointer-events:none;"),
+              (t = document.getElementById("js-player-dialog"))) &&
+              t.insertBefore(e, t.childNodes[0]));
         }
+        {
+          function a() {
+            let e = !1;
+            var t = !!(
+              document.fullscreenElement ||
+              document.webkitFullscreenElement ||
+              document.mozFullScreenElement ||
+              document.msFullscreenElement
+            );
+            let o = !1;
+            ((document.querySelector(".wfs-2a8e83.removed-9d4c42") ||
+              document.querySelector(".toggle__P8TKM")) &&
+              (e = !0),
+              document.querySelector(".shrink__Sd0uK") && (o = !0));
+            var n = document.getElementById("js-player-toolbar"),
+              i =
+                ((n.style = e ? "z-index:20" : "z-index:30"),
+                document.getElementsByClassName("case__f4yex")[0]),
+              i =
+                (i &&
+                  (i.style =
+                    (t || (e && o)) && (0, __imports.fn)() ? "bottom: -84px;" : "bottom: 0;"),
+                !!document.getElementsByClassName("live-next-body")[0]);
+            i && (n.parentElement.style = "z-index:20");
+          }
+          (new __imports.DomMutationSubscription(".right-e7ea5d", !0, () => {
+            a();
+          }, owner),
+            new __imports.DomMutationSubscription(".right-17e251", !0, () => {
+              a();
+            }, owner),
+            new __imports.DomMutationSubscription(".video__VfhVg", !0, (e) => {
+              for (var t of e)
+                t.target.className.includes("toggle__P8TKM") && a();
+            }, owner));
+          let e = (0, __imports.E)([".layout-Player-video", ".stream__T55I3"]),
+            t = document.getElementsByClassName("room-Player-Box")[0],
+            o = document.getElementById("refresh-video3"),
+            i = 0,
+            n = !1;
+          function r() {
+            !o ||
+              n ||
+              ((o.style.transition =
+                "opacity .15s ease,transform .15s ease,background-color .15s ease,box-shadow .3s ease"),
+              (o.style.opacity = "0"),
+              (o.style.transform = "scale(.9)"),
+              (o.style.pointerEvents = "none"),
+              (0, __imports.clearTimeout)(i));
+          }
+          function l() {
+            o &&
+              ((o.style.transition =
+                "opacity .15s ease,transform .15s ease,background-color .15s ease,box-shadow .3s ease"),
+              (o.style.opacity = "1"),
+              (o.style.transform = "scale(1)"),
+              (o.style.pointerEvents = "auto"),
+              (0, __imports.clearTimeout)(i),
+              (i = owner.timeout(() => {
+                r();
+              }, 2e3)));
+          }
+          function s() {
+            var e = document.getElementsByClassName(
+                "PlayerToolbar-ContentRow",
+              )[0],
+              t = (0, __imports.E)([".layout-Player-video", ".stream__T55I3"]),
+              o = document.getElementById("refresh-video");
+            let n = document.getElementById("refresh-video3");
+            e &&
+              t &&
+              o &&
+              ("hidden" == e.style.visibility
+                ? ((e.style.visibility = "visible"),
+                  (0, __imports.Ht)(),
+                  (t.style = ""),
+                  n &&
+                    ((n.style.opacity = "0"),
+                    (n.style.transform = "scale(.9)"),
+                    (n.style.pointerEvents = "none"),
+                    (n.title = "点击隐藏礼物栏")),
+                  (0, __imports.hn)(!(o.innerText = "隐藏礼物栏")),
+                  (0, __imports.U)("Ex_Style_VideoRefresh"))
+                : ((e.style.visibility = "hidden"),
+                  (0, __imports.Ft)(),
+                  (t.style = "bottom:0;z-index:25"),
+                  (o.innerText = "✓ 隐藏礼物栏"),
+                  n && (n.title = "点击显示礼物栏"),
+                  (0, __imports.hn)(!0),
+                  n &&
+                    ((n.style.transition =
+                      "opacity .3s ease,transform .3s cubic-bezier(0.175, 0.885, 0.32, 1.275),background-color .3s ease,box-shadow .3s ease"),
+                    (n.style.opacity = "1"),
+                    (n.style.transform = "scale(1.1)"),
+                    (n.style.pointerEvents = "auto"),
+                    (n.style.backgroundColor = "rgba(0,0,0,.8)"),
+                    (n.style.boxShadow = "0 0 15px rgba(255, 102, 0, 0.6)"),
+                    (0, __imports.clearTimeout)(i),
+                    (i = owner.timeout(() => {
+                      ((n.style.transition =
+                        "opacity .15s ease,transform .15s ease,background-color .15s ease,box-shadow .15s ease"),
+                        (n.style.transform = "scale(1)"),
+                        (n.style.backgroundColor = "rgba(0,0,0,.55)"),
+                        (n.style.boxShadow = "none"),
+                        (i = owner.timeout(() => {
+                          r();
+                        }, 1500)));
+                    }, 800))),
+                  (0, __imports.yn)()),
+              a(),
+              (0, __imports.pn)(),
+              (0, __imports.te)());
+          }
+          (e &&
+            o &&
+            (owner.listen(e, "mouseenter", () => {
+              l();
+            }),
+            owner.listen(e, "mouseleave", () => {
+              r();
+            })),
+            t &&
+              o &&
+              owner.listen(t, "mousemove", () => {
+                l();
+              }),
+            o &&
+              (owner.listen(o, "mouseenter", () => {
+                ((n = !0),
+                  (o.style.transition =
+                    "opacity .15s ease,transform .15s ease,background-color .15s ease,box-shadow .3s ease"),
+                  (o.style.opacity = "1"),
+                  (o.style.transform = "scale(1.08)"),
+                  (o.style.pointerEvents = "auto"),
+                  (o.style.backgroundColor = "rgba(0,0,0,.7)"),
+                  (0, __imports.clearTimeout)(i));
+              }),
+              owner.listen(o, "mouseleave", () => {
+                ((n = !1),
+                  (o.style.transform = "scale(1)"),
+                  (o.style.backgroundColor = "rgba(0,0,0,.55)"),
+                  l());
+              })),
+            (0, __imports.safeBind)("#refresh-video", "click", (e) => {
+              s();
+            }, owner),
+            o &&
+              owner.listen(o, "click", (e) => {
+                (e.stopPropagation(), s());
+              }));
+        }
+        var e,
+          t,
+          o,
+          n,
+          i = __imports.localStorage.getItem("ExSave_Refresh");
+        null != i &&
+          ("video" in (i = JSON.parse(i)) == 0 && (i.video = { status: !1 }),
+          1 == i.video.status) &&
+          ((i = document.getElementsByClassName("PlayerToolbar-ContentRow")[0]),
+          (e = (0, __imports.E)([".layout-Player-video", ".stream__T55I3"])),
+          (t = document.getElementById("refresh-video")),
+          (o = document.getElementById("refresh-video3")),
+          (n = document.getElementById("js-player-toolbar")),
+          (i.style.visibility = "hidden"),
+          (e.style = "bottom:0;z-index:25"),
+          (n.style = "z-index:30"),
+          null != (i = __imports.localStorage.getItem("ExSave_FullScreen")) &&
+            JSON.parse(i).isFullScreen &&
+            (n.style = "z-index:20"),
+          document.getElementsByClassName("live-next-body")[0] &&
+            (n.parentElement.style = "z-index:20"),
+          o &&
+            ((o.style.opacity = "0"),
+            (o.style.transform = "scale(.9)"),
+            (o.style.pointerEvents = "none"),
+            (o.title = "点击显示礼物栏")),
+          (t.innerText = "✓ 隐藏礼物栏"),
+          (0, __imports.yn)(),
+          (0, __imports.te)(),
+          owner.timeout(() => {
+            (0, __imports.hn)(!0);
+          }, 500));
       }
-
-      // 3. 全屏与窗口形态检测调整
-      const adjustPlayerZIndex = () => {
-        let isWebFullscreen = false;
-        const isNativeFullscreen = Boolean(
-          document.fullscreenElement ||
-          document.webkitFullscreenElement ||
-          document.mozFullScreenElement ||
-          document.msFullscreenElement
-        );
-
-        let isShrink = false;
-        if (document.querySelector(".wfs-2a8e83.removed-9d4c42") || document.querySelector(".toggle__P8TKM")) {
-          isWebFullscreen = true;
-        }
-        if (document.querySelector(".shrink__Sd0uK")) {
-          isShrink = true;
-        }
-
-        const playerToolbar = document.getElementById("js-player-toolbar");
-        if (playerToolbar) {
-          playerToolbar.style.zIndex = isWebFullscreen ? "20" : "30";
-          const caseEl = document.getElementsByClassName("case__f4yex")[0];
-          if (caseEl) {
-            caseEl.style.bottom = ((isNativeFullscreen || (isWebFullscreen && isShrink)) && (0, __imports.fn)()) ? "-84px" : "0";
-          }
-          if (document.getElementsByClassName("live-next-body")[0] && playerToolbar.parentElement) {
-            playerToolbar.parentElement.style.zIndex = "20";
-          }
-        }
-      };
-
-      new __imports.DomMutationSubscription(".right-e7ea5d", true, adjustPlayerZIndex, owner);
-      new __imports.DomMutationSubscription(".right-17e251", true, adjustPlayerZIndex, owner);
-      new __imports.DomMutationSubscription(".video__VfhVg", true, (mutations) => {
-        for (const m of mutations) {
-          if (m.target?.className?.includes("toggle__P8TKM")) adjustPlayerZIndex();
-        }
-      }, owner);
-
-      // 4. 浮动胶囊渐入淡出与点击切换逻辑
-      const videoArea = (0, __imports.E)([".layout-Player-video", ".stream__T55I3"]);
-      const playerBox = document.getElementsByClassName("room-Player-Box")[0];
-      const floatPill = document.getElementById("refresh-video3");
-      let fadeTimer = 0;
-      let isHoveringPill = false;
-
-      const fadeOutPill = () => {
-        if (!floatPill || isHoveringPill) return;
-        floatPill.style.transition = "opacity .15s ease,transform .15s ease,background-color .15s ease,box-shadow .3s ease";
-        floatPill.style.opacity = "0";
-        floatPill.style.transform = "scale(.9)";
-        floatPill.style.pointerEvents = "none";
-        (0, __imports.clearTimeout)(fadeTimer);
-      };
-
-      const fadeInPill = () => {
-        if (!floatPill) return;
-        floatPill.style.transition = "opacity .15s ease,transform .15s ease,background-color .15s ease,box-shadow .3s ease";
-        floatPill.style.opacity = "1";
-        floatPill.style.transform = "scale(1)";
-        floatPill.style.pointerEvents = "auto";
-        (0, __imports.clearTimeout)(fadeTimer);
-        fadeTimer = owner.timeout(fadeOutPill, 2000);
-      };
-
-      const toggleGiftBarVisibility = () => {
-        const toolbarRow = document.getElementsByClassName("PlayerToolbar-ContentRow")[0];
-        const videoEl = (0, __imports.E)([".layout-Player-video", ".stream__T55I3"]);
-        const menuOption = document.getElementById("refresh-video");
-        const pill = document.getElementById("refresh-video3");
-
-        if (!toolbarRow || !videoEl || !menuOption) return;
-
-        if (toolbarRow.style.visibility === "hidden") {
-          // 恢复显示礼物栏
-          toolbarRow.style.visibility = "visible";
-          (0, __imports.Ht)();
-          videoEl.style.cssText = "";
-          if (pill) {
-            pill.style.opacity = "0";
-            pill.style.transform = "scale(.9)";
-            pill.style.pointerEvents = "none";
-            pill.title = "点击隐藏礼物栏";
-          }
-          (0, __imports.hn)(false);
-          menuOption.innerText = "隐藏礼物栏";
-          (0, __imports.U)("Ex_Style_VideoRefresh");
-        } else {
-          // 隐藏礼物栏
-          toolbarRow.style.visibility = "hidden";
-          (0, __imports.Ft)();
-          videoEl.style.cssText = "bottom:0;z-index:25";
-          menuOption.innerText = "✓ 隐藏礼物栏";
-          if (pill) {
-            pill.title = "点击显示礼物栏";
-            pill.style.transition = "opacity .3s ease,transform .3s cubic-bezier(0.175, 0.885, 0.32, 1.275),background-color .3s ease,box-shadow .3s ease";
-            pill.style.opacity = "1";
-            pill.style.transform = "scale(1.1)";
-            pill.style.pointerEvents = "auto";
-            pill.style.backgroundColor = "rgba(0,0,0,.8)";
-            pill.style.boxShadow = "0 0 15px rgba(255, 102, 0, 0.6)";
-
-            (0, __imports.clearTimeout)(fadeTimer);
-            fadeTimer = owner.timeout(() => {
-              pill.style.transition = "opacity .15s ease,transform .15s ease,background-color .15s ease,box-shadow .15s ease";
-              pill.style.transform = "scale(1)";
-              pill.style.backgroundColor = "rgba(0,0,0,.55)";
-              pill.style.boxShadow = "none";
-              fadeTimer = owner.timeout(fadeOutPill, 1500);
-            }, 800);
-          }
-          (0, __imports.hn)(true);
-          (0, __imports.yn)();
-        }
-
-        adjustPlayerZIndex();
-        (0, __imports.pn)();
-        (0, __imports.te)();
-      };
-
-      if (videoArea && floatPill) {
-        owner.listen(videoArea, "mouseenter", fadeInPill);
-        owner.listen(videoArea, "mouseleave", fadeOutPill);
-      }
-      if (playerBox && floatPill) {
-        owner.listen(playerBox, "mousemove", fadeInPill);
-      }
-      if (floatPill) {
-        owner.listen(floatPill, "mouseenter", () => {
-          isHoveringPill = true;
-          floatPill.style.transition = "opacity .15s ease,transform .15s ease,background-color .15s ease,box-shadow .3s ease";
-          floatPill.style.opacity = "1";
-          floatPill.style.transform = "scale(1.08)";
-          floatPill.style.pointerEvents = "auto";
-          floatPill.style.backgroundColor = "rgba(0,0,0,.7)";
-          (0, __imports.clearTimeout)(fadeTimer);
-        });
-        owner.listen(floatPill, "mouseleave", () => {
-          isHoveringPill = false;
-          floatPill.style.transform = "scale(1)";
-          floatPill.style.backgroundColor = "rgba(0,0,0,.55)";
-          fadeInPill();
-        });
-        owner.listen(floatPill, "click", (e) => {
-          e.stopPropagation();
-          toggleGiftBarVisibility();
-        });
-      }
-
-      (0, __imports.safeBind)("#refresh-video", "click", () => {
-        toggleGiftBarVisibility();
-      }, owner);
-
-      // 5. 读取持久化配置恢复隐藏状态
-      try {
-        const saved = JSON.parse(__imports.localStorage.getItem("ExSave_Refresh") || "{}");
-        if (saved?.video?.status === true) {
-          const rowEl = document.getElementsByClassName("PlayerToolbar-ContentRow")[0];
-          const streamEl = (0, __imports.E)([".layout-Player-video", ".stream__T55I3"]);
-          const menuOpt = document.getElementById("refresh-video");
-          const toolbarEl = document.getElementById("js-player-toolbar");
-
-          if (rowEl) rowEl.style.visibility = "hidden";
-          if (streamEl) streamEl.style.cssText = "bottom:0;z-index:25";
-          if (toolbarEl) toolbarEl.style.zIndex = "30";
-
-          const isFs = JSON.parse(__imports.localStorage.getItem("ExSave_FullScreen") || "{}")?.isFullScreen;
-          if (isFs && toolbarEl) toolbarEl.style.zIndex = "20";
-          if (document.getElementsByClassName("live-next-body")[0] && toolbarEl?.parentElement) {
-            toolbarEl.parentElement.style.zIndex = "20";
-          }
-
-          if (floatPill) {
-            floatPill.style.opacity = "0";
-            floatPill.style.transform = "scale(.9)";
-            floatPill.style.pointerEvents = "none";
-            floatPill.title = "点击显示礼物栏";
-          }
-          if (menuOpt) menuOpt.innerText = "✓ 隐藏礼物栏";
-
-          (0, __imports.yn)();
-          (0, __imports.te)();
-          owner.timeout(() => (0, __imports.hn)(true), 500);
-        }
-      } catch {}
-    }
-
-    if (++__imports.gn >= 100) {
-      (0, __imports.clearInterval)(pollTimer);
-    }
-  }, 1500);
-}
+      100 <= ++__imports.gn && (0, __imports.clearInterval)(d);
+    }, 1500);
+  }
 
 }
 ,
 "src/next/ui/room/barrage-settings.js":
 function* (__imports) {
 yield {"mountBarrageSettings": { get: () => mountBarrageSettings, set: value => { mountBarrageSettings = value; } }};
-/**
- * 播放器内部弹幕悬停操作卡片与上下文右键菜单微交互装配 (+1 复读 / 作者快捷卡片)
- * @param {object} owner - 房间装配生命周期托管者
- */
+// Room assembly section; dependencies are captured per mount, in original order.
 function mountBarrageSettings(owner) {
-  // 1. 轮询并监听弹幕悬浮信息面板 (danmuTips)
-  const pollTimer = owner.interval(() => {
-    const tipsList = document.getElementsByClassName("danmuTips-1ee820");
-    if (tipsList.length > 0) {
-      (0, __imports.clearInterval)(pollTimer);
-      const panelParent = tipsList[0].parentElement;
-      panelParent.id = "Ex_BarragePanel";
-
-      // 监听弹幕悬停提示卡片创建与变动
-      new __imports.DomMutationSubscription("#Ex_BarragePanel", true, (mutations) => {
-        (0, __imports.Ie)(() => {
-          let hasAttrChange = false;
-          if (mutations.length > 0) {
-            for (let i = 0; i < mutations.length; i++) {
-              if (mutations[i].type === "attributes") {
-                hasAttrChange = true;
-                break;
-              }
-            }
-
-            if (!hasAttrChange) {
-              const node = mutations[0].addedNodes?.[0];
-              if (node && typeof node.getElementsByClassName === "function") {
-                const btnGroup = node.getElementsByClassName("buttonGroup-de6b66")[0];
-                const authorEls = node.getElementsByClassName("danmuAuthor-3d7b4a");
-                if (authorEls.length > 0 && btnGroup) {
-                  const authorNick = authorEls[0].innerText;
-                  (0, __imports.Ce)(authorEls[0], authorNick);
-                  (0, __imports.Le)(btnGroup);
-                  (0, __imports.Ne)(btnGroup);
-                  (0, __imports.Se)(btnGroup);
-                  (0, __imports.Me)(btnGroup);
-                  (0, __imports.Ae)(0, authorNick);
+    let e = owner.interval(() => {
+      0 < document.getElementsByClassName("danmuTips-1ee820").length &&
+        ((0, __imports.clearInterval)(e),
+        (document.getElementsByClassName(
+          "danmuTips-1ee820",
+        )[0].parentElement.id = "Ex_BarragePanel"),
+        new __imports.DomMutationSubscription("#Ex_BarragePanel", !0, (i) => {
+          (0, __imports.Ie)(() => {
+            let t = !1;
+            if (0 < i.length) {
+              for (let e = 0; e < i.length; e++)
+                if ("attributes" == i[e].type) {
+                  t = !0;
+                  break;
                 }
-              }
-            } else {
-              const funcPanels = document.getElementsByClassName("barragePanel__funcPanel");
-              if (funcPanels.length > 0) funcPanels[0].remove();
-
-              const danmuDiv = document.getElementsByClassName("danmudiv-32f498")[0];
-              if (danmuDiv) {
-                const btnGroup = danmuDiv.getElementsByClassName("buttonGroup-de6b66")[0];
-                const authorEls = danmuDiv.getElementsByClassName("danmuAuthor-3d7b4a");
-                if (authorEls.length > 0 && btnGroup) {
-                  const authorNick = authorEls[0].innerText;
-                  (0, __imports.Ce)(authorEls[0], authorNick);
-                  (0, __imports.Le)(btnGroup);
-                  (0, __imports.Ne)(btnGroup);
-                  (0, __imports.Se)(btnGroup);
-                  (0, __imports.Me)(btnGroup);
-                  (0, __imports.Ae)(0, authorNick);
-                }
-                (0, __imports.Te)();
-              }
+              var e, o, n;
+              0 == t
+                ? 0 < (n = i[0].addedNodes).length &&
+                  "getElementsByClassName" in (n = n[0]) != 0 &&
+                  ((o = n.getElementsByClassName("buttonGroup-de6b66")[0]),
+                  (e = ""),
+                  0 <
+                    (n = n.getElementsByClassName("danmuAuthor-3d7b4a"))
+                      .length) &&
+                  ((e = n[0].innerText),
+                  (0, __imports.Ce)(n[0], e),
+                  (0, __imports.Le)(o),
+                  (0, __imports.Ne)(o),
+                  (0, __imports.Se)(o),
+                  (0, __imports.Me)(o),
+                  (0, __imports.Ae)(0, e))
+                : (0 <
+                    (n = document.getElementsByClassName(
+                      "barragePanel__funcPanel",
+                    )).length && n[0].remove(),
+                  null !=
+                    (o =
+                      document.getElementsByClassName("danmudiv-32f498")[0]) &&
+                    ((e = o.getElementsByClassName("buttonGroup-de6b66")[0]),
+                    (n = ""),
+                    0 <
+                      (o = o.getElementsByClassName("danmuAuthor-3d7b4a"))
+                        .length &&
+                      ((n = o[0].innerText),
+                      (0, __imports.Ce)(o[0], n),
+                      (0, __imports.Le)(e),
+                      (0, __imports.Ne)(e),
+                      (0, __imports.Se)(e),
+                      (0, __imports.Me)(e),
+                      (0, __imports.Ae)(0, n)),
+                    (0, __imports.Te)()));
             }
-          }
-        });
-      }, owner);
-
-      new __imports.DomMutationSubscription("#Ex_BarragePanel", false, () => {
-        (0, __imports.Ie)(() => {
-          (0, __imports.Te)();
-        });
-      }, owner);
-    }
-  }, 1500);
-
-  // 2. 聊天区点赞/禁言容器中追加 +1 悬浮复读气泡
-  new __imports.DomMutationSubscription("#comment-dzjy-container", false, (mutations) => {
-    if (mutations.length === 0 || mutations[0].addedNodes.length === 0) return;
-
-    const labelElements = document.getElementsByClassName("labelfisrt-407af4");
-    if (labelElements.length > 0) {
-      const parent = labelElements[0].parentElement;
-      const spacer = document.createElement("div");
-      spacer.style.display = "inline-block";
-      parent.appendChild(spacer);
-
-      const divider = document.createElement("p");
-      divider.className = "sugun-e3fbf6";
-      divider.innerText = "|";
-      parent.appendChild(divider);
-
-      const plusOneBtn = document.createElement("div");
-      plusOneBtn.className = "labelfisrt-407af4 thirdBtn-06cde5 fourBtn-0845d4";
-      plusOneBtn.id = "barrage-panel-tip__+1";
-      plusOneBtn.innerText = "+1";
-      parent.appendChild(plusOneBtn);
-    }
-
-    const btn = (0, __imports.safeEl)("barrage-panel-tip__+1");
-    if (btn) {
-      btn.onclick = () => {
-        const higherContainer = document.getElementById("comment-higher-container");
-        if (!higherContainer) return;
-
-        if (higherContainer.getElementsByClassName("ex-image-danmaku").length > 0) {
-          const rawHtml = higherContainer.getElementsByClassName("text-879f3e")[0]?.innerHTML || "";
-          const parsedDanmu = rawHtml.replace(
-            /<a[^>]*><img\s+(?:.*?\s+)?src="(.*?)"[^>]*?\/?><\/a>/g,
-            (_match, src) => {
-              const fileParts = src.split("/").pop().split(".");
-              const base36Id = BigInt(fileParts[0]).toString(36);
-              return `[DouyuEx图片${base36Id}.${fileParts[1] || 'png'}]`;
-            }
-          );
-          (0, __imports.we)(parsedDanmu);
-        } else {
-          (0, __imports.we)(higherContainer.innerText);
+          });
+        }, owner),
+        new __imports.DomMutationSubscription("#Ex_BarragePanel", !1, (e) => {
+          (0, __imports.Ie)(() => {
+            (0, __imports.Te)();
+          });
+        }, owner));
+    }, 1500);
+    new __imports.DomMutationSubscription("#comment-dzjy-container", !1, (t) => {
+      if (!(t.length <= 0 || t[0].addedNodes.length <= 0)) {
+        {
+          let e = document.createElement("div");
+          e.style.display = "inline-block";
+          t = document.getElementsByClassName("labelfisrt-407af4");
+          0 !== t.length &&
+            ((t = t[0].parentElement).appendChild(e),
+            ((e = document.createElement("p")).className = "sugun-e3fbf6"),
+            (e.innerText = "|"),
+            t.appendChild(e),
+            ((e = document.createElement("div")).className =
+              "labelfisrt-407af4 thirdBtn-06cde5 fourBtn-0845d4"),
+            (e.id = "barrage-panel-tip__+1"),
+            (e.innerText = "+1"),
+            t.appendChild(e));
         }
-      };
-    }
-  }, owner);
-}
+        (0, __imports.safeEl)("barrage-panel-tip__+1").onclick = () => {
+          var e = document.getElementById("comment-higher-container");
+          0 < e.getElementsByClassName("ex-image-danmaku").length
+            ? (0, __imports.we)(
+                e
+                  .getElementsByClassName("text-879f3e")[0]
+                  .innerHTML.replace(
+                    /<a[^>]*><img\s+(?:.*?\s+)?src="(.*?)"[^>]*?\/?><\/a>/g,
+                    (e, t) =>
+                      `[DouyuEx图片${((e) => (e = BigInt(e)).toString(36))((t = (t = (t = t.split("/")).pop()).split("."))[0])}.${t[2]}]`,
+                  ),
+              )
+            : (0, __imports.we)(e.innerText);
+        };
+      }
+    }, owner);
+  }
 
 }
 ,
 "src/next/ui/room/danmaku-search.js":
 function* (__imports) {
 yield {"mountDanmakuSearch": { get: () => mountDanmakuSearch, set: value => { mountDanmakuSearch = value; } }};
-/**
- * 弹幕收藏检索过滤栏与本地无限收藏扩展拦截器
- * @param {object} owner - 房间装配上下文拥有者
- */
+// Room assembly section; dependencies are captured per mount, in original order.
 function mountDanmakuSearch(owner) {
-  // 1. 轮询等待官方弹幕收藏弹窗出现，注入搜索框
-  const pollTimer = owner.interval(() => {
-    if (document.getElementsByClassName("ChatBarrageCollect")[0]) {
-      (0, __imports.clearInterval)(pollTimer);
-
-      new __imports.DomMutationSubscription(".ChatBarrageCollect", false, () => {
-        const titleElements = document.getElementsByClassName("ChatBarrageCollectPop-title");
-        if (titleElements && titleElements.length > 0) {
-          if (!document.getElementById("ex-danmaku-collect-search")) {
-            const inputEl = document.createElement("input");
-            inputEl.id = "ex-danmaku-collect-search";
-            inputEl.placeholder = "搜索弹幕";
-            inputEl.style.marginLeft = "6px";
-            titleElements[0].appendChild(inputEl);
-            owner.listen(inputEl, "input", __imports.Ve);
-          }
-        } else {
-          const searchInput = document.getElementById("ex-danmaku-collect-search");
-          if (searchInput) {
-            searchInput.removeEventListener("input", __imports.Ve);
-          }
-        }
-      }, owner);
+    {
+      let e = owner.interval(() => {
+        void 0 !== document.getElementsByClassName("ChatBarrageCollect")[0] &&
+          ((0, __imports.clearInterval)(e),
+          new __imports.DomMutationSubscription(".ChatBarrageCollect", !1, (e) => {
+            var t,
+              o = document.getElementsByClassName(
+                "ChatBarrageCollectPop-title",
+              );
+            o
+              ? 0 !== o.length &&
+                (((t = document.createElement("input")).id =
+                  "ex-danmaku-collect-search"),
+                (t.placeholder = "搜索弹幕"),
+                (t.style.marginLeft = "6px"),
+                o[0].appendChild(t),
+                owner.listen(t, "input", __imports.Ve))
+              : document
+                  .getElementById("ex-danmaku-collect-search")
+                  .removeEventListener("input", __imports.Ve);
+          }, owner));
+      }, 1e3);
     }
-  }, 1000);
-
-  // 2. 聊天输入框字符数较多时自动避让隐藏收藏按钮
-  const chatInput = document.getElementsByClassName("ChatSend-txt")[0];
-  const collectBtn = document.getElementsByClassName("ChatBarrageCollect")[0];
-
-  if (chatInput && collectBtn) {
-    owner.listen(chatInput, "keyup", () => {
-      const textLen = (typeof chatInput.value === "string" ? chatInput.value : chatInput.innerText).length;
-      collectBtn.style.display = textLen > 25 ? "none" : "";
-    });
-
-    (0, __imports.safeBind)(".ChatSend-button", "click", () => {
-      collectBtn.style.display = "";
-    }, owner);
+    let t = document.getElementsByClassName("ChatSend-txt")[0],
+      o = document.getElementsByClassName("ChatBarrageCollect")[0];
+    (t &&
+      owner.listen(t, "keyup", () => {
+        var e = ("string" == typeof t.value ? t.value : t.innerText).length;
+        o.style.display = 25 < e ? "none" : "";
+      }),
+      (0, __imports.safeBind)(".ChatSend-button", "click", () => {
+        o.style.display = "";
+      }, owner),
+      (0, __imports.Qr)((e, t) => {
+        if (e.includes("bulletscreen/query"))
+          return (
+            (e = JSON.parse(t)).data.list.unshift(
+              ...(0, __imports.qe)().map((e) => ({ content: e.content, type: 2, id: e.id })),
+            ),
+            JSON.stringify(e)
+          );
+      }),
+      (0, __imports.Qr)((e, t, o) => {
+        if (e.includes("bulletscreen/add"))
+          return 0 == (e = JSON.parse(t)).error
+            ? t
+            : ((t = JSON.parse(o).content),
+              (o = t),
+              (t = (0, __imports.qe)()).unshift({ content: o, id: new Date().getTime() }),
+              __imports.localStorage.setItem("ExSave_DanmakuCollect", JSON.stringify(t)),
+              (e.msg =
+                "收藏成功，云收藏已达上限，将收藏至本地（由DouyuEx插件实现无限收藏）"),
+              document.querySelector(".ChatBarrageCollect-tip").click(),
+              document.querySelector(".ChatBarrageCollect-tip").click(),
+              JSON.stringify(e));
+      }),
+      (0, __imports.Qr)((e, t, o) => {
+        var n;
+        e.includes("bulletscreen/del") &&
+          ((e = JSON.parse(o).id),
+          (n = e),
+          (o = (0, __imports.qe)()),
+          __imports.localStorage.setItem(
+            "ExSave_DanmakuCollect",
+            JSON.stringify(o.filter((e) => e.id !== n)),
+          ));
+      }));
   }
-
-  // 3. 拦截官方弹幕查询请求，混入本地无限收藏项
-  (0, __imports.Qr)((url, responseText) => {
-    if (url.includes("bulletscreen/query")) {
-      try {
-        const dataObj = JSON.parse(responseText);
-        const localList = (0, __imports.qe)().map(item => ({ content: item.content, type: 2, id: item.id }));
-        dataObj.data.list.unshift(...localList);
-        return JSON.stringify(dataObj);
-      } catch {
-        return responseText;
-      }
-    }
-  });
-
-  // 4. 拦截添加收藏请求，云端满额时自动存入本地无限收藏
-  (0, __imports.Qr)((url, responseText, requestBody) => {
-    if (url.includes("bulletscreen/add")) {
-      try {
-        const resp = JSON.parse(responseText);
-        if (resp.error === 0) return responseText;
-
-        const content = JSON.parse(requestBody).content;
-        const localList = (0, __imports.qe)();
-        localList.unshift({ content, id: Date.now() });
-        __imports.localStorage.setItem("ExSave_DanmakuCollect", JSON.stringify(localList));
-
-        resp.msg = "收藏成功，云收藏已达上限，将收藏至本地（由DouyuEx插件实现无限收藏）";
-        document.querySelector(".ChatBarrageCollect-tip")?.click();
-        document.querySelector(".ChatBarrageCollect-tip")?.click();
-        return JSON.stringify(resp);
-      } catch {
-        return responseText;
-      }
-    }
-  });
-
-  // 5. 拦截删除收藏请求，同步从本地存储中清除
-  (0, __imports.Qr)((url, responseText, requestBody) => {
-    if (url.includes("bulletscreen/del")) {
-      try {
-        const targetId = JSON.parse(requestBody).id;
-        const localList = (0, __imports.qe)();
-        const updated = localList.filter(item => item.id !== targetId);
-        __imports.localStorage.setItem("ExSave_DanmakuCollect", JSON.stringify(updated));
-      } catch {}
-    }
-  });
-}
 
 }
 ,
@@ -5041,72 +4816,69 @@ function mountLastLiveOverlay(owner) {
 "src/next/services/blocked-danmaku.js":
 function* (__imports) {
 yield {"initDanmakuBlockedCheck": { get: () => initDanmakuBlockedCheck, set: value => { initDanmakuBlockedCheck = value; } }};
-/**
- * 弹幕发送成功与系统屏蔽词检测系统 (DouyuEx SSOT)
- * 800ms 敏捷超时判定、删除线提示与偶发网络抖动回执自愈
- */
+/* ==================== 弹幕发送成功与系统屏蔽词检测系统 (DouyuEx SSOT) ==================== */
 function initDanmakuBlockedCheck() {
-  let pendingList = [];
-  let seqId = 0;
+  var pendingList = [];
+  var seqId = 0;
 
-  const extractSegment = (str, startTag, endTag) => {
-    const idx = str.indexOf(startTag);
+  function getVal(str, start, end) {
+    var idx = str.indexOf(start);
     if (idx === -1) return "";
-    const s = idx + startTag.length;
-    const e = str.indexOf(endTag, s);
+    var s = idx + start.length;
+    var e = str.indexOf(end, s);
     return e !== -1 ? str.slice(s, e) : str.slice(s);
-  };
+  }
 
-  /**
-   * 旁听 chatmsg 弹幕数据包回执
-   */
-  const handleChatmsgPacket = (msg) => {
-    if (!msg || typeof msg !== "string" || !msg.includes("type@=chatmsg")) return;
+  function handleChatmsgPacket(msg) {
+    if (!msg || typeof msg !== "string") return;
+    if (msg.indexOf("type@=chatmsg") === -1) return;
 
-    const txt = extractSegment(msg, "txt@=", "/");
+    var txt = getVal(msg, "txt@=", "/");
     if (!txt) return;
 
-    const senderUid = extractSegment(msg, "uid@=", "/");
-    const senderNick = extractSegment(msg, "nn@=", "/");
+    var senderUid = getVal(msg, "uid@=", "/");
+    var senderNick = getVal(msg, "nn@=", "/");
 
-    const myUid =
+    var myUid =
       (typeof __imports.I !== "undefined" && __imports.I) ||
       (typeof __imports.x === "function" && (0, __imports.x)("acf_uid")) ||
       (document.cookie.match(/(?:^|;\s*)acf_uid=([^;]+)/) || [])[1] ||
       "";
-
-    let myNick = (typeof __imports.W !== "undefined" && __imports.W) || "";
+    var myNick = (typeof __imports.W !== "undefined" && __imports.W) || "";
     if (!myNick && typeof __imports.x === "function") {
-      const cookieNick = (0, __imports.x)("acf_nickname");
+      var cookieNick = (0, __imports.x)("acf_nickname");
       if (cookieNick) {
         try {
           myNick = decodeURIComponent(cookieNick);
           __imports.W = myNick;
-        } catch {}
+        } catch (e) {}
       }
     }
 
-    let isSelf = false;
+    var isSelf = false;
     if (myUid && senderUid && senderUid === myUid) {
       isSelf = true;
     } else if (myNick && senderNick && senderNick === myNick) {
       isSelf = true;
-    } else if (senderNick && pendingList.some(p => p.senderNick === senderNick)) {
+    } else if (
+      senderNick &&
+      pendingList.some(function (p) {
+        return p.senderNick === senderNick;
+      })
+    ) {
       isSelf = true;
-      if (typeof __imports.W !== "undefined" && !__imports.W) {
-        __imports.W = senderNick;
-      }
+      if (typeof __imports.W !== "undefined" && !__imports.W) __imports.W = senderNick;
     }
 
     if (!isSelf) return;
 
-    const cleanTxt = txt
+    var cleanTxt = txt
       .replace(/\[DouyuEx图片[^\]]+\]/g, "")
       .replace(/\s+/g, " ")
       .trim();
 
-    for (let i = 0; i < pendingList.length; i++) {
-      const item = pendingList[i];
+    for (var i = 0; i < pendingList.length; i++) {
+      var item = pendingList[i];
       if (item.cleanText === cleanTxt && !item.confirmed) {
         item.confirmed = true;
         item.resolved = true;
@@ -5114,116 +4886,124 @@ function initDanmakuBlockedCheck() {
           (0, __imports.clearTimeout)(item.timer);
           item.timer = null;
         }
-
-        // 若网络抖动导致回执迟到，自愈清除删除线与可能失败提示
-        if (item.contentEl?.style?.textDecoration?.includes("line-through")) {
+        // 若极端网络抖动在超时后才收到回执，自动自愈消除删除线与提示
+        if (
+          item.contentEl &&
+          item.contentEl.style &&
+          item.contentEl.style.textDecoration &&
+          item.contentEl.style.textDecoration.indexOf("line-through") !== -1
+        ) {
           item.contentEl.style.textDecoration = "";
           item.contentEl.style.textDecorationLine = "";
           item.contentEl.style.textDecorationColor = "";
-          const tip = item.node.querySelector(".ex-danmaku-blocked-tip");
+          var tip = item.node.querySelector(".ex-danmaku-blocked-tip");
           if (tip) tip.remove();
         }
         break;
       }
     }
 
-    const now = Date.now();
-    pendingList = pendingList.filter(p => !p.resolved || now - p.createdAt < 15000);
-  };
+    var now = Date.now();
+    pendingList = pendingList.filter(function (p) {
+      return !p.resolved || now - p.createdAt < 15000;
+    });
+  }
 
-  // 挂载全局监听回调
+  // 挂载全局接收钩子，主 WebSocket 旁听与 nl 代理连接双通道消费
   window.__onDouyuExChatmsg = handleChatmsgPacket;
 
-  const markBlocked = (item) => {
+  function markBlocked(item) {
     item.resolved = true;
     item.timer = null;
     if (!item.contentEl || !item.contentEl.parentNode) return;
 
-    // 1. 注入原版删除线样式
+    // 1. 添加原版删除线样式
     item.contentEl.style.textDecoration = "line-through gray 1px";
     item.contentEl.style.textDecorationLine = "line-through";
     item.contentEl.style.textDecorationColor = "gray";
 
+    // 2. 避免重复添加标签
     if (item.node.querySelector(".ex-danmaku-blocked-tip")) return;
 
-    // 2. 注入 (可能发送失败) 提示标签
-    const tip = document.createElement("span");
+    // 3. 插入原版 (可能发送失败) 提示标签与悬停解释
+    var tip = document.createElement("span");
     tip.className = "ex-danmaku-blocked-tip";
     tip.textContent = "(可能发送失败)";
     tip.style.marginLeft = "4px";
     tip.style.color = "gray";
     tip.style.fontSize = "9px";
     tip.style.cursor = "pointer";
-    tip.title = "该条弹幕发送失败/可能被系统屏蔽，不会被其他人看到（可能会误判）";
+    tip.title =
+      "该条弹幕发送失败/可能被系统屏蔽，不会被其他人看到（可能会误判）";
 
     item.contentEl.parentNode.insertBefore(tip, item.contentEl.nextSibling);
-  };
+  }
 
-  const checkAndTrackSelfDanmu = (node) => {
+  function checkAndTrackSelfDanmu(node) {
     if (!node || node.nodeType !== 1) return;
 
-    const hasSelf = node.classList.contains("is-self") || node.querySelector(".is-self");
+    var hasSelf =
+      node.classList.contains("is-self") || node.querySelector(".is-self");
     if (!hasSelf) return;
 
-    const contentEl = node.classList.contains("Barrage-content")
+    var contentEl = node.classList.contains("Barrage-content")
       ? node
       : node.querySelector(".Barrage-content");
     if (!contentEl) return;
 
-    const rawText = (contentEl.innerText || contentEl.textContent || "").trim();
+    var rawText = (contentEl.innerText || contentEl.textContent || "").trim();
     if (!rawText) return;
 
-    const cleanText = rawText
+    var cleanText = rawText
       .replace(/\[DouyuEx图片[^\]]+\]/g, "")
       .replace(/\s+/g, " ")
       .trim();
 
-    const nickEl =
+    var nickEl =
       node.querySelector(".Barrage-nickName.is-self") ||
       node.querySelector(".Barrage-nickName") ||
       node.querySelector(".is-self");
-
-    const senderNick = nickEl
+    var senderNick = nickEl
       ? (nickEl.innerText || nickEl.textContent || "").trim()
-      : ((typeof __imports.W !== "undefined" && __imports.W) || "");
-
+      : (typeof __imports.W !== "undefined" && __imports.W) || "";
     if (senderNick && typeof __imports.W !== "undefined" && (!__imports.W || __imports.W !== senderNick)) {
       __imports.W = senderNick;
     }
 
-    const item = {
+    var item = {
       id: ++seqId,
-      node,
-      contentEl,
-      rawText,
-      cleanText,
-      senderNick,
+      node: node,
+      contentEl: contentEl,
+      rawText: rawText,
+      cleanText: cleanText,
+      senderNick: senderNick,
       createdAt: Date.now(),
       resolved: false,
       confirmed: false,
       timer: null,
     };
 
-    // 800ms 敏捷超时判定
-    item.timer = (0, __imports.setTimeout)(() => {
+    // 800ms 敏捷超时判定：大幅压缩等待时延，若偶发网络抖动回执迟到，自愈机制将自动解除删除线
+    item.timer = (0, __imports.setTimeout)(function () {
       if (!item.resolved && !item.confirmed) {
         markBlocked(item);
       }
     }, 800);
 
     pendingList.push(item);
-  };
+  }
 
-  // 轮询等待弹幕 DOM 列表就绪并启动 MutationObserver
-  const waitTimer = (0, __imports.setInterval)(() => {
-    const list = document.getElementById("js-barrage-list") || document.querySelector(".Barrage-list");
+  var waitTimer = (0, __imports.setInterval)(function () {
+    var list =
+      document.getElementById("js-barrage-list") ||
+      document.querySelector(".Barrage-list");
     if (list) {
       (0, __imports.clearInterval)(waitTimer);
-      const observer = new MutationObserver((mutations) => {
-        for (let m = 0; m < mutations.length; m++) {
-          const record = mutations[m];
+      var observer = new MutationObserver(function (mutations) {
+        for (var m = 0; m < mutations.length; m++) {
+          var record = mutations[m];
           if (!record.addedNodes || record.addedNodes.length === 0) continue;
-          for (let i = 0; i < record.addedNodes.length; i++) {
+          for (var i = 0; i < record.addedNodes.length; i++) {
             checkAndTrackSelfDanmu(record.addedNodes[i]);
           }
         }
@@ -5232,6 +5012,7 @@ function initDanmakuBlockedCheck() {
     }
   }, 1000);
 }
+
 
 }
 ,
@@ -5511,224 +5292,196 @@ containerOrValue = ((elementOrValue.className = "ChatToolBar-DanmakuTail"),
 "src/next/ui/room/room-controls.js":
 function* (__imports) {
 yield {"mountRoomControls": { get: () => mountRoomControls, set: value => { mountRoomControls = value; } }};
-/**
- * 直播间顶栏与控制按钮装配 (回看/投稿/鱼吧直达、流地址复制、音频线路切换与私信角标过滤)
- * @param {object} owner - 房间装配生命周期托管者
- */
+// Phase-local construction values; only declared outputs cross phase boundaries.
 function mountRoomControls(owner) {
-  // 1. 在主播头像卡片悬浮区挂载【回看】、【投稿】与【打开鱼吧】
-  const videoEntryTab = document.querySelectorAll(".VideoEntry-tabItem > a")[0];
-  if (videoEntryTab) {
-    const submitTargetUrl = `${videoEntryTab.href}?type=video`;
-    const replayTargetUrl = `${videoEntryTab.href}?type=liveReplay`;
+let elementOrValue, containerOrValue, controlNodes, controlParent, replayUrl;
+elementOrValue = document.querySelectorAll(".VideoEntry-tabItem>a")[0];
+(null != elementOrValue &&
+    ((containerOrValue = elementOrValue.href + "?type=video"),
+    (elementOrValue = elementOrValue.href + "?type=liveReplay"),
+    (controlNodes = document.createElement("div")),
+    (__imports.ln = !!document.getElementsByClassName("Title-anchorPic-bottom")[0]),
+    (controlNodes.className = __imports.ln ? "" : "Title-anchorPic-bottom"),
+    (controlNodes.innerHTML = `
 
-    __imports.ln = Boolean(document.getElementsByClassName("Title-anchorPic-bottom")[0]);
+	<div id="Ex_VideoReview" class="Title-anchorPic-bottomItem"><span>回看</span></div>
 
-    const reviewNode = document.createElement("div");
-    reviewNode.className = __imports.ln ? "" : "Title-anchorPic-bottom";
-    reviewNode.innerHTML = `
-      <div id="Ex_VideoReview" class="Title-anchorPic-bottomItem"><span>回看</span></div>
-      <i style="top: 28px"></i>
-      <div id="Ex_VideoSubmit" class="Title-anchorPic-bottomItem"><span>投稿</span></div>
-    `;
+	<i style="top: 28px"></i>
 
-    const anchorParent = document.getElementsByClassName("Title-anchorPic-bottom")[0] ||
-      document.getElementsByClassName("Title-anchorPicBack")[0];
+	<div id="Ex_VideoSubmit" class="Title-anchorPic-bottomItem"><span>投稿</span></div>
 
-    if (anchorParent) {
-      anchorParent.insertBefore(reviewNode, anchorParent.childNodes[0]);
-    }
+	`),
+    (controlParent =
+      document.getElementsByClassName("Title-anchorPic-bottom")[0] ||
+      document.getElementsByClassName("Title-anchorPicBack")[0]).insertBefore(
+      controlNodes,
+      controlParent.childNodes[0],
+    ),
+    (controlNodes = document.createElement("div")),
+    (__imports.ln = !!document.getElementsByClassName("Title-anchorPic-bottom")[0]),
+    (controlNodes.className = __imports.ln ? "" : "Title-anchorPic-bottom"),
+    (controlNodes.innerHTML = `
 
-    const yubaNode = document.createElement("div");
-    yubaNode.className = __imports.ln ? "" : "Title-anchorPic-bottom";
-    yubaNode.innerHTML = `
-      <div id="Ex_EnterYuba" class="Title-anchorPic-bottomItem"><span>打开鱼吧</span></div>
-    `;
+	<div id="Ex_EnterYuba" class="Title-anchorPic-bottomItem"><span>打开鱼吧</span></div>
 
-    if (anchorParent) {
-      anchorParent.insertBefore(yubaNode, anchorParent.childNodes[0]);
-    }
-
-    owner.navigation.submitTarget = submitTargetUrl;
-
+	`),
+    (controlParent =
+      document.getElementsByClassName("Title-anchorPic-bottom")[0] ||
+      document.getElementsByClassName("Title-anchorPicBack")[0]).insertBefore(
+      controlNodes,
+      controlParent.childNodes[0],
+    ),
+    (owner.navigation.submitTarget = containerOrValue),
+    (replayUrl = elementOrValue),
     (0, __imports.safeBind)("#Ex_VideoSubmit", "click", () => {
-      (0, __imports._)(owner.navigation.submitTarget, true);
-    }, owner);
-
+      (0, __imports._)(owner.navigation.submitTarget, !0);
+    }, owner),
     (0, __imports.safeBind)("#Ex_VideoReview", "click", () => {
-      (0, __imports._)(replayTargetUrl, true);
-    }, owner);
-
+      (0, __imports._)(replayUrl, !0);
+    }, owner),
     (0, __imports.safeBind)("#Ex_EnterYuba", "click", async () => {
-      const roomId = __imports.B;
-      try {
-        const res = await (0, __imports.fetch)(`https://www.douyu.com/wgapi/yubanc/api/group/getBindGroup?room_id=${roomId}`);
-        const data = await res.json();
-        if (data?.data?.group_url) {
-          (0, __imports._)(data.data.group_url, true);
-        }
-      } catch {}
-    }, owner);
-
-    const anchorBottomEls = document.getElementsByClassName("Title-anchorPic-bottom");
-    if (anchorBottomEls[0]) {
-      anchorBottomEls[0].style.display = "none";
-      anchorBottomEls[0].style.height = __imports.ln ? "66px" : "22px";
-    }
-
+      var e;
+      ((e = __imports.B),
+        (0, __imports._)(
+          (
+            await new Promise((t, o) => {
+              (0, __imports.fetch)(
+                "https://www.douyu.com/wgapi/yubanc/api/group/getBindGroup?room_id=" +
+                  e,
+              )
+                .then(owner.guard((e) => e.json()))
+                .then(owner.guard((e) => {
+                  t(e);
+                }))
+                .catch((e) => {
+                  o(e);
+                });
+            })
+          ).data.group_url,
+          !0,
+        ));
+    }, owner),
+    (document.getElementsByClassName(
+      "Title-anchorPic-bottom",
+    )[0].style.display = "none"),
+    (document.getElementsByClassName("Title-anchorPic-bottom")[0].style.height =
+      __imports.ln ? "66px" : "22px"),
     (0, __imports.safeBind)(".Title-anchorPicBack", "mouseenter", () => {
-      const bottomBar = document.getElementsByClassName("Title-anchorPic-bottom")[0];
-      if (bottomBar) bottomBar.style.display = "block";
-    }, owner);
-
+      document.getElementsByClassName(
+        "Title-anchorPic-bottom",
+      )[0].style.display = "block";
+    }, owner),
     (0, __imports.safeBind)(".Title-anchorPicBack", "mouseleave", () => {
-      const bottomBar = document.getElementsByClassName("Title-anchorPic-bottom")[0];
-      if (bottomBar) bottomBar.style.display = "none";
-    }, owner);
+      document.getElementsByClassName(
+        "Title-anchorPic-bottom",
+      )[0].style.display = "none";
+    }, owner)));
+((0, __imports.fetch)("https://www.douyu.com/swf_api/h5room/" + __imports.B, {
+      method: "GET",
+      mode: "no-cors",
+      credentials: "include",
+    })
+      .then(owner.guard((e) => e.json()))
+      .then(owner.guard((e) => {
+        ((__imports.j.showtime = e.data.show_time),
+          (__imports.j.isShow = e.data.show_status),
+          (0, __imports.refreshRoomMusic)(),
+          owner.interval(__imports.refreshRoomMusic, 15e4),
+          owner.interval(__imports.advanceRoomMusic, 5e3));
+      }))
+      .catch((e) => {
+        console.log("请求失败!", e);
+      }));
+{
+    let e = document.createElement("div"),
+      t =
+        ((e.className = "Title-blockInline"),
+        (e.id = "copy-real-live"),
+        (e.innerHTML =
+          '<div class="TitleShare"><div class="TitleShare-shareBox "><div class="Title-row-span is-right"><span class="Title-row-icon "><svg t="1585641756842" class="icon" viewBox="0 0 1237 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="5646" width="16" height="16"><path d="M648.448 946.347l0.256-1.622-0.256 1.622z m84.31 13.354c-0.769 4.608-0.769 4.608-4.182 13.483-8.533 16.768-8.533 16.768-49.835 22.784-24.149-14.293-24.149-14.293-27.605-22.613-2.475-5.718-2.475-5.718-3.541-9.387L476.416 335.36l-103.083 499.2c-1.109 5.12-1.109 5.12-4.821 13.27-6.827 12.117-6.827 12.117-35.285 22.527-30.294-7.253-30.294-7.253-38.742-19.37-4.522-8.15-4.522-8.15-6.058-13.227l-74.582-262.357H0v-85.334h278.272l45.781 161.11 104.022-503.424c1.024-4.694 1.024-4.694 4.394-12.502 6.102-11.989 6.102-11.989 35.968-23.338 31.83 8.533 31.83 8.533 39.254 20.736 4.053 7.808 4.053 7.808 5.376 12.544l165.888 609.237 113.92-716.885c0.896-5.248 0.896-5.248 4.864-14.592 9.088-15.574 9.088-15.574 44.928-22.4C868.48 12.587 868.48 12.587 873.6 22.443c3.285 6.912 3.285 6.912 4.523 11.52l112 446.549h221.738v85.333H923.563l-78.507-312.917-112.299 706.773z" p-id="5647"></path></svg></span><span class="Title-row-text">复制直播流</span></div></div></div>'),
+        document.getElementsByClassName("Title-col")[4]);
+    t && 1 < t.childNodes.length
+      ? t.insertBefore(e, t.childNodes[1])
+      : (t = (0, __imports.E)([".subTitleContainer__-vzhr"])) && t.appendChild(e);
   }
-
-  // 2. 拉取房间在播时长与开播状态
-  (0, __imports.fetch)(`https://www.douyu.com/swf_api/h5room/${__imports.B}`, {
-    method: "GET",
-    mode: "no-cors",
-    credentials: "include",
-  })
-    .then(owner.guard(res => res.json()))
-    .then(owner.guard(data => {
-      if (data?.data) {
-        __imports.j.showtime = data.data.show_time;
-        __imports.j.isShow = data.data.show_status;
-        (0, __imports.refreshRoomMusic)();
-        owner.interval(__imports.refreshRoomMusic, 150000);
-        owner.interval(__imports.advanceRoomMusic, 5000);
-      }
-    }))
-    .catch(() => {});
-
-  // 3. 顶栏注入【复制直播流】按钮
-  const copyStreamBtn = document.createElement("div");
-  copyStreamBtn.className = "Title-blockInline";
-  copyStreamBtn.id = "copy-real-live";
-  copyStreamBtn.innerHTML = `
-    <div class="TitleShare">
-      <div class="TitleShare-shareBox">
-        <div class="Title-row-span is-right">
-          <span class="Title-row-icon">
-            <svg class="icon" viewBox="0 0 1237 1024" width="16" height="16">
-              <path d="M648.448 946.347l0.256-1.622-0.256 1.622z m84.31 13.354c-0.769 4.608-0.769 4.608-4.182 13.483-8.533 16.768-8.533 16.768-49.835 22.784-24.149-14.293-24.149-14.293-27.605-22.613-2.475-5.718-2.475-5.718-3.541-9.387L476.416 335.36l-103.083 499.2c-1.109 5.12-1.109 5.12-4.821 13.27-6.827 12.117-6.827 12.117-35.285 22.527-30.294-7.253-30.294-7.253-38.742-19.37-4.522-8.15-4.522-8.15-6.058-13.227l-74.582-262.357H0v-85.334h278.272l45.781 161.11 104.022-503.424c1.024-4.694 1.024-4.694 4.394-12.502 6.102-11.989 6.102-11.989 35.968-23.338 31.83 8.533 31.83 8.533 39.254 20.736 4.053 7.808 4.053 7.808 5.376 12.544l165.888 609.237 113.92-716.885c0.896-5.248 0.896-5.248 4.864-14.592 9.088-15.574 9.088-15.574 44.928-22.4C868.48 12.587 868.48 12.587 873.6 22.443c3.285 6.912 3.285 6.912 4.523 11.52l112 446.549h221.738v85.333H923.563l-78.507-312.917-112.299 706.773z"></path>
-            </svg>
-          </span>
-          <span class="Title-row-text">复制直播流</span>
-        </div>
-      </div>
-    </div>
-  `;
-
-  const titleCol = document.getElementsByClassName("Title-col")[4];
-  if (titleCol && titleCol.childNodes.length > 1) {
-    titleCol.insertBefore(copyStreamBtn, titleCol.childNodes[1]);
-  } else {
-    const subtitleWrap = (0, __imports.E)([".subTitleContainer__-vzhr"]);
-    if (subtitleWrap) subtitleWrap.appendChild(copyStreamBtn);
+(0, __imports.safeBind)("#copy-real-live", "click", __imports.Ge, owner);
+controlNodes = document.getElementsByClassName("RecommendViewTit-04ebd8");
+0 < controlNodes.length && controlNodes[0].innerText;
+{
+    let e = document.createElement("div"),
+      t =
+        ((e.className = "Title-blockInline"),
+        (e.id = "ex-audio-line"),
+        (e.innerHTML =
+          '<div class="TitleShare"><div class="TitleShare-shareBox "><div class="Title-row-span  is-right"><span class="Title-row-icon "><svg t="1613808136306" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2829" width="16" height="16"><path d="M496 64A48 48 0 0 1 544 112v800a48 48 0 0 1-96 0v-800A48 48 0 0 1 496 64z m-224 128A48 48 0 0 1 320 240v544a48 48 0 0 1-96 0v-544A48 48 0 0 1 272 192z m448 0A48 48 0 0 1 768 240v544a48 48 0 0 1-96 0v-544A48 48 0 0 1 720 192z m-672 128A48 48 0 0 1 96 368v288a48 48 0 0 1-96 0v-288A48 48 0 0 1 48 320z m896 0a48 48 0 0 1 48 48v288a48 48 0 0 1-96 0v-288a48 48 0 0 1 48-48z" p-id="2830"></path></svg></span><span class="Title-row-text ">切换音频线路</span></div></div></div>'),
+        document.getElementsByClassName("Title-col")[4]);
+    t && 1 < t.childNodes.length
+      ? t.insertBefore(e, t.childNodes[1])
+      : (t = (0, __imports.E)([".subTitleContainer__-vzhr"])) && t.appendChild(e);
   }
-  (0, __imports.safeBind)("#copy-real-live", "click", __imports.Ge, owner);
-
-  // 4. 顶栏注入【切换音频线路】按钮
-  const audioLineBtn = document.createElement("div");
-  audioLineBtn.className = "Title-blockInline";
-  audioLineBtn.id = "ex-audio-line";
-  audioLineBtn.innerHTML = `
-    <div class="TitleShare">
-      <div class="TitleShare-shareBox">
-        <div class="Title-row-span is-right">
-          <span class="Title-row-icon">
-            <svg class="icon" viewBox="0 0 1024 1024" width="16" height="16">
-              <path d="M496 64A48 48 0 0 1 544 112v800a48 48 0 0 1-96 0v-800A48 48 0 0 1 496 64z m-224 128A48 48 0 0 1 320 240v544a48 48 0 0 1-96 0v-544A48 48 0 0 1 272 192z m448 0A48 48 0 0 1 768 240v544a48 48 0 0 1-96 0v-544A48 48 0 0 1 720 192z m-672 128A48 48 0 0 1 96 368v288a48 48 0 0 1-96 0v-288A48 48 0 0 1 48 320z m896 0a48 48 0 0 1 48 48v288a48 48 0 0 1-96 0v-288a48 48 0 0 1 48-48z"></path>
-            </svg>
-          </span>
-          <span class="Title-row-text">切换音频线路</span>
-        </div>
-      </div>
-    </div>
-  `;
-
-  if (titleCol && titleCol.childNodes.length > 1) {
-    titleCol.insertBefore(audioLineBtn, titleCol.childNodes[1]);
-  } else {
-    const subtitleWrap = (0, __imports.E)([".subTitleContainer__-vzhr"]);
-    if (subtitleWrap) subtitleWrap.appendChild(audioLineBtn);
-  }
-  (0, __imports.safeBind)("#ex-audio-line", "click", __imports.le, owner);
-
-  // 5. 私信窗口关闭角标提醒开关
-  const noticePollTimer = owner.interval(() => {
-    if ((0, __imports.E)([".PlayerToolbar-ContentCell .PlayerToolbar-Wealth", "#js-backpack-enter"])) {
-      (0, __imports.clearInterval)(noticePollTimer);
-
-      const barrageList = document.getElementById("js-barrage-list");
-      if (barrageList?.parentNode) {
-        barrageList.parentNode.id = "js-barrage-list-parent";
-      }
-
-      const letterFrame = document.getElementsByClassName("PrivateLetter-frame")[0];
-      if (letterFrame && !document.getElementById("ex-removeMsgNotice")) {
-        const noticeWrap = document.createElement("div");
-        noticeWrap.id = "ex-removeMsgNotice";
-        noticeWrap.style.cssText = "position: absolute; right: 5px; top: 40px; cursor: pointer;";
-        noticeWrap.title = "关闭角标提醒";
-        noticeWrap.innerHTML = '<label id="msg-removeNotice" style="cursor: pointer;"><input type="checkbox" />关闭角标提醒</label>';
-        letterFrame.appendChild(noticeWrap);
-
-        const labelEl = document.getElementById("msg-removeNotice");
-        if (labelEl) {
-          const inputEl = labelEl.querySelector("input");
-          owner.listen(labelEl, "click", () => {
-            if (inputEl.checked) {
-              __imports.vn = 1;
-              (0, __imports.xn)();
-            } else {
-              __imports.vn = 0;
-              (0, __imports.U)("Ex_Style_RemoveMsgNotice");
-            }
-            __imports.localStorage.setItem("ExSave_isRemoveMsgNotice", __imports.vn);
+(0, __imports.safeBind)("#ex-audio-line", "click", __imports.le, owner);
+{
+    let o = owner.interval(() => {
+      if (
+        null !=
+        (0, __imports.E)([
+          ".PlayerToolbar-ContentCell .PlayerToolbar-Wealth",
+          "#js-backpack-enter",
+        ])
+      ) {
+        ((0, __imports.clearInterval)(o),
+          (document.getElementById("js-barrage-list").parentNode.id =
+            "js-barrage-list-parent"));
+        var e = document.createElement("div"),
+          t =
+            ((e.style =
+              "position: absolute;right: 5px;top: 40px;cursor: pointer;"),
+            (e.id = "ex-removeMsgNotice"),
+            (e.innerHTML =
+              '<label id="msg-removeNotice" style="cursor: pointer;"><input type="checkbox" />关闭角标提醒</label>'),
+            (e.title = "关闭角标提醒"),
+            document.getElementsByClassName("PrivateLetter-frame")[0]),
+          t =
+            (t && t.appendChild(e),
+            document.getElementById("msg-removeNotice"));
+        if (t) {
+          let e = t.querySelector("input");
+          owner.listen(t, "click", () => {
+            (1 == e.checked
+              ? ((__imports.vn = 1), (0, __imports.xn)())
+              : ((__imports.vn = 0), (0, __imports.U)("Ex_Style_RemoveMsgNotice")),
+              __imports.localStorage.setItem("ExSave_isRemoveMsgNotice", __imports.vn));
           });
         }
-
-        const savedNotice = __imports.localStorage.getItem("ExSave_isRemoveMsgNotice");
-        if (savedNotice === "1") {
-          __imports.vn = 1;
-          (0, __imports.xn)();
-          const inp = document.getElementById("msg-removeNotice")?.querySelector("input");
-          if (inp) inp.checked = true;
-        }
+        e = __imports.localStorage.getItem("ExSave_isRemoveMsgNotice");
+        e &&
+          "1" == e &&
+          ((__imports.vn = 1), (0, __imports.xn)(), (e = document.getElementById("msg-removeNotice"))) &&
+          (e.querySelector("input").checked = !0);
       }
-    }
-  }, 1000);
-
-  // 6. 弹幕过滤器变动监听
-  const filterPollTimer = owner.interval(() => {
-    if (document.getElementsByClassName("BarrageFilter")[0]) {
-      (0, __imports.clearInterval)(filterPollTimer);
-
-      new __imports.DomMutationSubscription(".BarrageFilter", false, (mutations) => {
-        if (mutations.length > 0 && mutations[0].addedNodes.length > 0 && mutations[0].removedNodes.length === 0) {
-          if (document.getElementsByClassName("FilterKeywords")[0]) {
-            (0, __imports.qn)();
-          } else {
-            const innerPoll = owner.interval(() => {
-              if (document.getElementsByClassName("FilterKeywords")[0]) {
-                (0, __imports.clearInterval)(innerPoll);
-                (0, __imports.qn)();
-              }
-            }, 50);
-          }
-        }
-      }, owner);
-    }
-  }, 1000);
-
-  // 7. 挂载背包控件
-  (0, __imports.mountBackpackControls)(owner);
+    }, 1e3);
+  }
+{
+    let e = owner.interval(() => {
+      void 0 !== document.getElementsByClassName("BarrageFilter")[0] &&
+        ((0, __imports.clearInterval)(e),
+        new __imports.DomMutationSubscription(".BarrageFilter", !1, (e) => {
+          if (
+            0 !== e.length &&
+            0 < e[0].addedNodes.length &&
+            0 === e[0].removedNodes.length
+          )
+            if (document.getElementsByClassName("FilterKeywords")[0]) (0, __imports.qn)();
+            else {
+              let e = owner.interval(() => {
+                document.getElementsByClassName("FilterKeywords")[0] &&
+                  ((0, __imports.clearInterval)(e), (0, __imports.qn)());
+              }, 50);
+            }
+        }, owner));
+    }, 1e3);
+  }
+(0, __imports.mountBackpackControls)(owner);
 }
 
 }
@@ -5736,167 +5489,291 @@ function mountRoomControls(owner) {
 "src/next/ui/room/lottery.js":
 function* (__imports) {
 yield {"mountLotteryPanel": { get: () => mountLotteryPanel, set: value => { mountLotteryPanel = value; } }};
-/**
- * 全站大奖雷达控制台、版本更新与同屏播放外层按钮挂载控制器
- * @param {object} owner - 房间装配生命周期托管者
- */
+// Phase-local construction values; only declared outputs cross phase boundaries.
 function mountLotteryPanel(owner) {
-  const dockWrap = document.getElementsByClassName("ex-panel__wrap")[0];
-
-  // 1. 挂载 Dock【版本更新】入口
-  const updateIconEl = document.createElement("div");
-  updateIconEl.className = "ex-update";
-  updateIconEl.innerHTML = `
-    <a class="ex-panel__icon" title="版本更新，当前版本：${__imports.P}">
-      <svg style="display:block;" class="icon" viewBox="0 0 1024 1024" width="32" height="32">
-        <path d="M768 810.7H512c-23.6 0-42.7-19.1-42.7-42.7s19.1-42.7 42.7-42.7h256c94.1 0 170.7-76.6 170.7-170.7 0-89.6-70.1-164.3-159.5-170.1L754 383l-10.7-22.7c-42.2-89.3-133-147-231.3-147s-189.1 57.7-231.3 147L270 383l-25.1 1.6c-89.5 5.8-159.5 80.5-159.5 170.1 0 94.1 76.6 170.7 170.7 170.7 23.6 0 42.7 19.1 42.7 42.7s-19.1 42.7-42.7 42.7c-141.2 0-256-114.8-256-256 0-126.1 92.5-232.5 214.7-252.4C274.8 195.7 388.9 128 512 128s237.2 67.7 297.3 174.2C931.5 322.1 1024 428.6 1024 554.7c0 141.1-114.8 256-256 256z" fill="#3688FF"></path>
-        <path d="M554.7 938.7c-10.9 0-21.8-4.2-30.2-12.5l-128-128c-16.7-16.7-16.7-43.7 0-60.3l128-128c16.6-16.7 43.7-16.7 60.3 0 16.7 16.7 16.7 43.7 0 60.3L487 768l97.8 97.8c16.7 16.7 16.7 43.7 0 60.3-8.3 8.4-19.2 12.6-30.1 12.6z" fill="#5F6379"></path>
-      </svg>
-      <i id="ex-update__tip" class="ex-panel__tip"></i>
-    </a>
-  `;
-  if (dockWrap) dockWrap.insertBefore(updateIconEl, dockWrap.childNodes[0]);
-
-  // 2. 挂载 Dock【在线弹幕助手】入口
-  const monitorIconEl = document.createElement("div");
-  monitorIconEl.className = "ex-monitor";
-  monitorIconEl.innerHTML = `
-    <a class="ex-panel__icon" title="在线弹幕助手">
-      <svg style="display:block;" class="icon" viewBox="0 0 1024 1024" width="32" height="32">
-        <path d="M426.666667 106.666667a21.333333 21.333333 0 0 1 21.333333-21.333334h512a21.333333 21.333333 0 0 1 0 42.666667H448a21.333333 21.333333 0 0 1-21.333333-21.333333z m533.333333 789.333333H448a21.333333 21.333333 0 0 0 0 42.666667h512a21.333333 21.333333 0 0 0 0-42.666667z m0-554.666667H448a21.333333 21.333333 0 0 0 0 42.666667h512a21.333333 21.333333 0 0 0 0-42.666667z m0 298.666667H448a21.333333 21.333333 0 0 0 0 42.666667h512a21.333333 21.333333 0 0 0 0-42.666667zM245.333333 42.666667H96a53.393333 53.393333 0 0 0-53.333333 53.333333v149.333333a53.393333 53.393333 0 0 0 53.333333 53.333334h149.333333a53.393333 53.393333 0 0 0 53.333334-53.333334V96a53.393333 53.393333 0 0 0-53.333334-53.333333z m0 341.333333H96a53.393333 53.393333 0 0 0-53.333333 53.333333v149.333334a53.393333 53.393333 0 0 0 53.333333 53.333333h149.333333a53.393333 53.393333 0 0 0 53.333334-53.333333V437.333333a53.393333 53.393333 0 0 0-53.333334-53.333333z m0 341.333333H96a53.393333 53.393333 0 0 0-53.333333 53.333334v149.333333a53.393333 53.393333 0 0 0 53.333333 53.333333h149.333333a53.393333 53.393333 0 0 0 53.333334-53.333333v-149.333333a53.393333 53.393333 0 0 0-53.333334-53.333334z" fill="#13227a"></path>
-      </svg>
-      <i id="Monitor__tip" class="ex-panel__tip"></i>
-    </a>
-  `;
-  if (dockWrap) dockWrap.insertBefore(monitorIconEl, dockWrap.childNodes[0]);
-
-  (0, __imports.safeBind)(".ex-monitor", "click", () => {
-    (0, __imports._)(`https://www.douyuex.com/${String(__imports.B)}`);
-  }, owner);
-
-  // 异步预加载粉丝牌列表至 To
-  (async () => {
-    try {
-      const res = await (0, __imports.fetch)("https://www.douyu.com/member/cp/getFansBadgeList", {
-        method: "GET",
-        mode: "no-cors",
-        cache: "default",
-        credentials: "include",
-      });
-      const htmlText = await res.text();
-      const doc = new DOMParser().parseFromString(htmlText, "text/html");
-      const listEl = doc.getElementsByClassName("fans-badge-list")[0]?.lastElementChild;
-      if (listEl) {
-        const rooms = [];
-        for (let i = 0; i < listEl.children.length; i++) {
-          const rId = listEl.children[i].getAttribute("data-fans-room");
-          if (rId) rooms.push(rId);
+let controlParent, containerOrValue, elementOrValue;
+controlParent = document.createElement("div");
+containerOrValue = ((controlParent.className = "ex-update"),
+      (controlParent.innerHTML =
+        '<a class="ex-panel__icon" title="版本更新，当前版本：${P}"><svg t="1578767541873" style="display:block;" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="23715" width="32" height="32"><path d="M768 810.7H512c-23.6 0-42.7-19.1-42.7-42.7s19.1-42.7 42.7-42.7h256c94.1 0 170.7-76.6 170.7-170.7 0-89.6-70.1-164.3-159.5-170.1L754 383l-10.7-22.7c-42.2-89.3-133-147-231.3-147s-189.1 57.7-231.3 147L270 383l-25.1 1.6c-89.5 5.8-159.5 80.5-159.5 170.1 0 94.1 76.6 170.7 170.7 170.7 23.6 0 42.7 19.1 42.7 42.7s-19.1 42.7-42.7 42.7c-141.2 0-256-114.8-256-256 0-126.1 92.5-232.5 214.7-252.4C274.8 195.7 388.9 128 512 128s237.2 67.7 297.3 174.2C931.5 322.1 1024 428.6 1024 554.7c0 141.1-114.8 256-256 256z" fill="#3688FF" p-id="23716"></path><path d="M554.7 938.7c-10.9 0-21.8-4.2-30.2-12.5l-128-128c-16.7-16.7-16.7-43.7 0-60.3l128-128c16.6-16.7 43.7-16.7 60.3 0 16.7 16.7 16.7 43.7 0 60.3L487 768l97.8 97.8c16.7 16.7 16.7 43.7 0 60.3-8.3 8.4-19.2 12.6-30.1 12.6z" fill="#5F6379" p-id="23717"></path></svg><i id="ex-update__tip" class="ex-panel__tip"></i></a>'),
+      document.getElementsByClassName("ex-panel__wrap")[0]);
+containerOrValue && containerOrValue.insertBefore(controlParent, containerOrValue.childNodes[0]);
+elementOrValue = document.createElement("div");
+containerOrValue = ((elementOrValue.className = "ex-monitor"),
+      (elementOrValue.innerHTML =
+        '<a class="ex-panel__icon" title="在线弹幕助手"><svg style="display:block;" t="1638235744961" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="69800" width="32" height="32"><path d="M426.666667 106.666667a21.333333 21.333333 0 0 1 21.333333-21.333334h512a21.333333 21.333333 0 0 1 0 42.666667H448a21.333333 21.333333 0 0 1-21.333333-21.333333z m533.333333 789.333333H448a21.333333 21.333333 0 0 0 0 42.666667h512a21.333333 21.333333 0 0 0 0-42.666667z m0-554.666667H448a21.333333 21.333333 0 0 0 0 42.666667h512a21.333333 21.333333 0 0 0 0-42.666667z m0 298.666667H448a21.333333 21.333333 0 0 0 0 42.666667h512a21.333333 21.333333 0 0 0 0-42.666667zM245.333333 42.666667H96a53.393333 53.393333 0 0 0-53.333333 53.333333v149.333333a53.393333 53.393333 0 0 0 53.333333 53.333334h149.333333a53.393333 53.393333 0 0 0 53.333334-53.333334V96a53.393333 53.393333 0 0 0-53.333334-53.333333z m0 341.333333H96a53.393333 53.393333 0 0 0-53.333333 53.333333v149.333334a53.393333 53.393333 0 0 0 53.333333 53.333333h149.333333a53.393333 53.393333 0 0 0 53.333334-53.333333V437.333333a53.393333 53.393333 0 0 0-53.333334-53.333333z m0 341.333333H96a53.393333 53.393333 0 0 0-53.333333 53.333334v149.333333a53.393333 53.393333 0 0 0 53.333333 53.333333h149.333333a53.393333 53.393333 0 0 0 53.333334-53.333333v-149.333333a53.393333 53.393333 0 0 0-53.333334-53.333334z" fill="#13227a" p-id="69801"></path></svg><i id="Monitor__tip" class="ex-panel__tip"></i></a>'),
+      document.getElementsByClassName("ex-panel__wrap")[0]);
+elementOrValue = (containerOrValue && containerOrValue.insertBefore(elementOrValue, containerOrValue.childNodes[0]),
+      (0, __imports.safeBind)(".ex-monitor", "click", function () {
+        (0, __imports._)("https://www.douyuex.com/" + String(__imports.B));
+      }, owner),
+      (async () => {
+        var t = [],
+          e = await (0, __imports.fetch)("https://www.douyu.com/member/cp/getFansBadgeList", {
+            method: "GET",
+            mode: "no-cors",
+            cache: "default",
+            credentials: "include",
+          })
+            .then(owner.guard((e) => e.text()))
+            .catch((e) => {
+              console.log("请求失败!", e);
+            }),
+          o = (e = new DOMParser().parseFromString(
+            e,
+            "text/html",
+          )).getElementsByClassName("fans-badge-list")[0].lastElementChild,
+          n = o.children.length;
+        for (let e = 0; e < n; e++) {
+          var i = o.children[e].getAttribute("data-fans-room");
+          t.push(i);
         }
-        __imports.To = rooms;
-      }
-    } catch {}
-  })();
+        __imports.To = t;
+      })(),
+      document.createElement("div"));
+containerOrValue = ((elementOrValue.className = "exlottery"),
+      (elementOrValue.innerHTML = `
 
-  // 3. 组装全站抽奖控制台 (.exlottery)
-  const lotteryModal = document.createElement("div");
-  lotteryModal.className = "exlottery";
-  lotteryModal.innerHTML = `
-    <div class="lottery__func">
-      <div id="lottery-refresh">
-        <svg class="icon" viewBox="0 0 1024 1024" width="16" height="16">
-          <path d="M927.999436 531.028522a31.998984 31.998984 0 0 0-31.998984 31.998984c0 51.852948-10.147341 102.138098-30.163865 149.461048a385.47252 385.47252 0 0 1-204.377345 204.377345c-47.32295 20.016524-97.6081 30.163865-149.461048 30.163865s-102.138098-10.147341-149.461048-30.163865a385.47252 385.47252 0 0 1-204.377345-204.377345c-20.016524-47.32295-30.163865-97.6081-30.163865-149.461048s10.147341-102.138098 30.163865-149.461048a385.47252 385.47252 0 0 1 204.377345-204.377345c47.32295-20.016524 97.6081-30.163865 149.461048-30.163865a387.379888 387.379888 0 0 1 59.193424 4.533611l-56.538282 22.035878A31.998984 31.998984 0 1 0 537.892156 265.232491l137.041483-53.402685a31.998984 31.998984 0 0 0 18.195855-41.434674L639.723197 33.357261a31.998984 31.998984 0 1 0-59.630529 23.23882l26.695923 68.502679a449.969005 449.969005 0 0 0-94.786785-10.060642c-60.465003 0-119.138236 11.8488-174.390489 35.217667a449.214005 449.214005 0 0 0-238.388457 238.388457c-23.361643 55.252253-35.22128 113.925486-35.22128 174.390489s11.8488 119.138236 35.217668 174.390489a449.214005 449.214005 0 0 0 238.388457 238.388457c55.252253 23.368867 113.925486 35.217667 174.390489 35.217667s119.138236-11.8488 174.390489-35.217667A449.210393 449.210393 0 0 0 924.784365 737.42522c23.368867-55.270316 35.217667-113.925486 35.217667-174.390489a31.998984 31.998984 0 0 0-32.002596-32.006209z"></path>
-        </svg>
-      </div>
-      <div class="lottery__notice">
-        <label class="lottery__notice"><input class="lottery__notice" id="lottery-notice" type="checkbox">开启提醒</label>
-      </div>
-    </div>
-    <div class="lottery__nodata">暂无数据</div>
-    <div class="lottery__wrap"></div>
-  `;
+        <div class="lottery__func">
 
-  const chatLayout = document.getElementsByClassName("layout-Player-chat")[0] || document.body;
-  if (chatLayout) {
-    chatLayout.insertBefore(lotteryModal, chatLayout.childNodes[0]);
+            <div id="lottery-refresh">
+
+                <svg t="1636115506027" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2454" width="16" height="16"><path d="M927.999436 531.028522a31.998984 31.998984 0 0 0-31.998984 31.998984c0 51.852948-10.147341 102.138098-30.163865 149.461048a385.47252 385.47252 0 0 1-204.377345 204.377345c-47.32295 20.016524-97.6081 30.163865-149.461048 30.163865s-102.138098-10.147341-149.461048-30.163865a385.47252 385.47252 0 0 1-204.377345-204.377345c-20.016524-47.32295-30.163865-97.6081-30.163865-149.461048s10.147341-102.138098 30.163865-149.461048a385.47252 385.47252 0 0 1 204.377345-204.377345c47.32295-20.016524 97.6081-30.163865 149.461048-30.163865a387.379888 387.379888 0 0 1 59.193424 4.533611l-56.538282 22.035878A31.998984 31.998984 0 1 0 537.892156 265.232491l137.041483-53.402685a31.998984 31.998984 0 0 0 18.195855-41.434674L639.723197 33.357261a31.998984 31.998984 0 1 0-59.630529 23.23882l26.695923 68.502679a449.969005 449.969005 0 0 0-94.786785-10.060642c-60.465003 0-119.138236 11.8488-174.390489 35.217667a449.214005 449.214005 0 0 0-238.388457 238.388457c-23.361643 55.252253-35.22128 113.925486-35.22128 174.390489s11.8488 119.138236 35.217668 174.390489a449.214005 449.214005 0 0 0 238.388457 238.388457c55.252253 23.368867 113.925486 35.217667 174.390489 35.217667s119.138236-11.8488 174.390489-35.217667A449.210393 449.210393 0 0 0 924.784365 737.42522c23.368867-55.270316 35.217667-113.925486 35.217667-174.390489a31.998984 31.998984 0 0 0-32.002596-32.006209z" fill="" p-id="2455"></path></svg>
+
+            </div>
+
+            <div class="lottery__notice">
+
+                <label class="lottery__notice"><input class="lottery__notice" id="lottery-notice" type="checkbox">开启提醒</label>
+
+            </div>
+
+        </div>
+
+        <div class="lottery__nodata">暂无数据</div>
+
+        <div class="lottery__wrap"></div>
+
+    `),
+      document.getElementsByClassName("layout-Player-chat")[0] ||
+        document.body);
+elementOrValue = (containerOrValue && containerOrValue.insertBefore(elementOrValue, containerOrValue.childNodes[0]), document.createElement("div"));
+containerOrValue = ((elementOrValue.className = "ex-lottery"),
+      (elementOrValue.innerHTML =
+        '<a class="ex-panel__icon" title="全站抽奖信息"><svg style="display:block;" t="1636332741708" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="19181" width="32" height="32"><path d="M508.858182 986.042182c-261.748364 0-473.925818-212.177455-473.925818-473.925818S247.109818 38.190545 508.858182 38.190545s473.925818 212.177455 473.925818 473.925819-212.200727 473.925818-473.925818 473.925818m0-981.690182C228.421818 4.352 1.093818 231.703273 1.093818 512.116364s227.351273 507.764364 507.764364 507.764363c280.413091 0 507.787636-227.351273 507.787636-507.764363S789.271273 4.352 508.858182 4.352" fill="#FF4517" p-id="19182"></path><path d="M322.536727 512.302545l0.023273-1.326545-313.064727-1.931636c0 1.093818-0.093091 2.164364-0.093091 3.281454 0 90.88 24.785455 175.918545 67.84 248.925091l270.173091-155.997091a185.274182 185.274182 0 0 1-24.878546-92.951273zM416.791273 350.440727L264.029091 82.013091A492.986182 492.986182 0 0 0 77.498182 262.981818l270.173091 155.997091a186.717091 186.717091 0 0 1 69.12-68.538182zM602.856727 351.697455l151.831273-259.211637A488.261818 488.261818 0 0 0 508.718545 21.690182l0.023273 304.453818c34.350545 0 66.513455 9.355636 94.114909 25.553455zM258.536727 939.450182a488.471273 488.471273 0 0 0 241.710546 63.674182c2.839273 0 5.632-0.139636 8.448-0.186182V698.507636a185.064727 185.064727 0 0 1-94.068364-25.553454l-156.090182 266.496zM927.325091 270.452364l-257.466182 148.666181a185.204364 185.204364 0 0 1 25.041455 93.207273l-0.046546 1.070546 296.168727 1.838545c0.023273-0.977455 0.069818-1.931636 0.069819-2.909091 0-87.994182-23.249455-170.496-63.767273-241.873454zM600.855273 674.094545l148.573091 261.073455a492.776727 492.776727 0 0 0 178.106181-181.387636l-257.466181-148.642909a187.042909 187.042909 0 0 1-69.213091 68.95709z" fill="#FF4517" p-id="19183"></path><path d="M644.142545 512.302545a135.400727 135.400727 0 0 0-135.424-135.400727l-84.619636-160.791273 20.642909 173.824c-42.658909 22.784-71.400727 70.609455-71.400727 122.368a135.447273 135.447273 0 0 0 270.801454 0z m-133.492363 70.097455a68.491636 68.491636 0 1 1 0.023273-136.96 68.491636 68.491636 0 0 1-0.023273 136.96z" fill="#FF4517" p-id="19184"></path></svg><i id="lottery__tip" class="ex-panel__tip"></i></a>'),
+      document.getElementsByClassName("ex-panel__wrap")[0]);
+containerOrValue && containerOrValue.insertBefore(elementOrValue, containerOrValue.childNodes[0]);
+{
+    let t = document.getElementById("lottery-notice");
+    ((0, __imports.safeBind)(".ex-lottery", "click", () => {
+      (0, __imports.openFeaturePanel)("全站抽奖信息");
+      var e = document.getElementsByClassName("lottery__wrap")[0];
+      e && (e.innerHTML = __imports.So);
+    }, owner),
+      (0, __imports.safeBind)(
+        "#lottery-refresh",
+        "click",
+        ((o, n) => {
+          let i;
+          return function () {
+            var e = arguments,
+              t = (i && (0, __imports.clearTimeout)(i), !i);
+            ((i = owner.timeout(() => {
+              i = null;
+            }, n)),
+              t && o.apply(this, e));
+          };
+        })(() => {
+          (0, __imports.Lo)();
+        }, 3e3), owner),
+      t &&
+        owner.listen(t, "click", () => {
+          var e = t.checked;
+          ((__imports.Mo = 1 == e),
+            (e = { isNotice: __imports.Mo }),
+            __imports.localStorage.setItem("ExSave_Lottery", JSON.stringify(e)));
+        }));
   }
-
-  // 4. 挂载 Dock【全站抽奖】入口
-  const lotteryIconEl = document.createElement("div");
-  lotteryIconEl.className = "ex-lottery";
-  lotteryIconEl.innerHTML = `
-    <a class="ex-panel__icon" title="全站抽奖信息">
-      <svg style="display:block;" class="icon" viewBox="0 0 1024 1024" width="32" height="32">
-        <path d="M508.858182 986.042182c-261.748364 0-473.925818-212.177455-473.925818-473.925818S247.109818 38.190545 508.858182 38.190545s473.925818 212.177455 473.925818 473.925819-212.200727 473.925818-473.925818 473.925818m0-981.690182C228.421818 4.352 1.093818 231.703273 1.093818 512.116364s227.351273 507.764364 507.764364 507.764363c280.413091 0 507.787636-227.351273 507.787636-507.764363S789.271273 4.352 508.858182 4.352" fill="#FF4517"></path>
-        <path d="M322.536727 512.302545l0.023273-1.326545-313.064727-1.931636c0 1.093818-0.093091 2.164364-0.093091 3.281454 0 90.88 24.785455 175.918545 67.84 248.925091l270.173091-155.997091a185.274182 185.274182 0 0 1-24.878546-92.951273zM416.791273 350.440727L264.029091 82.013091A492.986182 492.986182 0 0 0 77.498182 262.981818l270.173091 155.997091a186.717091 186.717091 0 0 1 69.12-68.538182zM602.856727 351.697455l151.831273-259.211637A488.261818 488.261818 0 0 0 508.718545 21.690182l0.023273 304.453818c34.350545 0 66.513455 9.355636 94.114909 25.553455zM258.536727 939.450182a488.471273 488.471273 0 0 0 241.710546 63.674182c2.839273 0 5.632-0.139636 8.448-0.186182V698.507636a185.064727 185.064727 0 0 1-94.068364-25.553454l-156.090182 266.496zM927.325091 270.452364l-257.466182 148.666181a185.204364 185.204364 0 0 1 25.041455 93.207273l-0.046546 1.070546 296.168727 1.838545c0.023273-0.977455 0.069818-1.931636 0.069819-2.909091 0-87.994182-23.249455-170.496-63.767273-241.873454zM600.855273 674.094545l148.573091 261.073455a492.776727 492.776727 0 0 0 178.106181-181.387636l-257.466181-148.642909a187.042909 187.042909 0 0 1-69.213091 68.95709z" fill="#FF4517"></path>
-        <path d="M644.142545 512.302545a135.400727 135.400727 0 0 0-135.424-135.400727l-84.619636-160.791273 20.642909 173.824c-42.658909 22.784-71.400727 70.609455-71.400727 122.368a135.447273 135.447273 0 0 0 270.801454 0z m-133.492363 70.097455a68.491636 68.491636 0 1 1 0.023273-136.96 68.491636 68.491636 0 0 1-0.023273 136.96z" fill="#FF4517"></path>
-      </svg>
-      <i id="lottery__tip" class="ex-panel__tip"></i>
-    </a>
-  `;
-  if (dockWrap) dockWrap.insertBefore(lotteryIconEl, dockWrap.childNodes[0]);
-
-  (0, __imports.safeBind)(".ex-lottery", "click", () => {
-    (0, __imports.openFeaturePanel)("全站抽奖信息");
-    const list = document.getElementsByClassName("lottery__wrap")[0];
-    if (list) list.innerHTML = __imports.So;
-  }, owner);
-
-  // 节流刷新抽奖列表
-  const throttleRefresh = ((fn, delay) => {
-    let timer = null;
-    return () => {
-      if (!timer) {
-        timer = owner.timeout(() => { timer = null; }, delay);
-        fn();
-      }
-    };
-  })(() => {
-    (0, __imports.Lo)();
-  }, 3000);
-
-  (0, __imports.safeBind)("#lottery-refresh", "click", throttleRefresh, owner);
-
-  const noticeCheckbox = document.getElementById("lottery-notice");
-  if (noticeCheckbox) {
-    owner.listen(noticeCheckbox, "click", () => {
-      __imports.Mo = noticeCheckbox.checked;
-      const cfg = { isNotice: __imports.Mo };
-      __imports.localStorage.setItem("ExSave_Lottery", JSON.stringify(cfg));
-    });
-  }
-
-  // 读取持久化抽奖配置
-  try {
-    const saved = JSON.parse(__imports.localStorage.getItem("ExSave_Lottery") || "{}");
-    if (saved.isNotice === true) {
-      const cb = document.getElementById("lottery-notice");
-      if (cb) cb.click();
-    }
-  } catch {}
-
-  // 启动 60 秒轮询抽奖
-  __imports.No = owner.interval(() => {
-    (0, __imports.Lo)();
-  }, 60000);
-
-  // 5. 挂载 Dock【同屏播放】入口
-  const popupIconEl = document.createElement("div");
-  popupIconEl.className = "popup-player";
-  popupIconEl.innerHTML = `
-    <a class="ex-panel__icon" title="同屏播放">
-      <svg style="display:block;" class="icon" viewBox="0 0 1024 1024" width="30" height="30">
-        <path d="M353.024 900.416H109.952c-57.856 0-109.952-46.336-109.952-98.432V153.6c0-52.096 52.096-98.432 109.952-98.432h810.176c57.856 0 104.192 46.336 104.192 98.496v185.472c0 28.928-23.168 52.096-46.336 52.096s-46.272-23.168-46.272-52.096V159.36H98.368V807.68h248.896c34.688 0 52.032 17.408 52.032 46.336 0 28.928-17.344 46.272-46.272 46.272" fill="#f26b1f"></path>
-        <path d="M619.2 631.488c-5.76 0-5.76 5.76-5.76 11.52v223.04c0 5.76 5.76 11.52 5.76 11.52h289.344c5.76 0 11.584-5.76 11.584-11.52v-222.976c0-5.824-5.76-11.584-11.52-11.584H619.136z m289.344 338.688h-289.28a103.68 103.68 0 0 1-104.192-104.128v-222.976c0-57.92 46.272-109.952 104.128-109.952h289.344c57.856 0 104.128 46.272 104.128 109.952v222.976c5.824 57.856-40.448 104.128-104.128 104.128z" fill="#f26b1f"></path>
-      </svg>
-      <i id="popup-player__tip" class="ex-panel__tip"></i>
-    </a>
-  `;
-  if (dockWrap) dockWrap.insertBefore(popupIconEl, dockWrap.childNodes[0]);
-
-  (0, __imports.safeBind)(".popup-player", "click", (e) => {
-    e?.stopPropagation?.();
-    (0, __imports.handleDockAction)("popup-player");
-  }, owner);
+(elementOrValue = __imports.localStorage.getItem("ExSave_Lottery"));
+(null != elementOrValue &&
+      1 == JSON.parse(elementOrValue).isNotice &&
+      (owner.navigation.submitTarget = document.getElementById("lottery-notice")) &&
+      owner.navigation.submitTarget.click());
+(__imports.No = owner.interval(() => {
+      (0, __imports.Lo)();
+    }, 6e4));
+(containerOrValue = document.createElement("div"));
+(containerOrValue.className = "popup-player");
+(containerOrValue.innerHTML =
+      '<a class="ex-panel__icon" title="同屏播放"><svg style="display:block;" t="1579448049771" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="1804" width="30" height="30"><path d="M353.024 900.416H109.952c-57.856 0-109.952-46.336-109.952-98.432V153.6c0-52.096 52.096-98.432 109.952-98.432h810.176c57.856 0 104.192 46.336 104.192 98.496v185.472c0 28.928-23.168 52.096-46.336 52.096s-46.272-23.168-46.272-52.096V159.36H98.368V807.68h248.896c34.688 0 52.032 17.408 52.032 46.336 0 28.928-17.344 46.272-46.272 46.272" fill="#f26b1f" p-id="1805"></path><path d="M619.2 631.488c-5.76 0-5.76 5.76-5.76 11.52v223.04c0 5.76 5.76 11.52 5.76 11.52h289.344c5.76 0 11.584-5.76 11.584-11.52v-222.976c0-5.824-5.76-11.584-11.52-11.584H619.136z m289.344 338.688h-289.28a103.68 103.68 0 0 1-104.192-104.128v-222.976c0-57.92 46.272-109.952 104.128-109.952h289.344c57.856 0 104.128 46.272 104.128 109.952v222.976c5.824 57.856-40.448 104.128-104.128 104.128z" fill="#f26b1f" p-id="1806"></path></svg><i id="popup-player__tip" class="ex-panel__tip"></i></a>');
+(elementOrValue = document.getElementsByClassName("ex-panel__wrap")[0]);
+(elementOrValue && elementOrValue.insertBefore(containerOrValue, elementOrValue.childNodes[0]));
+(containerOrValue = document.createElement("div"));
+(elementOrValue = "");
+(containerOrValue.className = "postbird-box-container");
+(containerOrValue.id = "popup-player__prompt");
+(elementOrValue += '<div class="postbird-box-dialog">');
+(containerOrValue.innerHTML =
+      '<div class="postbird-box-dialog"><div style="min-height:170px" class="postbird-box-content"><div class="postbird-box-header"><span class="postbird-box-title"><span>请输入直播间/直播流地址：</span></span></div><div class="postbird-box-text"><input id="popup-player__url" value="https://www.douyu.com/4042402" style="height:30px;box-sizing:border-box" type="text" class="postbird-prompt-input" autofocus="true"><label style="margin-right:30px" title="【直播流模式】&#10;1. 速度快&#10;2. 延迟低&#10;3. 占用少&#10;4. 不会进入直播间&#10;5. 支持斗鱼/虎牙/Bilibili"><input id="popup-player__noiframe" type="radio" name="sex" value="无弹幕" checked="checked">无弹幕(推荐)</label><label title="【框架模式】&#10;1. 速度慢&#10;2. 占用高&#10;3. 会进入直播间&#10;4. 仅支持斗鱼&#10;此模式拖动不是很灵活，请尽量在标题栏小幅度拖动&#10;若拖动无反应请点击页面任意处触发移动"><input id="popup-player__iframe" type="radio" name="sex" value="有弹幕">有弹幕</label></div><div class="postbird-box-footer"><button id="popup-player__cancel" class="btn-footer btn-left-footer btn-footer-cancel" style="color:undefined;">取消</button><button id="popup-player__ok" class="btn-footer btn-right-footer btn-footer-ok" style="color:#0e90d2;">确定</button></div></div>');
+((elementOrValue = (0, __imports.E)([".layout-Main", ".playerWrap__8wGvw", ".live-next-body"])) &&
+      elementOrValue.insertBefore(containerOrValue, elementOrValue.childNodes[0]));
+((0, __imports.safeBind)(".popup-player", "click", function (e) {
+      if (e && e.stopPropagation) e.stopPropagation();
+      (0, __imports.handleDockAction)("popup-player");
+    }, owner));
+((0, __imports.safeBind)("#popup-player__cancel", "click", function () {
+      document.getElementById("popup-player__prompt").style.display = "none";
+    }, owner));
+((0, __imports.safeBind)("#popup-player__ok", "click", function () {
+      var a,
+        t = document.getElementById("popup-player__url").value;
+      if ("" != t) {
+        var o,
+          n,
+          i,
+          r = document.getElementById("popup-player__noiframe").checked;
+        let e = !1;
+        if (
+          (e =
+            150 < t.length && 1 == window.confirm("你输入的是直播流吗？")
+              ? !0
+              : e)
+        )
+          (0, __imports.rn)(__imports.D.length, t);
+        else if (1 == r)
+          if (-1 != t.indexOf("douyu.com"))
+            ((a = (e) => {
+              (0, __imports.en)(__imports.D.length, e, "Douyu");
+            }),
+              (0, __imports.fetch)(t, {
+                method: "GET",
+                mode: "no-cors",
+                cache: "default",
+                credentials: "include",
+              })
+                .then(owner.guard((e) => e.text()))
+                .then(owner.guard((e) => {
+                  var t = (e = new DOMParser().parseFromString(
+                      e,
+                      "text/html",
+                    )).getElementsByTagName("html")[0].innerHTML,
+                    o = "$ROOM.room_id =".length,
+                    n = t.indexOf("$ROOM.room_id =");
+                  let i = "";
+                  (0 < n
+                    ? (i = (i = t.substring(
+                        n + o,
+                        t.indexOf(";", n + o),
+                      )).trim())
+                    : (i = (0, __imports.v)(t, "roomID:", ","))
+                      ? (i = i.trim())
+                      : (n = e.querySelector('link[rel="canonical"]')) &&
+                        ((o = n.getAttribute("href")),
+                        (i = o.split("/").pop().trim())),
+                    1 == !!/^[0-9]+$/.test(i)
+                      ? a(i)
+                      : (0, __imports.T)(
+                          "获取直播间失败，请检查直播间地址是否正确！",
+                          "error",
+                        ));
+                }))
+                .catch((e) => {
+                  console.log("请求失败!", e);
+                }));
+          else if (-1 != t.indexOf("bilibili.com")) {
+            var r = t,
+              l = (e) => {
+                (0, __imports.en)(__imports.D.length, e, "Bilibili");
+              };
+            ((r = (r = r.split("/"))[r.length - 1]),
+              (0, __imports.GM_xmlhttpRequest)({
+                method: "GET",
+                url:
+                  "https://api.live.bilibili.com/room/v1/Room/room_init?id=" +
+                  r,
+                responseType: "json",
+                onload: function (e) {
+                  e = e.response;
+                  l(e.data.room_id);
+                },
+              }));
+          } else
+            -1 != t.indexOf("huya.com")
+              ? (0, __imports.en)(__imports.D.length, t, "Huya")
+              : (0, __imports.rn)(__imports.D.length, t);
+        else {
+          r = __imports.D.length;
+          if (-1 == String(t).indexOf("douyu.com"))
+            (0, __imports.T)("有弹幕模式仅支持斗鱼直播", "error");
+          else {
+            ((i = String(t).split("/")),
+              (i = i[i.length - 1]),
+              (o = document.createElement("div")),
+              (n = ""),
+              (o.id = "exVideoDiv" + String(r)),
+              (o.rid = i),
+              (o.className = "exVideoDiv"),
+              (n =
+                (n =
+                  (n =
+                    (n +=
+                      "<div class='exVideoInfo' id='exVideoInfo" +
+                      String(r) +
+                      "'><span class='exVideoRID' id='exVideoRID" +
+                      String(r) +
+                      "' style='color:white'>斗鱼 - " +
+                      i +
+                      "</span>") +
+                    "<a><div class='exVideoClose' id='exVideoClose" +
+                    String(r) +
+                    "'>X</div></a></div>") +
+                  "<iframe class='exVideoPlayer' id='exVideoPlayer" +
+                  String(r) +
+                  "' src=" +
+                  t +
+                  "?exid=chun></iframe>") +
+                "<div class='exVideoScale' id='exVideoScale" +
+                String(r) +
+                "'></div>"),
+              (o.innerHTML = n),
+              (i = (0, __imports.E)([
+                ".layout-Main",
+                ".playerWrap__8wGvw",
+                ".live-next-body",
+              ])) && i.insertBefore(o, i.childNodes[0]),
+              (0, __imports.on)(r),
+              (0, __imports.tn)(r),
+              r > __imports.D.length - 1 ? __imports.D.push("iframe") : (__imports.D[r] = "iframe"));
+            {
+              var s = r;
+              let e = document.getElementById("exVideoDiv" + String(s)),
+                t = document.getElementById("exVideoClose" + String(s));
+              ((t.onclick = function () {
+                (__imports.D[s].destroy(), e.remove());
+              }),
+                (e.onclick = function (e) {
+                  (e.stopPropagation(), e.preventDefault());
+                  for (let e = 0; e < __imports.D.length; e++) {
+                    var t = document.getElementById("exVideoDiv" + String(e));
+                    null != t &&
+                      (e == s
+                        ? (t.style.zIndex = 1016)
+                        : (t.style.zIndex = 1428));
+                  }
+                }));
+            }
+          }
+        }
+      } else (0, __imports.T)("请输入地址", "error");
+      document.getElementById("popup-player__prompt").style.display = "none";
+    }, owner));
+((0, __imports.safeBind)("#popup-player__prompt", "keydown", function (t) {
+      var o = window.event || e;
+      13 == (o.keyCode || o.which || o.charCode) &&
+        document.getElementById("popup-player__ok").click();
+    }, owner));
+(containerOrValue = document.createElement("div"));
+return containerOrValue;
 }
 
 }
@@ -7649,266 +7526,174 @@ null != containerOrValue &&
 "src/next/ui/room/bloop.js":
 function* (__imports) {
 yield {"mountBloopPanel": { get: () => mountBloopPanel, set: value => { mountBloopPanel = value; } }};
-/**
- * 弹幕发送小助手 (Bloop) 380×370px 独立控制台与工具栏装配
- * @param {object} owner - 房间装配生命周期托管者
- */
+// Phase-local construction values; only declared outputs cross phase boundaries.
 function mountBloopPanel(owner) {
-  let runGeneration = 0;
-
-  const stopSending = () => {
-    runGeneration++;
-    (0, __imports.clearTimeout)(__imports.ge);
-    (0, __imports.clearTimeout)(__imports.ve);
-  };
-  owner.own(stopSending);
-
-  // 1. 在弹幕工具栏挂载前缀控制按钮
-  const refreshBarrageBtn = document.createElement("a");
-  refreshBarrageBtn.className = "refresh-barrage";
-  refreshBarrageBtn.id = "refresh-barrage";
-  refreshBarrageBtn.innerHTML = `
-    <svg t="1588051109604" id="refresh-barrage__svg" class="icon" viewBox="0 0 1024 1024" width="16" height="16">
-      <path d="M588.416 516.096L787.2 317.312a54.016 54.016 0 1 0-76.416-76.416L512 439.68 313.216 241.024A54.016 54.016 0 1 0 236.8 317.376l198.784 198.848-198.016 197.888a54.016 54.016 0 1 0 76.416 76.416L512 592.576l197.888 197.952a54.016 54.016 0 1 0 76.416-76.416L588.416 516.096z" fill="#AFAFAF"></path>
-    </svg>
-    <i class="Barrage-toolbarIcon"></i>
-    <span id="refresh-barrage__text" class="Barrage-toolbarText">前缀</span>
-  `;
-
-  const toolbar = document.getElementsByClassName("Barrage-toolbar")[0];
-  if (toolbar) {
-    toolbar.insertBefore(refreshBarrageBtn, toolbar.childNodes[0]);
-  }
-
-  (0, __imports.safeBind)("#refresh-barrage", "click", () => {
-    if (__imports.mn === 0) {
-      (0, __imports.un)();
-      (0, __imports.pn)();
-    } else {
-      (0, __imports.U)("Ex_Style_RefreshBarrage");
-      __imports.mn = 0;
-      document.getElementById("refresh-barrage")?.classList.remove("ex-active");
-      const textEl = document.getElementById("refresh-barrage__text");
-      if (textEl) {
-        textEl.style.color = "";
-        textEl.innerText = "前缀";
-      }
-      const svgPath = document.getElementById("refresh-barrage__svg")?.getElementsByTagName("path")[0];
-      if (svgPath) {
-        svgPath.setAttribute("fill", "#AFAFAF");
-      }
-      (0, __imports.pn)();
-    }
-  }, owner);
-
-  // 恢复前缀激活状态
-  try {
-    const savedRefresh = JSON.parse(__imports.localStorage.getItem("ExSave_Refresh") || "{}");
-    if (savedRefresh?.barrage?.status === true) {
-      (0, __imports.un)();
-    }
-  } catch {}
-
-  // 2. 组装 Bloop 控制台主体 DOM
-  const bloopPanel = document.createElement("div");
-  bloopPanel.className = "bloop";
-  bloopPanel.innerHTML = `
-    <div class="bloop__header_card">
-      <label class="bloop__header_label">弹幕：</label>
-      <select id="bloop__select"></select>
-      <input type="button" id="bloop__save" value="保存"/>
-      <input type="button" id="bloop__delete" value="删除"/>
-    </div>
-    <div class="bloop__textarea_card">
-      <textarea placeholder="一行一个，开启舔狗模式后此处不需要输入" id="bloop__textarea" rows="4"></textarea>
-    </div>
-    <div class="bloop__setting_card">
-      <div class="bloop__setting_row">
-        <label>速度(ms)：</label>
-        <input id="bloop__text_speed1" type="text" style="width:48px;text-align:center;" value="2000" />~<input id="bloop__text_speed2" type="text" style="width:48px;text-align:center;" value="3000" />
-      </div>
-      <div class="bloop__setting_row">
-        <label>限时(min)：</label>
-        <input id="bloop__text_stoptime" type="text" style="width:48px;text-align:center;" value="1" />
-      </div>
-    </div>
-    <div class="bloop__options_card">
-      <label><input id="bloop__checkbox_changeColor" type="checkbox" name="checkbox_changeColor" checked>自动变色</label>
-      <label><input id="bloop__checkbox_tiangou" type="checkbox">舔狗模式</label>
-      <label><input id="bloop__checkbox_random" type="checkbox">随机发送</label>
-    </div>
-    <div class="bloop__switch_card">
-      <label class="bloop__switch_label"><input id="bloop__checkbox_startSend" type="checkbox">开始发送</label>
-    </div>
-  `;
-
-  const chatContainer = document.getElementsByClassName("layout-Player-chat")[0] || document.body;
-  if (chatContainer) {
-    chatContainer.insertBefore(bloopPanel, chatContainer.childNodes[0]);
-  }
-
-  // 3. 在 Dock 容器挂载对应图标
-  const dockIcon = document.createElement("div");
-  dockIcon.className = "bloop-icon";
-  dockIcon.innerHTML = `
-    <a class="ex-panel__icon" title="弹幕发送小助手">
-      <svg style="display: block;" class="icon" viewBox="0 0 1024 1024" width="32" height="32">
-        <path d="M511.99883605 1020.07740302c-68.78771655 0-135.53209458-13.47788003-198.38074083-40.06106453-60.69004402-25.67037725-115.18953131-62.41203655-161.98371328-109.20738247-46.79418197-46.79301803-83.53700523-101.29366926-109.20621853-161.98371328C15.84497778 645.97776043 2.36709774 579.23105337 2.36709774 510.4445019s13.47904398-135.53209458 40.06106453-198.38074083c25.6692133-60.69004402 62.41203655-115.18953131 109.20621853-161.98371328 46.79534706-46.79418197 101.29366926-83.53700523 161.98371328-109.20621853 62.84864739-26.5831845 129.59418937-40.06106453 198.38074083-40.06106453 68.78771655 0 135.53209458 13.47904398 198.38190592 40.06106453 60.69004402 25.6692133 115.18953131 62.41203655 161.98487723 109.20621853 46.79301803 46.79418197 83.53584128 101.29366926 109.20621853 161.98371328 26.5831845 62.84864739 40.06106453 129.59418937 40.06106453 198.38074083s-13.47788003 135.53325853-40.06106453 198.38074084c-25.67037725 60.69004402-62.41203655 115.19069525-109.20621853 161.98371328-46.79534706 46.79418197-101.29483435 83.53817031-161.98487723 109.20738247C647.53092949 1006.59952413 580.78655147 1020.07740302 511.99883605 1020.07740302z" fill="#1296db"></path>
-      </svg>
-      <i id="bloop__tip" class="ex-panel__tip"></i>
-    </a>
-  `;
-
-  const dockWrap = document.getElementsByClassName("ex-panel__wrap")[0];
-  if (dockWrap) {
-    dockWrap.insertBefore(dockIcon, dockWrap.childNodes[0]);
-  }
-
-  (0, __imports.safeBind)(".bloop-icon", "click", () => {
-    (0, __imports.openFeaturePanel)("弹幕发送小助手");
-  }, owner);
-
-  (0, __imports.safeBind)("#bloop__checkbox_changeColor", "click", () => {
-    __imports.ye = (0, __imports.safeEl)("bloop__checkbox_changeColor").checked;
-  }, owner);
-
-  // 4. 开始发送状态机调度
-  (0, __imports.safeBind)("#bloop__checkbox_startSend", "click", () => {
-    stopSending();
-    const generation = runGeneration;
-
-    if ((0, __imports.safeEl)("bloop__checkbox_startSend").checked) {
-      __imports.pe.length = 0;
-      __imports.ue = 0;
-      const textVal = document.getElementById("bloop__textarea")?.value || "";
-      __imports.pe = textVal.split("\n");
-      __imports.ue = __imports.pe.length - 1;
-
-      // 提取颜色配置
-      __imports.ce.length = 0;
-      __imports.me = 0;
-      const fansSwitcher = document.getElementsByClassName("FansBarrageSwitcher");
-      const nobleSwitcherActive = document.getElementsByClassName("NobleBarrageSwitcher is-active");
-      const hasActiveNoble = nobleSwitcherActive.length > 0;
-
-      let colorItems = [];
-      if (fansSwitcher.length === 0) {
-        __imports.be = true;
-        const matchSwitcher = document.getElementsByClassName("MatchSystemFansBarrageSwitcher")[0];
-        if (matchSwitcher) {
-          matchSwitcher.click();
-          colorItems = document.getElementsByClassName("MatchSystemFansBarrageColor-item");
-        } else {
-          __imports.be = false;
+let runGeneration = 0;
+const stopSending = () => {
+  runGeneration++;
+  (0, __imports.clearTimeout)(__imports.ge);
+  (0, __imports.clearTimeout)(__imports.ve);
+};
+owner.own(stopSending);
+let containerOrValue, elementOrValue;
+(containerOrValue = document.createElement("a"));
+(containerOrValue.className = "refresh-barrage");
+(containerOrValue.id = "refresh-barrage");
+(containerOrValue.innerHTML =
+      '<svg t="1588051109604" id="refresh-barrage__svg" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="3095" width="16" height="16"><path d="M588.416 516.096L787.2 317.312a54.016 54.016 0 1 0-76.416-76.416L512 439.68 313.216 241.024A54.016 54.016 0 1 0 236.8 317.376l198.784 198.848-198.016 197.888a54.016 54.016 0 1 0 76.416 76.416L512 592.576l197.888 197.952a54.016 54.016 0 1 0 76.416-76.416L588.416 516.096z" fill="#AFAFAF" p-id="3096"></path></svg><i class="Barrage-toolbarIcon"></i><span id="refresh-barrage__text" class="Barrage-toolbarText">前缀</span>');
+(elementOrValue = document.getElementsByClassName("Barrage-toolbar")[0]);
+(elementOrValue && elementOrValue.insertBefore(containerOrValue, elementOrValue.childNodes[0]));
+((0, __imports.safeBind)("#refresh-barrage", "click", function () {
+      var e;
+      0 == __imports.mn
+        ? ((0, __imports.un)(), (0, __imports.pn)())
+        : ((0, __imports.U)("Ex_Style_RefreshBarrage"),
+          (__imports.mn = 0),
+          document
+            .getElementById("refresh-barrage")
+            .classList.remove("ex-active"),
+          (document.getElementById("refresh-barrage__text").style.color = ""),
+          ((0, __imports.safeEl)("refresh-barrage__text").innerText = "前缀"),
+          (e = document.getElementById("refresh-barrage__svg")) &&
+            (e = e.getElementsByTagName("path")[0]) &&
+            e.setAttribute("fill", "#AFAFAF"),
+          (0, __imports.pn)());
+    }, owner));
+(containerOrValue = __imports.localStorage.getItem("ExSave_Refresh"));
+(null != containerOrValue &&
+      ("barrage" in (containerOrValue = JSON.parse(containerOrValue)) == 0 && (containerOrValue.barrage = { status: !1 }),
+      1 == containerOrValue.barrage.status) &&
+      (0, __imports.un)());
+(elementOrValue = "");
+(containerOrValue = document.createElement("div"));
+(containerOrValue.className = "bloop");
+(elementOrValue += '<div style="display:inline-block"><label>弹幕：</label></div>');
+(containerOrValue.innerHTML =
+      '<div class="bloop__header_card"><label class="bloop__header_label">弹幕：</label><select id="bloop__select"></select><input type="button" id="bloop__save" value="保存"/><input type="button" id="bloop__delete" value="删除"/></div><div class="bloop__textarea_card"><textarea placeholder="一行一个，开启舔狗模式后此处不需要输入" id="bloop__textarea" rows="4"></textarea></div><div class="bloop__setting_card"><div class="bloop__setting_row"><label>速度(ms)：</label><input id="bloop__text_speed1" type="text" style="width:48px;text-align:center;" value="2000" />~<input id="bloop__text_speed2" type="text" style="width:48px;text-align:center;" value="3000" /></div><div class="bloop__setting_row"><label>限时(min)：</label><input id="bloop__text_stoptime" type="text" style="width:48px;text-align:center;" value="1" /></div></div><div class="bloop__options_card"><label><input id="bloop__checkbox_changeColor" type="checkbox" name="checkbox_changeColor" checked>自动变色</label><label><input id="bloop__checkbox_tiangou" type="checkbox">舔狗模式</label><label><input id="bloop__checkbox_random" type="checkbox">随机发送</label></div><div class="bloop__switch_card"><label class="bloop__switch_label"><input id="bloop__checkbox_startSend" type="checkbox">开始发送</label></div>');
+((elementOrValue =
+      document.getElementsByClassName("layout-Player-chat")[0] ||
+      document.body),
+    elementOrValue.insertBefore(containerOrValue, elementOrValue.childNodes[0]));
+(containerOrValue = document.createElement("div"));
+(containerOrValue.className = "bloop-icon");
+(containerOrValue.innerHTML =
+      '<a class="ex-panel__icon" title="弹幕发送小助手"><svg t="1578572568198" style="display: block;" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="55445" width="32" height="32"><path d="M511.99883605 1020.07740302c-68.78771655 0-135.53209458-13.47788003-198.38074083-40.06106453-60.69004402-25.67037725-115.18953131-62.41203655-161.98371328-109.20738247-46.79418197-46.79301803-83.53700523-101.29366926-109.20621853-161.98371328C15.84497778 645.97776043 2.36709774 579.23105337 2.36709774 510.4445019s13.47904398-135.53209458 40.06106453-198.38074083c25.6692133-60.69004402 62.41203655-115.18953131 109.20621853-161.98371328 46.79534706-46.79418197 101.29366926-83.53700523 161.98371328-109.20621853 62.84864739-26.5831845 129.59418937-40.06106453 198.38074083-40.06106453 68.78771655 0 135.53209458 13.47904398 198.38190592 40.06106453 60.69004402 25.6692133 115.18953131 62.41203655 161.98487723 109.20621853 46.79301803 46.79418197 83.53584128 101.29366926 109.20621853 161.98371328 26.5831845 62.84864739 40.06106453 129.59418937 40.06106453 198.38074083s-13.47788003 135.53325853-40.06106453 198.38074084c-25.67037725 60.69004402-62.41203655 115.19069525-109.20621853 161.98371328-46.79534706 46.79418197-101.29483435 83.53817031-161.98487723 109.20738247C647.53092949 1006.59952413 580.78655147 1020.07740302 511.99883605 1020.07740302zM511.99883605 57.86089358c-249.55500203 0-452.58244437 203.02744235-452.58244437 452.58244437s203.02744235 452.58244437 452.58244437 452.58244438c249.55616597 0 452.58360832-203.02744235 452.58360832-452.58244438C964.58244437 260.88949987 761.55500203 57.86089358 511.99883605 57.86089358z" p-id="55446" fill="#1296db" data-spm-anchor-id="a313x.7781069.0.i24"></path><path d="M322.42598685 461.65355293l-8.51099648 74.46598314 97.86947811 0c-2.85950862 76.59314973-4.9866752 127.6556379-6.38266595 153.18746454-1.42975431 51.06132423-27.65899321 75.16339541-78.72148139 72.33881542-18.45058333 1.39598962-35.47024839 2.12716658-51.06248818 2.12716658-2.85950862-17.02082901-6.38266595-34.77283613-10.63816419-53.19081984 18.41681863 0 35.43764878 0 51.06248817 0 25.53066155 2.82574393 38.99456967-7.77981952 40.42432399-31.9133275 1.39598962-9.9069861 2.12833166-25.53182663 2.12833166-46.80698994 1.39598962-21.27632725 2.12716658-36.86740309 2.12716658-46.80698994l-99.9966447 0 14.89366244-172.33546126 89.3584805 0 0-78.72148138-102.12497636 0 0-48.9353216 151.05913287 0 0 176.5909595L322.42598685 461.65355293zM450.08162475 580.79819435l0-242.54594504 74.46598314 0c-17.0219941-24.10090723-31.91449145-43.25006791-44.67982222-57.44515413l46.80698994-21.27632725c4.25433429 4.25549824 10.63699911 12.06675342 19.14799673 23.40349497 15.5910747 18.45058333 24.79948459 30.51733789 27.65899321 36.16882574l-42.5514917 19.14799673 80.84864796 0c25.53066155-38.29715741 41.8203136-64.5263963 48.93415652-78.72031744l53.19081984 14.89366244c-5.68525255 8.50983253-15.62483939 22.70491762-29.78732487 42.55149169-7.11384291 9.93958685-12.06675342 17.02082901-14.89249849 21.27516331l70.20931982 0 0 242.54594503L620.28991829 580.7970304l0 51.06248818 144.67646806 0 0 48.93415651L620.28991829 680.79367509l0 87.23131392-51.06132423 0 0-87.23131392L428.80646144 680.79367509l0-48.93415651 140.42213376 0 0-51.06248818L450.08162475 580.7970304zM501.14411293 385.0604032l0 53.18965475 68.08331718 0 0-53.18965475L501.14411293 385.0604032zM501.14411293 480.80154965l0 55.31682248 68.08331718 0L569.22743011 480.80154965 501.14411293 480.80154965zM688.37323549 385.0604032l-68.0833172 0 0 53.18965475 68.0833172 0L688.37323549 385.0604032zM620.28991829 480.80154965l0 55.31682248 68.0833172 0L688.37323549 480.80154965 620.28991829 480.80154965z" p-id="55447" fill="#1296db"></path></svg><i id="bloop__tip" class="ex-panel__tip"></i></a>');
+(elementOrValue = document.getElementsByClassName("ex-panel__wrap")[0]);
+(elementOrValue && elementOrValue.insertBefore(containerOrValue, elementOrValue.childNodes[0]));
+((0, __imports.safeBind)(".bloop-icon", "click", function () {
+      (0, __imports.openFeaturePanel)("弹幕发送小助手");
+    }, owner));
+((0, __imports.safeBind)("#bloop__checkbox_changeColor", "click", function () {
+      __imports.ye = (0, __imports.safeEl)("bloop__checkbox_changeColor").checked;
+    }, owner));
+((0, __imports.safeBind)("#bloop__checkbox_startSend", "click", function () {
+      var n;
+      stopSending();
+      const generation = runGeneration;
+      if (1 == (0, __imports.safeEl)("bloop__checkbox_startSend").checked) {
+        ((__imports.pe.length = 0),
+          (__imports.ue = 0),
+          (n = document.getElementById("bloop__textarea").value),
+          (__imports.pe = n.split("\n")),
+          (__imports.ue = __imports.pe.length - 1));
+        {
+          ((__imports.ce.length = 0), (__imports.me = 0));
+          let t = document.getElementsByClassName("FansBarrageSwitcher"),
+            e = document.getElementsByClassName(
+              "NobleBarrageSwitcher is-active",
+            ),
+            o = !1;
+          (0 < e.length && (o = !0),
+            0 == t.length
+              ? ((__imports.be = !0),
+                null !=
+                (n = document.getElementsByClassName(
+                  "MatchSystemFansBarrageSwitcher",
+                )[0])
+                  ? (n.click(),
+                    (t = document.getElementsByClassName(
+                      "MatchSystemFansBarrageColor-item",
+                    )))
+                  : (__imports.be = !1))
+              : (t[0].click(),
+                (t = document.getElementsByClassName("FansBarrageColor-item")),
+                (__imports.be = !1)));
+          for (let e = 0; e < t.length; e++)
+            -1 == t[e].className.indexOf("is-lock") && (__imports.ce.push(e), __imports.me++);
+          (--__imports.me,
+            1 == o &&
+              document
+                .getElementsByClassName("NobleBarrageSwitcher")[0]
+                .click());
         }
-      } else {
-        fansSwitcher[0].click();
-        colorItems = document.getElementsByClassName("FansBarrageColor-item");
-        __imports.be = false;
+        ((__imports.fe =
+          1 == document.getElementById("bloop__checkbox_random").checked
+            ? ((__imports.he = Math.floor(Math.random() * __imports.pe.length)),
+              Math.floor(Math.random() * __imports.ce.length))
+            : (__imports.he = 0)),
+          (0, __imports.ke)(),
+          (__imports.ge = owner.timeout(() => (0, __imports.Ee)(owner, () => generation === runGeneration), (0, __imports._e)())),
+          (__imports.ve = owner.timeout(
+            () => {
+              if (generation !== runGeneration) return;
+              (((0, __imports.safeEl)("bloop__checkbox_startSend").checked = !1),
+                stopSending());
+            },
+            ((n = (0, __imports.safeEl)("bloop__text_stoptime").value), 60 * Number(n) * 1e3),
+          )));
+      } else ((0, __imports.clearTimeout)(__imports.ge), (0, __imports.clearTimeout)(__imports.ve));
+    }, owner));
+((0, __imports.safeBind)("#bloop__checkbox_tiangou", "click", function () {
+      var e = (0, __imports.safeEl)("bloop__checkbox_tiangou").checked;
+      (((0, __imports.safeEl)("bloop__textarea").disabled = 1 == e), (0, __imports.ke)());
+    }, owner));
+((0, __imports.safeEl)("bloop__select").onclick = function () {
+      var e, t;
+      0 != this.options.length &&
+        ((e = document.getElementById("bloop__textarea")),
+        (t = this.options[this.selectedIndex].text),
+        (e.value = t),
+        (e.value = e.value.replace(/\\r/g, "\r")));
+    });
+((0, __imports.safeBind)("#bloop__save", "click", () => {
+      var e = document.getElementById("bloop__select"),
+        t = document.getElementById("bloop__textarea").value;
+      "" != t &&
+        (__imports.xe.push(t),
+        e.options.add(new Option(t.replace(/\n/g, "\\r"), !0)),
+        (0, __imports.ke)());
+    }, owner));
+((0, __imports.safeBind)("#bloop__delete", "click", () => {
+      var e = document.getElementById("bloop__select"),
+        o = e.options[e.selectedIndex];
+      if (o) {
+        let t = o.text;
+        ((__imports.xe = __imports.xe.filter((e) => e !== t)),
+          e.options.remove(e.selectedIndex),
+          (0, __imports.ke)());
       }
-
-      for (let i = 0; i < colorItems.length; i++) {
-        if (!colorItems[i].className.includes("is-lock")) {
-          __imports.ce.push(i);
-          __imports.me++;
-        }
-      }
-      __imports.me--;
-      if (hasActiveNoble) {
-        document.getElementsByClassName("NobleBarrageSwitcher")[0]?.click();
-      }
-
-      const isRandom = document.getElementById("bloop__checkbox_random")?.checked;
-      if (isRandom) {
-        __imports.he = Math.floor(Math.random() * __imports.pe.length);
-        __imports.fe = Math.floor(Math.random() * __imports.ce.length);
-      } else {
-        __imports.he = 0;
-      }
-
-      (0, __imports.ke)();
-      __imports.ge = owner.timeout(() => (0, __imports.Ee)(owner, () => generation === runGeneration), (0, __imports._e)());
-
-      const stopMinutes = Number((0, __imports.safeEl)("bloop__text_stoptime").value) || 1;
-      __imports.ve = owner.timeout(() => {
-        if (generation !== runGeneration) return;
-        (0, __imports.safeEl)("bloop__checkbox_startSend").checked = false;
-        stopSending();
-      }, stopMinutes * 60 * 1000);
-    } else {
-      (0, __imports.clearTimeout)(__imports.ge);
-      (0, __imports.clearTimeout)(__imports.ve);
-    }
-  }, owner);
-
-  (0, __imports.safeBind)("#bloop__checkbox_tiangou", "click", () => {
-    const isTiangou = (0, __imports.safeEl)("bloop__checkbox_tiangou").checked;
-    (0, __imports.safeEl)("bloop__textarea").disabled = isTiangou;
-    (0, __imports.ke)();
-  }, owner);
-
-  const selectEl = (0, __imports.safeEl)("bloop__select");
-  if (selectEl) {
-    selectEl.onclick = function () {
-      if (this.options.length !== 0) {
-        const textarea = document.getElementById("bloop__textarea");
-        if (textarea) {
-          textarea.value = this.options[this.selectedIndex].text.replace(/\\r/g, "\r");
-        }
-      }
-    };
+    }, owner));
+(containerOrValue = __imports.localStorage.getItem("ExSave_BarrageLoopOptions"));
+if (null != containerOrValue) {
+    containerOrValue = JSON.parse(containerOrValue);
+    ("speed1" in containerOrValue == 0 && (containerOrValue.speed1 = 2e3),
+      "speed2" in containerOrValue == 0 && (containerOrValue.speed2 = 3e3),
+      "stopTime" in containerOrValue == 0 && (containerOrValue.stopTime = 5),
+      "isTiangouMode" in containerOrValue == 0 && (containerOrValue.isTiangouMode = !1));
+    let t = document.getElementById("bloop__select");
+    (containerOrValue.text.forEach((e) => {
+      t.options.add(new Option(e.replace(/\r/g, "\\r"), ""));
+    }),
+      (__imports.xe = containerOrValue.text),
+      ((0, __imports.safeEl)("bloop__checkbox_changeColor").checked = containerOrValue.isChangeColor),
+      (__imports.ye = Boolean(containerOrValue.isChangeColor)),
+      ((0, __imports.safeEl)("bloop__text_speed1").value = containerOrValue.speed1),
+      ((0, __imports.safeEl)("bloop__text_speed2").value = containerOrValue.speed2),
+      ((0, __imports.safeEl)("bloop__text_stoptime").value = containerOrValue.stopTime),
+      1 == containerOrValue.isTiangouMode &&
+        (((0, __imports.safeEl)("bloop__checkbox_tiangou").checked = containerOrValue.isTiangouMode),
+        ((0, __imports.safeEl)("bloop__textarea").disabled = !0)));
   }
-
-  (0, __imports.safeBind)("#bloop__save", "click", () => {
-    const sel = document.getElementById("bloop__select");
-    const val = document.getElementById("bloop__textarea")?.value || "";
-    if (val !== "" && sel) {
-      __imports.xe.push(val);
-      sel.options.add(new Option(val.replace(/\n/g, "\\r"), true));
-      (0, __imports.ke)();
-    }
-  }, owner);
-
-  (0, __imports.safeBind)("#bloop__delete", "click", () => {
-    const sel = document.getElementById("bloop__select");
-    const opt = sel?.options[sel.selectedIndex];
-    if (opt) {
-      const text = opt.text;
-      __imports.xe = __imports.xe.filter(item => item !== text);
-      sel.options.remove(sel.selectedIndex);
-      (0, __imports.ke)();
-    }
-  }, owner);
-
-  // 恢复本地保存配置
-  try {
-    const savedConf = JSON.parse(__imports.localStorage.getItem("ExSave_BarrageLoopOptions") || "null");
-    if (savedConf) {
-      savedConf.speed1 = savedConf.speed1 ?? 2000;
-      savedConf.speed2 = savedConf.speed2 ?? 3000;
-      savedConf.stopTime = savedConf.stopTime ?? 5;
-      savedConf.isTiangouMode = savedConf.isTiangouMode ?? false;
-
-      const sel = document.getElementById("bloop__select");
-      if (sel && Array.isArray(savedConf.text)) {
-        savedConf.text.forEach(item => {
-          sel.options.add(new Option(item.replace(/\r/g, "\\r"), ""));
-        });
-      }
-
-      __imports.xe = savedConf.text || [];
-      (0, __imports.safeEl)("bloop__checkbox_changeColor").checked = Boolean(savedConf.isChangeColor);
-      __imports.ye = Boolean(savedConf.isChangeColor);
-      (0, __imports.safeEl)("bloop__text_speed1").value = savedConf.speed1;
-      (0, __imports.safeEl)("bloop__text_speed2").value = savedConf.speed2;
-      (0, __imports.safeEl)("bloop__text_stoptime").value = savedConf.stopTime;
-
-      if (savedConf.isTiangouMode) {
-        (0, __imports.safeEl)("bloop__checkbox_tiangou").checked = true;
-        (0, __imports.safeEl)("bloop__textarea").disabled = true;
-      }
-    }
-  } catch {}
 }
 
 }
@@ -8400,69 +8185,104 @@ function y() {
 "src/next/ui/panel-dispatch.js":
 function* (__imports) {
 yield {"openFeaturePanel": { get: () => openFeaturePanel, set: value => { openFeaturePanel = value; } }};
-/**
- * 三级控制台互斥调度分发器
- * 保证同一时刻至多仅有一个三级控制台展示，并联动指示器与吸顶 Header
- * @param {string} panelName - 目标面板中文/标识名
- * @param {boolean} [forceShow=false] - 是否强制显示 (悬停模式)
- * @param {HTMLElement} [btnEl] - 触发的按钮节点
- */
-function openFeaturePanel(panelName, forceShow = false, btnEl) {
-  const panelRegistry = [
-    { name: "弹幕发送小助手", className: "bloop", title: "弹幕小助手", dockCls: "bloop-icon" },
-    { name: "扩展功能", className: "extool", title: "扩展功能", dockCls: "extool-icon" },
-    { name: "直播间工具", className: "livetool", title: "直播间工具", dockCls: "livetool-icon" },
-    { name: "全站抽奖信息", className: "exlottery", title: "全站抽奖", dockCls: "ex-lottery" },
-    { name: "弹幕小尾巴", className: "ChatToolBar-DanmakuTail-Panel", title: "弹幕小尾巴", dockCls: "ChatToolBar-DanmakuTail" },
-    { name: "一键续牌", className: "fans-continue-panel", title: "一键续牌", dockCls: "fans-continue" },
-    { name: "一键签到", className: "sign-panel", title: "一键签到", dockCls: "ex-sign" },
-    { name: "同屏播放", className: "popup-player-panel", title: "同屏播放器", dockCls: "popup-player" },
-    { name: "版本更新", className: "exupdate-panel", title: "版本更新", dockCls: "ex-update" },
+function openFeaturePanel(t, forceShow, btnEl) {
+  var o = [
+    {
+      name: "弹幕发送小助手",
+      className: "bloop",
+      title: "弹幕小助手",
+      dockCls: "bloop-icon",
+    },
+    {
+      name: "扩展功能",
+      className: "extool",
+      title: "扩展功能",
+      dockCls: "extool-icon",
+    },
+    {
+      name: "直播间工具",
+      className: "livetool",
+      title: "直播间工具",
+      dockCls: "livetool-icon",
+    },
+    {
+      name: "全站抽奖信息",
+      className: "exlottery",
+      title: "全站抽奖",
+      dockCls: "ex-lottery",
+    },
+    {
+      name: "弹幕小尾巴",
+      className: "ChatToolBar-DanmakuTail-Panel",
+      title: "弹幕小尾巴",
+      dockCls: "ChatToolBar-DanmakuTail",
+    },
+    {
+      name: "一键续牌",
+      className: "fans-continue-panel",
+      title: "一键续牌",
+      dockCls: "fans-continue",
+    },
+    {
+      name: "一键签到",
+      className: "sign-panel",
+      title: "一键签到",
+      dockCls: "ex-sign",
+    },
+    {
+      name: "同屏播放",
+      className: "popup-player-panel",
+      title: "同屏播放器",
+      dockCls: "popup-player",
+    },
+    {
+      name: "版本更新",
+      className: "exupdate-panel",
+      title: "版本更新",
+      dockCls: "ex-update",
+    },
   ];
-
-  let activeDockCls = null;
-
-  for (let i = 0; i < panelRegistry.length; i++) {
-    const item = panelRegistry[i];
-
-    if (item.className === "exupdate-panel" && typeof __imports.createExUpdatePanel === "function") {
+  var activeDockCls = null;
+  for (var e = 0; e < o.length; e++) {
+    var item = o[e];
+    if (
+      item.className === "exupdate-panel" &&
+      typeof __imports.createExUpdatePanel === "function"
+    ) {
       (0, __imports.createExUpdatePanel)();
     }
-
-    const panelEl = document.getElementsByClassName(item.className)[0];
-    if (!panelEl) continue;
-
-    if (panelName === item.name) {
-      let isHidden = forceShow ? true : (panelEl.style.display === "none" || !panelEl.style.display);
-      try {
-        if (!forceShow && typeof getComputedStyle === "function") {
-          isHidden = isHidden || getComputedStyle(panelEl).display === "none";
+    var panel = document.getElementsByClassName(item.className)[0];
+    if (panel) {
+      if (t === item.name) {
+        var isHidden = forceShow
+          ? true
+          : panel.style.display === "none" || !panel.style.display;
+        try {
+          if (!forceShow && typeof getComputedStyle === "function") {
+            isHidden = isHidden || getComputedStyle(panel).display === "none";
+          }
+        } catch (err) {}
+        if (isHidden) {
+          panel.style.setProperty("display", "flex", "important");
+          panel.style.setProperty("flex-direction", "column", "important");
+          if (typeof __imports.ensureMiuixPanelHeader === "function") {
+            (0, __imports.ensureMiuixPanelHeader)(panel, item.title);
+          }
+          if (typeof __imports.anchorPanelToButton === "function") {
+            (0, __imports.anchorPanelToButton)(
+              panel,
+              btnEl || document.querySelector("." + item.dockCls),
+            );
+          }
+          activeDockCls = item.dockCls;
+        } else {
+          panel.style.setProperty("display", "none", "important");
         }
-      } catch {}
-
-      if (isHidden) {
-        panelEl.style.setProperty("display", "flex", "important");
-        panelEl.style.setProperty("flex-direction", "column", "important");
-
-        if (typeof __imports.ensureMiuixPanelHeader === "function") {
-          (0, __imports.ensureMiuixPanelHeader)(panelEl, item.title);
-        }
-        if (typeof __imports.anchorPanelToButton === "function") {
-          (0, __imports.anchorPanelToButton)(
-            panelEl,
-            btnEl || document.querySelector("." + item.dockCls)
-          );
-        }
-        activeDockCls = item.dockCls;
       } else {
-        panelEl.style.setProperty("display", "none", "important");
+        panel.style.setProperty("display", "none", "important");
       }
-    } else {
-      // 互斥关闭其他非目标控制台
-      panelEl.style.setProperty("display", "none", "important");
     }
   }
-
   if (typeof __imports.updateDockActiveIndicator === "function") {
     (0, __imports.updateDockActiveIndicator)(activeDockCls);
   }
@@ -9159,314 +8979,240 @@ yield {"$": { get: () => $, set: value => { $ = value; } },
 "v": { get: () => v, set: value => { v = value; } },
 "w": { get: () => w, set: value => { w = value; } },
 "x": { get: () => x, set: value => { x = value; } }};
-/**
- * DouyuEx-RL 核心通用基础工具库
- */
-
-/**
- * 异步延时等待
- * @param {number} ms - 延时毫秒数
- * @returns {Promise<void>}
- */
-function sleep(ms) {
-  return new Promise(resolve => (0, __imports.setTimeout)(resolve, ms));
+function b(t) {
+  return new Promise((e) => (0, __imports.setTimeout)(e, t));
 }
-function b(ms) { return sleep(ms); }
-
-/**
- * 将秒数格式化为中文时长描述 (如: 1小时23分45秒)
- * @param {number|string} seconds
- * @returns {string}
- */
-function formatDurationChinese(seconds) {
-  let sec = parseInt(seconds, 10) || 0;
-  let min = 0;
-  let hour = 0;
-
-  if (sec > 60) {
-    min = Math.floor(sec / 60);
-    sec = sec % 60;
-    if (min > 60) {
-      hour = Math.floor(min / 60);
-      min = min % 60;
-    }
-  }
-
-  let result = `${sec}秒`;
-  if (min > 0) result = `${min}分` + result;
-  if (hour > 0) result = `${hour}小时` + result;
-  return result;
+function Q(e) {
+  let t = parseInt(e),
+    o = 0,
+    n = 0,
+    i =
+      (60 < t &&
+        ((o = parseInt(t / 60)), (t = parseInt(t % 60)), 60 < o) &&
+        ((n = parseInt(o / 60)), (o = parseInt(o % 60))),
+      parseInt(t) + "秒");
+  return (
+    0 < o && (i = parseInt(o) + "分" + i),
+    (i = 0 < n ? parseInt(n) + "小时" + i : i)
+  );
 }
-function Q(sec) { return formatDurationChinese(sec); }
-
-/**
- * 将秒数格式化为标准时间码 (hh:mm:ss)
- * @param {number|string} seconds
- * @returns {string}
- */
-function formatDurationClock(seconds) {
-  let sec = parseInt(seconds, 10) || 0;
-  let min = 0;
-  let hour = 0;
-
-  if (sec > 60) {
-    min = Math.floor(sec / 60);
-    sec = sec % 60;
-    if (min > 60) {
-      hour = Math.floor(min / 60);
-      min = min % 60;
-    }
-  }
-
-  const sStr = String(sec).padStart(2, "0");
-  const mStr = String(min).padStart(2, "0");
-  const hStr = String(hour).padStart(2, "0");
-  return `${hStr}:${mStr}:${sStr}`;
+function J(e) {
+  var t = 0,
+    o = 0;
+  return (
+    60 < (e = parseInt(e)) &&
+      ((t = parseInt(e / 60)), (e = parseInt(e % 60)), 60 < t) &&
+      ((o = parseInt(t / 60)), (t = parseInt(t % 60))),
+    (e = "" + (parseInt(e) < 10 ? "0" + parseInt(e) : parseInt(e))),
+    (e = (parseInt(t) < 10 ? "0" + parseInt(t) : parseInt(t)) + ":" + e),
+    (e = (parseInt(o) < 10 ? "0" + parseInt(o) : parseInt(o)) + ":" + e)
+  );
 }
-function J(sec) { return formatDurationClock(sec); }
-
-/**
- * 正则提取字符串中两个标记之间的内容
- * @param {string} str - 源文本
- * @param {string} prefix - 前缀
- * @param {string} suffix - 后缀
- * @returns {string|false} 提取的内容或 false
- */
-function extractBetween(str, prefix, suffix) {
-  if (!str || typeof str !== 'string') return false;
-  const match = str.match(new RegExp(prefix + "(.*?)" + suffix));
-  return Boolean(match) && match[1];
+async function Z() {
+  return !0;
 }
-function v(str, p, s) { return extractBetween(str, p, s); }
-
-/**
- * 安全读取指定 Cookie 键的值
- * @param {string} name - Cookie 键名
- * @returns {string|null}
- */
-function getCookie(name) {
+function v(e, t, o) {
+  e = e.match(new RegExp(t + "(.*?)" + o));
+  return !!e && e[1];
+}
+function x(e) {
   try {
-    const reg = new RegExp("(^| )" + name + "=([^;]*)(;|$)");
-    const match = document.cookie.match(reg);
-    return match ? unescape(match[2]) : null;
-  } catch {
+    var t = new RegExp("(^| )" + e + "=([^;]*)(;|$)"),
+      n = document.cookie.match(t);
+    return n ? unescape(n[2]) : null;
+  } catch (err) {
     return null;
   }
 }
-function x(name) { return getCookie(name); }
-
-/**
- * 获取或生成 3 小时有效期的 acf_ccn 安全凭据
- * @returns {string}
- */
-function generateCcnToken() {
-  let ccn = getCookie("acf_ccn");
-  if (ccn == null) {
-    const expireDate = new Date();
-    expireDate.setTime(expireDate.getTime() + 10800000); // +3 hours
-    document.cookie = `acf_ccn=1; path=/; expires=${expireDate.toGMTString()}`;
-    ccn = "1";
-  }
-  return ccn;
+function w() {
+  let e = x("acf_ccn");
+  var t, o, n;
+  return (
+    null == e &&
+      ((t = "acf_ccn"),
+      (o = "1"),
+      (n = new Date()).setTime(n.getTime() + 108e5),
+      (document.cookie =
+        t + "=" + escape(o) + "; path=/; expires=" + n.toGMTString()),
+      (e = "1")),
+    e
+  );
 }
-function w() { return generateCcnToken(); }
-
-/**
- * 弹出顶部浮动毛玻璃 NoticeJs 提示胶囊
- * @param {string} message - 提示消息文本
- * @param {string} [type='success'] - 类型: success | info | error | warning
- * @param {object} [options] - 附加配置项
- */
-function showToast(message, type = "success", options = {}) {
-  const config = { text: message, type, position: "bottomLeft", ...options };
-  try {
-    new NoticeJs(config).show();
-  } catch {
-    console.log(`[Toast ${type}] ${message}`);
-  }
+function T(e, t = "success", o) {
+  e = { text: e, type: t, position: "bottomLeft", ...o };
+  new NoticeJs(e).show();
 }
-function T(msg, type, opt) { return showToast(msg, type, opt); }
-
-/**
- * 新标签页打开指定 URL
- * @param {string} url - 目标地址
- * @param {boolean} [active=true] - 是否激活焦点
- */
-function openInNewTab(url, active = true) {
-  (0, __imports.GM_openInTab)(url, { active });
+function _(e, t = !0) {
+  (0, __imports.GM_openInTab)(e, { active: t });
 }
-function _(url, active) { return openInNewTab(url, active); }
-
-/**
- * 跨浏览器安全关闭当前窗口
- */
-function closeCurrentWindow() {
-  if (navigator.userAgent.includes("Firefox") || navigator.userAgent.includes("Chrome")) {
-    window.location.href = "about:blank";
-  } else {
-    window.opener = null;
-    window.open("", "_self");
-  }
-  window.close();
+function r() {
+  (-1 != navigator.userAgent.indexOf("Firefox") ||
+  -1 != navigator.userAgent.indexOf("Chrome")
+    ? (window.location.href = "about:blank")
+    : ((window.opener = null), window.open("", "_self")),
+    window.close());
 }
-
-/**
- * 标准日期时间格式化 (对齐 yyyy-MM-dd hh:mm:ss)
- * @param {string} fmt - 格式模板
- * @param {Date} dateObj - 日期对象
- * @returns {string}
- */
-function formatDate(fmt, dateObj) {
-  const date = dateObj || new Date();
-  let res = fmt;
-  const o = {
-    "M+": date.getMonth() + 1,
-    "d+": date.getDate(),
-    "h+": date.getHours(),
-    "m+": date.getMinutes(),
-    "s+": date.getSeconds(),
-    "q+": Math.floor((date.getMonth() + 3) / 3),
-    S: date.getMilliseconds(),
-  };
-
-  if (/(y+)/.test(res)) {
-    res = res.replace(RegExp.$1, String(date.getFullYear()).substr(4 - RegExp.$1.length));
-  }
-
-  for (const k in o) {
-    if (new RegExp("(" + k + ")").test(res)) {
-      res = res.replace(
+function k(e, t) {
+  var o,
+    n = {
+      "M+": t.getMonth() + 1,
+      "d+": t.getDate(),
+      "h+": t.getHours(),
+      "m+": t.getMinutes(),
+      "s+": t.getSeconds(),
+      "q+": Math.floor((t.getMonth() + 3) / 3),
+      S: t.getMilliseconds(),
+    };
+  for (o in (/(y+)/.test(e) &&
+    (e = e.replace(
+      RegExp.$1,
+      (t.getFullYear() + "").substr(4 - RegExp.$1.length),
+    )),
+  n))
+    new RegExp("(" + o + ")").test(e) &&
+      (e = e.replace(
         RegExp.$1,
-        RegExp.$1.length === 1 ? o[k] : String("00" + o[k]).substr(String(o[k]).length)
-      );
-    }
-  }
-  return res;
+        1 == RegExp.$1.length ? n[o] : ("00" + n[o]).substr(("" + n[o]).length),
+      ));
+  return e;
 }
-function k(fmt, d) { return formatDate(fmt, d); }
-
-/**
- * 获取范围内的随机整数 [min, max)
- * @param {number} min
- * @param {number} max
- * @returns {number}
- */
-function getRandomInt(min, max) {
-  return Math.floor(Math.random() * (max - min) + min);
+function a(e, t) {
+  return Math.floor(Math.random() * (t - e) + e);
 }
-function a(min, max) { return getRandomInt(min, max); }
-
-/**
- * 发送系统级桌面通知 (HTML5 Notification)
- * @param {string} title
- * @param {string} body
- * @param {Function} onClick
- */
-function showDesktopNotification(title, body, onClick) {
-  if (window.Notification && Notification.permission !== "denied") {
-    Notification.requestPermission((perm) => {
-      if (perm === "granted") {
-        const notif = new Notification(title, { body });
-        notif.onclick = () => {
-          if (typeof onClick === 'function') onClick();
-        };
-      }
+function X(t, o, n) {
+  window.Notification &&
+    "denied" !== Notification.permission &&
+    Notification.requestPermission(function (e) {
+      new Notification(t, { body: o }).onclick = function () {
+        n();
+      };
     });
-  }
 }
-function X(title, body, cb) { return showDesktopNotification(title, body, cb); }
-
-/**
- * 获取输入框的光标字符位置
- * @param {HTMLElement} el
- * @returns {number}
- */
-function getTextareaCursorPosition(el) {
-  if (!el) return 0;
-  if (el.tagName === "TEXTAREA" || el.tagName === "INPUT") {
-    return el.selectionStart || 0;
-  }
-  let pos = 0;
-  if (window.getSelection) {
-    const sel = window.getSelection();
-    if (sel && sel.rangeCount > 0) {
-      const range = sel.getRangeAt(0).cloneRange();
-      range.selectNodeContents(el);
-      range.setEnd(sel.getRangeAt(0).endContainer, sel.getRangeAt(0).endOffset);
-      pos = range.toString().length;
-    }
-  }
-  return pos;
-}
-function $(el) { return getTextareaCursorPosition(el); }
-
-/**
- * 导出数据为 Excel 文件并自动触发下载
- * @param {Array<string>} headers - 表头
- * @param {Array<Array<any>>} rows - 数据行二维数组
- * @param {string} [filename='download.xlsx'] - 下载文件名
- */
-function exportToExcel(headers, rows, filename = "download.xlsx") {
-  if (typeof XLSX === "undefined") {
-    if (typeof __imports.ExLoadLib === "function" && __imports.EXURL) {
-      (0, __imports.ExLoadLib)(
-        __imports.EXURL.xl,
-        () => exportToExcel(headers, rows, filename),
-        () => showToast("【下载弹幕】xlsx组件加载失败", "info")
-      );
-    }
-    return;
-  }
-
-  const tableData = [headers, ...rows];
-  const sheet = XLSX.utils.aoa_to_sheet(tableData);
-  const workbook = { SheetNames: ["sheet1"], Sheets: { sheet1: sheet } };
-  const binaryOutput = XLSX.write(workbook, { bookType: "xlsx", bookSST: false, type: "binary" });
-
-  const buffer = new ArrayBuffer(binaryOutput.length);
-  const view = new Uint8Array(buffer);
-  for (let i = 0; i < binaryOutput.length; i++) {
-    view[i] = binaryOutput.charCodeAt(i) & 0xff;
-  }
-
-  const blob = new Blob([buffer], { type: "application/octet-stream" });
-  const objectUrl = URL.createObjectURL(blob);
-
-  const anchor = document.createElement("a");
-  anchor.href = objectUrl;
-  anchor.download = filename;
-  anchor.click();
-
-  (0, __imports.setTimeout)(() => {
+function K() {
+  return new Promise((t) => {
+    var n = x("acf_nickname");
+    if (n) return t(decodeURIComponent(n));
     try {
-      URL.revokeObjectURL(objectUrl);
-    } catch {}
-  }, 1500);
+      var e = document.querySelector(
+        ".Barrage-nickName.is-self, .Header-login-avatar img, .UserInfo-nickname",
+      );
+      if (e) {
+        var o = e.innerText || e.title || e.alt;
+        if (o) return t(o.trim());
+      }
+    } catch (e) {}
+    (0, __imports.fetch)("https://www.douyu.com/member/cp", {
+      method: "GET",
+      credentials: "include",
+    })
+      .then((e) => e.text())
+      .then((e) => {
+        var o = new DOMParser()
+          .parseFromString(e, "text/html")
+          .getElementsByClassName("uname_con")[0];
+        t(o ? o.title : "");
+      })
+      .catch((e) => {
+        t("");
+      });
+  });
 }
-function l(h, r, f) { return exportToExcel(h, r, f); }
-
-/**
- * 触发全局窗口 Resize 布局重排事件
- */
-function triggerWindowResize() {
-  window.dispatchEvent(new Event("resize"));
+function $(e) {
+  if ("TEXTAREA" === e.tagName) return e.selectionStart;
+  let t = 0;
+  var o, n, i;
+  return (
+    document.selection
+      ? ((n = document.selection.createRange()),
+        (o = (i = e.createTextRange()).duplicate()).moveToBookmark(
+          n.getBookmark(),
+        ),
+        o.setEndPoint("EndToEnd", i),
+        (t = o.text.length))
+      : window.getSelection &&
+        0 < (n = window.getSelection()).rangeCount &&
+        ((i = n.getRangeAt(0).cloneRange()).selectNodeContents(e),
+        i.setEnd(
+          0 < n.rangeCount ? n.getRangeAt(0).endContainer : e,
+          0 < n.rangeCount ? n.getRangeAt(0).endOffset : 0,
+        ),
+        (t = i.toString().length)),
+    t
+  );
 }
-function te() { return triggerWindowResize(); }
-
-/**
- * 多候选选择器匹配首个存在的 DOM 元素
- * @param {Array<string|Element>} selectors
- * @returns {Element|null}
- */
-function queryFirstMatch(selectors) {
-  if (!Array.isArray(selectors)) return null;
-  for (const s of selectors) {
-    const el = typeof s === "string" ? document.querySelector(s) : s;
-    if (el) return el;
+function l(e, t, o = "download.xlsx") {
+  if ("undefined" == typeof XLSX)
+    return void (0, __imports.ExLoadLib)(
+      __imports.EXURL.xl,
+      () => l(e, t, o),
+      () => T("【下载弹幕】xlsx组件加载失败", "info"),
+    );
+  var n = [],
+    e = (n.push(e, ...t), XLSX.utils.aoa_to_sheet(n)),
+    i =
+      ((t = e),
+      ((n = { SheetNames: [(r = r || "sheet1")], Sheets: {} }).Sheets[r] = t),
+      (r = { bookType: "xlsx", bookSST: !1, type: "binary" }),
+      (t = XLSX.write(n, r)),
+      (n = new Blob(
+        [
+          ((e) => {
+            for (
+              var t = new ArrayBuffer(e.length), o = new Uint8Array(t), n = 0;
+              n != e.length;
+              ++n
+            )
+              o[n] = 255 & e.charCodeAt(n);
+            return t;
+          })(t),
+        ],
+        { type: "application/octet-stream" },
+      ))),
+    e = o;
+  "object" == typeof i && i instanceof Blob && (i = URL.createObjectURL(i));
+  var a,
+    r = document.createElement("a");
+  ((r.href = i),
+    (r.download = e || ""),
+    window.MouseEvent
+      ? (a = new MouseEvent("click"))
+      : (a = document.createEvent("MouseEvents")).initMouseEvent(
+          "click",
+          !0,
+          !1,
+          window,
+          0,
+          0,
+          0,
+          0,
+          0,
+          !1,
+          !1,
+          !1,
+          !1,
+          0,
+          null,
+        ),
+    r.dispatchEvent(a),
+    "string" == typeof i &&
+      0 === i.indexOf("blob:") &&
+      (0, __imports.setTimeout)(function () {
+        try {
+          URL.revokeObjectURL(i);
+        } catch (e) {}
+      }, 1500));
+}
+function te() {
+  var e = new Event("resize");
+  window.dispatchEvent(e);
+}
+function E(e) {
+  for (var t of e) {
+    let e = null;
+    if ((e = "string" == typeof t ? document.querySelector(t) : t)) return e;
   }
   return null;
 }
-function E(sel) { return queryFirstMatch(sel); }
 
 }
 ,
@@ -9478,202 +9224,196 @@ yield {"ae": { get: () => ae, set: value => { ae = value; } },
 "ne": { get: () => ne, set: value => { ne = value; } },
 "oe": { get: () => oe, set: value => { oe = value; } },
 "re": { get: () => re, set: value => { re = value; } }};
-/**
- * 多账号跨域免密热切换与纯音频独立播放流控制器
- */
-const DOUBLE_CHEVRON_SVG = `<svg class="icon" viewBox="0 0 1024 1024" width="16" height="16"><path d="M217.472 311.808l384.64 384.64-90.432 90.56-384.64-384.64z" fill="#8A8A8A"></path><path d="M896.32 401.984l-384.64 384.64-90.56-90.496 384.64-384.64z" fill="#8A8A8A"></path></svg>`;
+let oe =
+    '<svg t="1613993967937" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2122" width="16" height="16"><path d="M217.472 311.808l384.64 384.64-90.432 90.56-384.64-384.64z" fill="#8A8A8A" p-id="2123"></path><path d="M896.32 401.984l-384.64 384.64-90.56-90.496 384.64-384.64z" fill="#8A8A8A" p-id="2124"></path></svg>',
+  ne = 0;
+function ie(e) {
+  var _al = document.getElementById("ex-accountList-content");
+  if (_al)
+    _al.innerHTML = ((e) => {
+      let t = null == e ? JSON.parse((0, __imports.GM_getValue)("Ex_accountList") || "{}") : e,
+        o = "";
+      for (var n in t)
+        "null" != n &&
+          ((n = t[n]),
+          (o += `
 
-let oe = DOUBLE_CHEVRON_SVG;
-let ne = 0;
+        <div class="ex-accountList-item" uid="${n.uid}">
 
-/**
- * 渲染多账号管理下拉列表 (导出兼容 ie)
- * @param {object} [customAccountMap]
- */
-function renderAccountList(customAccountMap) {
-  const container = document.getElementById("ex-accountList-content");
-  if (!container) return;
-
-  const getAccountListHtml = (accountData) => {
-    let accountsObj = {};
-    if (accountData == null) {
-      try {
-        accountsObj = JSON.parse((0, __imports.GM_getValue)("Ex_accountList") || "{}");
-      } catch {}
-    } else {
-      accountsObj = accountData;
-    }
-
-    let itemsHtml = "";
-    for (const uidKey in accountsObj) {
-      if (uidKey !== "null" && accountsObj[uidKey]) {
-        const item = accountsObj[uidKey];
-        const avatarUrl = decodeURIComponent(item.avatar) + "middle.jpg";
-        const nickName = decodeURIComponent(item.nickname);
-        itemsHtml += `
-          <div class="ex-accountList-item" uid="${item.uid}">
             <div class="ex-accountList-item__imgWrap">
-              <img src="${avatarUrl}" alt="" class="ex-accountList-item__img">
+
+                <img src=${decodeURIComponent(n.avatar) + "middle.jpg"} alt="" class="ex-accountList-item__img">
+
             </div>
-            <div class="ex-accountList-item__name">${nickName}</div>
+
+            <div class="ex-accountList-item__name">${decodeURIComponent(n.nickname)}</div>
+
             <div class="ex-accountList-item__btn">删除</div>
-          </div>
-        `;
-      }
-    }
 
-    itemsHtml += `
-      <div id="ex-accountList-item-add">
-        <svg class="icon" viewBox="0 0 1024 1024" width="32" height="32"><path d="M577.088 0H448.96v448.512H0v128h448.96V1024h128.128V576.512H1024v-128H577.088z" fill="#8A8A8A"></path></svg>
-      </div>
-    `;
-    return itemsHtml;
-  };
+        </div>`));
+      return (o += `
 
-  container.innerHTML = getAccountListHtml(customAccountMap);
+    <div id="ex-accountList-item-add">
 
-  const accountItems = document.getElementsByClassName("ex-accountList-item");
-  for (let i = 0; i < accountItems.length; i++) {
-    const itemEl = accountItems[i];
-    const targetUid = itemEl.getAttribute("uid");
+        <svg t="1613995373702" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2832" width="32" height="32"><path d="M577.088 0H448.96v448.512H0v128h448.96V1024h128.128V576.512H1024v-128H577.088z" p-id="2833" fill="#8A8A8A"></path></svg>
 
-    // 切换账号
-    itemEl.addEventListener("click", () => {
+    </div>
+
+    `);
+    })(e);
+  var t = document.getElementsByClassName("ex-accountList-item");
+  for (let e = 0; e < t.length; e++) {
+    var o = t[e];
+    let a = o.getAttribute("uid");
+    (o.addEventListener("click", () => {
       (0, __imports.T)("【账号管理】正在切换账号，请耐心等待...", "info");
-
-      clearAllCookies(() => {
-        executePassportCommand("switch", targetUid);
-        const iframeBox = document.getElementById("ex-accountList-iframe2");
-        if (iframeBox) {
-          const currentHref = encodeURIComponent(window.location.href);
-          iframeBox.innerHTML = `
-            <iframe id="ex-yuba-iframe" width="100%" height="100%" scrolling="no" frameborder="0" src="https://yuba.douyu.com/iframe/tab/6416853?exClean&domain=${currentHref}&"></iframe>
-            <iframe id="ex-msg-iframe" width="100%" height="100%" scrolling="no" frameborder="0" src="https://msg.douyu.com/web/index.html?exClean&domain=${currentHref}&"></iframe>
-            <iframe id="ex-video-iframe" width="100%" height="100%" scrolling="no" frameborder="0" src="https://v.douyu.com/show/0?exClean&domain=${currentHref}&"></iframe>
-            <iframe id="ex-cz-iframe" width="100%" height="100%" scrolling="no" frameborder="0" src="https://cz.douyu.com/item/gold?exClean&domain=${currentHref}&"></iframe>
-          `;
-        }
-      });
-    });
-
-    // 删除账号
-    const deleteBtn = itemEl.getElementsByClassName("ex-accountList-item__btn")[0];
-    if (deleteBtn) {
-      deleteBtn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        (0, __imports.T)("【账号管理】正在删除...", "info");
-        try {
-          const accounts = JSON.parse((0, __imports.GM_getValue)("Ex_accountList") || "{}");
-          delete accounts[targetUid];
-          (0, __imports.GM_setValue)("Ex_accountList", JSON.stringify(accounts));
-        } catch {}
-        executePassportCommand("delete", targetUid);
-      });
-    }
-  }
-
-  const addBtn = document.getElementById("ex-accountList-item-add");
-  if (addBtn) {
-    addBtn.addEventListener("click", () => {
-      clearAllCookies(() => {});
-      executePassportCommand("clean", "null");
-    });
-  }
-}
-const ie = renderAccountList;
-
-/**
- * 清除全站 Cookie 凭据 (导出兼容 ae)
- * @param {Function} onDone
- */
-function clearAllCookies(onDone) {
-  let finishedCount = 0;
-  (0, __imports.GM_cookie)("list", { path: "/" }, (cookieList) => {
-    if (cookieList && cookieList.length > 0) {
-      for (let i = 0; i < cookieList.length; i++) {
-        (0, __imports.GM_cookie)("delete", { name: cookieList[i].name }, () => {
-          if (++finishedCount >= cookieList.length && typeof onDone === "function") {
-            onDone();
-          }
+      {
+        a;
+        var i = () => {};
+        JSON.parse((0, __imports.GM_getValue)("Ex_accountList"));
+        let o = [],
+          n = 0;
+        (0, __imports.GM_cookie)("list", { path: "/" }, function (t) {
+          for (let e = 0; e < t.length; e++)
+            (0, __imports.GM_cookie)("delete", { name: t[e].name }, function (e) {
+              if (++n >= t.length) {
+                let t = 0;
+                for (let e = 0; e < o.length; e++)
+                  (0, __imports.GM_cookie)(
+                    "set",
+                    {
+                      name: o[e].name,
+                      value: o[e].value,
+                      domain: o[e].domain,
+                      path: o[e].path,
+                      secure: o[e].secure,
+                      httpOnly: o[e].httpOnly,
+                      sameSite: o[e].sameSite,
+                      expirationDate: o[e].expirationDate,
+                      hostOnly: o[e].hostOnly,
+                    },
+                    function (e) {
+                      ++t >= o.length && i();
+                    },
+                  );
+              }
+            });
         });
       }
-    } else if (typeof onDone === "function") {
-      onDone();
-    }
-  });
-}
-const ae = clearAllCookies;
+      (re("switch", a),
+        (document.getElementById("ex-accountList-iframe2").innerHTML = `
 
-/**
- * 挂载 passport 通信隐藏管道执行命令 (导出兼容 re)
- * @param {'switch'|'delete'|'clean'} cmd
- * @param {string} uid
- */
-function executePassportCommand(cmd, uid) {
-  const iframeContainer = document.getElementById("ex-accountList-iframe");
-  if (iframeContainer) {
-    const currentHref = encodeURIComponent(window.location.href);
-    iframeContainer.innerHTML = `
-      <iframe id="login-passport-frame" width="100%" height="100%" scrolling="no" frameborder="0" src="https://passport.douyu.com/index/error/show404?&exid=chun&cmd=${cmd}&uid=${uid}&domain=${currentHref}&"></iframe>
-    `;
+    <iframe id="ex-yuba-iframe" width="100%" height="100%" scrolling="no" frameborder="0" src="https://yuba.douyu.com/iframe/tab/6416853?exClean&domain=${encodeURIComponent(window.location.href)}&"></iframe>
+
+    <iframe id="ex-msg-iframe" width="100%" height="100%" scrolling="no" frameborder="0" src="https://msg.douyu.com/web/index.html?exClean&domain=${encodeURIComponent(window.location.href)}&"></iframe>
+
+    <iframe id="ex-video-iframe" width="100%" height="100%" scrolling="no" frameborder="0" src="https://v.douyu.com/show/0?exClean&domain=${encodeURIComponent(window.location.href)}&"></iframe>
+
+    <iframe id="ex-cz-iframe" width="100%" height="100%" scrolling="no" frameborder="0" src="https://cz.douyu.com/item/gold?exClean&domain=${encodeURIComponent(window.location.href)}&"></iframe>
+
+    `));
+    }),
+      o
+        .getElementsByClassName("ex-accountList-item__btn")[0]
+        .addEventListener("click", (e) => {
+          var t, o;
+          (e.stopPropagation(),
+            (0, __imports.T)("【账号管理】正在删除...", "info"),
+            (e = a),
+            (t = () => {}),
+            delete (o = JSON.parse((0, __imports.GM_getValue)("Ex_accountList") || "{}"))[e],
+            (0, __imports.GM_setValue)("Ex_accountList", JSON.stringify(o)),
+            t(),
+            re("delete", a));
+        }));
   }
-}
-const re = executePassportCommand;
-
-/**
- * 切换为纯音频独立播放器 (导出兼容 le)
- */
-function launchAudioOnlyPlayer() {
-  const pauseBtn = (0, __imports.E)([".pause-c594e8", ".icon-c8be96"]);
-  if (pauseBtn) pauseBtn.click();
-
-  (0, __imports.qr)(__imports.B, true, 0, "1428", () => {
-    const slotIdx = __imports.D.length;
-    const currentRoom = __imports.B;
-
-    (0, __imports.qr)(currentRoom, false, 0, "1", (audioStreamUrl) => {
-      if (!audioStreamUrl || audioStreamUrl === "None") {
-        (0, __imports.T)("房间未开播或其他错误", "error");
-        return;
-      }
-
-      const parts = String(audioStreamUrl).split("/live");
-      const streamBaseUrl = parts.length > 0 ? parts[0] : "";
-
-      const div = document.createElement("div");
-      div.id = `exVideoDiv${slotIdx}`;
-      div.rid = currentRoom;
-      div.className = "exVideoDiv";
-      div.innerHTML = `
-        <div class='exVideoInfo' id='exVideoInfo${slotIdx}'>
-          <a title='复制直播流地址'>
-            <span class='exVideoRID' id='exVideoRID${slotIdx}' style='color:white'>斗鱼音频流 - ${currentRoom}</span>
-          </a>
-          <select style='display:none' class='exVideoQn' id='exVideoQn${slotIdx}'>
-            <option value='1'>流畅</option><option value='2'>高清</option><option value='3'>超清</option><option value='0'>蓝光</option>
-          </select>
-          <select style='display:none' class='exVideoCDN' id='exVideoCDN${slotIdx}'>
-            <option value='1'>主线路</option><option value='2'>备用线路5</option><option value='3'>备用线路6</option>
-          </select>
-          <a style='margin-left:5px;display:none' href='${streamBaseUrl}' target='_blank'>无视频？</a>
-          <a><div class='exVideoClose' id='exVideoClose${slotIdx}'>X</div></a>
-        </div>
-        <video controls='controls' class='exVideoPlayer' id='exVideoPlayer${slotIdx}'></video>
-        <div class='exVideoScale' id='exVideoScale${slotIdx}'></div>
-      `;
-
-      const targetContainer = (0, __imports.E)([".layout-Main", ".playerWrap__8wGvw", ".live-next-body"]);
-      if (targetContainer) {
-        targetContainer.insertBefore(div, targetContainer.childNodes[0]);
-        (0, __imports.on)(slotIdx);
-        (0, __imports.tn)(slotIdx);
-        (0, __imports.an)(slotIdx, currentRoom);
-        (0, __imports.f)(slotIdx, audioStreamUrl);
-      }
+  var _addBtn = document.getElementById("ex-accountList-item-add");
+  _addBtn &&
+    _addBtn.addEventListener("click", () => {
+      (ae(() => {}), re("clean", "null"));
     });
+}
+function ae(o) {
+  let n = 0;
+  (0, __imports.GM_cookie)("list", { path: "/" }, (t) => {
+    if (t)
+      for (let e = 0; e < t.length; e++)
+        (0, __imports.GM_cookie)("delete", { name: t[e].name }, function (e) {
+          ++n >= t.length && o();
+        });
+    else o();
   });
 }
-const le = launchAudioOnlyPlayer;
+function re(e, t) {
+  var _iframe = document.getElementById("ex-accountList-iframe");
+  if (_iframe)
+    _iframe.innerHTML = `
+
+    <iframe id="login-passport-frame" width="100%" height="100%" scrolling="no" frameborder="0" src="https://passport.douyu.com/index/error/show404?&exid=chun&cmd=${e}&uid=${t}&domain=${encodeURIComponent(window.location.href)}&"></iframe>
+
+    `;
+}
+function le() {
+  var e = (0, __imports.E)([".pause-c594e8", ".icon-c8be96"]);
+  (e && e.click(),
+    (0, __imports.qr)(__imports.B, !0, 0, "1428", (e) => {
+      var i, a;
+      ((i = __imports.D.length),
+        (0, __imports.qr)((a = __imports.B), !1, 0, "1", (t) => {
+          if ("" != t || null != t)
+            if ("None" == t) (0, __imports.T)("房间未开播或其他错误", "error");
+            else {
+              var o = String(t).split("/live");
+              let e = "";
+              0 < o.length && (e = o[0]);
+              var o = document.createElement("div"),
+                n = "",
+                n =
+                  ((o.id = "exVideoDiv" + String(i)),
+                  (o.rid = a),
+                  (o.className = "exVideoDiv"),
+                  (n =
+                    (n =
+                      (n =
+                        (n =
+                          (n =
+                            (n +=
+                              "<div class='exVideoInfo' id='exVideoInfo" +
+                              String(i) +
+                              "'><a title='复制直播流地址'><span class='exVideoRID' id='exVideoRID" +
+                              String(i) +
+                              "' style='color:white'>斗鱼音频流 - " +
+                              a +
+                              "</span></a>") +
+                            ("<select style='display:none' class='exVideoQn' id='exVideoQn" +
+                              String(i) +
+                              "'><option value='1'>流畅</option><option value='2'>高清</option><option value='3'>超清</option><option value='0'>蓝光</option></select>")) +
+                          ("<select style='display:none' class='exVideoCDN' id='exVideoCDN" +
+                            String(i) +
+                            "'><option value='1'>主线路</option><option value='2'>备用线路5</option><option value='3'>备用线路6</option></select>")) +
+                        ("<a style='margin-left:5px;display:none' href='" +
+                          e +
+                          "' target='_blank'>无视频？</a>")) +
+                      ("<a><div class='exVideoClose' id='exVideoClose" +
+                        String(i) +
+                        "'>X</div></a>") +
+                      "</div>") +
+                    ("<video controls='controls' class='exVideoPlayer' id='exVideoPlayer" +
+                      String(i) +
+                      "'></video><div class='exVideoScale' id='exVideoScale" +
+                      String(i) +
+                      "'></div>")),
+                  (o.innerHTML = n),
+                  (0, __imports.E)([".layout-Main", ".playerWrap__8wGvw", ".live-next-body"]));
+              (n.insertBefore(o, n.childNodes[0]),
+                (0, __imports.on)(i),
+                (0, __imports.tn)(i),
+                (0, __imports.an)(i, a),
+                (0, __imports.f)(i, t));
+            }
+        }));
+    }));
+}
 
 }
 ,
@@ -10137,339 +9877,486 @@ async function Ye(e, o = 0, signal) {
 function* (__imports) {
 yield {"$e": { get: () => $e, set: value => { $e = value; } },
 "Xe": { get: () => Xe, set: value => { Xe = value; } }};
-/**
- * 录播视频高能弹幕热度进度条 (Heatmap) 与视频/弹幕下载控制中心
- */
-
+// Each VOD action captures its route and video; failed pages never become partial exports.
 function createVodAction(owner = __imports.roomRouteLifetime) {
   const toolbar = document.getElementsByTagName("demand-video-toolbar")[0];
   const share = toolbar?.shadowRoot?.querySelector("share-hover");
   const video = share?.getAttribute("hashid");
   const controller = new AbortController();
-
-  const current = () =>
-    !owner?.disposed &&
-    toolbar?.isConnected &&
+  const current = () => !owner?.disposed && toolbar?.isConnected &&
     document.getElementsByTagName("demand-video-toolbar")[0] === toolbar &&
     share?.getAttribute("hashid") === video;
-
   owner?.own(() => controller.abort());
-
-  return {
-    signal: controller.signal,
-    current,
-    check() {
-      if (!current()) {
-        controller.abort();
-        throw new Error("VOD action expired");
-      }
-    }
-  };
+  return { signal: controller.signal, current, check() {
+    if (!current()) { controller.abort(); throw new Error("VOD action expired"); }
+  } };
 }
-
 function vodAction(callback, label, owner) {
   return async () => {
     const job = createVodAction(owner);
-    try {
-      job.check();
-      await callback(job);
-    } catch (error) {
+    try { job.check(); await callback(job); }
+    catch (error) {
       if (job.current()) {
         if (label) label.innerText = "下载失败";
-        (0, __imports.T)(error?.message || "请求失败，请重试", "error");
+        (0, __imports.T)(error.message || "请求失败，请重试", "error");
       }
     }
   };
 }
+let Qe = null,
+  Je = !1,
+  Ze = "ex-barrageLine";
+function Xe(owner = __imports.roomRouteLifetime) {
+  owner.own(() => { Je = !1; vodHeatmapGeneration++; });
+  let n = owner.interval(() => {
+    var e = document
+        .getElementsByTagName("demand-video")[0]
+        .shadowRoot.getElementById("demandcontroller-bar")
+        .shadowRoot.querySelector("demand-video-controller-progress")
+        .shadowRoot.querySelector(".ProgressBar-Sign"),
+      t = document.getElementsByTagName("demand-video-toolbar")[0]?.shadowRoot,
+      o = document.getElementsByTagName("demand-video-toolbar")[0]?.shadowRoot;
+    e &&
+      t &&
+      o &&
+      ((0, __imports.clearInterval)(n),
+      ((e = document.createElement("style")).innerHTML =
+        `.no-hasLR #ex-barrageLine {
 
-let heatmapObserver = null;
-let isHeatmapLoading = false;
-const BARRAGE_LINE_ID = "ex-barrageLine";
-let vodHeatmapGeneration = 0;
+        display: none !important;
 
-/**
- * 挂载录播弹幕高能热度曲线进度条 (导出兼容 Xe)
- * @param {object} [owner]
- */
-function mountVodHeatmap(owner = __imports.roomRouteLifetime) {
-  owner.own(() => {
-    isHeatmapLoading = false;
-    vodHeatmapGeneration++;
-  });
-
-  const pollTimer = owner.interval(() => {
-    const progressBarSign = document.getElementsByTagName("demand-video")[0]?.shadowRoot
-      ?.getElementById("demandcontroller-bar")?.shadowRoot
-      ?.querySelector("demand-video-controller-progress")?.shadowRoot
-      ?.querySelector(".ProgressBar-Sign");
-
-    const toolbarShadow = document.getElementsByTagName("demand-video-toolbar")[0]?.shadowRoot;
-
-    if (progressBarSign && toolbarShadow) {
-      (0, __imports.clearInterval)(pollTimer);
-
-      const styleEl = document.createElement("style");
-      styleEl.innerHTML = `.no-hasLR #${BARRAGE_LINE_ID} { display: none !important; }`;
-      document.getElementsByTagName("demand-video")[0]?.shadowRoot
-        ?.getElementById("demandcontroller-bar")?.shadowRoot
-        ?.querySelector("demand-video-controller-progress")?.shadowRoot
-        ?.append(styleEl);
-
-      loadVodHeatmapData(owner);
-
-      const shareHover = toolbarShadow.querySelector("share-hover");
-      if (shareHover) {
-        heatmapObserver = new MutationObserver(owner.guard(() => {
-          loadVodHeatmapData(owner);
-        }));
-        heatmapObserver.observe(shareHover, { attributes: true, childList: true, subtree: false });
-        owner.own(() => heatmapObserver?.disconnect());
-      }
-    }
-  }, 1000);
+    }`),
+      document
+        .getElementsByTagName("demand-video")[0]
+        .shadowRoot.getElementById("demandcontroller-bar")
+        .shadowRoot.querySelector("demand-video-controller-progress")
+        .shadowRoot.append(e),
+      Ke(owner),
+      (t = o.querySelector("share-hover")),
+      (Qe = new MutationObserver(owner.guard(function (e) {
+        Ke(owner);
+      }))).observe(t, { attributes: !0, childList: !0, subtree: !1 }),
+      ((observer) => owner.own(() => observer.disconnect()))(Qe));
+  }, 1e3);
 }
-const Xe = mountVodHeatmap;
-
-async function loadVodHeatmapData(owner = __imports.roomRouteLifetime) {
-  if (isHeatmapLoading) return;
-
-  const job = createVodAction(owner);
-  const generation = ++vodHeatmapGeneration;
-
-  try {
+let vodHeatmapGeneration = 0;
+async function Ke(owner = __imports.roomRouteLifetime) {
+  if (!Je) {
+    const job = createVodAction(owner), generation = ++vodHeatmapGeneration;
+    try {
     job.check();
-    isHeatmapLoading = true;
-    owner.timeout(() => { isHeatmapLoading = false; }, 1000);
-    (0, __imports.T)("弹幕高能进度条加载中，请耐心等待", "info");
-
-    const progressShadow = document.getElementsByTagName("demand-video")[0]?.shadowRoot
-      ?.getElementById("demandcontroller-bar")?.shadowRoot
-      ?.querySelector("demand-video-controller-progress")?.shadowRoot;
-
-    const progressBar = progressShadow?.querySelector(".ProgressBar");
-    const existingLine = progressShadow?.querySelector(`#${BARRAGE_LINE_ID}`);
-    if (existingLine) existingLine.remove();
-
-    const videoHashId = document.getElementsByTagName("demand-video-toolbar")[0]?.shadowRoot
-      ?.querySelector("share-hover")?.getAttribute("hashid");
-
-    const timeLabelText = document.getElementsByTagName("demand-video")[0]?.shadowRoot
-      ?.getElementById("demandcontroller-bar")?.shadowRoot
-      ?.querySelector("#time-label")?.innerText || "";
-
-    const timeParts = timeLabelText.split("/");
-    if (timeParts.length === 0) return;
-
-    const parseTotalDurationMs = (str) => {
-      const parts = str.split(":");
-      let totalSec = 0;
-      if (parts.length === 1) totalSec = Number(parts[0]);
-      else if (parts.length === 2) totalSec = 60 * Number(parts[0]) + Number(parts[1]);
-      else if (parts.length === 3) totalSec = 3600 * Number(parts[0]) + 60 * Number(parts[1]) + Number(parts[2]);
-      return 1000 * totalSec;
-    };
-
-    const bucketDurationMs = parseTotalDurationMs(timeParts[1]) / 99;
-    const bucketCounts = new Array(100).fill(0);
-    const visitedPages = new Set();
-    let pageIdx = 0;
-
-    do {
-      if (visitedPages.has(String(pageIdx))) throw new Error("弹幕分页重复");
-      visitedPages.add(String(pageIdx));
-
-      const pageData = await (0, __imports.Ye)(videoHashId, pageIdx, job.signal);
-      job.check();
-      if (generation !== vodHeatmapGeneration) return;
-
-      pageIdx = pageData.data.pre;
-      const danmuList = pageData.data.list || [];
-      for (let i = 0; i < danmuList.length; i++) {
-        const item = danmuList[i];
-        const bucket = Math.floor(item.tl / bucketDurationMs);
-        if (bucket >= 0 && bucket < 100) {
-          bucketCounts[bucket]++;
-        }
+    ((Je = !0),
+      owner.timeout(() => {
+        Je = !1;
+      }, 1e3),
+      (0, __imports.T)("弹幕高能进度条加载中，请耐心等待", "info"));
+    var o = document
+        .getElementsByTagName("demand-video")[0]
+        .shadowRoot.getElementById("demandcontroller-bar")
+        .shadowRoot.querySelector(
+          "demand-video-controller-progress",
+        ).shadowRoot,
+      n = o.querySelector(".ProgressBar"),
+      o = o.querySelector("#" + Ze),
+      i =
+        (o && o.remove(),
+        document
+          .getElementsByTagName("demand-video-toolbar")[0]
+          .shadowRoot.querySelector("share-hover")
+          .getAttribute("hashid")),
+      o = document
+        .getElementsByTagName("demand-video")[0]
+        .shadowRoot.getElementById("demandcontroller-bar")
+        .shadowRoot.querySelector("#time-label")
+        .innerText.split("/");
+    if (!(o.length <= 0)) {
+      var a =
+          ((e) => {
+            let t = 0;
+            return (
+              1 === (e = e.split(":")).length
+                ? (t = Number(e[0]))
+                : 2 === e.length
+                  ? (t = 60 * Number(e[0]) + Number(e[1]))
+                  : 3 === e.length &&
+                    (t =
+                      3600 * Number(e[0]) + 60 * Number(e[1]) + Number(e[2])),
+              1e3 * t
+            );
+          })(o[1]) / 99,
+        r = new Array(100).fill(0, 0, 100);
+      const pages = new Set();
+      let e = 0;
+      do {
+        if (pages.has(String(e))) throw new Error("弹幕分页重复");
+        pages.add(String(e));
+        var l = await (0, __imports.Ye)(i, e, job.signal);
+        job.check();
+        if (generation !== vodHeatmapGeneration) return;
+        if (((e = l.data.pre), l.data.list))
+          for (let e = 0; e < l.data.list.length; e++) {
+            var s = l.data.list[e];
+            r[Math.floor(s.tl / a)]++;
+          }
+      } while (0 <= e);
+      var d = 1e3 / r.length,
+        c = Math.max(...r) / 100,
+        p = [];
+      for (let e = 0; e < r.length; e++) {
+        var m = r[e],
+          u = e * d;
+        p.push([u, m / c]);
       }
-    } while (pageIdx >= 0);
+      let t = "";
+      for (let e = 0; e < p.length - 1; e++) {
+        var [g, h] = p[e],
+          [f, y] = p[e + 1];
+        t =
+          t +
+          "C " +
+          (g +
+            ` ${80 - (h + y) / 2}, ${f} ${80 - (h + y) / 2}, ${f} ${80 - y} `);
+      }
+      var o = "M 0 100 L 0 80 " + (t += "L 1000 100 Z"),
+        b = `
 
-    const stepWidth = 1000 / bucketCounts.length;
-    const maxDanmuCount = Math.max(...bucketCounts) / 100;
-    const points = [];
+    <svg preserveAspectRatio="none" width="100%" height="100%" viewBox="0 0 1000 100" >
 
-    for (let i = 0; i < bucketCounts.length; i++) {
-      const count = bucketCounts[i];
-      const x = i * stepWidth;
-      points.push([x, count / maxDanmuCount]);
+        <path fill="rgba(255,255,255,0.3)" d="${o}" />
+
+    </svg>`,
+        o =
+          (-1 !== o.indexOf("NaN") &&
+            (console.log(o), (0, __imports.T)("弹幕高能进度条加载失败", "error")),
+          document.createElement("div"));
+      ((o.id = Ze),
+        (o.style =
+          "position:absolute;width:100%;height:30px;bottom:0px;pointer-events:none;cursor: default;"),
+        (o.innerHTML = b),
+        n.insertBefore(o, n.childNodes[0]));
     }
-
-    let pathCurve = "";
-    for (let i = 0; i < points.length - 1; i++) {
-      const [x1, y1] = points[i];
-      const [x2, y2] = points[i + 1];
-      pathCurve += `C ${x1} ${80 - (y1 + y2) / 2}, ${x2} ${80 - (y1 + y2) / 2}, ${x2} ${80 - y2} `;
+    } catch (error) {
+      if (job.current() && generation === vodHeatmapGeneration) (0, __imports.T)(error.message || "弹幕高能进度条加载失败", "error");
+    } finally {
+      if (generation === vodHeatmapGeneration) Je = !1;
     }
-
-    const svgPathD = `M 0 100 L 0 80 ${pathCurve}L 1000 100 Z`;
-    const svgHtml = `
-      <svg preserveAspectRatio="none" width="100%" height="100%" viewBox="0 0 1000 100">
-        <path fill="rgba(255,255,255,0.3)" d="${svgPathD}" />
-      </svg>
-    `;
-
-    if (svgPathD.includes("NaN")) {
-      (0, __imports.T)("弹幕高能进度条加载失败", "error");
-      return;
-    }
-
-    const lineContainer = document.createElement("div");
-    lineContainer.id = BARRAGE_LINE_ID;
-    lineContainer.style.cssText = "position:absolute;width:100%;height:30px;bottom:0px;pointer-events:none;cursor:default;";
-    lineContainer.innerHTML = svgHtml;
-
-    if (progressBar) {
-      progressBar.insertBefore(lineContainer, progressBar.childNodes[0]);
-    }
-  } catch (error) {
-    if (job.current() && generation === vodHeatmapGeneration) {
-      (0, __imports.T)(error.message || "弹幕高能进度条加载失败", "error");
-    }
-  } finally {
-    if (generation === vodHeatmapGeneration) isHeatmapLoading = false;
   }
 }
+function $e(owner = __imports.roomRouteLifetime) {
+  let o = owner.interval(() => {
+    var e,
+      t = document.getElementsByTagName("demand-video-toolbar")[0]?.shadowRoot;
+    if (t) {
+      (0, __imports.clearInterval)(o);
+      var t = t.querySelector(".ToolBar-positiveUl");
+      (((e = document.createElement("style")).innerHTML = `
 
-/**
- * 在录播工具栏挂载视频与弹幕下载面板 (导出兼容 $e)
- * @param {object} [owner]
- */
-function mountVodDownloader(owner = __imports.roomRouteLifetime) {
-  const pollTimer = owner.interval(() => {
-    const toolbarShadow = document.getElementsByTagName("demand-video-toolbar")[0]?.shadowRoot;
-    if (toolbarShadow) {
-      (0, __imports.clearInterval)(pollTimer);
-      const positiveUl = toolbarShadow.querySelector(".ToolBar-positiveUl");
-      if (!positiveUl) return;
+    #btn-download:hover .download__panel {
 
-      const styleEl = document.createElement("style");
-      styleEl.innerHTML = `
-        #btn-download:hover .download__panel { display: block; }
-        .download__panel {
-          width: 150px;
-          position: absolute;
-          text-align: center;
-          cursor: default;
-          margin-top: 29px;
-          margin-left: -38px;
-          box-shadow: 0px 3px 10px 0px rgba(0,0,0,0.2);
-          display: none;
-          background: white;
-          border-radius: 4px;
-          z-index: 1000;
-        }
-        .download__item {
-          height: 30px;
-          line-height: 30px;
-          width: 100%;
-          cursor: pointer;
-          font-size: 12px;
-          color: #333;
-        }
-        .download__item:hover { color: rgb(255, 119, 0); background: #f9f9f9; }
-      `;
-      toolbarShadow.appendChild(styleEl);
+        display: block;
 
-      const downloadLi = document.createElement("li");
-      downloadLi.id = "btn-download";
-      downloadLi.title = "下载视频";
-      downloadLi.innerHTML = `
-        <div class="download__panel">
-          <div class="download__item" id="download__default" title="文件超过2GB时可能会下载失败">
-            <span class="ToolBar-iconText">浏览器下载</span>
-          </div>
-          <div class="download__item" id="download__copy" title="可将链接填至第三方下载器中下载">
-            <span class="ToolBar-iconText">复制m3u8链接</span>
-          </div>
-          <div class="download__item" id="download__barrage" title="下载弹幕(.xlsx)">
-            <span class="ToolBar-iconText">下载弹幕(.xlsx)</span>
-          </div>
-          <div class="download__item" id="download__barrageass" title="下载弹幕(.ass)">
-            <span class="ToolBar-iconText">下载弹幕(.ass)</span>
-          </div>
-        </div>
-        <span class="ToolBar-icon">
-          <svg class="icon" viewBox="0 0 1024 1024" width="28" height="28">
-            <path d="M761.98 413.12c0.25-4.4 0.39-8.82 0.39-13.28 0-127.18-102.84-230.28-229.71-230.28s-229.71 103.1-229.71 230.28c0 0.67 0.02 1.33 0.03 2a213.156 213.156 0 0 0-38.91-3.58c-117.2 0-212.21 95.25-212.21 212.74 0 117.49 95.01 212.74 212.21 212.74 2.94 0 5.86-0.08 8.77-0.2 2.54 0.13 5.09 0.2 7.66 0.2h467.35c2.82 0 5.61-0.09 8.39-0.24 108.96-5.16 195.72-95.13 195.72-205.36 0.01-108.3-83.73-197.04-189.98-205.02zM616.33 584.24l-90.86 93.93c-0.78 1.11-1.66 2.17-2.63 3.17-3.95 4.09-8.9 6.62-14.09 7.61-8.34 1.77-17.38-0.51-23.97-6.89a25.975 25.975 0 0 1-3.16-3.68l-93.5-90.45c-10.53-10.19-10.81-26.99-0.62-37.52 10.19-10.53 26.99-10.81 37.52-0.62l45.09 43.62c0-0.06-0.01-0.12-0.01-0.18l-2.43-146.62c-0.3-17.83 13.92-32.52 31.75-32.82 17.83-0.3 32.52 13.92 32.82 31.75l2.43 146.63v0.17l43.52-44.99c10.19-10.53 26.99-10.81 37.52-0.62 10.53 10.17 10.81 26.97 0.62 37.51z" fill="#515151"></path>
-          </svg>
-        </span>
-        <span class="ToolBar-iconText" id="download-text">下载</span>
-      `;
-      positiveUl.appendChild(downloadLi);
-
-      const downloadTextEl = toolbarShadow.querySelector("#download-text");
-      const defaultItem = toolbarShadow.querySelector("#download__default");
-      const copyItem = toolbarShadow.querySelector("#download__copy");
-      const barrageItem = toolbarShadow.querySelector("#download__barrage");
-      const barrageAssItem = toolbarShadow.querySelector("#download__barrageass");
-
-      if (defaultItem) {
-        owner.listen(defaultItem, "click", vodAction(async (job) => {
-          (0, __imports.T)("正在拉取直播流信息...", "info");
-          const share = toolbarShadow.querySelector("share-hover");
-          const hashId = share?.getAttribute("hashid");
-          if (!hashId) return;
-
-          const res = await (0, __imports.fetch)(`https://v.douyu.com/video/video/getVideoUrl?vid=${hashId}`);
-          const data = await res.json();
-          job.check();
-          const playUrl = data?.data?.video_url;
-          if (playUrl) {
-            const downloader = new (0, __imports.jr)();
-            downloader.on("progress", (p) => {
-              if (downloadTextEl) downloadTextEl.innerText = `${p.percentage}%`;
-            });
-            downloader.on("finished", () => {
-              if (downloadTextEl) downloadTextEl.innerText = "下载完成";
-            });
-            downloader.start(playUrl);
-          }
-        }, downloadTextEl, owner));
-      }
-
-      if (copyItem) {
-        owner.listen(copyItem, "click", vodAction(async (job) => {
-          const share = toolbarShadow.querySelector("share-hover");
-          const hashId = share?.getAttribute("hashid");
-          if (!hashId) return;
-
-          const res = await (0, __imports.fetch)(`https://v.douyu.com/video/video/getVideoUrl?vid=${hashId}`);
-          const data = await res.json();
-          job.check();
-          const playUrl = data?.data?.video_url;
-          if (playUrl) {
-            (0, __imports.GM_setClipboard)(playUrl);
-            (0, __imports.T)("已复制 M3U8 直播流地址至剪贴板", "success");
-          }
-        }, downloadTextEl, owner));
-      }
-
-      if (barrageItem) {
-        owner.listen(barrageItem, "click", vodAction(async (job) => {
-          (0, __imports.T)("正在导出全量弹幕 Excel 表格...", "info");
-          // 导出全量 Excel 逻辑
-        }, downloadTextEl, owner));
-      }
-
-      if (barrageAssItem) {
-        owner.listen(barrageAssItem, "click", vodAction(async (job) => {
-          (0, __imports.T)("正在导出 ASS 弹幕字幕文件...", "info");
-          // 导出 ASS 逻辑
-        }, downloadTextEl, owner));
-      }
     }
-  }, 1000);
+
+    .download__panel {
+
+        width:150px;
+
+        position:absolute;
+
+        text-align: center;
+
+        cursor: default;
+
+        margin-top: 29px;
+
+        margin-left: -38px;
+
+        box-shadow: 0px 3px 10px 0px;
+
+        display: none;
+
+        background: white;
+
+    }
+
+    .download__item {
+
+        height: 30px;
+
+        line-height: 30px;
+
+        width: 100%;
+
+        cursor: pointer;
+
+    }
+
+    .download__item:hover {
+
+        color: rgb(255,119,0)
+
+    }
+
+    `),
+        document
+          .getElementsByTagName("demand-video-toolbar")[0]
+          .shadowRoot.appendChild(e),
+        (e = t),
+        ((t = document.createElement("li")).title = "下载视频"),
+        (t.innerHTML = `
+
+    <div class="download__panel">
+
+        <div class="download__item" id="download__default" title="文件超过2GB时可能会下载失败">
+
+            <span class="ToolBar-iconText">浏览器下载</span>
+
+        </div>
+
+        <div class="download__item" id="download__copy" title="可将链接填至第三方下载器中下载">
+
+            <span class="ToolBar-iconText">复制m3u8链接</span>
+
+        </div>
+
+        <div class="download__item" id="download__barrage" title="下载弹幕(.xlsx)">
+
+            <span class="ToolBar-iconText">下载弹幕(.xlsx)</span>
+
+        </div>
+
+        <div class="download__item" id="download__barrageass" title="下载弹幕(.ass)">
+
+            <span class="ToolBar-iconText">下载弹幕(.ass)</span>
+
+        </div>
+
+    </div>
+
+    <span class="ToolBar-icon ">
+
+        <svg t="1634113402576" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="7734" width="28" height="28"><path d="M761.98 413.12c0.25-4.4 0.39-8.82 0.39-13.28 0-127.18-102.84-230.28-229.71-230.28s-229.71 103.1-229.71 230.28c0 0.67 0.02 1.33 0.03 2a213.156 213.156 0 0 0-38.91-3.58c-117.2 0-212.21 95.25-212.21 212.74 0 117.49 95.01 212.74 212.21 212.74 2.94 0 5.86-0.08 8.77-0.2 2.54 0.13 5.09 0.2 7.66 0.2h467.35c2.82 0 5.61-0.09 8.39-0.24 108.96-5.16 195.72-95.13 195.72-205.36 0.01-108.3-83.73-197.04-189.98-205.02zM616.33 584.24l-90.86 93.93c-0.78 1.11-1.66 2.17-2.63 3.17-3.95 4.09-8.9 6.62-14.09 7.61-8.34 1.77-17.38-0.51-23.97-6.89a25.975 25.975 0 0 1-3.16-3.68l-93.5-90.45c-10.53-10.19-10.81-26.99-0.62-37.52 10.19-10.53 26.99-10.81 37.52-0.62l45.09 43.62c0-0.06-0.01-0.12-0.01-0.18l-2.43-146.62c-0.3-17.83 13.92-32.52 31.75-32.82 17.83-0.3 32.52 13.92 32.82 31.75l2.43 146.63v0.17l43.52-44.99c10.19-10.53 26.99-10.81 37.52-0.62 10.53 10.17 10.81 26.97 0.62 37.51z" p-id="7735" fill="#515151"></path></svg>
+
+    </span>
+
+    <span class="ToolBar-iconText" id="download-text">下载</span>
+
+    `),
+        (t.id = "btn-download"),
+        e.appendChild(t));
+      {
+        let a = __imports.unsafeWindow.$DATA,
+          r = document
+            .getElementsByTagName("demand-video-toolbar")[0]
+            .shadowRoot.querySelector("#download-text");
+        (document
+          .getElementsByTagName("demand-video-toolbar")[0]
+          .shadowRoot.querySelector(".download__panel"),
+          document
+            .getElementsByTagName("demand-video-toolbar")[0]
+            .shadowRoot.querySelector("#btn-download")
+            .addEventListener("click", () => {
+              "下载完成" === r.innerText && (0, __imports.T)("请刷新页面后再下载", "warning");
+            }),
+          document
+            .getElementsByTagName("demand-video-toolbar")[0]
+            .shadowRoot.querySelector("#download__default")
+            .addEventListener("click", vodAction(async (job) => {
+              var o = document
+                  .getElementsByTagName("demand-video-toolbar")[0]
+                  .shadowRoot.querySelector("share-hover")
+                  .getAttribute("hashid"),
+                n = a.ROOM.vid;
+              if (o !== n) (0, __imports.T)("视频内容已改变，请刷新网页后重试", "error");
+              else {
+                (0, __imports.T)("开始下载视频...当视频超过2GB时可能会下载失败", "info");
+                o = new __imports.jr();
+                let e = new __imports.Dr(a.ROOM.point_id);
+                var i = e.getSign(),
+                  n = ((e = null), await (0, __imports.We)(n, i, job.signal));
+                job.check();
+                let t = "";
+                "" !==
+                (t =
+                  "super" in n.data.thumb_video
+                    ? n.data.thumb_video.super.url
+                    : "high" in n.data.thumb_video
+                      ? n.data.thumb_video.high.url
+                      : "normal" in n.data.thumb_video
+                        ? n.data.thumb_video.normal.url
+                        : 0 < (i = Object.keys(n.data.thumb_video)).length
+                          ? n.data.thumb_video[i[0]].url
+                          : "")
+                  ? ((handle) => {
+                      // jr.start() returns the abort handle, not the jr instance.
+                      // Its abort only takes effect after the playlist creates a batch.
+                      owner.own(() => handle.abort());
+                      return handle;
+                    })(o.start(t, { filename: a.ROOM.name + ".mp4" }))
+                      .on("progress", (e) => {
+                        if (!job.current()) return;
+                        r.innerText = Number(e.percentage).toFixed(2) + "%";
+                      })
+                      .on("finished", (e) => {
+                        if (!job.current()) return;
+                        ((r.innerText = "下载完成"),
+                          (0, __imports.T)("视频下载完成", "success"));
+                      })
+                      .on("error", (e) => {
+                        if (!job.current()) return;
+                        ((r.innerText = "下载失败"), (0, __imports.T)(e, "error"));
+                      })
+                      .on("aborted", () => {
+                        if (!job.current()) return;
+                        r.innerText = "下载中止";
+                      })
+                  : (0, __imports.T)("获取m3u8链接失败", "error");
+              }
+            }, r, owner)),
+          document
+            .getElementsByTagName("demand-video-toolbar")[0]
+            .shadowRoot.querySelector("#download__copy")
+            .addEventListener("click", vodAction(async (job) => {
+              var o = document
+                  .getElementsByTagName("demand-video-toolbar")[0]
+                  .shadowRoot.querySelector("share-hover")
+                  .getAttribute("hashid"),
+                n = a.ROOM.vid;
+              if (o !== n) (0, __imports.T)("视频内容已改变，请刷新网页后重试", "error");
+              else {
+                (0, __imports.T)("正在获取m3u8链接...", "info");
+                let e = new __imports.Dr(a.ROOM.point_id);
+                var o = e.getSign(),
+                  n = ((e = null), await (0, __imports.We)(n, o, job.signal));
+                job.check();
+                let t = "";
+                "" !==
+                (t =
+                  "super" in n.data.thumb_video
+                    ? n.data.thumb_video.super.url
+                    : "high" in n.data.thumb_video
+                      ? n.data.thumb_video.high.url
+                      : "normal" in n.data.thumb_video
+                        ? n.data.thumb_video.normal.url
+                        : 0 < (o = Object.keys(n.data.thumb_video)).length
+                          ? n.data.thumb_video[o[0]].url
+                          : "")
+                  ? ((0, __imports.GM_setClipboard)(t),
+                    (0, __imports.T)("复制成功，可将链接复制到第三方下载器中下载", "success"))
+                  : (0, __imports.T)("获取m3u8链接失败", "error");
+              }
+            }, r, owner)),
+          document
+            .getElementsByTagName("demand-video-toolbar")[0]
+            .shadowRoot.querySelector("#download__barrage")
+            .addEventListener("click", vodAction(async (job) => {
+              var e = document
+                  .getElementsByTagName("demand-video-title")[0]
+                  .shadowRoot.querySelector(".Title-Main").innerText,
+                t = document
+                  .getElementsByTagName("demand-video-toolbar")[0]
+                  .shadowRoot.querySelector("share-hover")
+                  .getAttribute("hashid");
+              (0, __imports.T)("正在获取弹幕数据，请勿切换页面...", "info");
+              const pages = new Set();
+              let o = 0;
+              var n = [];
+              do {
+                if (pages.has(String(o))) throw new Error("弹幕分页重复");
+                pages.add(String(o));
+                var i = await (0, __imports.Ye)(t, o, job.signal);
+                job.check();
+                o = i.data.pre;
+                for (let e = 0; e < i.data.list.length; e++) {
+                  var a = i.data.list[e];
+                  n.push([
+                    a.vid,
+                    t,
+                    a.uid,
+                    a.nn,
+                    a.ctt,
+                    (0, __imports.J)(a.tl / 1e3),
+                    (0, __imports.k)("yyyy-MM-dd hh:mm:ss", new Date(1e3 * a.sts)),
+                  ]);
+                }
+              } while (0 <= o);
+              (0, __imports.l)(
+                ["vid", "hashid", "uid", "昵称", "弹幕", "时间", "发送时间"],
+                n,
+                `【${e}】弹幕数据.xlsx`,
+              );
+            }, r, owner)),
+          document
+            .getElementsByTagName("demand-video-toolbar")[0]
+            .shadowRoot.querySelector("#download__barrageass")
+            .addEventListener("click", vodAction(async (job) => {
+              var e = document
+                  .getElementsByTagName("demand-video-title")[0]
+                  .shadowRoot.querySelector(".Title-Main").innerText,
+                t = document
+                  .getElementsByTagName("demand-video-toolbar")[0]
+                  .shadowRoot.querySelector("share-hover")
+                  .getAttribute("hashid");
+              (0, __imports.T)("正在获取弹幕数据，请勿切换页面...", "info");
+              const pages = new Set();
+              let o = 0;
+              var n = new __imports.Lr({ title: e }),
+                i = [];
+              do {
+                if (pages.has(String(o))) throw new Error("弹幕分页重复");
+                pages.add(String(o));
+                var a = await (0, __imports.Ye)(t, o, job.signal);
+                job.check();
+                o = a.data.pre;
+                for (let e = 0; e < a.data.list.length; e++) {
+                  var r = a.data.list[e];
+                  i.push({ time: Number(r.tl), txt: r.ctt, color: r.col });
+                }
+              } while (0 <= o);
+              var l,
+                s,
+                d,
+                n = n.generate(i);
+              ((e = e + ".ass"),
+                (l = n),
+                (s =
+                  __imports.unsafeWindow.URL || __imports.unsafeWindow.webkitURL || __imports.unsafeWindow),
+                (l = new Blob([n])),
+                ((n = document.createElementNS(
+                  "http://www.w3.org/1999/xhtml",
+                  "a",
+                )).href = s.createObjectURL(l)),
+                (n.download = e),
+                (s = document.createEvent("MouseEvents")).initMouseEvent(
+                  "click",
+                  !0,
+                  !1,
+                  __imports.unsafeWindow,
+                  0,
+                  0,
+                  0,
+                  0,
+                  0,
+                  !1,
+                  !1,
+                  !1,
+                  !1,
+                  0,
+                  null,
+                ),
+                n.dispatchEvent(s),
+                (d = n.href) &&
+                  0 === d.indexOf("blob:") &&
+                  (0, __imports.setTimeout)(function () {
+                    try {
+                      URL.revokeObjectURL(d);
+                    } catch (e) {}
+                  }, 1500));
+            }, r, owner)));
+      }
+    } else;
+  }, 1e3);
 }
-const $e = mountVodDownloader;
 
 }
 ,
@@ -11448,287 +11335,336 @@ yield {"$t": { get: () => $t, set: value => { $t = value; } },
 "wo": { get: () => wo, set: value => { wo = value; } },
 "xo": { get: () => xo, set: value => { xo = value; } },
 "yo": { get: () => yo, set: value => { yo = value; } }};
-/**
- * 全站大奖雷达监听、进场欢迎、自动回复、自动谢礼与关键词禁言数据服务
- */
-let Jt = "";
-let Zt = 0;
+let Jt = "",
+  Zt = 0;
 let Xt = 0;
-let Kt = false;
-let S = []; // 进场欢迎词列表 [{ level, word }]
-
-function persistEnterWelcomeWords() {
-  __imports.localStorage.setItem("ExSave_Enter", JSON.stringify(S));
+let Kt = !1,
+  S = [];
+function $t() {
+  var e = S;
+  __imports.localStorage.setItem("ExSave_Enter", JSON.stringify(e));
 }
-const $t = persistEnterWelcomeWords;
-
-function populateEnterSelectOptions() {
-  const sel = document.getElementById("enter__select");
-  if (!sel) return;
-  sel.options.length = 0;
-  for (const item of S) {
-    sel.options.add(new Option(`【${item.level}级】${item.word}`, ""));
-  }
+function eo() {
+  var e,
+    t = document.getElementById("enter__select");
+  t.options.length = 0;
+  for (e of S) t.options.add(new Option(`【${e.level}级】` + e.word, ""));
 }
-const eo = populateEnterSelectOptions;
-
-let to = false;
-let M = {}; // 自动谢礼配置
-
-function persistThankGiftConfig() {
-  __imports.localStorage.setItem("ExSave_Gift", JSON.stringify(M));
+let to = !1,
+  M = {};
+function oo() {
+  var e = M;
+  __imports.localStorage.setItem("ExSave_Gift", JSON.stringify(e));
 }
-const oo = persistThankGiftConfig;
-
-function extractMessageType(str) {
-  return (0, __imports.v)(str, "type@=", "/");
+function N(e) {
+  return (0, __imports.v)(e, "type@=", "/");
 }
-const N = extractMessageType;
-
-let no = false;
-let L = {}; // 禁言关键词配置
-let io = {};
-let ao = [];
-
-function persistMuteWords() {
-  __imports.localStorage.setItem("ExSave_Mute", JSON.stringify(L));
+let no = !1,
+  L = {},
+  io = {},
+  ao = [];
+function ro() {
+  var e = L;
+  __imports.localStorage.setItem("ExSave_Mute", JSON.stringify(e));
 }
-const ro = persistMuteWords;
-
-function requestAddMuteUser(roomId, nickname, banTime) {
-  return new Promise((resolve) => {
+function lo(e, o, n) {
+  return new Promise((t) => {
     (0, __imports.fetch)("https://www.douyu.com/room/roomSetting/addMuteUser", {
       method: "POST",
       mode: "no-cors",
       credentials: "include",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: `ban_nickname=${nickname}&room_id=${roomId}&ban_time=${banTime}&reason=7`,
+      body:
+        "ban_nickname=" + o + "&room_id=" + e + "&ban_time=" + n + "&reason=7",
     })
-      .then(res => res.json())
-      .then(data => resolve(data))
-      .catch(() => resolve({ error: -1 }));
+      .then((e) => e.json())
+      .then((e) => {
+        t(e);
+      });
   });
 }
-const lo = requestAddMuteUser;
-
 let so = { day: {}, week: {}, all: {} };
-
-function renderRankPoints(type, elements) {
-  if (elements) {
-    const startIndex = type === "week" ? 10 : 0;
-    for (let i = startIndex; i < elements.length; i++) {
-      const el = elements[i];
-      const nickname = el.innerHTML.split("<span")[0];
-      const parent = el.parentElement;
-      const point = so[type]?.[nickname] || 0;
-
-      if (parent?.className?.includes("--top")) {
-        el.innerHTML = `${nickname}<span class="exRankPoint--top">${point}</span>`;
-      } else {
-        el.innerHTML = `${nickname}<span class="exRankPoint">${point}</span>`;
-      }
+function co(t, o) {
+  if (o)
+    for (let e = "week" === t ? 10 : 0; e < o.length; e++) {
+      var n = o[e],
+        i = n.innerHTML.split("<span")[0],
+        a = n.parentElement,
+        r = so[t][i];
+      a.className.includes("--top")
+        ? (n.innerHTML = i + `<span class="exRankPoint--top">${r}</span>`)
+        : (n.innerHTML = i + `<span class="exRankPoint">${r}</span>`);
     }
+}
+function po(t) {
+  var o = {};
+  for (let e = 0; e < t.length; e++) {
+    var n = t[e];
+    o[n.nickname] = Number(n.gold) / 100;
   }
+  return o;
 }
-const co = renderRankPoints;
-
-function parseRankPoints(list) {
-  const result = {};
-  if (Array.isArray(list)) {
-    for (let i = 0; i < list.length; i++) {
-      const item = list[i];
-      result[item.nickname] = Number(item.gold) / 100;
-    }
-  }
-  return result;
+let mo = !1,
+  A = {},
+  uo = !1,
+  go = 0;
+function ho() {
+  var e = A;
+  __imports.localStorage.setItem("ExSave_Reply", JSON.stringify(e));
 }
-const po = parseRankPoints;
-
-let mo = false;
-let A = {}; // 关键词自动回复配置
-let uo = false;
-let go = 0;
-
-function persistAutoReplyConfig() {
-  __imports.localStorage.setItem("ExSave_Reply", JSON.stringify(A));
-}
-const ho = persistAutoReplyConfig;
-
-let fo = 0;
-
-function fetchRedPacketWithGeetest(roomId, packerId, deviceId, containerId) {
+var fo = 0;
+function yo(i, a, r, l) {
   (0, __imports.GM_xmlhttpRequest)({
     method: "POST",
-    url: `https://pcapi.douyucdn.cn/h5nc/member/getRedPacket?token=${__imports.m}`,
-    data: `room_id=${roomId}&package_room_id=${roomId}&device_id=${deviceId}&packerid=${packerId}&version=1`,
+    url: "https://pcapi.douyucdn.cn/h5nc/member/getRedPacket?token=" + __imports.m,
+    data:
+      "room_id=" +
+      i +
+      "&package_room_id=" +
+      i +
+      "&device_id=" +
+      r +
+      "&packerid=" +
+      a +
+      "&version=1",
     responseType: "json",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    onload: (res) => {
-      const resp = res.response;
-      if (resp?.data?.code === "-1" && resp?.data?.validate !== "0") {
-        try {
-          const geetestConf = JSON.parse(resp.data.geetest.validate_str);
-          if (__imports.unsafeWindow?.initGeetest) {
-            __imports.unsafeWindow.initGeetest(
+    onload: function (t) {
+      t = t.response;
+      if ("-1" == t.data.code && "0" != t.data.validate) {
+        var e = JSON.parse(t.data.geetest.validate_str),
+          o = e.success;
+        null != __imports.unsafeWindow.initGeetest
+          ? __imports.unsafeWindow.initGeetest(
               {
-                gt: geetestConf.gt,
-                challenge: geetestConf.challenge,
-                offline: !geetestConf.success,
+                gt: e.gt,
+                challenge: e.challenge,
+                offline: !o,
                 product: "float",
               },
-              (captchaObj) => {
-                captchaObj.appendTo(`#${containerId}`);
-                captchaObj.onSuccess(() => {
-                  const validateRes = captchaObj.getValidate();
-                  const postData = `room_id=${roomId}&package_room_id=${roomId}&device_id=${deviceId}&packerid=${packerId}&version=1&geetest_challenge=${validateRes.geetest_challenge}&geetest_validate=${validateRes.geetest_validate}&geetest_seccode=${encodeURIComponent(validateRes.geetest_seccode)}`;
-
-                  (0, __imports.GM_xmlhttpRequest)({
-                    method: "POST",
-                    url: `https://pcapi.douyucdn.cn/h5nc/member/getRedPacket?token=${__imports.m}`,
-                    data: postData,
-                    responseType: "json",
-                    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-                    onload: () => {},
-                  });
-                });
-              }
-            );
-          }
-        } catch {}
-      }
+              (o) => {
+                let n = document.getElementById(l);
+                (o.appendTo("#" + l),
+                  o.onSuccess(() => {
+                    var e = o.getValidate(),
+                      t = e.geetest_challenge,
+                      t =
+                        "room_id=" +
+                        i +
+                        "&package_room_id=" +
+                        i +
+                        "&device_id=" +
+                        r +
+                        "&packerid=" +
+                        a +
+                        "&version=1" +
+                        "&geetest_challenge=" +
+                        t +
+                        "&geetest_validate=" +
+                        e.geetest_validate +
+                        "&geetest_seccode=" +
+                        encodeURIComponent(e.geetest_seccode);
+                    (0, __imports.GM_xmlhttpRequest)({
+                      method: "POST",
+                      url:
+                        "https://pcapi.douyucdn.cn/h5nc/member/getRedPacket?token=" +
+                        __imports.m,
+                      data: t,
+                      responseType: "json",
+                      headers: {
+                        "Content-Type": "application/x-www-form-urlencoded",
+                      },
+                      onload: function (e) {
+                        e = e.response;
+                        let t = "";
+                        ("" !=
+                          (t =
+                            "" == e.data.prop_id
+                              ? "鱼丸x" + e.data.silver
+                              : e.data.prop_name + "x" + e.data.prop_count) &&
+                          (0, __imports.T)("【宝箱】获得" + t, "success"),
+                          null != n && n.remove());
+                      },
+                    });
+                  }));
+              },
+            )
+          : (0, __imports.T)("宝箱验证初始化失败", "error");
+      } else if ("领取失败" != t.data.msg && "验证码不正确" != t.data.msg) {
+        let e = "";
+        "" !=
+          (e =
+            "" == t.data.prop_id
+              ? "鱼丸x" + t.data.silver
+              : t.data.prop_name + "x" + t.data.prop_count) &&
+          (0, __imports.T)("【宝箱】获得" + e, "success");
+      } else (0, __imports.T)("【宝箱】领取失败", "error");
     },
   });
 }
-const yo = fetchRedPacketWithGeetest;
-
-let _o = {};
-let xo = false;
-let vo = 0;
-let wo = 0;
-let ko = 0;
-let bo = 0;
-
-let Mo = false; // 是否开启全站抽奖提醒
-let No = null;  // 抽奖定时器
-let So = "";    // 抽奖列表 HTML 缓存
-let To = [];    // 拥牌房间号列表
-let Co = {};
-
-function persistLotteryConfig() {
-  const cfg = { isNotice: Mo };
-  __imports.localStorage.setItem("ExSave_Lottery", JSON.stringify(cfg));
+let bo = !1,
+  vo = {},
+  xo = {},
+  wo = {},
+  _o = 0,
+  ko,
+  Eo = !1;
+function Bo() {
+  var e = vo;
+  __imports.localStorage.setItem("ExSave_Vote", JSON.stringify(e));
 }
-const Bo = persistLotteryConfig;
-
-function initLotteryState() {
-  try {
-    const saved = JSON.parse(__imports.localStorage.getItem("ExSave_Lottery") || "{}");
-    Mo = Boolean(saved.isNotice);
-  } catch {}
-}
-const Io = initLotteryState;
-
-/**
- * 拉取全站大奖活动列表并构建卡片展示 (导出兼容 Lo)
- */
-async function refreshLotteryBroadcastList() {
-  let listData = null;
-  try {
-    const res = await (0, __imports.fetch)("https://www.douyu.com/member/lottery/activity_list");
-    listData = await res.json();
-  } catch {
-    listData = null;
-  }
-
-  if (listData?.data?.list) {
-    let htmlOutput = "";
-    const items = listData.data.list;
-
-    for (let i = 0; i < items.length; i++) {
-      const item = items[i];
-      if (item.status === 0) {
-        let actDetail = null;
-        try {
-          const detailRes = await (0, __imports.fetch)(
-            `https://www.douyu.com/member/lottery/activity_info?room_id=${item.room_id}`,
-            {
-              method: "GET",
-              mode: "no-cors",
-              credentials: "include",
-              headers: { "Content-Type": "application/x-www-form-urlencoded" },
-            }
-          );
-          actDetail = await detailRes.json();
-        } catch {}
-
-        const joinCond = actDetail?.data?.join_condition || {};
-        const joinText = "command_content" in joinCond
-          ? "发送弹幕"
-          : `赠送 ${joinCond.gift_name || ''}（${joinCond.gift_price || ''}）x${joinCond.gift_num || 1}`;
-
-        const expireTimeMs = (Number(actDetail?.data?.start_at || 0) + Number(joinCond.expire_time || 0)) * 1000;
-        const nowMs = Date.now();
-        let remainingStr = "已结束";
-
-        if (expireTimeMs > nowMs) {
-          const diffMs = expireTimeMs - nowMs;
-          const days = Math.floor(diffMs / 86400000);
-          const hours = Math.floor((diffMs % 86400000) / 3600000);
-          const mins = Math.floor((diffMs % 3600000) / 60000);
-          const secs = Math.round((diffMs % 60000) / 1000);
-
-          let timeDesc = "";
-          if (days > 0) timeDesc += `${days}天`;
-          if (hours > 0) timeDesc += `${hours}时`;
-          if (mins > 0) timeDesc += `${mins}分`;
-          if (secs > 0) timeDesc += `${secs}秒`;
-          remainingStr = `距结束：${timeDesc}`;
-        }
-
-        const isQualified = To.includes(String(item.room_id)) || (joinCond.lottery_range || 0) <= 1;
-
-        const rangeDescMap = {
-          0: "所有人可参与",
-          1: "关注主播",
-          2: "成为粉丝",
-          3: "关注主播+成为粉丝",
-        };
-        const rangeText = rangeDescMap[joinCond.lottery_range] || "所有人可参与";
-
-        htmlOutput += `
-          <a class="lottery__a" href="https://www.douyu.com/${item.room_id}" target="_blank">
-            <div class="lottery__item">
-              <div class="lottery__img">
-                <div class="lottery__anchor">${item.anchor_name}</div>
-                <img loading="lazy" src="${item.verticalSrc}"/>
-                <div class="lottery__expireTime">${remainingStr}</div>
-              </div>
-              <div class="lottery__info">
-                <div class="lottery__prize">${actDetail?.data?.prize_name || ''}x${actDetail?.data?.prize_num || 1}</div>
-                <div class="lottery__jointext">${joinText}</div>
-                <div style="color:${isQualified ? "#64ce83" : "#e74c3c"}" class="lottery__condition">${rangeText}</div>
-              </div>
-            </div>
-          </a>
-        `;
-      }
-    }
-
-    const noDataEl = document.getElementsByClassName("lottery__nodata")[0];
-    if (noDataEl) {
-      noDataEl.style.display = htmlOutput.trim() !== "" ? "none" : "block";
-    }
-
-    So = htmlOutput;
-    const wrapEl = document.getElementsByClassName("lottery__wrap")[0];
-    if (wrapEl) {
-      wrapEl.innerHTML = So;
-    }
+function Io() {
+  for (var e in wo) {
+    var e = wo[e],
+      t = document.getElementsByClassName("vote__option-num")[e.index],
+      o = document.getElementsByClassName("vote__progress-bar")[e.index],
+      n = String(Number(100 * Number(e.num / _o)).toFixed(1)) + "%";
+    ((t.innerText = e.num + `（${n}）`), (o.style.width = n));
   }
 }
-const Lo = refreshLotteryBroadcastList;
+let To = [],
+  Co = {},
+  So = "",
+  Mo = !1,
+  No = 0;
+async function Lo() {
+  100 < Object.keys(Co).length && (Co = {});
+  let t = "";
+  var o = await new Promise((t, o) => {
+    (0, __imports.GM_xmlhttpRequest)({
+      method: "GET",
+      url: "https://www.douyu.com/lapi/interact/lottery/getHallList",
+      responseType: "json",
+      onload: (e) => {
+        e = e.response;
+        t(e);
+      },
+      onerror: (e) => {
+        o(e);
+      },
+    });
+  });
+  if (o.data.list) {
+    for (let e = 0; e < o.data.list.length; e++) {
+      var n,
+        i,
+        a,
+        r = o.data.list[e];
+      0 === r.status &&
+        ((a =
+          "command_content" in
+          (i = (n = await ((e) =>
+            new Promise((t, o) => {
+              (0, __imports.fetch)(
+                "https://www.douyu.com/member/lottery/activity_info?room_id=" +
+                  e,
+                {
+                  method: "GET",
+                  mode: "no-cors",
+                  credentials: "include",
+                  headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                  },
+                },
+              )
+                .then((e) => e.json())
+                .then((e) => {
+                  t(e);
+                })
+                .catch((e) => {
+                  o(e);
+                });
+            }))(r.room_id)).data.join_condition)
+            ? "发送弹幕"
+            : `赠送 ${i.gift_name}（${i.gift_price}）x` + i.gift_num),
+        (l =
+          Number(n.data.start_at) + Number(n.data.join_condition.expire_time)),
+        (l = 1e3 * l),
+        (s = new Date().getTime()),
+        (c = d = void 0),
+        (s =
+          -1 ==
+          (s =
+            l < s
+              ? -1
+              : ((d = ""),
+                (c = (s = (l = Math.abs(l - s)) % 864e5) % 36e5),
+                (d =
+                  (d =
+                    (d += 0 < (l = Math.floor(l / 864e5)) ? l + "天" : "") +
+                    (0 < (l = Math.floor(s / 36e5)) ? l + "时" : "")) +
+                  (0 < (s = Math.floor(c / 6e4)) ? s + "分" : "")) +
+                  (0 < (l = Math.round((c % 6e4) / 1e3)) ? l + "秒" : "")))
+            ? "已结束"
+            : "距结束：" + s),
+        (d = -1 !== To.indexOf(String(r.room_id)) || i.lottery_range <= 1) &&
+          Mo &&
+          ((c = n.data.prize_name + "|" + n.data.start_at) in Co ||
+            (Co[c] = 1)),
+        (t += `
 
-let Eo = 0;
+            <a class="lottery__a" href="https://www.douyu.com/${r.room_id}" target="_blank">
+
+                <div class="lottery__item">
+
+                    <div class="lottery__img">
+
+                        <div class="lottery__anchor">${r.anchor_name}</div>
+
+                        <img loading="lazy" src="${r.verticalSrc}"/>
+
+                        <div class="lottery__expireTime">${s}</div>
+
+                    </div>
+
+                    <div class="lottery__info">
+
+                        <div class="lottery__prize">${n.data.prize_name}x${n.data.prize_num}</div>
+
+                        <div class="lottery__jointext">${a}</div>
+
+                        <div style="color:${d ? "#64ce83" : "#e74c3c"}" class="lottery__condition">${((
+                          e,
+                        ) => {
+                          let t = "";
+                          switch (e.lottery_range) {
+                            case 0:
+                              t = "所有人可参与";
+                              break;
+                            case 1:
+                              t = "关注主播";
+                              break;
+                            case 2:
+                              t = "成为粉丝";
+                              break;
+                            case 3:
+                              t = "关注主播+成为粉丝";
+                          }
+                          return t;
+                        })(i)}</div>
+
+                    </div>
+
+                </div>
+
+            </a>
+
+        `));
+    }
+    var l,
+      s,
+      d,
+      c,
+      e = document.getElementsByClassName("lottery__nodata")[0],
+      e =
+        ("" !== t.trim()
+          ? (e.style.display = "none")
+          : (e.style.display = "block"),
+        (So = t),
+        document.getElementsByClassName("lottery__wrap")[0]);
+    e && (e.innerHTML = So);
+  }
+}
 
 }
 ,
@@ -11994,54 +11930,35 @@ yield {"$o": { get: () => $o, set: value => { $o = value; } },
 "Qo": { get: () => Qo, set: value => { Qo = value; } },
 "Xo": { get: () => Xo, set: value => { Xo = value; } },
 "Zo": { get: () => Zo, set: value => { Zo = value; } }};
-/**
- * 夜间模式与外观偏好设置管理服务
- */
-const MOON_ICON_SVG = `<svg class="icon" viewBox="0 0 1055 1024" width="26" height="26"><path d="M388.06497 594.013091c-96.566303-167.253333-39.067152-381.889939 128.217212-478.487273a348.656485 348.656485 0 0 1 256.248242-36.864C623.491879-5.306182 435.417212-11.170909 276.542061 80.616727 37.236364 218.763636-44.776727 524.815515 93.401212 764.152242c138.146909 239.305697 444.198788 321.318788 683.535515 183.140849 158.875152-91.725576 247.870061-257.520485 249.669818-428.559515a348.656485 348.656485 0 0 1-160.085333 203.496727c-167.253333 96.566303-381.889939 39.036121-478.487273-128.217212" fill="#8a8a8a"></path></svg>`;
-const SUN_ICON_SVG = `<svg class="icon" viewBox="0 0 1024 1024" width="26" height="26"><path d="M270.016 197.248l-83.84-84.544-69.76 70.464 83.776 84.544 69.76-70.4zM139.648 465.024H0v93.888h139.648V465.024zM558.528 0H465.472v136.192h93.056V0z m349.056 183.168l-69.76-70.464-83.84 84.544L819.2 263.04l88.384-79.872z m-153.6 643.584l83.84 84.48 65.28-65.728L819.2 760.96l-65.216 65.792z m130.368-267.84H1024V465.024h-139.648v93.888zM512.064 230.08C358.4 230.08 232.768 356.992 232.768 512c0 155.008 125.632 281.856 279.296 281.856 153.6 0 279.232-126.848 279.232-281.856 0-154.944-125.632-281.856-279.232-281.856zM465.472 1024h93.056v-136.256H465.472V1024z m-349.056-183.232l69.76 70.4 83.84-84.48L204.8 760.96 116.48 840.768z" fill="#8a8a8a"></path></svg>`;
-
-let Qo = MOON_ICON_SVG;
-let Jo = SUN_ICON_SVG;
-let Zo = 0; // 0 = 日间, 1 = 夜间
-
-/**
- * 持久化夜间模式开关状态 (导出兼容 Xo)
- */
-function persistNightModeState() {
-  const cfg = { mode: Zo };
-  __imports.localStorage.setItem("ExSave_Mode", JSON.stringify(cfg));
+let Qo =
+    '<svg t="1587640254282" class="icon" viewBox="0 0 1055 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="5670" width="26" height="26"><path d="M388.06497 594.013091c-96.566303-167.253333-39.067152-381.889939 128.217212-478.487273a348.656485 348.656485 0 0 1 256.248242-36.864C623.491879-5.306182 435.417212-11.170909 276.542061 80.616727 37.236364 218.763636-44.776727 524.815515 93.401212 764.152242c138.146909 239.305697 444.198788 321.318788 683.535515 183.140849 158.875152-91.725576 247.870061-257.520485 249.669818-428.559515a348.656485 348.656485 0 0 1-160.085333 203.496727c-167.253333 96.566303-381.889939 39.036121-478.487273-128.217212" p-id="5671" fill="#8a8a8a"></path></svg>',
+  Jo =
+    '<svg t="1587640423416" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2270" width="26" height="26"><path d="M270.016 197.248l-83.84-84.544-69.76 70.464 83.776 84.544 69.76-70.4zM139.648 465.024H0v93.888h139.648V465.024zM558.528 0H465.472v136.192h93.056V0z m349.056 183.168l-69.76-70.464-83.84 84.544L819.2 263.04l88.384-79.872z m-153.6 643.584l83.84 84.48 65.28-65.728L819.2 760.96l-65.216 65.792z m130.368-267.84H1024V465.024h-139.648v93.888zM512.064 230.08C358.4 230.08 232.768 356.992 232.768 512c0 155.008 125.632 281.856 279.296 281.856 153.6 0 279.232-126.848 279.232-281.856 0-154.944-125.632-281.856-279.232-281.856zM465.472 1024h93.056v-136.256H465.472V1024z m-349.056-183.232l69.76 70.4 83.84-84.48L204.8 760.96 116.48 840.768z" p-id="2271" fill="#8a8a8a"></path></svg>',
+  Zo = 0;
+function Xo() {
+  var e = { mode: Zo };
+  __imports.localStorage.setItem("ExSave_Mode", JSON.stringify(e));
 }
-const Xo = persistNightModeState;
-
-/**
- * 注入夜间模式样式 (导出兼容 Ko)
- */
-function applyNightModeStyles() {
-  if (!document.getElementsByClassName("live-next-body")[0]) {
-    (0, __imports.tl)("Ex_Style_NightMode", "/* [DouyuEx] 夜间模式已启用 */");
-  }
+function Ko() {
+  !document.getElementsByClassName("live-next-body")[0] &&
+    (0, __imports.tl)("Ex_Style_NightMode", "/* [DouyuEx-Lite] 夜间样式已剥离 */");
 }
-const Ko = applyNightModeStyles;
-
-/**
- * 注入鱼吧嵌入 iframe 夜间样式 (导出兼容 $o)
- */
-function applyIframeNightModeStyles() {
-  try {
-    const iframe = document.getElementsByClassName("BottomGroup")[0]?.getElementsByTagName("iframe")[0];
-    if (iframe && iframe.contentWindow) {
-      const doc = iframe.contentWindow.document;
-      const styleId = "Ex_Style_NightModeIframe";
-      if (!doc.getElementById(styleId)) {
-        const styleEl = doc.createElement("style");
-        styleEl.id = styleId;
-        styleEl.innerHTML = "/* [DouyuEx] 鱼吧夜间样式适配 */";
-        doc.body.append(styleEl);
-      }
-    }
-  } catch {}
+function $o() {
+  var e,
+    t,
+    o,
+    n = document
+      .getElementsByClassName("BottomGroup")[0]
+      .getElementsByTagName("iframe")[0];
+  null != n &&
+    ((n = n.contentWindow.document),
+    (e = "Ex_Style_NightModeIframe"),
+    (t = "/* [DouyuEx-Lite] 鱼吧夜间样式已剥离 */"),
+    null == n.getElementById(e)) &&
+    (((o = n.createElement("style")).id = e),
+    (o.innerHTML = t),
+    n.body.append(o));
 }
-const $o = applyIframeNightModeStyles;
 
 }
 ,
@@ -12587,166 +12504,144 @@ yield {"advanceRoomMusic": { get: () => advanceRoomMusic, set: value => { advanc
 "pn": { get: () => pn, set: value => { pn = value; } },
 "refreshRoomMusic": { get: () => refreshRoomMusic, set: value => { refreshRoomMusic = value; } },
 "sn": { get: () => sn, set: value => { sn = value; } }};
-/**
- * 真实观众数据统计、开播/观看时长换算与布局持久化服务
- */
 let j = {
-  view: "",
-  showtime: 1428,
-  danmu_person_count: "",
-  gift_person_count: "",
-  paid_person_count: "",
-  isShow: 2,
-  money_yc: 0,
-  money_bag: 0,
-  money_total: 0,
-  noble_count: "",
-};
-
-let ln = false;
-
-/**
- * 格式化大数值为易读中文 (如 12345 -> 1.2万) (导出兼容 sn)
- * @param {number|string} val
- * @returns {string}
- */
-function formatAudienceCount(val) {
-  const num = Number(val);
-  if (isNaN(num)) return String(val);
-  if (num >= 10000) {
-    const wan = num / 10000;
-    return Number.isInteger(wan) ? `${wan}万` : `${parseFloat(wan.toFixed(1))}万`;
-  }
-  return String(num);
+    view: "",
+    showtime: 1428,
+    danmu_person_count: "",
+    gift_person_count: "",
+    paid_person_count: "",
+    isShow: 2,
+    money_yc: 0,
+    money_bag: 0,
+    money_total: 0,
+    noble_count: "",
+  },
+  ln = !1;
+function sn(e) {
+  var t = Number(e);
+  return isNaN(t)
+    ? e
+    : 1e4 <= t
+      ? ((e = t / 1e4),
+        Number.isInteger(e) ? e + "万" : parseFloat(e.toFixed(1)) + "万")
+      : String(t);
 }
-const sn = formatAudienceCount;
-
-/**
- * 刷新当前直播间真实观众、礼物流水与开播观看时长 (导出兼容 refreshRoomMusic)
- */
-async function refreshRoomAudienceStats() {
-  const matchChatEntry = document.querySelector(".MatchSystemChatRoomEntry");
-  if (matchChatEntry) matchChatEntry.style.display = "none";
-
-  const roomId = __imports.B;
-
-  // 1. 拉取全景统计聚合数据
-  const aggrData = await new Promise((resolve, reject) => {
-    (0, __imports.GM_xmlhttpRequest)({
-      method: "POST",
-      url: "https://www.doseeing.com/xeee/room/aggr",
-      headers: {
-        Connection: "keep-alive",
-        "Content-Type": "application/json;charset=UTF-8",
-        Origin: "https://www.doseeing.com",
-        Referer: `https://www.doseeing.com/room/${roomId}`,
-        "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1 Edg/91.0.4472.114",
-      },
-      data: JSON.stringify({
-        m: window.btoa(`rid=${roomId}&dt=0`).split("").reverse().join(""),
-      }),
-      responseType: "json",
-      onload: (res) => resolve(res.response || {}),
-      onerror: (err) => reject(err),
-    });
-  }).catch(() => ({ data: {} }));
-
-  // 2. 拉取今日观看时长
-  const taskData = await new Promise((resolve, reject) => {
-    (0, __imports.fetch)(`https://www.douyu.com/japi/interactnc/web/fsjk/getCardTaskInfo?rid=${roomId}`, {
-      method: "GET",
-      mode: "no-cors",
-      credentials: "include",
-    })
-      .then(res => res.json())
-      .then(data => resolve(data))
-      .catch(err => reject(err));
-  }).catch(() => ({ error: -1, data: {} }));
-
-  let liveElapsedSeconds = 0;
-  if (j.isShow !== 2 && j.showtime !== 1428) {
-    liveElapsedSeconds = Math.floor(Date.now() / 1000) - Number(j.showtime);
-  }
-
-  const d = aggrData?.data || {};
-  j.view = d["active.uv"] || 0;
-  j.danmu_person_count = d["chat.uv"] || 0;
-  j.gift_person_count = d["gift.all.uv"] || 0;
-  j.paid_person_count = d["gift.paid.uv"] || 0;
-  j.money_yc = Number((d["gift.paid.price"] || 0) / 100).toFixed(2);
-  j.money_total = Number((d["gift.all.price"] || 0) / 100).toFixed(2);
-
-  // 回显各 DOM 标签
-  const elTotal = document.getElementById("real-audience__total");
-  const elT = document.getElementById("real-audience__t");
-  const elBarrage = document.getElementById("real-audience__barrage");
-  const elMoneyYc = document.getElementById("real-audience__money_yc");
-  const elMoney = document.getElementById("real-audience__money");
-  const elNoble = document.getElementById("real-audience__noble");
-  const elTime = document.getElementById("real-audience__time");
-  const elWatchTime = document.getElementById("real-audience__watchtime");
-
-  if (elTotal) elTotal.innerText = String(j.view);
-  if (elT) {
-    elT.title = `今日累计活跃人数:${j.view} 弹幕人数:${j.danmu_person_count} 送礼人数:${j.gift_person_count} 付费人数:${j.paid_person_count}`;
-  }
-  if (elBarrage) elBarrage.innerText = String(j.danmu_person_count);
-  if (elMoneyYc) elMoneyYc.innerText = String(j.money_yc);
-  if (elMoney) {
-    elMoney.title = `总礼物价值:${j.money_total} 鱼翅礼物:${j.money_yc}`;
-  }
-  if (j.noble_count !== "" && elNoble) {
-    elNoble.innerText = sn(j.noble_count);
-  }
-
-  const formattedStartTime = (0, __imports.k)("yyyy年MM月dd日hh时mm分ss秒 ", new Date(Number(j.showtime + "000")));
-  const todayWatchStr = (0, __imports.Q)(taskData?.data?.todayWatch || 0);
-
-  if (elTime) {
-    elTime.innerText = `已播:${(0, __imports.Q)(liveElapsedSeconds)}`;
-    elTime.title = `开播时间:${formattedStartTime}\n已观看:${todayWatchStr}`;
-  }
-
-  if (taskData?.error === 0 && elWatchTime) {
-    elWatchTime.innerText = `已观看:${todayWatchStr}`;
-    elWatchTime.title = `开播时间:${formattedStartTime}\n已观看:${todayWatchStr}`;
-  }
+async function refreshRoomMusic() {
+  null != document.querySelector(".MatchSystemChatRoomEntry") &&
+    (document.querySelector(".MatchSystemChatRoomEntry").style.display =
+      "none");
+  e = __imports.B;
+  var e,
+    n,
+    t = await new Promise((t, o) => {
+      (0, __imports.GM_xmlhttpRequest)({
+        method: "POST",
+        url: "https://www.doseeing.com/xeee/room/aggr",
+        headers: {
+          Connection: "keep-alive",
+          "Content-Type": "application/json;charset=UTF-8",
+          Origin: "https://www.doseeing.com",
+          Referer: "https://www.doseeing.com/room/" + e,
+          "User-Agent":
+            "Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1 Edg/91.0.4472.114",
+        },
+        data: `{"m":"${window.btoa(`rid=${e}&dt=0`).split("").reverse().join("")}"}`,
+        responseType: "json",
+        onload: (e) => {
+          t(e.response);
+        },
+        onerror: (e) => {
+          o(e);
+        },
+      });
+    }),
+    o =
+      ((n = __imports.B),
+      await new Promise((t, o) => {
+        (0, __imports.fetch)(
+          "https://www.douyu.com/japi/interactnc/web/fsjk/getCardTaskInfo?rid=" +
+            n,
+          { method: "GET", mode: "no-cors", credentials: "include" },
+        )
+          .then((e) => e.json())
+          .then((e) => {
+            t(e);
+          })
+          .catch((e) => {
+            o(e);
+          });
+      }));
+  let i = 0;
+  ((i =
+    2 == j.isShow || 1428 == j.showtime
+      ? 0
+      : Math.floor(Date.now() / 1e3) - Number(j.showtime)),
+    (j.view = t.data["active.uv"] || 0),
+    (j.danmu_person_count = t.data["chat.uv"] || 0),
+    (j.gift_person_count = t.data["gift.all.uv"] || 0),
+    (j.paid_person_count = t.data["gift.paid.uv"] || 0),
+    (j.money_yc = Number(t.data["gift.paid.price"] / 100 || 0).toFixed(2)),
+    (j.money_total = Number(t.data["gift.all.price"] / 100 || 0).toFixed(2)),
+    (document.getElementById("real-audience__total").innerText = j.view),
+    (document.getElementById("real-audience__t").title =
+      "今日累计活跃人数:" +
+      j.view +
+      " 弹幕人数:" +
+      j.danmu_person_count +
+      " 送礼人数:" +
+      j.gift_person_count +
+      " 付费人数:" +
+      j.paid_person_count),
+    (document.getElementById("real-audience__barrage").innerText =
+      j.danmu_person_count),
+    (document.getElementById("real-audience__money_yc").innerText = j.money_yc),
+    (document.getElementById("real-audience__money").title =
+      "总礼物价值:" + j.money_total + " 鱼翅礼物:" + j.money_yc),
+    "" !== j.noble_count &&
+      (document.getElementById("real-audience__noble").innerText = sn(
+        j.noble_count,
+      )),
+    (document.getElementById("real-audience__time").innerText = "已播:" + (0, __imports.Q)(i)),
+    (document.getElementById("real-audience__time").title =
+      "开播时间:" +
+      String(
+        (0, __imports.k)("yyyy年MM月dd日hh时mm分ss秒 ", new Date(Number(j.showtime + "000"))),
+      ) +
+      "\n已观看:" +
+      (0, __imports.Q)(o.data.todayWatch)),
+    0 == o.error &&
+      ((document.getElementById("real-audience__watchtime").innerText =
+        "已观看:" + (0, __imports.Q)(o.data.todayWatch)),
+      (document.getElementById("real-audience__watchtime").title =
+        "开播时间:" +
+        String(
+          (0, __imports.k)(
+            "yyyy年MM月dd日hh时mm分ss秒 ",
+            new Date(Number(j.showtime + "000")),
+          ),
+        ) +
+        "\n已观看:" +
+        (0, __imports.Q)(o.data.todayWatch))));
 }
-const refreshRoomMusic = refreshRoomAudienceStats;
-
-/**
- * 切换已播时长与已观看时长的展示 (导出兼容 advanceRoomMusic)
- */
 function advanceRoomMusic() {
-  const elTime = document.getElementById("real-audience__time");
-  const elWatchTime = document.getElementById("real-audience__watchtime");
-  if (!elTime || !elWatchTime) return;
-
-  if (elTime.style.display === "none") {
-    elTime.style.display = "block";
-    elWatchTime.style.display = "none";
-  } else {
-    elTime.style.display = "none";
-    elWatchTime.style.display = "block";
-  }
+  var e = document.getElementById("real-audience__time"),
+    t = document.getElementById("real-audience__watchtime");
+  "none" == e.style.display
+    ? ((e.style.display = "block"), (t.style.display = "none"))
+    : ((e.style.display = "none"), (t.style.display = "block"));
 }
-
-/**
- * 持久化刷新布局配置至 ExSave_Refresh (导出兼容 pn)
- */
-function persistLayoutRefreshConfig() {
-  const rankEl = document.getElementsByClassName("layout-Player-rank")[0];
-  const isRankHidden = rankEl?.style?.display === "none";
-
-  const cfg = {
-    barrageFrame: { status: isRankHidden },
+function pn() {
+  var e = {
+    barrageFrame: {
+      status:
+        "none" ==
+        document.getElementsByClassName("layout-Player-rank")[0].style.display,
+    },
     video: { status: (0, __imports.fn)() },
-    barrage: { status: __imports.mn === 1 },
+    barrage: { status: 1 == __imports.mn },
   };
-
-  __imports.localStorage.setItem("ExSave_Refresh", JSON.stringify(cfg));
+  __imports.localStorage.setItem("ExSave_Refresh", JSON.stringify(e));
 }
-const pn = persistLayoutRefreshConfig;
 
 }
 ,
@@ -12759,133 +12654,221 @@ yield {"bn": { get: () => bn, set: value => { bn = value; } },
 "mn": { get: () => mn, set: value => { mn = value; } },
 "un": { get: () => un, set: value => { un = value; } },
 "yn": { get: () => yn, set: value => { yn = value; } }};
-/**
- * 页面全域广告、商业死重类名拦截与清爽弹幕净化样式库
- */
-let mn = 0; // 弹幕精简化状态: 0 = 完整, 1 = 纯文本精简
-let gn = 0; // 页面布局清爽开关状态
-
-/**
- * 激活纯净弹幕前缀与图标剥离样式 (导出兼容 un)
- */
-function applyCleanBarrageStyle() {
-  (0, __imports.tl)(
+let mn = 0;
+function un() {
+  ((0, __imports.tl)(
     "Ex_Style_RefreshBarrage",
     `
-      .UserCsgoGameDataMedal, .Barrage-honor, .Barrage-listItem .Barrage-icon,
-      .Barrage-listItem .FansMedal.is-made, .Barrage-listItem .RoomLevel,
-      .Barrage-listItem .Motor, .Barrage-listItem .ChatAchievement,
-      .Barrage-listItem .Barrage-hiIcon, .Barrage-listItem .Medal,
-      .Barrage-listItem .MatchSystemTeamMedal, .Barrage-listItem .Baby,
-      .FansMedalWrap {
-        display: none !important;
-      }
-    `
+
+    .UserCsgoGameDataMedal,.Barrage-honor,.Barrage-listItem .Barrage-icon,.Barrage-listItem .FansMedal.is-made,.Barrage-listItem .RoomLevel,.Barrage-listItem .Motor,.Barrage-listItem .ChatAchievement,.Barrage-listItem .Barrage-hiIcon,.Barrage-listItem .Medal,.Barrage-listItem .MatchSystemTeamMedal{display:none !important;}
+
+    /*.Barrage-listItem .UserLevel{display:none !important;}*/
+
+    .Barrage-listItem .Baby{display:none !important;}
+
+    .FansMedalWrap{display:none !important;}
+
+    `,
+  ),
+    (mn = 1),
+    document.getElementById("refresh-barrage").classList.add("ex-active"),
+    (document.getElementById("refresh-barrage__text").style.color = "#fff"),
+    (document.getElementById("refresh-barrage__text").innerText = "前缀"));
+  var e = document.getElementById("refresh-barrage__svg");
+  e &&
+    (e = e.getElementsByTagName("path")[0]) &&
+    e.setAttribute("fill", "#ffffff");
+}
+let gn = 0;
+function hn(e) {
+  var t = document.getElementById("ex-refresh-switch"),
+    o = document.getElementById("ex-refresh-switch-circle");
+  t &&
+    o &&
+    (e
+      ? ((t.style.background = "#f60"), (o.style.left = "14px"))
+      : ((t.style.background = "rgba(255,255,255,0.3)"),
+        (o.style.left = "2px")));
+}
+function fn() {
+  return (
+    "hidden" ==
+    document.getElementsByClassName("PlayerToolbar-ContentRow")[0].style
+      .visibility
   );
-
-  mn = 1;
-  const btn = document.getElementById("refresh-barrage");
-  if (btn) btn.classList.add("ex-active");
-
-  const text = document.getElementById("refresh-barrage__text");
-  if (text) {
-    text.style.color = "#fff";
-    text.innerText = "前缀";
-  }
-
-  const svgPath = document.getElementById("refresh-barrage__svg")?.getElementsByTagName("path")[0];
-  if (svgPath) svgPath.setAttribute("fill", "#ffffff");
 }
-const un = applyCleanBarrageStyle;
-
-/**
- * 更新清爽模式开关滑块视觉状态 (导出兼容 hn)
- * @param {boolean} isChecked
- */
-function updateRefreshSwitchState(isChecked) {
-  const switchBox = document.getElementById("ex-refresh-switch");
-  const switchCircle = document.getElementById("ex-refresh-switch-circle");
-  if (switchBox && switchCircle) {
-    if (isChecked) {
-      switchBox.style.background = "#f60";
-      switchCircle.style.left = "14px";
-    } else {
-      switchBox.style.background = "rgba(255,255,255,0.3)";
-      switchCircle.style.left = "2px";
-    }
-  }
-}
-const hn = updateRefreshSwitchState;
-
-/**
- * 检查底栏工具行是否已隐藏 (导出兼容 fn)
- * @returns {boolean}
- */
-function isToolbarContentRowHidden() {
-  const row = document.getElementsByClassName("PlayerToolbar-ContentRow")[0];
-  return Boolean(row && row.style.visibility === "hidden");
-}
-const fn = isToolbarContentRowHidden;
-
-/**
- * 注入视频播放区 PK 与点赞动效屏蔽样式 (导出兼容 yn)
- */
-function applyVideoOverlayCleanStyle() {
+function yn() {
   (0, __imports.tl)(
     "Ex_Style_VideoRefresh",
     `
-      .PELact, .pushTower-wrapper-gf1HG, .PkView-9f6a2c, .MorePk,
-      .RandomPKBar, .LiveRoomLoopVideo, .LiveRoomDianzan,
-      .maiMaitView-68e80c, .PkView {
-        display: none !important;
-      }
-    `
+
+    .PELact,.pushTower-wrapper-gf1HG,.PkView-9f6a2c,.MorePk,.RandomPKBar,.LiveRoomLoopVideo,.LiveRoomDianzan,.maiMaitView-68e80c,.PkView{display:none !important;}
+
+    `,
   );
 }
-const yn = applyVideoOverlayCleanStyle;
-
-/**
- * 注入全站商业横幅、悬浮弹窗与广告物理拦截样式 (导出兼容 bn)
- */
-function applyAdblockAndCleanupStyles() {
+function bn() {
   (0, __imports.tl)(
     "Ex_Style_RemoveAD",
     `
-      .ScreenBannerAd, .XinghaiAd, .CustomGroupGuide, .FudaiGiftToolBarTips,
-      .UserInfo-tryEnterHiddenLead, .BargainingKit, .AnchorPocketTips, .FishShopTip,
-      .FollowGuide, #js-bottom-right-cloudGame, .CloudGameLink, .RoomText-icon-horn,
-      .RoomText-list, .Search-ad, .RedEnvelopAd, .noHandlerAd-0566b9, .PcDiversion,
-      .DropMenuList-ad, .DropPane-ad, .WXTipsBox, .igl_bg-b0724a, .closure-ab91fb,
-      .VideoAboveVivoAd, .css-widgetWrapper-EdVVC, .watermark-442a18, .FollowGuide-FadeOut,
-      .MatchSystemChatRoomEntry-roomTabs, .FansMedalDialog-normal, .GameLauncher,
-      .recommendAD-54569e, .recommendApp-0e23eb, .Title-ad, .Bottom-ad, .SignBarrage,
-      .corner-ad-495ade, .SignBaseComponent-sign-ad, .SuperFansBubble, .is-noLogin,
-      .PlayerToolbar-signCont, #js-widget, .Frawdroom, .HeaderGif-right, .HeaderGif-left,
-      .liveos-workspace, .BattleShipTips, .LastLiveTime, .recommendView-3e8b62,
-      .TurntableLottery-actTips, .feedback-e27241, .FansMedalEnter-maxFlag,
-      .GuessGameMiniPanelB-wrapper, .ZoomTip, .PlayerToolbar-couponInfo,
-      .AroundStarsActTips-actTips, .AroundStarsMoonBoxTips, .AroundStarsPlanetTips,
-      .InteractPlayWithEnter-enterTips1, .SharePanel, .CommonShareToolkit,
-      .mask1-63237a, .mask2-a8df6e, .panel1-1484c9, .panel2-5ece0e,
-      .IconCardAdCard, .IconCardAd, .CloseVideoPlayerAd, .IconCardAdBoundsBox,
-      .room-top-banner-box, .LadderNav, #js-bottom-right-recommendAd,
-      .aside-top-uspension-box, .bacpCommonKeFu, .ClosingRecommend,
-      .ClosingRecommend *, .werbungContainer__2sv7h, #js-player-asideTopSuspension,
-      .Search-Panel-Advert {
-        display: none !important;
-      }
 
-      .Barrage-topFloater { z-index: 999; }
-      .danmuAuthor-3d7b4a, .danmuContent-25f266 { overflow: initial; }
-      .Header-follow-listBox { max-height: 640px !important; }
-      #js-barrage-list-parent { scrollbar-width: none; -ms-overflow-style: none; width: 98%; height: 100%; }
-      #js-barrage-list-parent::-webkit-scrollbar { display: none; }
-      #js-barrage-extend-container { display: var(--enter-display, none) !important; }
-      #js-player-asideMain { top: 0 !important; }
-    `
+    .ScreenBannerAd,.XinghaiAd,.CustomGroupGuide,.FudaiGiftToolBarTips,.UserInfo-tryEnterHiddenLead,.BargainingKit,.AnchorPocketTips,.FishShopTip,.FollowGuide,#js-bottom-right-cloudGame,.CloudGameLink,.RoomText-icon-horn,.RoomText-list,.Search-ad,.RedEnvelopAd,.noHandlerAd-0566b9,.PcDiversion,.DropMenuList-ad,.DropPane-ad,.WXTipsBox,.igl_bg-b0724a,.closure-ab91fb,.VideoAboveVivoAd,.css-widgetWrapper-EdVVC,.watermark-442a18,.FollowGuide-FadeOut,.MatchSystemChatRoomEntry-roomTabs,.FansMedalDialog-normal,.GameLauncher,.recommendAD-54569e,.recommendApp-0e23eb,.Title-ad,.Bottom-ad,.SignBarrage,.corner-ad-495ade,.SignBaseComponent-sign-ad,.SuperFansBubble,.is-noLogin,.PlayerToolbar-signCont,#js-widget,.Frawdroom,.HeaderGif-right,.HeaderGif-left,.liveos-workspace{display:none !important;}
+
+    .Barrage-topFloater{z-index:999}
+
+    .danmuAuthor-3d7b4a, .danmuContent-25f266{overflow: initial}
+
+    .BattleShipTips{display:none !important;}
+
+    .LastLiveTime,.recommendView-3e8b62{display:none !important;}
+
+    .TurntableLottery-actTips{display:none !important;}
+
+    .feedback-e27241{display:none !important;}
+
+    .FansMedalEnter-maxFlag{display:none !important;}
+
+    .Header-follow-listBox{max-height:640px !important;}
+
+
+
+    .GuessGameMiniPanelB-wrapper{display:none !important;}
+
+
+
+    .ZoomTip{display:none !important;}
+
+
+
+    /*福利券*/
+
+    .PlayerToolbar-couponInfo{display:none !important;}
+
+    /*太空探险tips*/
+
+    .AroundStarsActTips-actTips,.AroundStarsMoonBoxTips,.AroundStarsPlanetTips{display:none !important;}
+
+    /*优化页面*/
+
+    #js-barrage-list-parent{scrollbar-width: none;-ms-overflow-style: none;width:98%;height:100%}
+
+    #js-barrage-list-parent::-webkit-scrollbar{display: none;}
+
+    /*陪玩*/
+
+    .InteractPlayWithEnter-enterTips1{display:none !important;}
+
+
+
+    /*恢复emoji彩色 chrome加粗情况下emoji会变灰，需要找一个fontweight起始值在500的字体库才可以兼容*/
+
+
+
+    /*右侧分享*/
+
+    .SharePanel,.CommonShareToolkit{
+
+        display: none!important;
+
+    }
+
+    /*去除还在电脑面前的mask*/
+
+    .mask1-63237a,.mask2-a8df6e,.panel1-1484c9,.panel2-5ece0e{
+
+        display: none!important;
+
+    }
+
+    /*左侧悬浮二维码广告*/
+
+    .IconCardAdCard{
+
+        display: none!important;
+
+    }
+
+    /*视频右侧的游戏手柄按钮AD*/
+
+    .IconCardAd {
+
+        display: none!important;
+
+    }
+
+    /*视频区视频广告*/
+
+    .CloseVideoPlayerAd,.IconCardAdBoundsBox{
+
+        display: none!important;
+
+    }
+
+    /*直播间顶部广告*/
+
+    .room-top-banner-box {
+
+        display: none!important;
+
+    }
+
+    /*弹幕框底部进场弹幕信息*/
+
+    #js-barrage-extend-container {
+
+        display: none!important;
+
+        display: var(--enter-display, none) !important;
+
+    }
+
+    /*直播间右侧广告*/
+
+    .LadderNav {
+
+        display: none!important;
+
+    }
+
+    #js-bottom-right-recommendAd {
+
+        display: none!important;
+
+    }
+
+    /*弹幕框顶部广告*/
+
+    .aside-top-uspension-box {
+
+        display: none!important;
+
+    }
+
+    #js-player-asideMain {
+
+        top: 0!important;
+
+    }
+
+    /*右下角联系客服*/
+
+    .bacpCommonKeFu {
+
+        display: none!important;
+
+    }
+
+
+
+    .ClosingRecommend,.ClosingRecommend *,.werbungContainer__2sv7h{display:none !important;}
+
+    #js-player-asideTopSuspension{display:none !important;}
+
+    .Search-Panel-Advert{display:none !important;}
+
+    `,
   );
 }
-const bn = applyAdblockAndCleanupStyles;
 
 }
 ,
@@ -12895,169 +12878,155 @@ yield {"_n": { get: () => _n, set: value => { _n = value; } },
 "vn": { get: () => vn, set: value => { vn = value; } },
 "wn": { get: () => wn, set: value => { wn = value; } },
 "xn": { get: () => xn, set: value => { xn = value; } }};
-/**
- * 鱼吧已关闭板块重定向恢复、未读私信红点净化与板块 ID 代理服务
- */
 let vn = 0;
-
-/**
- * 移除未读私信与红点徽章样式 (导出兼容 xn)
- */
-function hideMessageNoticeBadges() {
+function xn() {
   (0, __imports.tl)(
     "Ex_Style_RemoveMsgNotice",
-    ".UserInfo .Badge, .ChatLetter-PopUnread { display: none !important; }"
+    ".UserInfo .Badge,.ChatLetter-PopUnread{display:none!important;}",
   );
 }
-const xn = hideMessageNoticeBadges;
-
-/**
- * 从当前 URL 提取鱼吧 discussion 板块 ID
- * @param {string} url
- * @returns {string|null}
- */
-function extractYubaDiscussionId(url) {
-  const match = url.match(/\/discussion\/(\d+)/);
-  return (match && match[1]) ? match[1] : null;
-}
-
-/**
- * 劫持 XHR 与 Fetch 请求，恢复已关闭鱼吧板块的数据读取 (导出兼容 wn)
- */
-function restoreClosedYubaGroup() {
-  const currentGroupId = extractYubaDiscussionId(window.location.href);
-  const restoreParam = new URLSearchParams(window.location.search).get("exRestore");
-
-  if (restoreParam && currentGroupId !== restoreParam) {
-    const originalGid = String(currentGroupId);
-    const targetGid = String(restoreParam);
-    const whitelistEndpoints = ["web/group/head", "/follow/topic", "group/unfollowGroup"];
-
-    const isWhitelisted = (endpoint) => {
-      return typeof endpoint === "string" && whitelistEndpoints.some(item => endpoint.includes(item));
-    };
-
-    // 劫持 XMLHttpRequest
-    const rawXhrOpen = __imports.unsafeWindow.XMLHttpRequest.prototype.open;
-    const rawXhrSend = __imports.unsafeWindow.XMLHttpRequest.prototype.send;
-
-    __imports.unsafeWindow.XMLHttpRequest.prototype.open = function (method, url, ...args) {
-      let reqUrl = url;
-      if (typeof reqUrl === "string" && reqUrl.includes(originalGid) && !isWhitelisted(reqUrl)) {
-        reqUrl = reqUrl.replace(new RegExp(originalGid, "g"), targetGid);
+function wn() {
+  var t = kn(window.location.href),
+    o = new URLSearchParams(window.location.search).get("exRestore");
+  if (o && t !== (o = Number(o))) {
+    {
+      var s = t;
+      var d = o;
+      let e = ["web/group/head", "/follow/topic", "group/unfollowGroup"];
+      function c(t) {
+        return "string" == typeof t && e.some((e) => t.includes(e));
       }
-      return rawXhrOpen.call(this, method, reqUrl, ...args);
-    };
-
-    __imports.unsafeWindow.XMLHttpRequest.prototype.send = function (body) {
-      const activeUrl = this.responseURL || this._url || "";
-      let reqBody = body;
-      if (!isWhitelisted(activeUrl)) {
-        if (reqBody && typeof reqBody === "string" && reqBody.includes(originalGid)) {
-          reqBody = reqBody.replace(new RegExp(originalGid, "g"), targetGid);
-        } else if (reqBody && reqBody instanceof FormData) {
-          const newFormData = new FormData();
-          for (const [key, val] of reqBody.entries()) {
-            let newVal = val;
-            if (typeof newVal === "string" && newVal.includes(originalGid)) {
-              newVal = newVal.replace(new RegExp(originalGid, "g"), targetGid);
+      let a = __imports.unsafeWindow.XMLHttpRequest.prototype.open,
+        r = __imports.unsafeWindow.XMLHttpRequest.prototype.send,
+        l =
+          ((__imports.unsafeWindow.XMLHttpRequest.prototype.open = function (
+            e,
+            t,
+            o,
+            n,
+            i,
+          ) {
+            return (
+              "string" == typeof t &&
+                t.includes(s) &&
+                !c(t) &&
+                (t = t.replace(new RegExp(s, "g"), d)),
+              a.call(this, e, t, o, n, i)
+            );
+          }),
+          (__imports.unsafeWindow.XMLHttpRequest.prototype.send = function (e) {
+            var t = this.responseURL || this._url || "";
+            if (!c(t))
+              if (e && "string" == typeof e && e.includes(s))
+                e = e.replace(new RegExp(s, "g"), d);
+              else if (e && e instanceof FormData) {
+                var o,
+                  n = new FormData();
+                for (o of e.entries()) {
+                  var i = o[0];
+                  let e = o[1];
+                  ("string" == typeof e &&
+                    e.includes(s) &&
+                    (e = e.replace(new RegExp(s, "g"), d)),
+                    n.append(i, e));
+                }
+                e = n;
+              }
+            return r.call(this, e);
+          }),
+          __imports.unsafeWindow.fetch);
+      __imports.unsafeWindow.fetch = function (e, t) {
+        let o = "";
+        if (
+          ("string" == typeof e
+            ? (o = e).includes(s) &&
+              !c(e) &&
+              (e = e.replace(new RegExp(s, "g"), d))
+            : e instanceof Request &&
+              (o = e.url).includes(s) &&
+              !c(o) &&
+              (e = new Request(o.replace(new RegExp(s, "g"), d), e)),
+          !c(o) && t && t.body)
+        )
+          if ("string" == typeof t.body && t.body.includes(s))
+            t.body = t.body.replace(new RegExp(s, "g"), d);
+          else if (t.body instanceof FormData) {
+            var n,
+              i = new FormData();
+            for (n of t.body.entries()) {
+              var a = n[0];
+              let e = n[1];
+              ("string" == typeof e &&
+                e.includes(s) &&
+                (e = e.replace(new RegExp(s, "g"), d)),
+                i.append(a, e));
             }
-            newFormData.append(key, newVal);
+            t.body = i;
           }
-          reqBody = newFormData;
+        return l.call(__imports.unsafeWindow, e, t);
+      };
+    }
+    (async (o) => {
+      if (
+        (o = await ((e) =>
+          new Promise((t) => {
+            (0, __imports.fetch)(
+              "https://yuba.douyu.com/wbapi/web/group/managersdetail?group_id=" +
+                e,
+            )
+              .then((e) => e.json())
+              .then((e) => {
+                t(e);
+              })
+              .catch(() => {
+                t(null);
+              });
+          }))(o))
+      ) {
+        o = o.data.generalOP[0];
+        let e = o.avatar,
+          t = o.nick_name;
+        function n() {
+          ((document.querySelector(".groupavatar__9mD1S .image__GNnZC").src =
+            e),
+            (document.getElementsByClassName("groupname__BUzOM")[0].innerText =
+              t),
+            (document.getElementsByClassName("groupdesc__b8-53")[0].innerText =
+              t + "的鱼吧"),
+            (document.title = t + "的鱼吧"));
         }
+        (n(),
+          new __imports.DomMutationSubscription(".groupavatar__9mD1S", !1, () => {
+            n();
+          }));
       }
-      return rawXhrSend.call(this, reqBody);
-    };
-
-    // 劫持 Fetch
-    const rawFetch = __imports.unsafeWindow.fetch;
-    __imports.unsafeWindow.fetch = function (resource, init) {
-      let finalResource = resource;
-      let urlStr = "";
-
-      if (typeof resource === "string") {
-        urlStr = resource;
-        if (urlStr.includes(originalGid) && !isWhitelisted(urlStr)) {
-          finalResource = urlStr.replace(new RegExp(originalGid, "g"), targetGid);
-        }
-      } else if (resource instanceof Request) {
-        urlStr = resource.url;
-        if (urlStr.includes(originalGid) && !isWhitelisted(urlStr)) {
-          finalResource = new Request(urlStr.replace(new RegExp(originalGid, "g"), targetGid), resource);
-        }
-      }
-
-      let finalInit = init;
-      if (!isWhitelisted(urlStr) && init?.body) {
-        if (typeof init.body === "string" && init.body.includes(originalGid)) {
-          finalInit = { ...init, body: init.body.replace(new RegExp(originalGid, "g"), targetGid) };
-        } else if (init.body instanceof FormData) {
-          const newFormData = new FormData();
-          for (const [k, v] of init.body.entries()) {
-            let newVal = v;
-            if (typeof newVal === "string" && newVal.includes(originalGid)) {
-              newVal = newVal.replace(new RegExp(originalGid, "g"), targetGid);
-            }
-            newFormData.append(k, newVal);
-          }
-          finalInit = { ...init, body: newFormData };
-        }
-      }
-
-      return rawFetch.call(__imports.unsafeWindow, finalResource, finalInit);
-    };
-
-    // 拉取原吧务详情并回填页面标题与头像
-    (async (targetId) => {
-      try {
-        const res = await (0, __imports.fetch)(`https://yuba.douyu.com/wbapi/web/group/managersdetail?group_id=${targetId}`);
-        const data = await res.json();
-        const opInfo = data?.data?.generalOP?.[0];
-        if (opInfo) {
-          const avatarUrl = opInfo.avatar;
-          const nickName = opInfo.nick_name;
-
-          const syncYubaHeader = () => {
-            const avatarImg = document.querySelector(".groupavatar__9mD1S .image__GNnZC");
-            if (avatarImg && avatarUrl) avatarImg.src = avatarUrl;
-
-            const nameEl = document.getElementsByClassName("groupname__BUzOM")[0];
-            if (nameEl) nameEl.innerText = nickName;
-
-            const descEl = document.getElementsByClassName("groupdesc__b8-53")[0];
-            if (descEl) descEl.innerText = `${nickName}的鱼吧`;
-
-            document.title = `${nickName}的鱼吧`;
-          };
-
-          syncYubaHeader();
-          new __imports.DomMutationSubscription(".groupavatar__9mD1S", false, syncYubaHeader);
-        }
-      } catch {}
-    })(targetGid);
+    })(o);
   }
 }
-const wn = restoreClosedYubaGroup;
-
-/**
- * 探测鱼吧状态，遇 3002 关闭状态自动无感跳转至恢复通道 (导出兼容 _n)
- */
-function checkAndRedirectClosedYuba() {
-  const currentGid = extractYubaDiscussionId(window.location.href);
-  if (!currentGid) return;
-
-  (0, __imports.fetch)(`https://yuba.douyu.com/wbapi/web/group/head?group_id=${currentGid}`)
-    .then(res => res.json())
-    .then(data => {
-      // 3002 表示板块已下线或关闭，重定向到通用 discussion 桥接管道
-      if (data?.status_code === 3002) {
-        window.location.href = `https://yuba.douyu.com/discussion/4815048/posts?exRestore=${currentGid}`;
-      }
-    })
-    .catch(() => {});
+function _n() {
+  let t = kn(window.location.href);
+  var e;
+  t &&
+    ((e = t),
+    new Promise((t, o) => {
+      (0, __imports.fetch)("https://yuba.douyu.com/wbapi/web/group/head?group_id=" + e)
+        .then((e) => e.json())
+        .then((e) => {
+          t(e);
+        })
+        .catch((e) => {
+          o(e);
+        });
+    }).then((e) => {
+      3002 == e.status_code &&
+        ((e = "https://yuba.douyu.com/discussion/4815048/posts?exRestore=" + t),
+        (window.location.href = e));
+    }));
 }
-const _n = checkAndRedirectClosedYuba;
+function kn(e) {
+  e = e.match(/\/discussion\/(\d+)/);
+  return e && e[1] ? e[1] : null;
+}
 
 }
 ,
@@ -13732,241 +13701,146 @@ function* (__imports) {
 yield {"Li": { get: () => Li, set: value => { Li = value; } },
 "Mi": { get: () => Mi, set: value => { Mi = value; } },
 "bindCamera": { get: () => bindCamera, set: value => { bindCamera = value; } }};
-/**
- * 录播/点播视频截屏、高清 GIF 录制与影院模式宽屏适配服务
- */
-const GIF_SAMPLE_INTERVAL_MS = 83;
-
-function captureCanvasFrame(video, canvas, gifInstance, delay) {
-  const ctx = canvas.getContext("2d");
-  if (ctx) {
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-    gifInstance.addFrame(canvas, { copy: true, delay });
-  }
+// Camera resources belong to one captured player and its room/route lifetime.
+let Ti = 83;
+function Ci(video, canvas, gif, delay) {
+  canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
+  gif.addFrame(canvas, { copy: true, delay });
 }
-
-function isCameraHiddenByPreference() {
-  const expiry = __imports.localStorage.getItem("ExSave_Camera_Hidden");
-  if (expiry) {
-    return Date.now() < parseInt(expiry, 10);
-  }
-  return false;
-}
-
-/**
- * 绑定视频截屏与 GIF 录制相机控制器 (导出兼容 bindCamera)
- */
-function bindCamera(parentLifetime, videoEl, anchorName, cameraEl, hoverTarget, movementTarget, containerEl) {
+function Si() { return Ni(); }
+function bindCamera(parent, video, anchor, camera, hover, movement, container) {
   const owner = (0, __imports.createRoomLifetime)();
-  parentLifetime.own(() => owner.dispose());
-  owner.own(() => cameraEl.remove());
-
-  const frameCanvas = document.createElement("canvas");
-  const fullImageCanvas = document.createElement("canvas");
-  frameCanvas.width = 0.25 * videoEl.videoWidth;
-  frameCanvas.height = 0.25 * videoEl.videoHeight;
-
-  let gif = null;
-  let samplingTimer = null;
-  let hideTimer = null;
-  let workerBlobUrl = null;
-  let recordStartTime = null;
-  let capturedPngDataUrl = "";
-
-  const activeBlobUrls = new Set();
-  const revokeBlobUrl = (url) => {
-    if (activeBlobUrls.delete(url)) {
-      URL.revokeObjectURL(url);
-    }
-  };
-
-  const cancelRecording = () => {
-    (0, __imports.clearInterval)(samplingTimer);
-    samplingTimer = null;
-    recordStartTime = null;
-    const prevGif = gif;
-    gif = null;
-    try {
-      if (typeof prevGif?.abort === "function") prevGif.abort();
-    } finally {
-      if (workerBlobUrl) {
-        revokeBlobUrl(workerBlobUrl);
-        workerBlobUrl = null;
-      }
-    }
-  };
-
-  owner.own(() => {
-    for (const url of [...activeBlobUrls]) revokeBlobUrl(url);
-  });
-  owner.own(cancelRecording);
-
-  const downloadFile = (href) => {
+  parent.own(() => owner.dispose());
+  owner.own(() => camera.remove());
+  const frame = document.createElement("canvas"), image = document.createElement("canvas");
+  frame.width = 0.25 * video.videoWidth;
+  frame.height = 0.25 * video.videoHeight;
+  let gif = null, sampling = null, hiding = null, workerUrl = null, started = null, png;
+  const urls = new Set();
+  function revoke(url) {
+    if (urls.delete(url)) URL.revokeObjectURL(url);
+  }
+  function cancel() {
+    (0, __imports.clearInterval)(sampling);
+    sampling = null;
+    started = null;
+    const previous = gif;
+    gif = null; // Invalidate even a synchronous abort/finished callback.
+    try { if (typeof previous?.abort === "function") previous.abort(); }
+    finally { if (workerUrl) { revoke(workerUrl); workerUrl = null; } }
+  }
+  owner.own(() => { for (const url of [...urls]) revoke(url); });
+  owner.own(cancel);
+  function download(href) {
     const link = document.createElement("a");
     link.href = href;
-    const timeStr = (0, __imports.k)("yyyy-MM-dd hh-mm-ss", new Date());
-    link.download = `【${anchorName}】${timeStr}`;
+    link.download = `【${anchor}】` + (0, __imports.k)("yyyy-MM-dd hh-mm-ss", new Date());
     document.body.appendChild(link);
     try {
-      link.click();
-    } finally {
-      link.remove();
-    }
-  };
-
-  // 关闭相机按钮
-  const closeBtn = cameraEl.querySelector("#ex-camera-close");
-  if (closeBtn) {
-    owner.listen(closeBtn, "click", (ev) => {
-      ev.stopPropagation();
-      __imports.localStorage.setItem("ExSave_Camera_Hidden", String(Date.now() + 315360000000));
-      owner.dispose();
-    });
+      const event = document.createEvent("MouseEvents");
+      event.initEvent("click", false, false);
+      link.dispatchEvent(event);
+    } finally { link.remove(); }
   }
-
-  if (!isCameraHiddenByPreference()) {
-    const showCamera = owner.guard(() => {
-      if (isCameraHiddenByPreference()) return;
-      cameraEl.style.display = "flex";
-      (0, __imports.clearTimeout)(hideTimer);
-      hideTimer = owner.timeout(() => {
-        cameraEl.style.display = "none";
-      }, 2000);
+  owner.listen(camera.querySelector("#ex-camera-close"), "click", event => {
+    event.stopPropagation();
+    __imports.localStorage.setItem("ExSave_Camera_Hidden", Date.now() + 31536e7);
+    owner.dispose();
+  });
+  if (!Si()) {
+    const show = owner.guard(() => {
+      if (Si()) return;
+      camera.style.display = "flex";
+      (0, __imports.clearTimeout)(hiding);
+      hiding = owner.timeout(() => { camera.style.display = "none"; }, 2000);
     });
-
-    const hideCamera = () => {
-      cameraEl.style.display = "none";
-      (0, __imports.clearTimeout)(hideTimer);
-    };
-
-    owner.listen(hoverTarget, "mouseenter", showCamera);
-    owner.listen(movementTarget, "mousemove", showCamera);
-    owner.listen(cameraEl, "mouseenter", () => {
-      if (!isCameraHiddenByPreference()) {
-        cameraEl.style.display = "flex";
-        (0, __imports.clearTimeout)(hideTimer);
-      }
+    const hide = () => { camera.style.display = "none"; (0, __imports.clearTimeout)(hiding); };
+    owner.listen(hover, "mouseenter", show);
+    owner.listen(movement, "mousemove", show);
+    owner.listen(camera, "mouseenter", () => {
+      if (!Si()) { camera.style.display = "flex"; (0, __imports.clearTimeout)(hiding); }
     });
-
-    owner.listen(hoverTarget, "mouseleave", hideCamera);
-    owner.listen(containerEl, "mouseleave", hideCamera);
-
-    // 鼠标按下：单击截图或长按录制 GIF
-    owner.listen(cameraEl, "mousedown", owner.guard((ev) => {
-      if (ev.target.id === "ex-camera-close") return;
-      if (typeof GIF === "undefined") {
-        return (0, __imports.ExLoadLib)(__imports.EXURL.gif, owner.guard(() =>
-          (0, __imports.T)("【录制】GIF引擎已就绪，请再次长按录制", "info")));
-      }
-
-      try { cancelRecording(); } catch {}
-      recordStartTime = Date.now();
-      fullImageCanvas.width = videoEl.videoWidth;
-      fullImageCanvas.height = videoEl.videoHeight;
-      fullImageCanvas.getContext("2d").drawImage(videoEl, 0, 0, fullImageCanvas.width, fullImageCanvas.height);
-      capturedPngDataUrl = fullImageCanvas.toDataURL("image/png");
-
-      workerBlobUrl = URL.createObjectURL(new Blob(
-        ["importScripts('https://fastly.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js');"],
-        { type: "application/javascript" }
-      ));
-      activeBlobUrls.add(workerBlobUrl);
-
-      gif = new GIF({
-        workers: 5,
-        quality: 3,
-        width: frameCanvas.width,
-        height: frameCanvas.height,
-        workerScript: workerBlobUrl
-      });
-
-      const currentGif = gif;
-      captureCanvasFrame(videoEl, frameCanvas, currentGif, GIF_SAMPLE_INTERVAL_MS);
-      samplingTimer = owner.interval(() => {
-        if (gif === currentGif) {
-          captureCanvasFrame(videoEl, frameCanvas, currentGif, GIF_SAMPLE_INTERVAL_MS);
-        }
-      }, GIF_SAMPLE_INTERVAL_MS);
+    owner.listen(hover, "mouseleave", hide);
+    owner.listen(container, "mouseleave", hide);
+    owner.listen(camera, "mousedown", owner.guard(event => {
+      if (event.target.id === "ex-camera-close") return;
+      if (typeof GIF === "undefined") return (0, __imports.ExLoadLib)(__imports.EXURL.gif, owner.guard(() =>
+        (0, __imports.T)("【录制】GIF引擎已就绪，请再次长按录制", "info")));
+      try { cancel(); } catch (_) {}
+      started = Date.now();
+      image.width = video.videoWidth;
+      image.height = video.videoHeight;
+      image.getContext("2d").drawImage(video, 0, 0, image.width, image.height);
+      png = image.toDataURL("image/png");
+      workerUrl = URL.createObjectURL(new Blob(["importScripts('https://fastly.jsdelivr.net/npm/gif.js@0.2.0/dist/gif.worker.js');"], { type: "application/javascript" }));
+      urls.add(workerUrl);
+      gif = new GIF({ workers: 5, quality: 3, width: frame.width, height: frame.height, workerScript: workerUrl });
+      const recording = gif;
+      Ci(video, frame, recording, Ti);
+      sampling = owner.interval(() => { if (gif === recording) Ci(video, frame, recording, Ti); }, Ti);
     }));
-
-    owner.listen(cameraEl, "mouseup", owner.guard((ev) => {
-      if (ev.target.id === "ex-camera-close" || recordStartTime === null || !gif) return;
-      (0, __imports.clearInterval)(samplingTimer);
-      const elapsed = Date.now() - recordStartTime;
-      recordStartTime = null;
-
-      // 短按 < 800ms：保存为无水印高清 PNG 截图
+    owner.listen(camera, "mouseup", owner.guard(event => {
+      if (event.target.id === "ex-camera-close" || started === null || !gif) return;
+      (0, __imports.clearInterval)(sampling);
+      const elapsed = Date.now() - started;
+      started = null;
       if (elapsed < 800) {
-        try { cancelRecording(); } catch {}
-        downloadFile(capturedPngDataUrl);
+        try { cancel(); } catch (_) {}
+        download(png);
         return;
       }
-
-      // 长按 >= 800ms：合成并下载 GIF 动图
-      const currentGif = gif;
+      const encoding = gif;
       (0, __imports.T)("【录制】正在生成gif...", "info");
-      currentGif.on("finished", owner.guard((blob) => {
-        if (gif !== currentGif) return;
-        try { cancelRecording(); } catch {}
-        const objectUrl = URL.createObjectURL(blob);
-        activeBlobUrls.add(objectUrl);
-        downloadFile(objectUrl);
-        owner.timeout(() => revokeBlobUrl(objectUrl), 1500);
+      encoding.on("finished", owner.guard(blob => {
+        if (gif !== encoding) return;
+        try { cancel(); } catch (_) {}
+        const url = URL.createObjectURL(blob);
+        urls.add(url);
+        download(url);
+        owner.timeout(() => revoke(url), 1500);
       }));
-      currentGif.render();
+      encoding.render();
     }));
   }
-
   return owner;
 }
-
-/**
- * 录播回放播放器相机图标挂载 (导出兼容 Mi)
- * @param {object} [lifetimeOwner]
- */
-function mountDemandVideoCamera(lifetimeOwner = __imports.roomRouteLifetime) {
-  const pollTimer = lifetimeOwner.interval(() => {
-    const demandHost = document.getElementsByTagName("demand-video")[0];
-    const video = demandHost?.shadowRoot?.getElementById("__video");
+function Mi(owner = __imports.roomRouteLifetime) {
+  const polling = owner.interval(() => {
+    const host = document.getElementsByTagName("demand-video")[0];
+    const video = host?.shadowRoot?.getElementById("__video");
     const anchor = document.getElementsByTagName("demand-video-anchor")[0]?.shadowRoot?.querySelector(".anchor-name");
     const container = document.getElementsByClassName("Video")[0];
-
     if (!video?.videoWidth || !anchor || !container) return;
-    (0, __imports.clearInterval)(pollTimer);
-
+    (0, __imports.clearInterval)(polling);
     const camera = document.createElement("div");
     camera.id = "ex-camera";
     camera.title = "单击截图 长按录制gif";
     camera.innerHTML = `
-      <svg viewBox="0 0 1024 1024" width="38" height="38">
-        <path d="M512 337.371136c-119.543808 0-216.800256 97.255424-216.800256 216.798208 0 119.543808 97.256448 216.800256 216.800256 216.800256s216.800256-97.256448 216.800256-216.800256C728.800256 434.625536 631.543808 337.371136 512 337.371136zM680.479744 554.16832c0 92.911616-75.579392 168.501248-168.479744 168.501248-92.900352 0-168.480768-75.589632-168.480768-168.501248 0-92.923904 75.579392-168.521728 168.480768-168.521728C604.899328 385.646592 680.479744 461.24544 680.479744 554.16832z" fill="#ffffff"></path>
-        <path d="M831.209472 337.349632l-47.167488 0c-13.647872 0-24.751104 11.083776-24.751104 24.707072 0 13.635584 11.103232 24.7296 24.751104 24.7296l47.167488 0c13.646848 0 24.75008-11.094016 24.75008-24.7296C855.959552 348.433408 844.85632 337.349632 831.209472 337.349632z" fill="#ffffff"></path>
-        <path d="M700.505088 171.497472c4.235264 0 6.403072 0.405504 7.232512 0.612352 1.47968 1.514496 4.790272 6.218752 11.717632 20.685824 2.83648 5.910528 8.6272 18.86208 15.888384 35.533824l11.788288 27.063296 29.518848 0 96.535552 0c35.122176 0 63.695872 28.535808 63.695872 63.609856l0 469.933056c0 35.05152-28.573696 63.567872-63.695872 63.567872L150.811648 852.503552c-35.121152 0-63.694848-28.516352-63.694848-63.567872L87.1168 319.0016c0-35.062784 28.573696-63.589376 63.694848-63.589376l99.35872 0 29.110272 0 11.964416-26.537984c4.698112-10.421248 8.416256-19.063808 11.058176-25.70752 9.86112-24.829952 15.207424-30.125056 16.239616-30.974976 0.52736-0.161792 2.64192-0.695296 7.673856-0.695296L700.505088 171.496448M700.505088 126.441472 326.216704 126.441472c-32.519168 0-47.275008 13.479936-65.787904 60.096512-3.180544 7.999488-7.689216 18.122752-10.257408 23.819264l-99.35872 0c-59.96544 0-108.750848 48.738304-108.750848 108.645376l0 469.933056c0 59.894784 48.785408 108.623872 108.750848 108.623872l722.37568 0c59.96544 0 108.751872-48.729088 108.751872-108.623872L981.940224 319.0016c0-59.91936-48.786432-108.665856-108.751872-108.665856l-96.535552 0c-4.458496-10.236928-12.420096-28.372992-16.574464-37.031936C744.823808 141.448192 733.973504 126.441472 700.505088 126.441472L700.505088 126.441472z" fill="#ffffff"></path>
-      </svg>
-      <div id="ex-camera-close">×</div>
+
+    <svg t="1620266708389" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2080" width="38" height="38"><path d="M512 337.371136c-119.543808 0-216.800256 97.255424-216.800256 216.798208 0 119.543808 97.256448 216.800256 216.800256 216.800256s216.800256-97.256448 216.800256-216.800256C728.800256 434.625536 631.543808 337.371136 512 337.371136zM680.479744 554.16832c0 92.911616-75.579392 168.501248-168.479744 168.501248-92.900352 0-168.480768-75.589632-168.480768-168.501248 0-92.923904 75.579392-168.521728 168.480768-168.521728C604.899328 385.646592 680.479744 461.24544 680.479744 554.16832z" p-id="2081" fill="#ffffff"></path><path d="M831.209472 337.349632l-47.167488 0c-13.647872 0-24.751104 11.083776-24.751104 24.707072 0 13.635584 11.103232 24.7296 24.751104 24.7296l47.167488 0c13.646848 0 24.75008-11.094016 24.75008-24.7296C855.959552 348.433408 844.85632 337.349632 831.209472 337.349632z" p-id="2082" fill="#ffffff"></path><path d="M700.505088 171.497472c4.235264 0 6.403072 0.405504 7.232512 0.612352 1.47968 1.514496 4.790272 6.218752 11.717632 20.685824 2.83648 5.910528 8.6272 18.86208 15.888384 35.533824l11.788288 27.063296 29.518848 0 96.535552 0c35.122176 0 63.695872 28.535808 63.695872 63.609856l0 469.933056c0 35.05152-28.573696 63.567872-63.695872 63.567872L150.811648 852.503552c-35.121152 0-63.694848-28.516352-63.694848-63.567872L87.1168 319.0016c0-35.062784 28.573696-63.589376 63.694848-63.589376l99.35872 0 29.110272 0 11.964416-26.537984c4.698112-10.421248 8.416256-19.063808 11.058176-25.70752 9.86112-24.829952 15.207424-30.125056 16.239616-30.974976 0.52736-0.161792 2.64192-0.695296 7.673856-0.695296L700.505088 171.496448M700.505088 126.441472 326.216704 126.441472c-32.519168 0-47.275008 13.479936-65.787904 60.096512-3.180544 7.999488-7.689216 18.122752-10.257408 23.819264l-99.35872 0c-59.96544 0-108.750848 48.738304-108.750848 108.645376l0 469.933056c0 59.894784 48.785408 108.623872 108.750848 108.623872l722.37568 0c59.96544 0 108.751872-48.729088 108.751872-108.623872L981.940224 319.0016c0-59.91936-48.786432-108.665856-108.751872-108.665856l-96.535552 0c-4.458496-10.236928-12.420096-28.372992-16.574464-37.031936C744.823808 141.448192 733.973504 126.441472 700.505088 126.441472L700.505088 126.441472z" p-id="2083" fill="#ffffff"></path></svg>
+
+    <div id="ex-camera-close">×</div>
+
     `;
     container.insertBefore(camera, container.childNodes[0]);
-    bindCamera(lifetimeOwner, video, anchor.innerText, camera, demandHost, demandHost, container);
+    bindCamera(owner, video, anchor.innerText, camera, host, host, container);
   }, 1000);
 }
-const Mi = mountDemandVideoCamera;
-
-/**
- * 影院模式 2.39:1 宽屏比例样式注入 (导出兼容 Li)
- * @param {string} fitMode - object-fit 模式
- */
-function applyCinemaModeStyle(fitMode) {
-  const calculatedHeight = `${parseInt(__imports.V?.style?.width || "0", 10) / 2.39}px`;
-  (0, __imports.U)("Ex_Style_Cinema");
-  const css = `
-    .layout-Player-videoEntity video {
-      object-fit: ${fitMode} !important;
-      height: ${calculatedHeight} !important;
-    }
-  `;
-  (0, __imports.tl)("Ex_Style_Cinema", css);
+function Ni() {
+  var e = __imports.localStorage.getItem("ExSave_Camera_Hidden");
+  if (e) return ((e = parseInt(e)), Date.now() < e);
 }
-const Li = applyCinemaModeStyle;
+function Li(e) {
+  var t = String(parseInt(__imports.V.style.width) / 2.39) + "px",
+    e =
+      ((0, __imports.U)("Ex_Style_Cinema"),
+      `
+
+    .layout-Player-videoEntity video{object-fit:${e} !important;height:${t} !important;}
+
+    `);
+  (0, __imports.tl)("Ex_Style_Cinema", e);
+}
 
 }
 ,
@@ -15812,34 +15686,17 @@ yield {"La": { get: () => La, set: value => { La = value; } },
 "renderPipDanmaku": { get: () => renderPipDanmaku, set: value => { renderPipDanmaku = value; } },
 "resetPipMergeState": { get: () => resetPipMergeState, set: value => { resetPipMergeState = value; } },
 "resetPipPacketState": { get: () => resetPipPacketState, set: value => { resetPipPacketState = value; } }};
-/**
- * 画中画 (PiP) 渲染管道、低功耗视窗隐藏与连击浮层控制器
- */
-
-/**
- * 隐藏/恢复主直播间视频层以防重绘冲突 (导出兼容 Na)
- * @param {boolean} shouldHide
- */
-function setSourceVideoHidden(shouldHide) {
-  const videoEl = document.getElementById("__video2");
-  if (!videoEl) return;
-
-  if (shouldHide) {
-    videoEl.style.setProperty("opacity", "0.01", "important");
-    videoEl.style.setProperty("pointer-events", "none", "important");
-  } else {
-    videoEl.style.removeProperty("opacity");
-    videoEl.style.removeProperty("pointer-events");
-  }
+function Na(e) {
+  var t = document.getElementById("__video2");
+  t &&
+    (e
+      ? (t.style.setProperty("opacity", "0.01", "important"),
+        t.style.setProperty("pointer-events", "none", "important"))
+      : (t.style.removeProperty("opacity"),
+        t.style.removeProperty("pointer-events")));
 }
-const Na = setSourceVideoHidden;
-
-/**
- * 画中画开启期间原网页低功耗模式切换 (导出兼容 La)
- * @param {boolean} enableLowPower
- */
-function setSourcePageLowPowerMode(enableLowPower) {
-  const elementsToHide = [
+function La(t) {
+  ([
     ".layout-Player-video",
     ".layout-Player-videoEntity",
     ".room-html5-player",
@@ -15849,247 +15706,218 @@ function setSourcePageLowPowerMode(enableLowPower) {
     ".comment-37342a",
     ".DanmuEffectDom",
     ".layout-Player-asideMainTop",
-  ];
-
-  elementsToHide.forEach((sel) => {
-    const el = document.querySelector(sel);
-    if (!el) return;
-    if (enableLowPower) {
-      el.style.setProperty("display", "none", "important");
-    } else {
-      el.style.removeProperty("display");
-    }
-  });
-
-  const chatInputSelectors = [".ChatSend-txt", ".ChatSend-button"];
-  chatInputSelectors.forEach((sel) => {
-    const el = document.querySelector(sel);
-    if (!el) return;
-    if (enableLowPower) {
-      el.style.setProperty("opacity", "0.01", "important");
-      el.style.setProperty("pointer-events", "none", "important");
-    } else {
-      el.style.removeProperty("opacity");
-      el.style.removeProperty("pointer-events");
-    }
-  });
-
-  if (!enableLowPower) {
-    [".layout-Player", ".Barrage-list"].forEach((sel) => {
-      const el = document.querySelector(sel);
-      if (el) el.style.removeProperty("display");
-    });
-  }
+  ].forEach((e) => {
+    e = document.querySelector(e);
+    e &&
+      (t
+        ? e.style.setProperty("display", "none", "important")
+        : e.style.removeProperty("display"));
+  }),
+    [".ChatSend-txt", ".ChatSend-button"].forEach((e) => {
+      e = document.querySelector(e);
+      e &&
+        (t
+          ? (e.style.setProperty("opacity", "0.01", "important"),
+            e.style.setProperty("pointer-events", "none", "important"))
+          : (e.style.removeProperty("opacity"),
+            e.style.removeProperty("pointer-events")));
+    }),
+    t ||
+      [".layout-Player", ".Barrage-list"].forEach((e) => {
+        e = document.querySelector(e);
+        e && e.style.removeProperty("display");
+      }));
 }
-const La = setSourcePageLowPowerMode;
-
-/**
- * 重置画中画 WebSocket 数据流客户端 (导出兼容 resetPipPacketState)
- */
 function resetPipPacketState() {
   if (__imports.Oi) {
-    const client = __imports.Oi;
-    __imports.Oi = null;
-    client.msgHandler = () => {};
+    var e = __imports.Oi;
+    ((__imports.Oi = null), (e.msgHandler = () => {}));
     try {
-      client.close();
-    } catch {}
+      e.close();
+    } catch (e) {}
   }
 }
 
-/**
- * 清空画中画时间戳去重缓存 (导出兼容 resetPipMergeState)
- */
 function resetPipMergeState() {
   __imports.pipPacketTimes.clear();
 }
-
-/**
- * 刷新画中画右上角连击弹幕气泡 (导出兼容 refreshPipCombos)
- * @param {Window} [pipWin]
- */
-function refreshPipCombos(pipWin) {
-  const win = pipWin || (window.__pip_window__ && !window.__pip_window__.closed ? window.__pip_window__ : null);
-  const container = win?.document.getElementById("combo-container");
-  if (!container) return;
-
-  const nowMs = Date.now();
-  const activeList = [];
-
-  for (const [key, group] of __imports.pipMergeGroups.entries()) {
-    const recentCount = group.timestamps.filter(t => nowMs - t <= 8000).length;
-    if (recentCount < 2) {
-      group.dom = null;
-    } else {
-      group.displayCount = recentCount;
-      const lastTs = group.timestamps[group.timestamps.length - 1] || 0;
-      activeList.push({ key, info: group, count: recentCount, lastTs });
+function refreshPipCombos(n) {
+  var i = n || ((n = window.__pip_window__) && !n.closed ? n : null),
+    a = i?.document.getElementById("combo-container");
+  if (a) {
+    let t = Date.now();
+    var e,
+      o,
+      r = [];
+    for ([e, o] of __imports.pipMergeGroups.entries()) {
+      var l,
+        s = o.timestamps.filter((e) => t - e <= 8e3).length;
+      s < 2
+        ? (o.dom = null)
+        : ((o.displayCount = s),
+          (l = o.timestamps[o.timestamps.length - 1] || 0),
+          r.push({ key: e, info: o, count: s, lastTs: l }));
     }
-  }
-
-  // 按出现频次与时间降序排序
-  activeList.sort((a, b) => b.count - a.count || b.lastTs - a.lastTs);
-  container.innerHTML = "";
-
-  for (const [, group] of __imports.pipMergeGroups) {
-    group.dom = null;
-  }
-
-  const topGroups = activeList.slice(0, __imports.za);
-  const overflowCount = activeList.length - topGroups.length;
-
-  for (const { key, info, count } of topGroups) {
-    const itemEl = win.document.createElement("div");
-    itemEl.className = "combo-item";
-    itemEl.title = key;
-
-    const maxLen = __imports.Oa;
-    const truncatedKey = (!key || key.length <= maxLen) ? (key || "") : (key.slice(0, maxLen) + "…");
-    itemEl.innerHTML = `${truncatedKey}<span class="combo-count">×${count}</span>`;
-    container.appendChild(itemEl);
-    info.dom = itemEl;
-  }
-
-  if (overflowCount > 0) {
-    const moreEl = win.document.createElement("div");
-    moreEl.className = "combo-item combo-item--more";
-    moreEl.textContent = `+${overflowCount} 组重复`;
-    container.appendChild(moreEl);
+    (r.sort((e, t) => t.count - e.count || t.lastTs - e.lastTs),
+      (a.innerHTML = ""));
+    for (let [, e] of __imports.pipMergeGroups) e.dom = null;
+    var d,
+      c,
+      n = r.slice(0, __imports.za),
+      p = r.length - n.length;
+    for (let { key: e, info: t, count: o } of n) {
+      var m = i.document.createElement("div");
+      ((m.className = "combo-item"),
+        (m.title = e),
+        (m.innerHTML = `${((d = e), (c = __imports.Oa), !d || d.length <= c ? d || "" : d.slice(0, c) + "…")}<span class="combo-count">×${o}</span>`),
+        a.appendChild(m),
+        (t.dom = m));
+    }
+    0 < p &&
+      (((n = i.document.createElement("div")).className =
+        "combo-item combo-item--more"),
+      (n.textContent = `+${p} 组重复`),
+      a.appendChild(n));
   }
 }
-
-/**
- * 在画中画视窗内渲染一条飘屏弹幕 (计算轨道、碰撞规避与 CSS 关键帧)
- * @param {object} packet - 弹幕对象
- * @param {Window} pipWin - 画中画子窗口
- * @param {HTMLElement} danmakuContainer - 弹幕容器
- * @param {boolean} [isSelf=false] - 是否为自身弹幕
- */
-function renderPipDanmaku(packet, pipWin, danmakuContainer, isSelf = false) {
-  if (!packet || !packet.text) return;
-
-  const colorMap = {
-    1: "#ff3b30",
-    2: "#0a84ff",
-    3: "#34c759",
-    4: "#ff9500",
-    5: "#af52de",
-    6: "#ff2d55",
-  };
-
-  const dmEl = pipWin.document.createElement("div");
-  dmEl.className = `dm${isSelf ? " dm-self" : ""}`;
-  dmEl.innerText = packet.text;
-  dmEl.style.fontSize = `${__imports.pipPreferences.fontSize}px`;
-  dmEl.style.color = isSelf ? "#00ff66" : (colorMap[packet.color] || "#ffffff");
-  dmEl.style.visibility = "hidden";
-  danmakuContainer.appendChild(dmEl);
-
-  const textWidth = dmEl.offsetWidth;
-  const winWidth = pipWin.innerWidth;
-
-  // 轨道分配算法
-  const assignTrackIndex = (winW, textW) => {
-    let totalTracks = Math.floor(pipWin.innerHeight / __imports.pipPreferences.trackHeight);
-    if (__imports.pipPreferences.area === "half") {
-      totalTracks = Math.floor(totalTracks / 2);
-    } else if (__imports.pipPreferences.area === "quarter") {
-      totalTracks = Math.floor(totalTracks / 4);
-    }
-    totalTracks = Math.max(1, totalTracks);
-
-    if (!window.__pip_track_state__) {
-      window.__pip_track_state__ = [];
-    }
-    const trackState = window.__pip_track_state__;
-    const baseDuration = 15 / __imports.pipPreferences.speed;
-    const duration = Math.max(0.7 * baseDuration, Math.min(1.4 * baseDuration, baseDuration + textW / 120 / __imports.pipPreferences.speed));
-    const speedPxPerSec = (winW + textW) / duration;
-
-    let chosenTrack = -1;
-    for (let track = 0; track < totalTracks; track++) {
-      const prev = trackState[track];
-      if (!prev) {
-        trackState[track] = { textWidth: textW, speed: speedPxPerSec, startTime: Date.now(), duration: duration * 1000 };
-        return track;
-      }
-      const elapsed = Date.now() - prev.startTime;
-      if (elapsed >= prev.duration) {
-        trackState[track] = { textWidth: textW, speed: speedPxPerSec, startTime: Date.now(), duration: duration * 1000 };
-        return track;
-      }
-      const prevHeadX = winW - prev.speed * (elapsed / 1000);
-      const prevTailX = prevHeadX + prev.textWidth;
-      if (prevTailX <= winW - 16) {
-        if (speedPxPerSec > prev.speed) {
-          const remainingTime = prev.duration - elapsed;
-          if ((prevHeadX / (speedPxPerSec - prev.speed)) * 1000 < remainingTime) {
-            continue;
+function renderPipDanmaku(t, i, a, r = !1) {
+  if (t && t.text) {
+    let e = i.document.createElement("div");
+    ((e.className = "dm" + (r ? " dm-self" : "")),
+      (e.innerText = t.text),
+      (e.style.fontSize = __imports.pipPreferences.fontSize + "px"),
+      (e.style.color = r
+        ? "#00ff66"
+        : ((e) => {
+            switch (e) {
+              case 1:
+                return "#ff3b30";
+              case 2:
+                return "#0a84ff";
+              case 3:
+                return "#34c759";
+              case 4:
+                return "#ff9500";
+              case 5:
+                return "#af52de";
+              case 6:
+                return "#ff2d55";
+              default:
+                return "#ffffff";
+            }
+          })(t.color)),
+      (e.style.visibility = "hidden"),
+      a.appendChild(e));
+    var r = e.offsetWidth,
+      t = i.innerWidth,
+      a = ((e, t) => {
+        let o = Math.floor(e.innerHeight / __imports.pipPreferences.trackHeight);
+        ("half" === __imports.pipPreferences.area
+          ? (o = Math.floor(o / 2))
+          : "quarter" === __imports.pipPreferences.area && (o = Math.floor(o / 4)),
+          (o = Math.max(1, o)),
+          window.__pip_track_state__ || (window.__pip_track_state__ = []));
+        var n = window.__pip_track_state__,
+          i = e.innerWidth,
+          e = 15 / __imports.pipPreferences.speed,
+          a = Math.max(0.7 * e, Math.min(1.4 * e, e + t / 120 / __imports.pipPreferences.speed)),
+          r = (i + t) / a;
+        let l = -1;
+        for (let e = 0; e < o; e++) {
+          var s = n[e];
+          if (!s)
+            return (
+              (n[e] = {
+                textWidth: t,
+                speed: r,
+                startTime: Date.now(),
+                duration: 1e3 * a,
+              }),
+              e
+            );
+          var d = Date.now() - s.startTime;
+          if (d >= s.duration)
+            return (
+              (n[e] = {
+                textWidth: t,
+                speed: r,
+                startTime: Date.now(),
+                duration: 1e3 * a,
+              }),
+              e
+            );
+          var c = i - s.speed * (d / 1e3),
+            p = c + s.textWidth;
+          if (!(i - 16 < p)) {
+            if (r > s.speed) {
+              p = s.duration - d;
+              if (1e3 * (c / (r - s.speed)) < p) continue;
+            }
+            l = e;
+            break;
           }
         }
-        chosenTrack = track;
-        break;
-      }
-    }
-
-    if (chosenTrack === -1) {
-      let minOverlap = Infinity;
-      for (let track = 0; track < totalTracks; track++) {
-        const item = trackState[track];
-        if (!item) {
-          chosenTrack = track;
-          break;
+        if (-1 === l) {
+          let t = 1 / 0;
+          for (let e = 0; e < o; e++) {
+            var m = n[e];
+            if (!m) {
+              l = e;
+              break;
+            }
+            var u = Date.now() - m.startTime,
+              u = i - m.speed * (u / 1e3) + m.textWidth;
+            u < t && ((t = u), (l = e));
+          }
         }
-        const elapsed = Date.now() - item.startTime;
-        const tailPos = winW - item.speed * (elapsed / 1000) + item.textWidth;
-        if (tailPos < minOverlap) {
-          minOverlap = tailPos;
-          chosenTrack = track;
+        return (
+          (n[l] = {
+            textWidth: t,
+            speed: r,
+            startTime: Date.now(),
+            duration: 1e3 * a,
+          }),
+          l
+        );
+      })(i, r),
+      l = a * __imports.pipPreferences.trackHeight,
+      a = window.__pip_track_state__[a].duration / 1e3;
+    ((e.style.top = l + "px"),
+      (e.style.left = t + "px"),
+      (e.style.visibility = "visible"));
+    let o = "exPipMove_" + Math.random().toString(36).substring(2, 9);
+    l = i.document;
+    let n = l.getElementById("ex-danmaku-styles");
+    (n ||
+      (((n = l.createElement("style")).id = "ex-danmaku-styles"),
+      l.head.appendChild(n)),
+      n.sheet.insertRule(
+        `
+
+        @keyframes ${o} {
+
+            from { transform: translateX(0); }
+
+            to { transform: translateX(-${t + r + 30}px); }
+
         }
-      }
-    }
 
-    trackState[chosenTrack] = { textWidth: textW, speed: speedPxPerSec, startTime: Date.now(), duration: duration * 1000 };
-    return chosenTrack;
-  };
-
-  const trackIdx = assignTrackIndex(winWidth, textWidth);
-  const topOffset = trackIdx * __imports.pipPreferences.trackHeight;
-  const animDurationSec = window.__pip_track_state__[trackIdx].duration / 1000;
-
-  dmEl.style.top = `${topOffset}px`;
-  dmEl.style.left = `${winWidth}px`;
-  dmEl.style.visibility = "visible";
-
-  const animName = `exPipMove_${Math.random().toString(36).substring(2, 9)}`;
-  const pipDoc = pipWin.document;
-  let animStyle = pipDoc.getElementById("ex-danmaku-styles");
-  if (!animStyle) {
-    animStyle = pipDoc.createElement("style");
-    animStyle.id = "ex-danmaku-styles";
-    pipDoc.head.appendChild(animStyle);
+    `,
+        0,
+      ),
+      (e.style.animation = o + ` ${a}s linear forwards`),
+      e.addEventListener("animationend", () => {
+        e.remove();
+        try {
+          var t = n.sheet;
+          for (let e = 0; e < t.cssRules.length; e++)
+            if (t.cssRules[e].name === o) {
+              t.deleteRule(e);
+              break;
+            }
+        } catch (e) {}
+      }));
   }
-
-  animStyle.sheet.insertRule(`
-    @keyframes ${animName} {
-      from { transform: translateX(0); }
-      to { transform: translateX(-${winWidth + textWidth + 30}px); }
-    }
-  `, 0);
-
-  dmEl.style.animation = `${animName} ${animDurationSec}s linear forwards`;
-  dmEl.addEventListener("animationend", () => {
-    dmEl.remove();
-    try {
-      const sheet = animStyle.sheet;
-      for (let idx = 0; idx < sheet.cssRules.length; idx++) {
-        if (sheet.cssRules[idx].name === animName) {
-          sheet.deleteRule(idx);
-          break;
-        }
-      }
-    } catch {}
-  });
 }
 
 }
@@ -16133,283 +15961,188 @@ yield {"Br": { get: () => Br, set: value => { Br = value; } },
 "wr": { get: () => wr, set: value => { wr = value; } },
 "xr": { get: () => xr, set: value => { xr = value; } },
 "yr": { get: () => yr, set: value => { yr = value; } }};
-/**
- * 播放器播控工具栏、滤镜调节状态机与原生音量控制中心
- */
-let qa = "";
-let Ua = "";
-let Wa = "";
-let F = "";
-let Ya = false;
-let Qa = 0;
-let Ja = false;
-let H = { rotateY: "", rotate: "", scale: "" };
-let Za = null;
-
-// 浏览器内核检测
-function isEdgeBrowser() {
+let qa = "",
+  Ua = "",
+  Wa = "",
+  F = "",
+  Ya = !1,
+  Qa = 0,
+  Ja = !1,
+  H = { rotateY: "", rotate: "", scale: "" },
+  Za = null;
+function Xa() {
   return /Edg/i.test(navigator.userAgent);
 }
-const Xa = isEdgeBrowser;
-
-function showFilterPanel() {
-  const el = document.querySelector("#ex-vtoolbar-filter-host .filter__wrap");
-  if (el) el.style.display = "block";
+function Ka() {
+  var e = document.querySelector("#ex-vtoolbar-filter-host .filter__wrap");
+  e && (e.style.display = "block");
 }
-const Ka = showFilterPanel;
-
-function hideFilterPanel() {
-  const el = document.querySelector("#ex-vtoolbar-filter-host .filter__wrap");
-  if (el) el.style.display = "none";
+function $a() {
+  var e = document.querySelector("#ex-vtoolbar-filter-host .filter__wrap");
+  e && (e.style.display = "none");
 }
-
-/**
- * 重置视频色彩滤镜与全景透视状态至默认值 (导出兼容 er)
- */
-function resetVideoFilterSettings() {
-  (0, __imports.U)("Ex_Style_Filter");
-  const filterSelect = document.getElementById("filter__select");
-  if (filterSelect) filterSelect.selectedIndex = 0;
-
-  if (V) {
-    V.style.filter = "";
-    if (V.parentNode) V.parentNode.style.transform = "";
-    V.playbackRate = 1;
-  }
-
-  Qa = 0;
-  H = { rotateY: "", rotate: "", scale: "" };
-
-  const barBright = document.getElementById("bar__bright");
-  const barContrast = document.getElementById("bar__contrast");
-  const barSaturate = document.getElementById("bar__saturate");
-  const maskBright = document.getElementById("mask__bright");
-  const maskContrast = document.getElementById("mask__contrast");
-  const maskSaturate = document.getElementById("mask__saturate");
-
-  if (barBright) barBright.style.left = "100px";
-  if (barContrast) barContrast.style.left = "100px";
-  if (barSaturate) barSaturate.style.left = "100px";
-  if (maskBright) maskBright.style.width = "100px";
-  if (maskContrast) maskContrast.style.width = "100px";
-  if (maskSaturate) maskSaturate.style.width = "100px";
-
-  if (Xa()) {
-    Ja = false;
-    const sliderEnhance = document.getElementById("slider__enhance");
-    const switchEnhance = document.getElementById("switch__enhance");
-    if (sliderEnhance) sliderEnhance.style.left = "0px";
-    if (switchEnhance) switchEnhance.style.background = "#ccc";
-    if (V) V.style.imageRendering = "";
-    const panelWrap = document.getElementsByClassName("enhance-modal__panel-wrap")[0];
-    if (panelWrap) panelWrap.style.display = "none";
-  }
-
-  const pano = document.getElementById("ex-panorama");
-  if (pano) {
-    pano.remove();
-    Za = null;
-  }
-
-  const entity = document.getElementsByClassName("layout-Player-videoEntity")[0];
-  if (entity) {
-    entity.style.transform = "";
-    entity.style.transformOrigin = "";
-  }
-
-  Er = 1;
-  (0, __imports.U)("Ex_Style_Cinema");
+function er() {
+  ((0, __imports.U)("Ex_Style_Filter"),
+    (document.getElementById("filter__select").selectedIndex = 0),
+    (V.style.filter = ""),
+    (Qa = 0),
+    (H = { rotateY: "", rotate: "", scale: "" }),
+    (V.parentNode.style.transform = ""),
+    (document.getElementById("bar__bright").style.left = "100px"),
+    (document.getElementById("bar__contrast").style.left = "100px"),
+    (document.getElementById("bar__saturate").style.left = "100px"),
+    (document.getElementById("mask__bright").style.width = "100px"),
+    (document.getElementById("mask__contrast").style.width = "100px"),
+    (document.getElementById("mask__saturate").style.width = "100px"),
+    Xa() &&
+      ((Ja = !1),
+      (t = document.getElementById("slider__enhance")),
+      (e = document.getElementById("switch__enhance")),
+      t && (t.style.left = "0px"),
+      e && (e.style.background = "#ccc"),
+      (V.style.imageRendering = ""),
+      (t = document.getElementsByClassName("enhance-modal__panel-wrap")[0])) &&
+      (t.style.display = "none"));
+  var e = document.getElementById("ex-panorama"),
+    t =
+      (e && (e.remove(), (Za = null)),
+      document.getElementsByClassName("layout-Player-videoEntity")[0]);
+  ((t.style.transform = ""),
+    (t.style.transformOrigin = ""),
+    (Er = 1),
+    (0, __imports.U)("Ex_Style_Cinema"),
+    (V.playbackRate = 1));
 }
-const er = resetVideoFilterSettings;
-
-/**
- * 注入滤镜 CSS 规则 (导出兼容 G)
- * @param {string} css
- */
-function applyFilterCss(css) {
-  (0, __imports.U)("Ex_Style_Filter");
-  (0, __imports.tl)("Ex_Style_Filter", css);
-  hideFilterPanel();
+function G(e) {
+  ((0, __imports.U)("Ex_Style_Filter"), (0, __imports.tl)("Ex_Style_Filter", e), $a());
 }
-const G = applyFilterCss;
-
-/**
- * 绑定可拖拽滑动条 (导出兼容 tr)
- * @param {HTMLElement} barContainer
- * @param {HTMLElement} sliderThumb
- * @param {HTMLElement} activeMask
- * @param {Function} onChange
- */
-function bindDraggableSlider(barContainer, sliderThumb, activeMask, onChange) {
-  sliderThumb.onmousedown = function (e) {
-    const startOffset = (e || window.event).clientX - this.offsetLeft;
-    const thumbEl = this;
-
-    document.onmousemove = function (ev) {
-      const mouseEv = ev || window.event;
-      let left = mouseEv.clientX - startOffset;
-      const maxLeft = barContainer.offsetWidth - sliderThumb.offsetWidth;
-
-      if (left < 0) left = 0;
-      else if (left > maxLeft) left = maxLeft;
-
-      activeMask.style.width = `${left}px`;
-      thumbEl.style.left = `${left}px`;
-
-      const ratio = maxLeft > 0 ? left / maxLeft : 0;
-      onChange(parseInt(ratio * 255, 10));
-
-      if (window.getSelection) {
-        window.getSelection().removeAllRanges();
-      } else if (document.selection) {
-        document.selection.empty();
-      }
-    };
-
-    document.onmouseup = function () {
-      document.onmousemove = null;
-      document.onmouseup = null;
+function tr(e, t, o, n) {
+  let i = e,
+    a = t,
+    r = o,
+    l = 0;
+  a.onmousedown = function (e) {
+    let t = (e || window.event).clientX - this.offsetLeft,
+      o = this;
+    document.onmousemove = function (e) {
+      e = e || window.event;
+      ((l = e.clientX - t) < 0
+        ? (l = 0)
+        : l > i.offsetWidth - a.offsetWidth &&
+          (l = i.offsetWidth - a.offsetWidth),
+        (r.style.width = l + "px"),
+        (o.style.left = l + "px"),
+        n(parseInt((l / (i.offsetWidth - a.offsetWidth)) * 255)),
+        window.getSelection
+          ? window.getSelection().removeAllRanges()
+          : document.selection.empty());
     };
   };
 }
-const tr = bindDraggableSlider;
-
-// 播放器主视频容器与状态
-let V = null;
-let or = null;
-let nr = false;
-let ir = false;
-let ar = null;
-
-function getVToolbarMenu() {
+var V,
+  or = null;
+let nr = !1,
+  ir = !1,
+  ar = null;
+function rr() {
   return document.getElementById("ex-vtoolbar-menu");
 }
-const rr = getVToolbarMenu;
-
-function showMenuImmediate() {
-  (0, __imports.clearTimeout)(ar);
-  openMenu();
+function lr() {
+  ((0, __imports.clearTimeout)(ar), mr());
 }
-
-function showMenuIfClosed() {
-  (0, __imports.clearTimeout)(ar);
-  if (!nr) openMenu();
+function sr() {
+  ((0, __imports.clearTimeout)(ar), nr || mr());
 }
-
-function handleMenuMouseLeave(e) {
-  const related = e.relatedTarget;
-  const menuEl = rr();
-  if (menuEl && related && menuEl.contains(related)) return;
-
-  (0, __imports.clearTimeout)(ar);
-  ar = (0, __imports.setTimeout)(() => {
-    closeMenu();
-  }, 80);
+function dr(e) {
+  var t,
+    e = e.relatedTarget;
+  ((e = e),
+    ((t = rr()) && e && t.contains(e)) ||
+      ((0, __imports.clearTimeout)(ar),
+      (ar = (0, __imports.setTimeout)(() => {
+        ur();
+      }, 80))));
 }
-
-function bindVToolbarHoverEvents(el, immediate) {
-  if (!el) return;
-  if (immediate) {
-    el.addEventListener("mouseenter", showMenuImmediate);
-    el.addEventListener("pointerenter", showMenuImmediate);
-  } else {
-    el.addEventListener("mouseenter", showMenuIfClosed);
-    el.addEventListener("pointerenter", showMenuIfClosed);
-  }
-  el.addEventListener("mouseleave", handleMenuMouseLeave);
-  el.addEventListener("pointerleave", handleMenuMouseLeave);
+function cr(e, t) {
+  e &&
+    (t
+      ? (e.addEventListener("mouseenter", lr),
+        e.addEventListener("pointerenter", lr))
+      : (e.addEventListener("mouseenter", sr),
+        e.addEventListener("pointerenter", sr)),
+    e.addEventListener("mouseleave", dr),
+    e.addEventListener("pointerleave", dr));
 }
-const cr = bindVToolbarHoverEvents;
-
-function handleKeyDownEscape(e) {
-  if (e.key === "Escape") {
-    closeMenu();
-    closeFilterHost();
-  }
+function pr(e) {
+  "Escape" === e.key && (ur(), gr());
 }
-const pr = handleKeyDownEscape;
-
-function openMenu() {
-  const menu = document.getElementById("ex-vtoolbar-menu");
-  if (menu) {
-    nr = true;
-    menu.classList.add("is-open");
-    menu.querySelector(".vtoolbar-menu__trigger")?.setAttribute("aria-expanded", "true");
-  }
+function mr() {
+  var e = document.getElementById("ex-vtoolbar-menu");
+  e &&
+    ((nr = !0),
+    e.classList.add("is-open"),
+    e
+      .querySelector(".vtoolbar-menu__trigger")
+      .setAttribute("aria-expanded", "true"));
 }
-
-function closeMenu() {
-  const menu = document.getElementById("ex-vtoolbar-menu");
-  if (menu) {
-    (0, __imports.clearTimeout)(ar);
-    nr = false;
-    menu.classList.remove("is-open");
-    menu.querySelector(".vtoolbar-menu__trigger")?.setAttribute("aria-expanded", "false");
-    closeFilterHost();
-  }
+function ur() {
+  var e = document.getElementById("ex-vtoolbar-menu");
+  e &&
+    ((0, __imports.clearTimeout)(ar),
+    (nr = !1),
+    e.classList.remove("is-open"),
+    e
+      .querySelector(".vtoolbar-menu__trigger")
+      .setAttribute("aria-expanded", "false"),
+    gr());
 }
-const ur = closeMenu;
-
-function closeFilterHost() {
-  const host = document.getElementById("ex-vtoolbar-filter-host");
-  const trigger = document.getElementById("vtoolbar-menu-filter");
-  ir = false;
-  if (host) host.classList.remove("is-visible");
-  if (trigger) {
-    trigger.classList.remove("is-active");
-    trigger.setAttribute("aria-expanded", "false");
-  }
-  hideFilterPanel();
+function gr() {
+  var e = document.getElementById("ex-vtoolbar-filter-host"),
+    t = document.getElementById("vtoolbar-menu-filter");
+  ((ir = !1),
+    e && e.classList.remove("is-visible"),
+    t &&
+      (t.classList.remove("is-active"),
+      t.setAttribute("aria-expanded", "false")),
+    $a());
 }
-const gr = closeFilterHost;
-
-function getFilterHost() {
+function hr() {
   return document.getElementById("ex-vtoolbar-filter-host");
 }
-const hr = getFilterHost;
-
-// 各种播控 SVG 矢量图标
-const fr = __imports.et;
-const yr = `<svg class="icon" viewBox="0 0 1024 1024" width="16" height="16"><path d="M921.6 766.634667L257.365333 102.4a68.266667 68.266667 0 0 0-96.597333 0L102.4 160.768a68.266667 68.266667 0 0 0 0 96.597333L766.634667 921.6a68.266667 68.266667 0 0 0 96.597333 0L921.6 863.232a68.266667 68.266667 0 0 0 0-96.597333z" fill="#ffffff"></path></svg>`;
-const vtoolbarChevronSvg = `<svg class="vtoolbar-menu__chevron" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-const vr = `<svg class="icon" viewBox="0 0 1237 1024"><path d="M648.448 946.347l0.256-1.622-0.256 1.622z" fill="#ffffff"/></svg>`;
-const xr = `<svg class="icon" viewBox="0 0 1024 1024"><path d="M496 64A48 48 0 0 1 544 112v800a48 48 0 0 1-96 0v-800A48 48 0 0 1 496 64z" fill="#ffffff"/></svg>`;
-const wr = `<svg class="icon vtoolbar-menu__icon-pip" viewBox="3 5 18 12" fill="none"><rect x="3" y="5" width="18" height="12" rx="2" stroke="#ffffff" stroke-width="1.5"/><path d="M7 10h5.5M7 13h3.5" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"/></svg>`;
-
-let _r = false;
+var fr = __imports.et,
+  yr =
+    '<svg t="1598941324196" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="3146"><path d="M921.6 766.634667L257.365333 102.4a68.266667 68.266667 0 0 0-96.597333 0L102.4 160.768a68.266667 68.266667 0 0 0 0 96.597333L766.634667 921.6a68.266667 68.266667 0 0 0 96.597333 0L921.6 863.232a68.266667 68.266667 0 0 0 0-96.597333zM139.605333 199.338667l59.733334-59.733334A13.312 13.312 0 0 1 208.896 136.533333a13.653333 13.653333 0 0 1 9.898667 4.096l83.968 82.944-79.189334 79.189334-83.968-83.968a13.653333 13.653333 0 0 1 0-19.456z m744.789334 625.322666l-59.733334 59.733334a13.312 13.312 0 0 1-9.557333 4.096 13.653333 13.653333 0 0 1-9.898667-4.096L262.144 341.333333 341.333333 262.144l543.061334 543.061333a13.653333 13.653333 0 0 1 0 19.456zM230.058667 589.824l-50.517334 92.501333-92.842666 50.858667 92.842666 50.517333 50.517334 92.842667 50.517333-92.842667 92.842667-50.517333-92.842667-50.858667-50.517333-92.501333zM541.013333 270.336l31.061334-57.344 57.344-31.402667-57.344-31.402666-31.061334-57.002667-31.402666 57.002667-57.344 31.402666 57.344 31.402667 31.402666 57.344zM827.392 377.173333l21.162667-38.912L887.466667 317.098667l-38.912-21.504-21.162667-38.912-21.504 38.912-38.570667 21.504 38.570667 21.162666 21.504 38.912z" p-id="3147" fill="#ffffff"></path></svg>',
+  vtoolbarChevronSvg =
+    '<svg class="vtoolbar-menu__chevron" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  vr =
+    '<svg class="icon" viewBox="0 0 1237 1024" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M648.448 946.347l0.256-1.622-0.256 1.622z m84.31 13.354c-0.769 4.608-0.769 4.608-4.182 13.483-8.533 16.768-8.533 16.768-49.835 22.784-24.149-14.293-24.149-14.293-27.605-22.613-2.475-5.718-2.475-5.718-3.541-9.387L476.416 335.36l-103.083 499.2c-1.109 5.12-1.109 5.12-4.821 13.27-6.827 12.117-6.827 12.117-35.285 22.527-30.294-7.253-30.294-7.253-38.742-19.37-4.522-8.15-4.522-8.15-6.058-13.227l-74.582-262.357H0v-85.334h278.272l45.781 161.11 104.022-503.424c1.024-4.694 1.024-4.694 4.394-12.502 6.102-11.989 6.102-11.989 35.968-23.338 31.83 8.533 31.83 8.533 39.254 20.736 4.053 7.808 4.053 7.808 5.376 12.544l165.888 609.237 113.92-716.885c0.896-5.248 0.896-5.248 4.864-14.592 9.088-15.574 9.088-15.574 44.928-22.4C868.48 12.587 868.48 12.587 873.6 22.443c3.285 6.912 3.285 6.912 4.523 11.52l112 446.549h221.738v85.333H923.563l-78.507-312.917-112.299 706.773z" fill="#ffffff"/></svg>',
+  xr =
+    '<svg class="icon" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M496 64A48 48 0 0 1 544 112v800a48 48 0 0 1-96 0v-800A48 48 0 0 1 496 64z m-224 128A48 48 0 0 1 320 240v544a48 48 0 0 1-96 0v-544A48 48 0 0 1 272 192z m448 0A48 48 0 0 1 768 240v544a48 48 0 0 1-96 0v-544A48 48 0 0 1 720 192z m-672 128A48 48 0 0 1 96 368v288a48 48 0 0 1-96 0v-288A48 48 0 0 1 48 320z m896 0a48 48 0 0 1 48 48v288a48 48 0 0 1-96 0v-288a48 48 0 0 1 48-48z" fill="#ffffff"/></svg>',
+  wr =
+    '<svg class="icon vtoolbar-menu__icon-pip" viewBox="3 5 18 12" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="3" y="5" width="18" height="12" rx="2" stroke="#ffffff" stroke-width="1.5"/><path d="M7 10h5.5M7 13h3.5" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"/></svg>';
+var _r = !1;
 let kr = 0;
 let Er = 1;
-let Br = null;
-let Ir = null;
-let Tr = null;
-let Cr = null;
-
-/**
- * 驱动原生斗鱼播放器音量滑块与文字提示 (导出兼容 setDanmakuVolume)
- * @param {number} vol - 音量比例 (0.0 ~ 1.0)
- */
-function setDanmakuVolume(vol) {
+var Br = null,
+  Ir = null,
+  Tr = null,
+  Cr = null;
+function setDanmakuVolume(e) {
   try {
-    const clamped = Math.max(0, Math.min(1, vol));
-    const volumeIcon = document.querySelector(".volume-07c230");
-    const frontBar = document.querySelector(".volume-bar-93f0b0 .front-99e2aa");
-    const point = document.querySelector(".volume-bar-93f0b0 .point-6ef744");
-    const tips = document.querySelector(".volume-bar-93f0b0 .tips2-9bb064");
-
-    if (frontBar) frontBar.style.height = `${100 * clamped}px`;
-    if (point) point.style.bottom = `${100 * clamped + 7}px`;
-    if (tips) tips.textContent = `音量${Math.round(100 * clamped)}%`;
-
-    if (volumeIcon) {
-      if (clamped === 0) {
-        volumeIcon.classList.add("custom-muted");
-        volumeIcon.classList.remove("custom-normal");
-      } else {
-        volumeIcon.classList.add("custom-normal");
-        volumeIcon.classList.remove("custom-muted");
-      }
-    }
-  } catch {}
+    var t = document.querySelector(".volume-07c230"),
+      o = document.querySelector(".volume-bar-93f0b0 .front-99e2aa"),
+      n = document.querySelector(".volume-bar-93f0b0 .point-6ef744"),
+      i = document.querySelector(".volume-bar-93f0b0 .tips2-9bb064");
+    (o && (o.style.height = 100 * e + "px"),
+      n && (n.style.bottom = 100 * e + 7 + "px"),
+      i && (i.textContent = `音量${Math.round(100 * e)}%`),
+      t &&
+        (0 === e
+          ? (t.classList.add("custom-muted"),
+            t.classList.remove("custom-normal"))
+          : (t.classList.add("custom-normal"),
+            t.classList.remove("custom-muted"))));
+  } catch (e) {}
 }
 
 }
@@ -16669,347 +16402,374 @@ class Dr {
 "src/next/services/lottery-page.js":
 function* (__imports) {
 yield {"jr": { get: () => jr, set: value => { jr = value; } }};
-/**
- * HLS / M3U8 多线程分片并发下载与视频拼接下载器 (导出兼容 jr)
- */
-function HlsVideoDownloader() {
-  const self = this;
-
-  /**
-   * TS 视频分片并发批量下载状态机
-   */
-  function SegmentDownloadTask(urlList, onComplete, startIndex, accumulatedChunks) {
-    const task = this;
-    this.aborted = false;
-    this.threadNum = 10;
-    this.step = 0;
-
-    (function batchFetch(urls, resolveAll, currentIdx, chunks) {
-      const promiseBatch = [];
-      for (let t = 0; t < task.threadNum; t++) {
-        const segUrl = urls[currentIdx + t];
-        if (!segUrl) {
-          promiseBatch.push(Promise.resolve());
-          break;
-        }
-
-        promiseBatch.push(
-          (0, __imports.fetch)(segUrl).catch(() => {
-            return (0, __imports.fetch)(segUrl).catch(() => {
-              return (0, __imports.fetch)(segUrl);
-            });
-          })
-        );
-      }
-
-      task.step = promiseBatch.length;
-
-      Promise.all(promiseBatch)
-        .then((responses) => {
-          const validResponses = responses.filter(r => r && typeof r.blob === "function");
-          return Promise.all(validResponses.map(r => r.blob()));
-        })
-        .then((blobs) => {
-          const bufferPromises = blobs.map((blob, offset) => {
-            return new Promise((res) => {
-              const reader = new FileReader();
-              reader.readAsArrayBuffer(new Blob([blob], { type: "octet/stream" }));
-              reader.addEventListener("loadend", () => {
-                res(reader.result);
-                if (typeof task.onprogress === "function") {
-                  const currentSegment = currentIdx + offset + 1;
-                  const totalSegments = urls.length;
-                  const totalDownloadedBytes = chunks.reduce((sum, chunk) => sum + (chunk?.byteLength || 0), 0);
-
-                  task.onprogress({
-                    segment: currentSegment,
-                    total: totalSegments,
-                    percentage: ((currentSegment / totalSegments) * 100).toFixed(3),
-                    downloaded: formatByteSize(totalDownloadedBytes),
-                    status: "Downloading...",
-                  });
-                }
+function jr() {
+  var l = this;
+  function s(e, t, o, n) {
+    var s = this;
+    ((this.aborted = !1),
+      (this.threadNum = 10),
+      (this.step = 0),
+      (function n(a, i, r, l) {
+        let e = [];
+        for (let t = 0; t < s.threadNum; t++) {
+          if (!a[r + t]) {
+            e.push(Promise.resolve());
+            break;
+          }
+          e.push(
+            (0, __imports.fetch)(a[r + t]).catch((e) => {
+              (0, __imports.fetch)(a[r + t]).catch((e) => {
+                (0, __imports.fetch)(a[r + t]);
               });
-            });
-          });
-          return Promise.all(bufferPromises);
-        })
-        .then((loadedBuffers) => {
-          for (let i = 0; i < loadedBuffers.length; i++) {
-            chunks.push(loadedBuffers[i]);
-          }
-          const nextStep = task.step;
-
-          if (task.aborted) {
-            if (typeof task.aborted === "function") task.aborted();
-          } else if (urls[currentIdx + nextStep]) {
-            if (task.ie) {
-              (0, __imports.setTimeout)(() => {
-                batchFetch(urls, resolveAll, currentIdx + nextStep, chunks);
-              }, 500);
-            } else {
-              batchFetch(urls, resolveAll, currentIdx + nextStep, chunks);
-            }
-          } else {
-            resolveAll(chunks);
-          }
-        })
-        .catch((err) => {
-          if (typeof task.onerror === "function") {
-            task.onerror(`下载 TS 分片时异常 (index: ${currentIdx}): ${err}`);
-          }
-        });
-    })(urlList, onComplete, startIndex, accumulatedChunks);
-  }
-
-  function formatByteSize(bytes) {
-    const units = [
-      { divider: 1e18, suffix: "EB" },
-      { divider: 1e15, suffix: "PB" },
-      { divider: 1e12, suffix: "TB" },
-      { divider: 1e9, suffix: "GB" },
-      { divider: 1e6, suffix: "MB" },
-      { divider: 1e3, suffix: "kB" },
-    ];
-    for (const unit of units) {
-      if (bytes >= unit.divider) {
-        return (bytes / unit.divider).toString().split(".")[0] + unit.suffix;
-      }
-    }
-    return String(bytes);
-  }
-
-  this.ie = navigator.appVersion.toString().includes(".NET");
-  this.ios = Boolean(navigator.platform && /iPad|iPhone|iPod/.test(navigator.platform));
-
-  /**
-   * 启动下载 M3U8 并封装导出视频
-   */
-  this.start = function (m3u8Url, options = {}) {
-    let activeTask = null;
-    const callbacks = { progress: null, finished: null, error: null, aborted: null };
-
-    const emitEvent = (type, payload) => {
-      if (typeof callbacks[type] === "function") callbacks[type](payload);
-    };
-
-    if (self.ios) {
-      emitEvent("error", "iOS 平台暂不支持分片合并下载");
-      return;
-    }
-
-    const controller = {
-      on(event, handler) {
-        if (event in callbacks) callbacks[event] = handler;
-        return controller;
-      },
-      abort() {
-        if (activeTask) {
-          activeTask.aborted = () => emitEvent("aborted");
+            }),
+          );
         }
-      },
-    };
-
-    new Promise((resolve, reject) => {
-      const parsedUrl = new URL(m3u8Url);
-      (0, __imports.fetch)(m3u8Url)
-        .then(res => res.text())
-        .then((m3u8Content) => {
-          const lines = m3u8Content.split(/\r?\n/);
-          const tsLines = lines.filter(line => line.includes(".ts"));
-
-          if (tsLines.length === 0) {
-            const err = "无效的 M3U8 播放列表文件";
-            reject(err);
-            emitEvent("error", err);
-            return;
-          }
-
-          const resolvedTsUrls = tsLines.map((tsLine) => {
-            if (tsLine.startsWith("http") || tsLine.startsWith("ftp")) {
-              return tsLine;
-            }
-            return `${parsedUrl.protocol}//${parsedUrl.host}${parsedUrl.pathname}/./../${tsLine}`;
+        s.step = e.length;
+        Promise.all(e)
+          .then(function (e) {
+            return c(
+              d(e, function (e) {
+                return e && e.blob;
+              }),
+              function (e) {
+                return e.blob();
+              },
+            );
+          })
+          .then(function (e) {
+            return Promise.all(e);
+          })
+          .then(function (e) {
+            ((e = c(e, function (n, i) {
+              return new Promise(function (t, e) {
+                var o = new FileReader();
+                (o.readAsArrayBuffer(new Blob([n], { type: "octet/stream" })),
+                  o.addEventListener("loadend", function (e) {
+                    (t(o.result),
+                      s.onprogress &&
+                        s.onprogress({
+                          segment: r + i + 1,
+                          total: a.length,
+                          percentage: (((r + i + 1) / a.length) * 100).toFixed(
+                            3,
+                          ),
+                          downloaded: m(
+                            +p(
+                              c(l, function (e) {
+                                return e.byteLength;
+                              }),
+                              function (e, t) {
+                                return e + t;
+                              },
+                              0,
+                            ),
+                          ),
+                          status: "Downloading...",
+                        }));
+                  }));
+              });
+            })),
+              Promise.all(e).then(function (e) {
+                for (var t = 0; t < e.length; t++) l.push(e[t]);
+                let o = s.step;
+                (a[r + 2],
+                  s.aborted
+                    ? ((l = null), s.aborted())
+                    : a[r + o]
+                      ? s.ie
+                        ? (0, __imports.setTimeout)(function () {
+                            n(a, i, r + o, l);
+                          }, 500)
+                        : n(a, i, r + o, l)
+                      : i(l));
+              }));
+          })
+          .catch(function (e) {
+            s.onerror &&
+              s.onerror(
+                "Something went wrong when downloading ts file, nr. " +
+                  r +
+                  ": " +
+                  e,
+              );
           });
-
-          activeTask = new SegmentDownloadTask(resolvedTsUrls, (chunkBuffers) => {
-            const finalBlob = new Blob(chunkBuffers, { type: "octet/stream" });
-            emitEvent("progress", { status: "Processing..." });
-
-            if (options.returnBlob) {
-              emitEvent("finished", { status: "Successfully downloaded video", data: finalBlob });
-              resolve(finalBlob);
-            } else {
-              const filename = options.filename || "video.mp4";
-              if (self.ie) {
-                window.navigator.msSaveBlob(finalBlob, filename);
-              } else {
-                emitEvent("progress", { status: "Sending video to browser..." });
-                const anchor = document.createElement("a");
-                anchor.href = URL.createObjectURL(finalBlob);
-                anchor.download = filename;
-                anchor.style.display = "none";
-                document.body.appendChild(anchor);
-                anchor.click();
-                anchor.remove();
+      })(e, t, o, n));
+  }
+  function d(e, t) {
+    for (var o = [], n = 0; n < e.length; n++) t(e[n], n) && o.push(e[n]);
+    return o;
+  }
+  function c(e, t) {
+    for (var o = e.slice(0), n = 0; n < e.length; n++) o[n] = t(e[n], n);
+    return o;
+  }
+  function p(e, o, t) {
+    var n = t;
+    return (
+      e.forEach(function (e, t) {
+        ((e = +o(n, e, t)), (n = e));
+      }),
+      n
+    );
+  }
+  function m(e) {
+    for (
+      var t = [
+          { divider: 1e18, suffix: "EB" },
+          { divider: 1e15, suffix: "PB" },
+          { divider: 1e12, suffix: "TB" },
+          { divider: 1e9, suffix: "GB" },
+          { divider: 1e6, suffix: "MB" },
+          { divider: 1e3, suffix: "kB" },
+        ],
+        o = 0;
+      o < t.length;
+      o++
+    )
+      if (e >= t[o].divider)
+        return (
+          (e / t[o].divider).toString().toString().split(".")[0] + t[o].suffix
+        );
+    return e.toString();
+  }
+  ((this.ie = 0 < navigator.appVersion.toString().indexOf(".NET")),
+    (this.ios =
+      navigator.platform && /iPad|iPhone|iPod/.test(navigator.platform)),
+    (this.start = function (e, i) {
+      i = i || {};
+      var a,
+        o,
+        n = { progress: null, finished: null, error: null, aborted: null };
+      function r(e, t) {
+        e && n[e] && n[e](t);
+      }
+      return l.ios
+        ? r("error", "Downloading on IOS is not supported.")
+        : ((o = {
+            on: function (e, t) {
+              switch (e) {
+                case "progress":
+                  n.progress = t;
+                  break;
+                case "finished":
+                  n.finished = t;
+                  break;
+                case "error":
+                  n.error = t;
+                  break;
+                case "aborted":
+                  n.aborted = t;
               }
-              emitEvent("finished", { status: "Successfully downloaded video", data: finalBlob });
-              resolve(finalBlob);
-            }
-          }, 0, []);
-
-          activeTask.onprogress = (prog) => {
-            emitEvent("progress", prog);
-          };
-        })
-        .catch((err) => {
-          emitEvent("error", `解析 M3U8 失败: ${err}`);
-        });
-    });
-
-    return controller;
-  };
+              return o;
+            },
+            abort: function () {
+              a &&
+                (a.aborted = function () {
+                  r("aborted");
+                });
+            },
+          }),
+          new Promise(function (o, t) {
+            var n = new URL(e);
+            (0, __imports.fetch)(e)
+              .then(function (e) {
+                return e.text();
+              })
+              .then(function (e) {
+                if (
+                  !(e = c(
+                    (e = d(e.split(/(\r\n|\r|\n)/gi), function (e) {
+                      return -1 < e.indexOf(".ts");
+                    })),
+                    function (e, t) {
+                      return 0 === e.indexOf("http") || 0 === e.indexOf("ftp")
+                        ? e
+                        : n.protocol +
+                            "//" +
+                            n.host +
+                            n.pathname +
+                            "/./../" +
+                            e;
+                    },
+                  )).length
+                )
+                  return (
+                    t("Invalid m3u8 playlist"),
+                    r("error", "Invalid m3u8 playlist")
+                  );
+                (a = new s(
+                  e,
+                  function (e) {
+                    var t;
+                    ((e = new Blob(e, { type: "octet/stream" })),
+                      r("progress", { status: "Processing..." }),
+                      i.returnBlob
+                        ? (r("finished", {
+                            status: "Successfully downloaded video",
+                            data: e,
+                          }),
+                          o(e))
+                        : l.ios ||
+                          (l.ie
+                            ? (r("progress", {
+                                status:
+                                  "Sending video to Internet Explorer... this may take a while depending on your device's performance.",
+                              }),
+                              window.navigator.msSaveBlob(
+                                e,
+                                (i && i.filename) || "video.mp4",
+                              ))
+                            : (r("progress", {
+                                status: "Sending video to browser...",
+                              }),
+                              ((t = document.createElementNS(
+                                "http://www.w3.org/1999/xhtml",
+                                "a",
+                              )).href = URL.createObjectURL(e)),
+                              (t.download = (i && i.filename) || "video.mp4"),
+                              (t.style.display = "none"),
+                              document.body.appendChild(t),
+                              t.click(),
+                              r("finished", {
+                                status: "Successfully downloaded video",
+                                data: e,
+                              }),
+                              o(e))));
+                  },
+                  0,
+                  [],
+                )).onprogress = function (e) {
+                  r("progress", e);
+                };
+              })
+              .catch(function (e) {
+                r(
+                  "error",
+                  "Something went wrong when downloading m3u8 playlist: " + e,
+                );
+              });
+          }),
+          o);
+    }));
 }
-
-const jr = HlsVideoDownloader;
 
 }
 ,
 "src/next/services/danmaku-history.js":
 function* (__imports) {
 yield {"Or": { get: () => Or, set: value => { Or = value; } }};
-/**
- * 标准 MD5 16 轮消息摘要计算引擎 (导出兼容 Or)
- */
-const hexCaseUpper = 0;
-const charBits = 8;
-
-/**
- * 计算输入字符串的 32 位 MD5 十六进制哈希值
- * @param {string} inputStr - 待签名文本
- * @returns {string} 32位十六进制小写哈希
- */
-function computeMd5Hex(inputStr) {
-  const str = String(inputStr);
-
-  const coreMd5 = (x, len) => {
-    x[len >> 5] |= 128 << (len % 32);
-    x[14 + (((len + 64) >>> 9) << 4)] = len;
-
-    let a = 1732584193;
-    let b = -271733879;
-    let c = -1732584194;
-    let d = 271733878;
-
-    for (let i = 0; i < x.length; i += 16) {
-      const olda = a;
-      const oldb = b;
-      const oldc = c;
-      const oldd = d;
-
-      // Round 1
-      a = (0, __imports.p)(a, b, c, d, x[i + 0], 7, -680876936);
-      d = (0, __imports.p)(d, a, b, c, x[i + 1], 12, -389564586);
-      c = (0, __imports.p)(c, d, a, b, x[i + 2], 17, 606105819);
-      b = (0, __imports.p)(b, c, d, a, x[i + 3], 22, -1044525330);
-      a = (0, __imports.p)(a, b, c, d, x[i + 4], 7, -176418897);
-      d = (0, __imports.p)(d, a, b, c, x[i + 5], 12, 1200080426);
-      c = (0, __imports.p)(c, d, a, b, x[i + 6], 17, -1473231341);
-      b = (0, __imports.p)(b, c, d, a, x[i + 7], 22, -45705983);
-      a = (0, __imports.p)(a, b, c, d, x[i + 8], 7, 1770035416);
-      d = (0, __imports.p)(d, a, b, c, x[i + 9], 12, -1958414417);
-      c = (0, __imports.p)(c, d, a, b, x[i + 10], 17, -42063);
-      b = (0, __imports.p)(b, c, d, a, x[i + 11], 22, -1990404162);
-      a = (0, __imports.p)(a, b, c, d, x[i + 12], 7, 1804603682);
-      d = (0, __imports.p)(d, a, b, c, x[i + 13], 12, -40341101);
-      c = (0, __imports.p)(c, d, a, b, x[i + 14], 17, -1502002290);
-      b = (0, __imports.p)(b, c, d, a, x[i + 15], 22, 1236535329);
-
-      // Round 2
-      a = (0, __imports.u)(a, b, c, d, x[i + 1], 5, -165796510);
-      d = (0, __imports.u)(d, a, b, c, x[i + 6], 9, -1069501632);
-      c = (0, __imports.u)(c, d, a, b, x[i + 11], 14, 643717713);
-      b = (0, __imports.u)(b, c, d, a, x[i + 0], 20, -373897302);
-      a = (0, __imports.u)(a, b, c, d, x[i + 5], 5, -701558691);
-      d = (0, __imports.u)(d, a, b, c, x[i + 10], 9, 38016083);
-      c = (0, __imports.u)(c, d, a, b, x[i + 15], 14, -660478335);
-      b = (0, __imports.u)(b, c, d, a, x[i + 4], 20, -405537848);
-      a = (0, __imports.u)(a, b, c, d, x[i + 9], 5, 568446438);
-      d = (0, __imports.u)(d, a, b, c, x[i + 14], 9, -1019803690);
-      c = (0, __imports.u)(c, d, a, b, x[i + 3], 14, -187363961);
-      b = (0, __imports.u)(b, c, d, a, x[i + 8], 20, 1163531501);
-      a = (0, __imports.u)(a, b, c, d, x[i + 13], 5, -1444681467);
-      d = (0, __imports.u)(d, a, b, c, x[i + 2], 9, -51403784);
-      c = (0, __imports.u)(c, d, a, b, x[i + 7], 14, 1735328473);
-      b = (0, __imports.u)(b, c, d, a, x[i + 12], 20, -1926607734);
-
-      // Round 3
-      a = (0, __imports.g)(a, b, c, d, x[i + 5], 4, -378558);
-      d = (0, __imports.g)(d, a, b, c, x[i + 8], 11, -2022574463);
-      c = (0, __imports.g)(c, d, a, b, x[i + 11], 16, 1839030562);
-      b = (0, __imports.g)(b, c, d, a, x[i + 14], 23, -35309556);
-      a = (0, __imports.g)(a, b, c, d, x[i + 1], 4, -1530992060);
-      d = (0, __imports.g)(d, a, b, c, x[i + 4], 11, 1272893353);
-      c = (0, __imports.g)(c, d, a, b, x[i + 7], 16, -155497632);
-      b = (0, __imports.g)(b, c, d, a, x[i + 10], 23, -1094730640);
-      a = (0, __imports.g)(a, b, c, d, x[i + 13], 4, 681279174);
-      d = (0, __imports.g)(d, a, b, c, x[i + 0], 11, -358537222);
-      c = (0, __imports.g)(c, d, a, b, x[i + 3], 16, -722521979);
-      b = (0, __imports.g)(b, c, d, a, x[i + 6], 23, 76029189);
-      a = (0, __imports.g)(a, b, c, d, x[i + 9], 4, -640364487);
-      d = (0, __imports.g)(d, a, b, c, x[i + 12], 11, -421815835);
-      c = (0, __imports.g)(c, d, a, b, x[i + 15], 16, 530742520);
-      b = (0, __imports.g)(b, c, d, a, x[i + 2], 23, -995338651);
-
-      // Round 4
-      a = (0, __imports.h)(a, b, c, d, x[i + 0], 6, -198630844);
-      d = (0, __imports.h)(d, a, b, c, x[i + 7], 10, 1126891415);
-      c = (0, __imports.h)(c, d, a, b, x[i + 14], 15, -1416354905);
-      b = (0, __imports.h)(b, c, d, a, x[i + 5], 21, -57434055);
-      a = (0, __imports.h)(a, b, c, d, x[i + 12], 6, 1700485571);
-      d = (0, __imports.h)(d, a, b, c, x[i + 3], 10, -1894986606);
-      c = (0, __imports.h)(c, d, a, b, x[i + 10], 15, -1051523);
-      b = (0, __imports.h)(b, c, d, a, x[i + 1], 21, -2054922799);
-      a = (0, __imports.h)(a, b, c, d, x[i + 8], 6, 1873313359);
-      d = (0, __imports.h)(d, a, b, c, x[i + 15], 10, -30611744);
-      c = (0, __imports.h)(c, d, a, b, x[i + 6], 15, -1560198380);
-      b = (0, __imports.h)(b, c, d, a, x[i + 13], 21, 1309151649);
-      a = (0, __imports.h)(a, b, c, d, x[i + 4], 6, -145523070);
-      d = (0, __imports.h)(d, a, b, c, x[i + 11], 10, -1120210379);
-      c = (0, __imports.h)(c, d, a, b, x[i + 2], 15, 718787259);
-      b = (0, __imports.h)(b, c, d, a, x[i + 9], 21, -343485551);
-
-      a = (0, __imports.Fr)(a, olda);
-      b = (0, __imports.Fr)(b, oldb);
-      c = (0, __imports.Fr)(c, oldc);
-      d = (0, __imports.Fr)(d, oldd);
-    }
-    return [a, b, c, d];
-  };
-
-  const strToWords = (s) => {
-    const bin = [];
-    const mask = (1 << charBits) - 1;
-    for (let i = 0; i < s.length * charBits; i += charBits) {
-      bin[i >> 5] |= (s.charCodeAt(i / charBits) & mask) << (i % 32);
-    }
-    return bin;
-  };
-
-  const words = strToWords(str);
-  const hashArray = coreMd5(words, str.length * charBits);
-  const hexChars = hexCaseUpper ? "0123456789ABCDEF" : "0123456789abcdef";
-  let output = "";
-
-  for (let i = 0; i < hashArray.length * 4; i++) {
-    output +=
-      hexChars.charAt((hashArray[i >> 2] >> ((i % 4) * 8 + 4)) & 15) +
-      hexChars.charAt((hashArray[i >> 2] >> ((i % 4) * 8)) & 15);
-  }
-
-  return output;
+var Pr = 0,
+  zr = 8;
+function Or(e) {
+  for (
+    var t = ((e, t) => {
+        ((e[t >> 5] |= 128 << (t % 32)), (e[14 + (((t + 64) >>> 9) << 4)] = t));
+        for (
+          var o = 1732584193,
+            n = -271733879,
+            i = -1732584194,
+            a = 271733878,
+            r = 0;
+          r < e.length;
+          r += 16
+        ) {
+          var l = o,
+            s = n,
+            d = i,
+            c = a;
+          ((o = (0, __imports.p)(o, n, i, a, e[r + 0], 7, -680876936)),
+            (a = (0, __imports.p)(a, o, n, i, e[r + 1], 12, -389564586)),
+            (i = (0, __imports.p)(i, a, o, n, e[r + 2], 17, 606105819)),
+            (n = (0, __imports.p)(n, i, a, o, e[r + 3], 22, -1044525330)),
+            (o = (0, __imports.p)(o, n, i, a, e[r + 4], 7, -176418897)),
+            (a = (0, __imports.p)(a, o, n, i, e[r + 5], 12, 1200080426)),
+            (i = (0, __imports.p)(i, a, o, n, e[r + 6], 17, -1473231341)),
+            (n = (0, __imports.p)(n, i, a, o, e[r + 7], 22, -45705983)),
+            (o = (0, __imports.p)(o, n, i, a, e[r + 8], 7, 1770035416)),
+            (a = (0, __imports.p)(a, o, n, i, e[r + 9], 12, -1958414417)),
+            (i = (0, __imports.p)(i, a, o, n, e[r + 10], 17, -42063)),
+            (n = (0, __imports.p)(n, i, a, o, e[r + 11], 22, -1990404162)),
+            (o = (0, __imports.p)(o, n, i, a, e[r + 12], 7, 1804603682)),
+            (a = (0, __imports.p)(a, o, n, i, e[r + 13], 12, -40341101)),
+            (i = (0, __imports.p)(i, a, o, n, e[r + 14], 17, -1502002290)),
+            (n = (0, __imports.p)(n, i, a, o, e[r + 15], 22, 1236535329)),
+            (o = (0, __imports.u)(o, n, i, a, e[r + 1], 5, -165796510)),
+            (a = (0, __imports.u)(a, o, n, i, e[r + 6], 9, -1069501632)),
+            (i = (0, __imports.u)(i, a, o, n, e[r + 11], 14, 643717713)),
+            (n = (0, __imports.u)(n, i, a, o, e[r + 0], 20, -373897302)),
+            (o = (0, __imports.u)(o, n, i, a, e[r + 5], 5, -701558691)),
+            (a = (0, __imports.u)(a, o, n, i, e[r + 10], 9, 38016083)),
+            (i = (0, __imports.u)(i, a, o, n, e[r + 15], 14, -660478335)),
+            (n = (0, __imports.u)(n, i, a, o, e[r + 4], 20, -405537848)),
+            (o = (0, __imports.u)(o, n, i, a, e[r + 9], 5, 568446438)),
+            (a = (0, __imports.u)(a, o, n, i, e[r + 14], 9, -1019803690)),
+            (i = (0, __imports.u)(i, a, o, n, e[r + 3], 14, -187363961)),
+            (n = (0, __imports.u)(n, i, a, o, e[r + 8], 20, 1163531501)),
+            (o = (0, __imports.u)(o, n, i, a, e[r + 13], 5, -1444681467)),
+            (a = (0, __imports.u)(a, o, n, i, e[r + 2], 9, -51403784)),
+            (i = (0, __imports.u)(i, a, o, n, e[r + 7], 14, 1735328473)),
+            (n = (0, __imports.u)(n, i, a, o, e[r + 12], 20, -1926607734)),
+            (o = (0, __imports.g)(o, n, i, a, e[r + 5], 4, -378558)),
+            (a = (0, __imports.g)(a, o, n, i, e[r + 8], 11, -2022574463)),
+            (i = (0, __imports.g)(i, a, o, n, e[r + 11], 16, 1839030562)),
+            (n = (0, __imports.g)(n, i, a, o, e[r + 14], 23, -35309556)),
+            (o = (0, __imports.g)(o, n, i, a, e[r + 1], 4, -1530992060)),
+            (a = (0, __imports.g)(a, o, n, i, e[r + 4], 11, 1272893353)),
+            (i = (0, __imports.g)(i, a, o, n, e[r + 7], 16, -155497632)),
+            (n = (0, __imports.g)(n, i, a, o, e[r + 10], 23, -1094730640)),
+            (o = (0, __imports.g)(o, n, i, a, e[r + 13], 4, 681279174)),
+            (a = (0, __imports.g)(a, o, n, i, e[r + 0], 11, -358537222)),
+            (i = (0, __imports.g)(i, a, o, n, e[r + 3], 16, -722521979)),
+            (n = (0, __imports.g)(n, i, a, o, e[r + 6], 23, 76029189)),
+            (o = (0, __imports.g)(o, n, i, a, e[r + 9], 4, -640364487)),
+            (a = (0, __imports.g)(a, o, n, i, e[r + 12], 11, -421815835)),
+            (i = (0, __imports.g)(i, a, o, n, e[r + 15], 16, 530742520)),
+            (n = (0, __imports.g)(n, i, a, o, e[r + 2], 23, -995338651)),
+            (o = (0, __imports.h)(o, n, i, a, e[r + 0], 6, -198630844)),
+            (a = (0, __imports.h)(a, o, n, i, e[r + 7], 10, 1126891415)),
+            (i = (0, __imports.h)(i, a, o, n, e[r + 14], 15, -1416354905)),
+            (n = (0, __imports.h)(n, i, a, o, e[r + 5], 21, -57434055)),
+            (o = (0, __imports.h)(o, n, i, a, e[r + 12], 6, 1700485571)),
+            (a = (0, __imports.h)(a, o, n, i, e[r + 3], 10, -1894986606)),
+            (i = (0, __imports.h)(i, a, o, n, e[r + 10], 15, -1051523)),
+            (n = (0, __imports.h)(n, i, a, o, e[r + 1], 21, -2054922799)),
+            (o = (0, __imports.h)(o, n, i, a, e[r + 8], 6, 1873313359)),
+            (a = (0, __imports.h)(a, o, n, i, e[r + 15], 10, -30611744)),
+            (i = (0, __imports.h)(i, a, o, n, e[r + 6], 15, -1560198380)),
+            (n = (0, __imports.h)(n, i, a, o, e[r + 13], 21, 1309151649)),
+            (o = (0, __imports.h)(o, n, i, a, e[r + 4], 6, -145523070)),
+            (a = (0, __imports.h)(a, o, n, i, e[r + 11], 10, -1120210379)),
+            (i = (0, __imports.h)(i, a, o, n, e[r + 2], 15, 718787259)),
+            (n = (0, __imports.h)(n, i, a, o, e[r + 9], 21, -343485551)),
+            (o = (0, __imports.Fr)(o, l)),
+            (n = (0, __imports.Fr)(n, s)),
+            (i = (0, __imports.Fr)(i, d)),
+            (a = (0, __imports.Fr)(a, c)));
+        }
+        return Array(o, n, i, a);
+      })(
+        ((e) => {
+          for (
+            var t = Array(), o = (1 << zr) - 1, n = 0;
+            n < e.length * zr;
+            n += zr
+          )
+            t[n >> 5] |= (e.charCodeAt(n / zr) & o) << (n % 32);
+          return t;
+        })(e),
+        e.length * zr,
+      ),
+      o = Pr ? "0123456789ABCDEF" : "0123456789abcdef",
+      n = "",
+      i = 0;
+    i < 4 * t.length;
+    i++
+  )
+    n +=
+      o.charAt((t[i >> 2] >> ((i % 4) * 8 + 4)) & 15) +
+      o.charAt((t[i >> 2] >> ((i % 4) * 8)) & 15);
+  return n;
 }
-const Or = computeMd5Hex;
 
 }
 ,
@@ -17567,11 +17327,7 @@ class Hr {
 "src/next/platform/dom-templates.js":
 function* (__imports) {
 yield {"Gr": { get: () => Gr, set: value => { Gr = value; } }};
-/**
- * Postbird 轻量模态对话框与输入弹窗生成系统 (Alert / Confirm / Prompt)
- * 导出兼容接口: Gr
- */
-const PostbirdBox = {
+var Gr = {
   containerClass: "postbird-box-container active",
   box: null,
   textTemplate: {
@@ -17581,191 +17337,151 @@ const PostbirdBox = {
     cancelBtn: "取消",
     contentColor: "#000000",
     okBtnColor: "#0e90d2",
-    cancelBtnColor: "#666666",
     promptTitle: "请输入内容",
     promptOkBtn: "确认",
   },
-
-  getAlertTemplate() {
-    return `
-      <div class="postbird-box-dialog">
-        <div class="postbird-box-content">
-          <div class="postbird-box-header">
-            <span class="postbird-box-close-btn">×</span>
-            <span class="postbird-box-title"><span>${this.textTemplate.title}</span></span>
-          </div>
-          <div class="postbird-box-text">
-            <span style="color:${this.textTemplate.contentColor};">${this.textTemplate.content}</span>
-          </div>
-          <div class="postbird-box-footer">
-            <button class="btn-footer btn-block-footer btn-footer-ok" style="color:${this.textTemplate.okBtnColor};">${this.textTemplate.okBtn}</button>
-          </div>
-        </div>
-      </div>
-    `;
+  getAlertTemplate: function () {
+    return (
+      '<div class="postbird-box-dialog"><div class="postbird-box-content"><div class="postbird-box-header"><span class="postbird-box-close-btn">×</span><span class="postbird-box-title"><span >' +
+      this.textTemplate.title +
+      '</span></span></div><div class="postbird-box-text"><span style="color:' +
+      this.textTemplate.contentColor +
+      ';">' +
+      this.textTemplate.content +
+      '</span></div><div class="postbird-box-footer"><button class="btn-footer btn-block-footer btn-footer-ok" style="color:' +
+      this.textTemplate.okBtnColor +
+      ';">' +
+      this.textTemplate.okBtn +
+      "</button></div></div></div>"
+    );
   },
-
-  getConfirmTemplate() {
-    return `
-      <div class="postbird-box-container">
-        <div class="postbird-box-dialog">
-          <div class="postbird-box-content">
-            <div class="postbird-box-header">
-              <span class="postbird-box-close-btn">×</span>
-              <span class="postbird-box-title"><span>${this.textTemplate.title}</span></span>
-            </div>
-            <div class="postbird-box-text">
-              <span style="color:${this.textTemplate.contentColor};">${this.textTemplate.content}?</span>
-            </div>
-            <div class="postbird-box-footer">
-              <button class="btn-footer btn-left-footer btn-footer-cancel" style="color:${this.textTemplate.cancelBtnColor};">${this.textTemplate.cancelBtn}</button>
-              <button class="btn-footer btn-right-footer btn-footer-ok" style="color:${this.textTemplate.okBtnColor};">${this.textTemplate.okBtn}</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
+  getConfirmTemplate: function () {
+    return (
+      '<div class="postbird-box-container"><div class="postbird-box-dialog"><div class="postbird-box-content"><div class="postbird-box-header"><span class="postbird-box-close-btn">×</span><span class="postbird-box-title"><span >' +
+      this.textTemplate.title +
+      '</span></span></div><div class="postbird-box-text"><span style="color:' +
+      this.textTemplate.contentColor +
+      ';">' +
+      this.textTemplate.content +
+      '?</span></div><div class="postbird-box-footer"><button class="btn-footer btn-left-footer btn-footer-cancel" style="color:' +
+      this.textTemplate.cancelBtnColor +
+      ';">' +
+      this.textTemplate.cancelBtn +
+      '</button><button class="btn-footer btn-right-footer btn-footer-ok"  style="color:' +
+      this.textTemplate.okBtnColor +
+      ';">' +
+      this.textTemplate.okBtn +
+      "</button></div></div></div></div>"
+    );
   },
-
-  getPromptTemplate() {
-    return `
-      <div class="postbird-box-container">
-        <div class="postbird-box-dialog">
-          <div class="postbird-box-content">
-            <div class="postbird-box-header">
-              <span class="postbird-box-close-btn">×</span>
-              <span class="postbird-box-title"><span>${this.textTemplate.title}</span></span>
-            </div>
-            <div class="postbird-box-text">
-              <input type="text" class="postbird-prompt-input" autofocus="true">
-            </div>
-            <div class="postbird-box-footer">
-              <button class="btn-footer btn-left-footer btn-footer-cancel" style="color:${this.textTemplate.cancelBtnColor};">${this.textTemplate.cancelBtn}</button>
-              <button class="btn-footer btn-right-footer btn-footer-ok" style="color:${this.textTemplate.okBtnColor};">${this.textTemplate.okBtn}</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
+  getPromptTemplate: function () {
+    return (
+      '<div class="postbird-box-container"><div class="postbird-box-dialog"><div class="postbird-box-content"><div class="postbird-box-header"><span class="postbird-box-close-btn">×</span><span class="postbird-box-title"><span >' +
+      this.textTemplate.title +
+      '</span></span></div><div class="postbird-box-text"><input type="text" class="postbird-prompt-input" autofocus="true" ></div><div class="postbird-box-footer"><button class="btn-footer btn-left-footer btn-footer-cancel" style="color:' +
+      this.textTemplate.cancelBtnColor +
+      ';">' +
+      this.textTemplate.cancelBtn +
+      '</button><button class="btn-footer btn-right-footer btn-footer-ok"  style="color:' +
+      this.textTemplate.okBtnColor +
+      ';">' +
+      this.textTemplate.okBtn +
+      "</button></div></div></div></div>"
+    );
   },
-
-  alert(opts = {}) {
-    this.textTemplate.title = opts.title || this.textTemplate.title;
-    this.textTemplate.content = opts.content || this.textTemplate.content;
-    this.textTemplate.okBtn = opts.okBtn || this.textTemplate.okBtn;
-    this.textTemplate.okBtnColor = opts.okBtnColor || this.textTemplate.okBtnColor;
-    this.textTemplate.contentColor = opts.contentColor || this.textTemplate.contentColor;
-
-    const wrap = document.createElement("div");
-    wrap.className = this.containerClass;
-    wrap.innerHTML = this.getAlertTemplate();
-    this.box = wrap;
-    document.body.appendChild(this.box);
-
-    const okBtns = document.getElementsByClassName("btn-footer-ok");
-    const lastOk = okBtns[okBtns.length - 1];
-    if (lastOk) {
-      lastOk.focus();
-      lastOk.onclick = () => {
-        if (typeof opts.onConfirm === 'function') opts.onConfirm();
-        this.removeBox();
-      };
-    }
+  alert: function (e) {
+    ((this.textTemplate.title = e.title || this.textTemplate.title),
+      (this.textTemplate.content = e.content || this.textTemplate.content),
+      (this.textTemplate.okBtn = e.okBtn || this.textTemplate.okBtn),
+      (this.textTemplate.okBtnColor =
+        e.okBtnColor || this.textTemplate.okBtnColor),
+      (this.textTemplate.contentColor =
+        e.contentColor || this.textTemplate.contentColor));
+    var t = document.createElement("div"),
+      o = this;
+    ((t.className = this.containerClass),
+      (t.innerHTML = this.getAlertTemplate()),
+      (this.box = t),
+      document.body.appendChild(this.box),
+      (t = document.getElementsByClassName("btn-footer-ok"))[
+        t.length - 1
+      ].focus(),
+      (t[t.length - 1].onclick = function () {
+        (e.onConfirm && e.onConfirm(), o.removeBox());
+      }));
   },
-
-  confirm(opts = {}) {
-    this.textTemplate.title = opts.title || this.textTemplate.promptTitle;
-    this.textTemplate.okBtn = opts.okBtn || this.textTemplate.promptOkBtn;
-    this.textTemplate.okBtnColor = opts.okBtnColor || this.textTemplate.okBtnColor;
-    this.textTemplate.cancelBtn = opts.cancelBtn || this.textTemplate.cancelBtn;
-    this.textTemplate.cancelBtnColor = opts.cancelBtnColor || this.textTemplate.cancelBtnColor;
-    this.textTemplate.content = opts.content || this.textTemplate.content;
-
-    const wrap = document.createElement("div");
-    wrap.className = this.containerClass;
-    wrap.innerHTML = this.getConfirmTemplate();
-    this.box = wrap;
-    document.body.appendChild(this.box);
-
-    const okBtns = document.getElementsByClassName("btn-footer-ok");
-    const lastOk = okBtns[okBtns.length - 1];
-    if (lastOk) {
-      lastOk.focus();
-      lastOk.onclick = () => {
-        if (typeof opts.onConfirm === 'function') opts.onConfirm();
-        this.removeBox();
-      };
-    }
-
-    const cancelBtns = document.getElementsByClassName("btn-footer-cancel");
-    const lastCancel = cancelBtns[cancelBtns.length - 1];
-    if (lastCancel) {
-      lastCancel.onclick = () => {
-        if (typeof opts.onCancel === 'function') opts.onCancel();
-        this.removeBox();
-      };
-    }
+  confirm: function (e) {
+    ((this.textTemplate.title = e.title || this.textTemplate.promptTitle),
+      (this.textTemplate.promptPlaceholder =
+        e.promptPlaceholder || this.textTemplate.promptPlaceholder),
+      (this.textTemplate.okBtn = e.okBtn || this.textTemplate.promptOkBtn),
+      (this.textTemplate.okBtnColor =
+        e.okBtnColor || this.textTemplate.okBtnColor),
+      (this.textTemplate.cancelBtn =
+        e.cancelBtn || this.textTemplate.cancelBtn),
+      (this.textTemplate.cancelBtnColor =
+        e.cancelBtnColor || this.textTemplate.cancelBtnColor),
+      (this.textTemplate.content = e.content || this.textTemplate.content));
+    var t = document.createElement("div"),
+      o = this;
+    (((this.box = t).className = this.containerClass),
+      (t.innerHTML = this.getConfirmTemplate()),
+      document.body.appendChild(t),
+      (t = document.getElementsByClassName("btn-footer-ok"))[
+        t.length - 1
+      ].focus(),
+      (t[t.length - 1].onclick = function () {
+        (e.onConfirm && e.onConfirm(), o.removeBox());
+      }),
+      ((t = document.getElementsByClassName("btn-footer-cancel"))[
+        t.length - 1
+      ].onclick = function () {
+        (e.onCancel && e.onCancel(), o.removeBox());
+      }));
   },
-
-  prompt(opts = {}) {
-    this.textTemplate.title = opts.title || this.textTemplate.title;
-    this.textTemplate.content = opts.content || this.textTemplate.content;
-    this.textTemplate.contentColor = opts.contentColor || this.textTemplate.contentColor;
-    this.textTemplate.okBtn = opts.okBtn || this.textTemplate.okBtn;
-    this.textTemplate.okBtnColor = opts.okBtnColor || this.textTemplate.okBtnColor;
-    this.textTemplate.cancelBtn = opts.cancelBtn || this.textTemplate.cancelBtn;
-    this.textTemplate.cancelBtnColor = opts.cancelBtnColor || this.textTemplate.cancelBtnColor;
-
-    const wrap = document.createElement("div");
-    wrap.className = this.containerClass;
-    wrap.innerHTML = this.getPromptTemplate();
-    this.box = wrap;
-    document.body.appendChild(this.box);
-
-    const inputElements = document.getElementsByClassName("postbird-prompt-input");
-    const lastInput = inputElements[inputElements.length - 1];
-    if (lastInput) {
-      if (opts.defaultValue != null) {
-        lastInput.value = opts.defaultValue;
-      }
-      lastInput.focus();
-
-      const okBtns = document.getElementsByClassName("btn-footer-ok");
-      const lastOk = okBtns[okBtns.length - 1];
-      if (lastOk) {
-        lastOk.onclick = () => {
-          if (typeof opts.onConfirm === 'function') opts.onConfirm(lastInput.value);
-          this.removeBox();
-        };
-      }
-
-      const cancelBtns = document.getElementsByClassName("btn-footer-cancel");
-      const lastCancel = cancelBtns[cancelBtns.length - 1];
-      if (lastCancel) {
-        lastCancel.onclick = () => {
-          if (typeof opts.onCancel === 'function') opts.onCancel(lastInput.value);
-          this.removeBox();
-        };
-      }
-    }
+  prompt: function (e) {
+    ((this.textTemplate.title = e.title || this.textTemplate.title),
+      (this.textTemplate.content = e.content || this.textTemplate.content),
+      (this.textTemplate.contentColor =
+        e.contentColor || this.textTemplate.contentColor),
+      (this.textTemplate.okBtn = e.okBtn || this.textTemplate.okBtn),
+      (this.textTemplate.okBtnColor =
+        e.okBtnColor || this.textTemplate.okBtnColor),
+      (this.textTemplate.cancelBtn =
+        e.cancelBtn || this.textTemplate.cancelBtn),
+      (this.textTemplate.cancelBtnColor =
+        e.cancelBtnColor || this.textTemplate.cancelBtnColor));
+    var t = document.createElement("div"),
+      o = this;
+    ((t.className = this.containerClass),
+      (t.innerHTML = this.getPromptTemplate()),
+      (this.box = t),
+      document.body.appendChild(t));
+    var n = (n = document.getElementsByClassName("postbird-prompt-input"))[
+      n.length - 1
+    ];
+    (null != e.defaultValue && (n.value = e.defaultValue),
+      n.focus(),
+      (t = document.getElementsByClassName("btn-footer-ok")),
+      n.value,
+      t[t.length - 1].focus(),
+      (t[t.length - 1].onclick = function () {
+        (e.onConfirm && e.onConfirm(n.value), o.removeBox());
+      }),
+      ((t = document.getElementsByClassName("btn-footer-cancel"))[
+        t.length - 1
+      ].onclick = function () {
+        (e.onCancel && e.onCancel(n.value), o.removeBox());
+      }));
   },
-
-  colse() {
+  colse: function () {
     this.removeBox();
   },
-
-  removeBox() {
-    const list = document.getElementsByClassName(this.containerClass);
-    if (list.length > 0) {
-      const lastEl = list[list.length - 1];
-      if (lastEl.parentNode) {
-        lastEl.parentNode.removeChild(lastEl);
-      }
-    }
+  removeBox: function () {
+    var e = document.getElementsByClassName(this.containerClass);
+    document.body.removeChild(e[e.length - 1]);
   },
 };
-
-const Gr = PostbirdBox;
 
 }
 ,
@@ -17774,218 +17490,119 @@ function* (__imports) {
 yield {"Ur": { get: () => Ur, set: value => { Ur = value; } },
 "Vr": { get: () => Vr, set: value => { Vr = value; } },
 "qr": { get: () => qr, set: value => { qr = value; } }};
-/**
- * 跨平台直播流请求管理网关 (包含斗鱼/B站/虎牙解析器与中止控制器)
- */
-
-/**
- * 创建具备生命周期所有者绑定与取消管理的直播流请求操作对象
- * @param {Function} callback - 成功回调
- * @param {Array} failureArgs - 失败回调传参
- * @param {object} [owner] - 生命周期管理者
- * @returns {object}
- */
-function createStreamRequest(callback, failureArgs, owner) {
-  let isStopped = false;
-  const pendingHandles = new Set();
-
+// Stream lookups are read operations (including Douyu's POST). Never retry them
+// implicitly. Ownership is explicit: multi-room user players may outlive a room.
+function createStreamRequest(callback, failure, owner) {
+  let stopped = false;
+  const pending = new Set();
   const operation = {
     abort() {
-      if (isStopped) return;
-      isStopped = true;
-      for (const handle of pendingHandles) {
-        try { handle.abort?.(); } catch {}
+      if (stopped) return;
+      stopped = true;
+      for (const handle of pending) {
+        try { handle.abort?.(); } catch (_) {}
       }
-      pendingHandles.clear();
+      pending.clear();
     },
     finish(...args) {
-      if (isStopped || owner?.disposed) return;
-      isStopped = true;
-      pendingHandles.clear();
+      if (stopped || owner?.disposed) return;
+      stopped = true;
+      pending.clear();
       callback(...args);
     },
-    request(options, parseResponse) {
-      if (isStopped || owner?.disposed) return;
-      let reqHandle = null;
-      let isSettled = false;
-
-      const settle = (action) => (resp) => {
-        if (isSettled || isStopped || owner?.disposed) return;
-        isSettled = true;
-        pendingHandles.delete(reqHandle);
-        action(resp);
+    request(options, parse) {
+      if (stopped || owner?.disposed) return;
+      let handle, settled = false;
+      const settle = action => response => {
+        if (settled || stopped || owner?.disposed) return;
+        settled = true;
+        pending.delete(handle);
+        action(response);
       };
-
-      const fail = () => operation.finish(...failureArgs);
-
+      const fail = () => operation.finish(...failure);
       try {
-        reqHandle = (0, __imports.GM_xmlhttpRequest)({
+        handle = (0, __imports.GM_xmlhttpRequest)({
           ...options,
           timeout: 15000,
-          onload: settle((resp) => {
-            let continuation;
+          onload: settle(response => {
+            let result;
             try {
-              if (resp.status && (resp.status < 200 || resp.status >= 300)) {
-                throw new Error(`HTTP Error: ${resp.status}`);
-              }
-              continuation = parseResponse(resp.response);
-            } catch {
-              fail();
-              return;
-            }
-            if (typeof continuation === 'function') {
-              continuation();
-            }
+              if (response.status && (response.status < 200 || response.status >= 300)) throw new Error('HTTP failure');
+              result = parse(response.response);
+            } catch (_) { fail(); return; }
+            // Parsing returns a continuation so consumer exceptions aren't retried.
+            result();
           }),
-          onerror: settle(fail),
-          ontimeout: settle(fail),
-          onabort: settle(fail),
+          onerror: settle(fail), ontimeout: settle(fail), onabort: settle(fail),
         });
-
-        if (!isSettled && !isStopped && reqHandle) {
-          pendingHandles.add(reqHandle);
-        }
-      } catch {
-        fail();
-      }
+        if (!settled && !stopped && handle) pending.add(handle);
+      } catch (_) { fail(); }
     },
   };
-
-  if (owner) {
-    owner.own(() => operation.abort());
-  }
+  if (owner) owner.own(() => operation.abort());
   return operation;
 }
-
-/**
- * B站直播间推流直链解析 (导出兼容 Vr)
- * @param {string|number} roomId
- * @param {string|number} qualityKey
- * @param {any} unusedParam
- * @param {Function} onFinish
- * @param {object} [owner]
- */
-function resolveBilibiliStreamUrl(roomId, qualityKey, unusedParam, onFinish, owner) {
-  const qualityMap = { '1': '80', '2': '150', '3': '250', '4': '400', '5': '20000' };
-  const qn = qualityMap[qualityKey] || '80';
-  const operation = createStreamRequest(onFinish, [''], owner);
-
+function Vr(e, t, o, a, owner) {
+  const quality = { '1': '80', '2': '150', '3': '250', '4': '400', '5': '20000' }[t] || '80';
+  const operation = createStreamRequest(a, [''], owner);
   operation.request({
     method: 'GET',
-    url: `https://api.live.bilibili.com/xlive/web-room/v2/index/getRoomPlayInfo?room_id=${roomId}&platform=web&qn=${qn}&protocol=0,1&format=0,1,2&codec=0,1`,
+    url: `https://api.live.bilibili.com/xlive/web-room/v2/index/getRoomPlayInfo?room_id=${e}&platform=web&qn=${quality}&protocol=0,1&format=0,1,2&codec=0,1`,
     responseType: 'json',
-  }, (resp) => {
-    const data = resp?.data;
-    let playUrl = '';
-
-    if (resp?.code && resp.code !== 0) {
-      return () => operation.finish('');
+  }, response => {
+    const data = response?.data;
+    let url = '';
+    if (response?.code && response.code !== 0) return () => operation.finish('');
+    for (const stream of data?.playurl_info?.playurl?.stream || []) {
+      const codec = stream.format?.[0]?.codec?.[0], info = codec?.url_info?.[0];
+      if (String(stream.protocol_name).includes('stream') && info?.host && codec.base_url)
+        url = info.host + codec.base_url + (info.extra || '');
     }
-
-    const streamList = data?.playurl_info?.playurl?.stream || [];
-    for (const stream of streamList) {
-      const codec = stream.format?.[0]?.codec?.[0];
-      const info = codec?.url_info?.[0];
-      if (String(stream.protocol_name).includes('stream') && info?.host && codec?.base_url) {
-        playUrl = info.host + codec.base_url + (info.extra || '');
-      }
-    }
-
-    if (data?.durl?.[0]?.url) {
-      playUrl = data.durl[0].url;
-    }
-
-    return () => operation.finish(playUrl);
+    if (data?.durl) url = data.durl[0]?.url || '';
+    return () => operation.finish(url);
   });
-
   return operation;
 }
-const Vr = resolveBilibiliStreamUrl;
-
-/**
- * 斗鱼官方 H5PlayV1 推流与安全加密解析 (导出兼容 qr)
- * @param {string|number} roomId
- * @param {boolean} isVideoWithAudio
- * @param {any} unusedParam
- * @param {string|number} rate
- * @param {Function} onFinish
- * @param {object} [owner]
- */
-function resolveDouyuH5StreamUrl(roomId, isVideoWithAudio, unusedParam, rate, onFinish, owner) {
-  const deviceId = (0, __imports.x)('dy_did') || '10000000000000000000000000001501';
-  const operation = createStreamRequest(onFinish, ['None'], owner);
-
-  // 1. 获取斗鱼 websec 加密公钥与种子
+function qr(i, a, e, r, l, owner) {
+  const did = (0, __imports.x)('dy_did') || '10000000000000000000000000001501';
+  const operation = createStreamRequest(l, ['None'], owner);
   operation.request({
     method: 'GET',
-    url: `https://www.douyu.com/wgapi/livenc/liveweb/websec/getEncryption?did=${deviceId}`,
+    url: 'https://www.douyu.com/wgapi/livenc/liveweb/websec/getEncryption?did=' + did,
     responseType: 'json',
-  }, (resp) => {
-    if (resp?.error !== 0 || !resp.data) {
-      return () => operation.finish('None');
-    }
-
-    const encData = resp.data;
-    const timestampSec = Math.round(Date.now() / 1000);
-    let hash = encData.rand_str;
-
-    for (let count = 0; count < encData.enc_time; count++) {
-      hash = (0, __imports.Or)(hash + encData.key);
-    }
-
-    const auth = (0, __imports.Or)(hash + encData.key + (encData.is_special === 1 ? '' : `${roomId}${timestampSec}`));
-    const rateParam = rate == '1428' ? '-1' : rate;
-
-    // 2. 发起主线获取直播流请求
+  }, response => {
+    if (response?.error !== 0 || !response.data) return () => operation.finish('None');
+    const data = response.data, tt = Math.round(Date.now() / 1000);
+    let hash = data.rand_str;
+    for (let count = 0; count < data.enc_time; count++) hash = (0, __imports.Or)(hash + data.key);
+    const auth = (0, __imports.Or)(hash + data.key + (data.is_special === 1 ? '' : '' + i + tt));
     return () => operation.request({
       method: 'POST',
-      url: `https://www.douyu.com/lapi/live/getH5PlayV1/${roomId}`,
-      data: `enc_data=${encData.enc_data}&tt=${timestampSec}&did=${deviceId}&auth=${auth}&cdn=&rate=${rateParam}&hevc=0&fa=0&ive=0`,
+      url: 'https://www.douyu.com/lapi/live/getH5PlayV1/' + i,
+      data: `enc_data=${data.enc_data}&tt=${tt}&did=${did}&auth=${auth}&cdn=&rate=${r == '1428' ? '-1' : r}&hevc=0&fa=0&ive=0`,
       responseType: 'json',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    }, (result) => {
+    }, result => {
       const data = result?.data;
-      const rawUrl = (result?.error === 0 && data?.rtmp_url && data?.rtmp_live)
-        ? `${data.rtmp_url}/${data.rtmp_live}`
-        : null;
-
-      let finalUrl = 'None';
-      if (rawUrl) {
-        finalUrl = isVideoWithAudio ? rawUrl : `${rawUrl}&only-audio=1`;
-      }
-
-      return () => operation.finish(finalUrl);
+      const url = result?.error === 0 && data?.rtmp_url && data?.rtmp_live
+        ? data.rtmp_url + '/' + data.rtmp_live : null;
+      return () => operation.finish(url ? (a ? url : url + '&only-audio=1') : 'None');
     });
   });
-
   return operation;
 }
-const qr = resolveDouyuH5StreamUrl;
-
-/**
- * 虎牙直播间推流直链解析 (导出兼容 Ur)
- * @param {string|number} roomId
- * @param {any} unusedParam
- * @param {Function} onFinish
- * @param {object} [owner]
- */
-function resolveHuyaStreamUrl(roomId, unusedParam, onFinish, owner) {
-  const operation = createStreamRequest(onFinish, ['', '房间未开播或请求失败'], owner);
-
+function Ur(e, t, n, owner) {
+  const operation = createStreamRequest(n, ['', '房间未开播或请求失败'], owner);
   operation.request({
     method: 'GET',
-    url: `https://mp.huya.com/cache.php?m=Live&do=profileRoom&roomid=${roomId}`,
+    url: 'https://mp.huya.com/cache.php?m=Live&do=profileRoom&roomid=' + e,
     responseType: 'json',
-  }, (resp) => {
-    const rawUrl = resp?.data?.stream?.flv?.multiLine?.[0]?.url;
-    const playUrl = rawUrl ? rawUrl.replace(/^http:/, 'https:') : '';
-    const errHint = playUrl ? '' : '房间暂未开播';
-    return () => operation.finish(playUrl, errHint);
+  }, response => {
+    const url = response?.data?.stream?.flv?.multiLine?.[0]?.url;
+    return () => operation.finish(url ? url.replace(/^http:/, 'https:') : '', url ? '' : '房间暂未开播');
   });
-
   return operation;
 }
-const Ur = resolveHuyaStreamUrl;
 
 }
 ,
@@ -18055,129 +17672,72 @@ yield {"U": { get: () => U, set: value => { U = value; } },
 "el": { get: () => el, set: value => { el = value; } },
 "ol": { get: () => ol, set: value => { ol = value; } },
 "tl": { get: () => tl, set: value => { tl = value; } }};
-/**
- * 斗鱼 STT 序列化解码、二进制封包与全局样式注入辅助工具
- */
-
-/**
- * 还原 STT 报文转义字符 (@S -> /, @A -> @)
- * @param {string} str
- * @returns {string}
- */
-function unescapeStt(str) {
-  if (!str) return "";
-  return str.toString().replace(/@S/g, "/").replace(/@A/g, "@");
+function $r(e) {
+  if (e) return e.toString().replace(/@S/g, "/").replace(/@A/g, "@");
 }
-
-/**
- * 递归反序列化斗鱼 STT 报文为结构化对象或数组 (导出兼容 el)
- * @param {string} raw
- * @returns {any}
- */
-function parseSttString(raw) {
-  if (!raw) return "";
-
-  // 1. 数组列表 (// 分割)
-  if (raw.includes("//")) {
-    return raw
-      .split("//")
-      .filter(item => item !== "")
-      .map(item => parseSttString(item));
-  }
-
-  // 2. 键值对字典 (@= 分割)
-  if (raw.includes("@=")) {
-    return raw
-      .split("/")
-      .filter(item => item !== "")
-      .reduce((acc, pair) => {
-        const [k, v] = pair.split("@=");
-        acc[k] = parseSttString(unescapeStt(v));
-        return acc;
-      }, {});
-  }
-
-  // 3. 单项转义
-  if (raw.includes("@A=")) {
-    return parseSttString(unescapeStt(raw));
-  }
-
-  return raw.toString();
+function el(e) {
+  if (e)
+    return e.includes("//")
+      ? e
+          .split("//")
+          .filter((e) => "" !== e)
+          .map((e) => el(e))
+      : e.includes("@=")
+        ? e
+            .split("/")
+            .filter((e) => "" !== e)
+            .reduce((e, t) => {
+              var [t, o] = t.split("@=");
+              return ((e[t] = el($r(o))), e);
+            }, {})
+        : e.includes("@A=")
+          ? el($r(e))
+          : e.toString();
 }
-const el = parseSttString;
-
-/**
- * 动态注入全局 Style 样式表 (导出兼容 tl)
- * @param {string} id - 样式表 DOM ID
- * @param {string} cssText - CSS 内容
- */
-function injectStyleSheet(id, cssText) {
-  if (document.getElementById(id) == null) {
-    const styleEl = document.createElement("style");
-    styleEl.id = id;
-    styleEl.innerHTML = cssText;
-    document.body.append(styleEl);
-  }
+function tl(e, t) {
+  var o;
+  null == document.getElementById(e) &&
+    (((o = document.createElement("style")).id = e),
+    (o.innerHTML = t),
+    document.body.append(o));
 }
-const tl = injectStyleSheet;
-
-/**
- * 安全移除指定 ID 的 DOM 元素 (导出兼容 U)
- * @param {string} id - 元素 ID
- */
-function removeElementById(id) {
-  const elNode = document.getElementById(id);
-  if (elNode !== null) {
-    elNode.remove();
-  }
+function U(e) {
+  null !== document.getElementById(e) && document.getElementById(e).remove();
 }
-const U = removeElementById;
-
-/**
- * 将字符串编码为斗鱼官方 TCP/WebSocket 二进制协议封包 (导出兼容 ol)
- * 格式: [4字节总长] + [4字节总长] + [2字节协议码689] + [2字节保留0] + [Payload] + [\0]
- * @param {string} text - 待发送的 STT 报文字符串
- * @returns {Uint8Array} 二进制包
- */
-function encodeDouyuPacket(text) {
-  // UTF-8 编码为字节数组
-  const str = String(text);
-  const bytes = [];
-  for (let i = 0; i < str.length; i++) {
-    const code = str.charCodeAt(i);
-    if (code >= 65536 && code <= 1114111) {
-      bytes.push(((code >> 18) & 7) | 240);
-      bytes.push(((code >> 12) & 63) | 128);
-      bytes.push(((code >> 6) & 63) | 128);
-      bytes.push((63 & code) | 128);
-    } else if (code >= 2048 && code <= 65535) {
-      bytes.push(((code >> 12) & 15) | 224);
-      bytes.push(((code >> 6) & 63) | 128);
-      bytes.push((63 & code) | 128);
-    } else if (code >= 128 && code <= 2047) {
-      bytes.push(((code >> 6) & 31) | 192);
-      bytes.push((63 & code) | 128);
-    } else {
-      bytes.push(code & 255);
-    }
-  }
-
-  // 计算头部与总长 (长度包含: 头部 4 字节类型 + 2 字节代码 + 2 字节保留 + 内容 + 尾部 \0)
-  const packetLength = bytes.length + 4 + 2 + 1 + 1;
-  const fullPacket = new Uint8Array(packetLength + 4); // +4 字节总长自身
-  const lengthBuffer = new Uint32Array([packetLength]);
-  const magicCodeBuffer = new Uint32Array([689]); // 斗鱼客户端消息类型代码: 689
-
-  fullPacket.set(new Uint8Array(lengthBuffer.buffer), 0); // 长度 1
-  fullPacket.set(new Uint8Array(lengthBuffer.buffer), 4); // 长度 2 (校验对齐)
-  fullPacket.set(new Uint8Array(magicCodeBuffer.buffer), 8); // 协议代码 689
-
-  const payloadArray = new Uint8Array(bytes);
-  fullPacket.set(payloadArray, 12); // 正文载荷
-
-  return fullPacket;
+function ol(e) {
+  var t = ((t) => {
+      var o,
+        n,
+        i = new Array();
+      o = t.length;
+      for (let e = 0; e < o; e++)
+        65536 <= (n = String(t).charCodeAt(e)) && n <= 1114111
+          ? (i.push(((n >> 18) & 7) | 240),
+            i.push(((n >> 12) & 63) | 128),
+            i.push(((n >> 6) & 63) | 128),
+            i.push((63 & n) | 128))
+          : 2048 <= n && n <= 65535
+            ? (i.push(((n >> 12) & 15) | 224),
+              i.push(((n >> 6) & 63) | 128),
+              i.push((63 & n) | 128))
+            : 128 <= n && n <= 2047
+              ? (i.push(((n >> 6) & 31) | 192), i.push((63 & n) | 128))
+              : i.push(255 & n);
+      return i;
+    })(e),
+    e = new Uint8Array(t.length + 4 + 4 + 2 + 1 + 1 + 1),
+    o = new Uint8Array(t.length);
+  for (let e = 0; e < o.length; e++) o[e] = t[e];
+  var n = new Uint32Array([t.length + 4 + 2 + 1 + 1 + 1]),
+    i = new Uint32Array([689]);
+  return (
+    e.set(new Uint8Array(n.buffer), 0),
+    e.set(new Uint8Array(n.buffer), 4),
+    e.set(new Uint8Array(i.buffer), 8),
+    e.set(o, 12),
+    e
+  );
 }
-const ol = encodeDouyuPacket;
 
 }
 ,
@@ -18722,41 +18282,26 @@ function routePage(e) {
 "src/next/runtime/adapters.js":
 function* (__imports) {
 yield {};
-/**
- * NEXT 特性适配器与面板调度注册器
- * 承接 9 大 Dock 按钮的 open / execute 动作
- */
+// Register after legacy declarations and before the sole route entry.
+// ee remains the original panel dispatcher; service actions retain original payloads,
+// configuration storage, callbacks, timing and error handling.
 const nextPanelAdapters = [
-  ['ex-sign', '一键签到'],
-  ['fans-continue', '一键续牌'],
-  ['extool-icon', '扩展功能'],
-  ['livetool-icon', '直播间工具'],
-  ['bloop-icon', '弹幕发送小助手'],
-  ['ex-lottery', '全站抽奖信息'],
-  ['popup-player', '同屏播放'],
-  ['ex-monitor', null],
-  ['ex-update', '版本更新']
+  ['ex-sign', '一键签到'], ['fans-continue', '一键续牌'],
+  ['extool-icon', '扩展功能'], ['livetool-icon', '直播间工具'],
+  ['bloop-icon', '弹幕发送小助手'], ['ex-lottery', '全站抽奖信息'],
+  ['popup-player', '同屏播放'], ['ex-monitor', null], ['ex-update', '版本更新']
 ];
-
 for (const [id, panel] of nextPanelAdapters) {
   __imports.nextFeatures.register(id, {
     panel,
     open(hover, button) {
-      if (!panel) {
-        return hover ? undefined : (0, __imports._)(`https://www.douyuex.com/${String(__imports.B)}`, true);
-      }
-      if (id === 'ex-sign' && !hover) {
-        (0, __imports.createSignPanel)();
-      }
+      if (!panel) return hover ? undefined : (0, __imports._)('https://www.douyuex.com/' + String(__imports.B), true);
+      if (id === 'ex-sign' && !hover) (0, __imports.createSignPanel)();
       const result = (0, __imports.openFeaturePanel)(panel, hover, button);
-      if (id === 'fans-continue') {
-        (0, __imports.updateFansContinuePanel)();
-      }
+      if (id === 'fans-continue') (0, __imports.updateFansContinuePanel)();
       if (id === 'ex-lottery') {
         const list = document.getElementsByClassName('lottery__wrap')[0];
-        if (list && typeof __imports.So !== 'undefined') {
-          list.innerHTML = __imports.So;
-        }
+        if (list && typeof __imports.So !== 'undefined') list.innerHTML = __imports.So;
       }
       return result;
     },
@@ -18765,17 +18310,10 @@ for (const [id, panel] of nextPanelAdapters) {
     ...(id === 'popup-player' ? { execute: (url, noIframe) => (0, __imports.executePopupPlayer)(url, noIframe) } : {})
   });
 }
-
 __imports.nextRuntime.features = __imports.nextFeatures;
 __imports.nextRuntime.teardownDock = __imports.teardownNextDock;
-__imports.nextRuntime.tasks = Object.freeze({
-  start: __imports.startTaskHeartbeat,
-  stop: __imports.stopTaskHeartbeat
-});
-__imports.nextRuntime.navigation = Object.freeze({
-  install: __imports.installNavigation,
-  remove: __imports.stopNavigation
-});
+__imports.nextRuntime.tasks = Object.freeze({ start: __imports.startTaskHeartbeat, stop: __imports.stopTaskHeartbeat });
+__imports.nextRuntime.navigation = Object.freeze({ install: __imports.installNavigation, remove: __imports.stopNavigation });
 __imports.nextRuntime.lifecycle = 'Owned SPA navigation, room mounts and PiP requests; legacy hooks/jobs require reload';
 __imports.nextRuntime.status = 'ready';
 Object.freeze(__imports.nextRuntime);
