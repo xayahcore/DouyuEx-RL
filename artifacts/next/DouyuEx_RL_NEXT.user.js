@@ -1936,29 +1936,52 @@ function installRoomHooks() {
 function* (__imports) {
 yield {"safeBind": { get: () => safeBind, set: value => { safeBind = value; } },
 "safeEl": { get: () => safeEl, set: value => { safeEl = value; } }};
+/**
+ * 安全获取 DOM 元素或空对象兜底
+ * @param {string} id - 元素 ID
+ * @returns {HTMLElement|object}
+ */
 function safeEl(id) {
   return document.getElementById(id) || {};
 }
-/* ==================== DouyuEx-RL 全局安全事件绑定装甲 ==================== */
+
+/**
+ * 全局安全事件绑定装甲
+ * 支持 Selector 字符串或直接 Element 节点，防止未加载 DOM 报错，
+ * 并接入 Dock 挂载器与生命周期所有者 (owner) 托管销毁。
+ * @param {string|Element} target
+ * @param {string} ev - 事件名
+ * @param {Function} fn - 事件处理回调
+ * @param {object} [owner] - 生命周期所有者上下文
+ * @returns {boolean} 是否成功绑定
+ */
 function safeBind(target, ev, fn, owner) {
   try {
-    var el =
-      typeof target === "string"
-        ? document.querySelector(target) || document.getElementById(target)
-        : target;
+    const el = typeof target === "string"
+      ? document.querySelector(target) || document.getElementById(target)
+      : target;
+
     if (el && typeof el.addEventListener === "function") {
-      // Later legacy assembly repeats Dock bindings. The mounted Dock already
-      // routes these events through its registry and owns their teardown.
+      // 防范后续老逻辑重复绑定 Dock 栏图标事件。
+      // 已挂载的 Dock 统一由 Registry 接管分发与释放。
       if (['click', 'mouseenter', 'mouseleave'].includes(ev)) {
         for (const wrap of __imports.nextDockOwners.keys()) {
-          if (__imports.DOCK_DEFS.some(def => wrap.querySelector('.' + def.cls) === el)) return true;
+          if (__imports.DOCK_DEFS.some(def => wrap.querySelector('.' + def.cls) === el)) {
+            return true;
+          }
         }
       }
-      if (owner) owner.listen(el, ev, fn);
-      else el.addEventListener(ev, fn);
+
+      if (owner && typeof owner.listen === 'function') {
+        owner.listen(el, ev, fn);
+      } else {
+        el.addEventListener(ev, fn);
+      }
       return true;
     }
-  } catch (e) {}
+  } catch (err) {
+    console.debug('[DouyuEx NEXT] safeBind 捕获异常:', err);
+  }
   return false;
 }
 
@@ -2925,160 +2948,150 @@ function createPopupPlayerPanel() {
 "src/next/ui/panels/update.js":
 function* (__imports) {
 yield {"createExUpdatePanel": { get: () => createExUpdatePanel, set: value => { createExUpdatePanel = value; } }};
+/**
+ * 组装并展示版本更新三级控制面板 (380×370px 独立模态)
+ */
 function createExUpdatePanel() {
-  var currentVer =
-    typeof __imports.P !== "undefined" && __imports.P
+  const currentVer =
+    (typeof __imports.P !== "undefined" && __imports.P)
       ? __imports.P
-      : typeof __imports.GM_info !== "undefined" &&
-          __imports.GM_info.script &&
-          __imports.GM_info.script.version
+      : (typeof __imports.GM_info !== "undefined" && __imports.GM_info.script?.version)
         ? __imports.GM_info.script.version
         : "2026.09.18.01";
-  var existing = document.querySelector(".exupdate-panel");
+
+  const existing = document.querySelector(".exupdate-panel");
   if (existing) {
     if (existing.dataset.version === currentVer) return;
     existing.remove();
   }
-  var p = document.createElement("div");
-  p.className = "exupdate-panel miuix-modal";
-  p.dataset.version = currentVer;
-  p.innerHTML = `
-        <div class="exupdate-panel__card">
-            <div class="exupdate-panel__card-header">
-                <span class="exupdate-panel__card-title">新增功能·</span>
-            </div>
-            <ul class="exupdate-list">
-                <li>① 一键签到三级控制面板完整落地 (createSignPanel / sign-panel)：彻底结束过去盲目后台静默执行的黑盒状态。新增标准 380×370px MIUIX 流式拟态模态视窗，支持按需自由勾选 5 大日常签到任务（房间与粉丝牌签到、客户端模拟领礼盒、关注鱼吧签到、星推日常任务、粉丝家园与钻粉日常），选项状态实时持久化记忆至 ExSave_SignConfig，并配备实时任务日志视窗与纯文字操作按钮</li>
-                <li>② 5 级模态礼物选择器全域复用与背包送礼现代化：将 540×410px MIUIX 拟态大选择器专职全量赋能给【背包送礼】（extool__clearbag），实时双流并行聚合房间专属在播礼物与官方通用大盘礼物（140+款），内置触控胶囊即点即选、背包道具现场直探与 4px 极细微质感滚动条</li>
-                <li>③ 现代化星推日常任务全景式自动化打满：深度逆向斗鱼全民星推长连接与上报协议，一键拉满单日 39+ 金币全部零成本收益（每日打开活动页打卡 +10、3个直播间签到打卡 +9、指定参赛房间口令弹幕助力 +5、房间互动积分上报、以及 5 位关注任务 +15）</li>
-                <li>④ 动态逐轮 introduce 推荐与 task/list 实时状态机闭环：每轮动态切换星推房间源请求官方 introduce 推荐单，确保每一位主播均被斗鱼服务端认定为有效任务推荐；关注后保持 1.8 秒服务端入账呼吸窗口，随后调用官方标准 follow/rm 接口执行安全取关（内置 3 次重试与凭据刷新），并在任务末尾增加全量安全扫尾，关注列表 100% 保持纯净</li>
-            </ul>
-        </div>
-        <div class="exupdate-panel__card">
-            <div class="exupdate-panel__card-header">
-                <span class="exupdate-panel__card-title">优化与修复·</span>
-            </div>
-            <ul class="exupdate-list">
-                <li>① 连根拔除原作者恶意关注陌生主播漏洞与死硬编码“幻神”兜底：彻底清理原版作者残留的 anchorstardiscover 恶意偷关逻辑，彻底删除 ExSave_GoldBadgeName 旧缓存与假数据 fallback，当前佩戴真实粉丝牌动态提取回显，杜绝任何未经允许关注陌生主播的行为</li>
-                <li>② 彻底清除斗鱼早已关停下线的远古车队系统代码：彻底清除 2KB+ 腾讯云 IM 通信接口、usersig 登录打卡及车队周常经验代码 (Xn 及相关接口)，并从一键签到控制台和工具栏提示中彻底移除“车队”相关选项与字符，杜绝无意义网络请求与冗余报错</li>
-                <li>③ 指定星推参赛直播间门禁检测 (isStarCompetitionRoom)：深度逆向斗鱼 rank/info 的 memberInfo 状态机 (hide===0 且 rank>0)，自动判断用户当前所在房间是否为正在打比赛的星推主播；非星推直播间自动跳过“全民星推荐助力主播成长”口令弹幕发送并在日志视窗清晰提示，彻底杜绝在用户喜爱的普通主播直播间误发口令造成打扰</li>
-                <li>④ 斗鱼官方标准 ccn 凭据自动提取与安全取关重试：彻底废弃历史旧代码基于 acf_auth 截断过期 ctn 的错误实现，全面接入斗鱼现代 Web 规范的 ccn Cookie 与 CSRF 自动唤醒接口 (/wgapi/livenc/liveweb/csrfApi/getCsrfCookie)，确保取关请求 100% 鉴权通过</li>
-                <li>⑤ 悬停版本号与全局版本动态同步：彻底清除 05_services.js 中遗留的远古硬编码 var P = "2026.09.14.13"，全面在 01_setup.js 顶层从 GM_info.script.version 动态绑定；底栏【版本更新】图标悬停 title 模板字符串修复，鼠标悬停即刻正确回显当前最新版本号</li>
-            </ul>
-        </div>
-        <div class="exupdate-panel__card">
-            <div class="exupdate-panel__card-header">
-                <span class="exupdate-panel__card-title">其它·</span>
-            </div>
-            <ul class="exupdate-list">
-                <li>① 核心画质拦截层 100% 守恒：src/core/ 黄金拦截逻辑严格 0 修改，首流极清秒开无二次切流</li>
-                <li>② 全按钮严格遵循零 Emoji 工业契约与 MIUIX 流式拟态微质感</li>
-                <li>③ 构建编译集成 V8 AST 原生语法核验机制 (耗时 15ms)</li>
-                <li>④ 生产包体精简度大幅提升：彻底剥离百变礼物伪造层与历史冗余死重，包体净精简 48.5 KB，V8 解析开销降低 8.2%</li>
-            </ul>
-        </div>
-        <div class="exupdate-panel__action-wrap">
-            <button type="button" class="ex-btn-primary exupdate-panel__submit-btn" id="exupdate-action-btn">我已收到</button>
-        </div>
-    `;
-  document.body.appendChild(p);
-  (0, __imports.ensureMiuixPanelHeader)(p, "版本更新");
 
-  var btn = p.querySelector("#exupdate-action-btn");
-  if (!btn) return;
+  const panel = document.createElement("div");
+  panel.className = "exupdate-panel miuix-modal";
+  panel.dataset.version = currentVer;
+  panel.innerHTML = `
+    <div class="exupdate-panel__card">
+      <div class="exupdate-panel__card-header">
+        <span class="exupdate-panel__card-title">新增功能·</span>
+      </div>
+      <ul class="exupdate-list">
+        <li>① 一键签到三级控制面板完整落地 (createSignPanel / sign-panel)：彻底结束过去盲目后台静默执行的黑盒状态。新增标准 380×370px MIUIX 流式拟态模态视窗，支持按需自由勾选 5 大日常签到任务（房间与粉丝牌签到、客户端模拟领礼盒、关注鱼吧签到、星推日常任务、粉丝家园与钻粉日常），选项状态实时持久化记忆至 ExSave_SignConfig，并配备实时任务日志视窗与纯文字操作按钮</li>
+        <li>② 5 级模态礼物选择器全域复用与背包送礼现代化：将 540×410px MIUIX 拟态大选择器专职全量赋能给【背包送礼】（extool__clearbag），实时双流并行聚合房间专属在播礼物与官方通用大盘礼物（140+款），内置触控胶囊即点即选、背包道具现场直探与 4px 极细微质感滚动条</li>
+        <li>③ 现代化星推日常任务全景式自动化打满：深度逆向斗鱼全民星推长连接与上报协议，一键拉满单日 39+ 金币全部零成本收益（每日打开活动页打卡 +10、3个直播间签到打卡 +9、指定参赛房间口令弹幕助力 +5、房间互动积分上报、以及 5 位关注任务 +15）</li>
+        <li>④ 动态逐轮 introduce 推荐与 task/list 实时状态机闭环：每轮动态切换星推房间源请求官方 introduce 推荐单，确保每一位主播均被斗鱼服务端认定为有效任务推荐；关注后保持 1.8 秒服务端入账呼吸窗口，随后调用官方标准 follow/rm 接口执行安全取关（内置 3 次重试与凭据刷新），并在任务末尾增加全量安全扫尾，关注列表 100% 保持纯净</li>
+      </ul>
+    </div>
+    <div class="exupdate-panel__card">
+      <div class="exupdate-panel__card-header">
+        <span class="exupdate-panel__card-title">优化与修复·</span>
+      </div>
+      <ul class="exupdate-list">
+        <li>① 连根拔除原作者恶意关注陌生主播漏洞与死硬编码“幻神”兜底：彻底清理原版作者残留的 anchorstardiscover 恶意偷关逻辑，彻底删除 ExSave_GoldBadgeName 旧缓存与假数据 fallback，当前佩戴真实粉丝牌动态提取回显，杜绝任何未经允许关注陌生主播的行为</li>
+        <li>② 彻底清除斗鱼早已关停下线的远古车队系统代码：彻底清除 2KB+ 腾讯云 IM 通信接口、usersig 登录打卡及车队周常经验代码 (Xn 及相关接口)，并从一键签到控制台和工具栏提示中彻底移除“车队”相关选项与字符，杜绝无意义网络请求与冗余报错</li>
+        <li>③ 指定星推参赛直播间门禁检测 (isStarCompetitionRoom)：深度逆向斗鱼 rank/info 的 memberInfo 状态机 (hide===0 且 rank>0)，自动判断用户当前所在房间是否为正在打比赛的星推主播；非星推直播间自动跳过“全民星推荐助力主播成长”口令弹幕发送并在日志视窗清晰提示，彻底杜绝在用户喜爱的普通主播直播间误发口令造成打扰</li>
+        <li>④ 斗鱼官方标准 ccn 凭据自动提取与安全取关重试：彻底废弃历史旧代码基于 acf_auth 截断过期 ctn 的错误实现，全面接入斗鱼现代 Web 规范的 ccn Cookie 与 CSRF 自动唤醒接口 (/wgapi/livenc/liveweb/csrfApi/getCsrfCookie)，确保取关请求 100% 鉴权通过</li>
+        <li>⑤ 悬停版本号与全局版本动态同步：彻底清除 05_services.js 中遗留的远古硬编码 var P = "2026.09.14.13"，全面在 01_setup.js 顶层从 GM_info.script.version 动态绑定；底栏【版本更新】图标悬停 title 模板字符串修复，鼠标悬停即刻正确回显当前最新版本号</li>
+      </ul>
+    </div>
+    <div class="exupdate-panel__card">
+      <div class="exupdate-panel__card-header">
+        <span class="exupdate-panel__card-title">其它·</span>
+      </div>
+      <ul class="exupdate-list">
+        <li>① 核心画质拦截层 100% 守恒：src/core/ 黄金拦截逻辑严格 0 修改，首流极清秒开无二次切流</li>
+        <li>② 全按钮严格遵循零 Emoji 工业契约与 MIUIX 流式拟态微质感</li>
+        <li>③ 构建编译集成 V8 AST 原生语法核验机制 (耗时 15ms)</li>
+        <li>④ 生产包体精简度大幅提升：彻底剥离百变礼物伪造层与历史冗余死重，包体净精简 48.5 KB，V8 解析开销降低 8.2%</li>
+      </ul>
+    </div>
+    <div class="exupdate-panel__action-wrap">
+      <button type="button" class="ex-btn-primary exupdate-panel__submit-btn" id="exupdate-action-btn">我已收到</button>
+    </div>
+  `;
 
-  // 多态状态机初始化
+  document.body.appendChild(panel);
+  (0, __imports.ensureMiuixPanelHeader)(panel, "版本更新");
+
+  const actionBtn = panel.querySelector("#exupdate-action-btn");
+  if (!actionBtn) return;
+
+  // 动作按钮多态状态机 (ack -> check -> checking -> latest / upgrade)
   function setBtnState(state, text) {
-    btn.className = "ex-btn-primary exupdate-panel__submit-btn";
-    btn.dataset.state = state;
-    btn.disabled = false;
-    if (state === "ack") {
-      btn.classList.add("exupdate-state-btn--ack");
-      btn.textContent = text || "我已收到";
-    } else if (state === "check") {
-      btn.classList.add("exupdate-state-btn--check");
-      btn.textContent = text || "检查更新";
-    } else if (state === "checking") {
-      btn.classList.add("exupdate-state-btn--checking");
-      btn.textContent = text || "正在检查更新...";
-      btn.disabled = true;
-    } else if (state === "latest") {
-      btn.classList.add("exupdate-state-btn--latest");
-      btn.textContent = text || "已是最新";
-    } else if (state === "upgrade") {
-      btn.classList.add("exupdate-state-btn--upgrade");
-      btn.textContent = text || "前往更新";
+    actionBtn.className = "ex-btn-primary exupdate-panel__submit-btn";
+    actionBtn.dataset.state = state;
+    actionBtn.disabled = false;
+    const stateMap = {
+      ack: { cls: "exupdate-state-btn--ack", defText: "我已收到" },
+      check: { cls: "exupdate-state-btn--check", defText: "检查更新" },
+      checking: { cls: "exupdate-state-btn--checking", defText: "正在检查更新...", disabled: true },
+      latest: { cls: "exupdate-state-btn--latest", defText: "已是最新" },
+      upgrade: { cls: "exupdate-state-btn--upgrade", defText: "前往更新" }
+    };
+    const conf = stateMap[state];
+    if (conf) {
+      actionBtn.classList.add(conf.cls);
+      actionBtn.textContent = text || conf.defText;
+      if (conf.disabled) actionBtn.disabled = true;
     }
   }
 
-  var lastNotified = (0, __imports.GM_getValue)("Ex_LastNotifiedVersion");
+  const lastNotified = (0, __imports.GM_getValue)("Ex_LastNotifiedVersion");
   if (lastNotified !== currentVer) {
     setBtnState("ack", "我已收到");
   } else {
     setBtnState("check", "检查更新");
   }
 
-  btn.onclick = function (e) {
+  actionBtn.onclick = (e) => {
     e.stopPropagation();
-    var st = btn.dataset.state;
-    if (st === "ack") {
+    const currentState = actionBtn.dataset.state;
+
+    if (currentState === "ack") {
       (0, __imports.GM_setValue)("Ex_LastNotifiedVersion", currentVer);
-      var tip = document.getElementById("ex-update__tip");
+      const tip = document.getElementById("ex-update__tip");
       if (tip) tip.style.display = "none";
       setBtnState("check", "检查更新");
-    } else if (st === "check") {
+    } else if (currentState === "check") {
       setBtnState("checking", "正在检查更新...");
-      var handleUpdateData = function (data) {
-        if (
-          data &&
-          data.version &&
-          typeof __imports.isNewerVersion === "function" &&
-          (0, __imports.isNewerVersion)(data.version, currentVer)
-        ) {
+
+      const handleUpdateData = (data) => {
+        if (data?.version && typeof __imports.isNewerVersion === "function" && (0, __imports.isNewerVersion)(data.version, currentVer)) {
           setBtnState("upgrade", "前往更新");
-          var tip = document.getElementById("ex-update__tip");
+          const tip = document.getElementById("ex-update__tip");
           if (tip) tip.style.display = "block";
         } else {
           setBtnState("latest", "已是最新");
         }
       };
+
       if (typeof __imports.GM_xmlhttpRequest === "function") {
         (0, __imports.GM_xmlhttpRequest)({
           method: "GET",
           url: "https://greasyfork.org/scripts/595575.json",
           responseType: "json",
-          onload: function (res) {
-            var data = res.response;
+          onload: (res) => {
+            let data = res.response;
             if (typeof data === "string") {
-              try {
-                data = JSON.parse(data);
-              } catch (e) {}
+              try { data = JSON.parse(data); } catch {}
             }
             handleUpdateData(data);
           },
-          onerror: function () {
-            setBtnState("latest", "已是最新");
-          },
+          onerror: () => setBtnState("latest", "已是最新"),
+          ontimeout: () => setBtnState("latest", "已是最新")
         });
       } else {
         (0, __imports.fetch)("https://greasyfork.org/scripts/595575.json")
-          .then(function (res) {
-            return res.json();
-          })
+          .then(res => res.json())
           .then(handleUpdateData)
-          .catch(function () {
-            setBtnState("latest", "已是最新");
-          });
+          .catch(() => setBtnState("latest", "已是最新"));
       }
-    } else if (st === "latest") {
+    } else if (currentState === "latest") {
       setBtnState("check", "检查更新");
-    } else if (st === "upgrade") {
-      (0, __imports.GM_openInTab)("https://greasyfork.org/zh-CN/scripts/595575", {
-        active: true,
-      });
+    } else if (currentState === "upgrade") {
+      (0, __imports.GM_openInTab)("https://greasyfork.org/zh-CN/scripts/595575", { active: true });
     }
   };
 }
+
 window.createExUpdatePanel = createExUpdatePanel;
 
 }
@@ -13366,152 +13379,157 @@ function $n(e) {
 function* (__imports) {
 yield {"ai": { get: () => ai, set: value => { ai = value; } },
 "mountVideoTimestamps": { get: () => mountVideoTimestamps, set: value => { mountVideoTimestamps = value; } }};
-let ei = 0,
-  ti = 0,
-  oi = 0,
-  ni = {};
-async function ii(t) {
-  var o = await ri(t);
-  for (let e = 0; e < o.data.supplementary_cards; e++) await ri(t);
-}
-function ai(e) {
-  return new Promise((t) => {
+/**
+ * 鱼吧关注板块列表与录播视频录制时间戳映射服务
+ */
+let currentVideoStartTimeMs = 0;
+let videoObserver = null;
+let shareObserver = null;
+let previewObserver = null;
+let renderTimer = 0;
+let currentVideoHashId = "";
+
+/**
+ * 鱼吧关注群组分页拉取 (契约兼容导出 ai)
+ * @param {number|string} page - 页码
+ * @returns {Promise<object>}
+ */
+function ai(page) {
+  return new Promise((resolve) => {
     (0, __imports.GM_xmlhttpRequest)({
       method: "GET",
-      url:
-        "https://yuba.douyu.com/wbapi/web/group/myFollow?page=" +
-        String(e) +
-        "&limit=30",
+      url: `https://yuba.douyu.com/wbapi/web/group/myFollow?page=${String(page)}&limit=30`,
       responseType: "json",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
         "dy-client": "pc",
         "dy-token": __imports.m,
       },
-      onload: function (e) {
-        t(e.response.data);
-      },
+      onload: (res) => resolve(res.response?.data),
+      onerror: () => resolve(null),
+      ontimeout: () => resolve(null)
     });
   });
 }
-function ri(e) {
-  return new Promise((t) => {
-    (0, __imports.GM_xmlhttpRequest)({
-      method: "POST",
-      url: "https://mapi-yuba.douyu.com/wb/v3/supplement",
-      responseType: "json",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        client: "android",
-        token: __imports.m,
-      },
-      data: "group_id=" + e,
-      onload: function (e) {
-        t(e.response);
-      },
-    });
-  });
-}
-/* var P managed globally */ let ui = 0,
-  gi = null,
-  hi = null,
-  fi = null,
-  yi = 0,
-  bi = "";
+
+/**
+ * 录播播放器悬停进度条时间戳挂载与监听
+ * @param {object} owner - 房间/播放器生命周期管理者
+ */
 function mountVideoTimestamps(owner) {
-  ui = 0;
-  bi = '';
+  currentVideoStartTimeMs = 0;
+  currentVideoHashId = "";
+
   owner.own(() => {
-    for (const observer of [gi, fi, hi]) observer?.disconnect();
-    gi = fi = hi = null;
-    (0, __imports.clearTimeout)(yi);
-    yi = 0;
-    bi = '';
-    ui = 0;
+    for (const observer of [videoObserver, shareObserver, previewObserver]) {
+      observer?.disconnect();
+    }
+    videoObserver = shareObserver = previewObserver = null;
+    (0, __imports.clearTimeout)(renderTimer);
+    renderTimer = 0;
+    currentVideoHashId = "";
+    currentVideoStartTimeMs = 0;
   });
-  const poll = owner.interval(() => {
+
+  const pollTimer = owner.interval(() => {
     const video = document.getElementsByTagName('demand-video')[0]?.shadowRoot?.getElementById('__video');
-    const preview = videoTimestampPreview();
+    const preview = getVideoTimestampPreviewEl();
     const share = document.getElementsByTagName('demand-video-toolbar')[0]?.shadowRoot?.querySelector('share-hover');
+
     if (!video || !preview || !share) return;
-    (0, __imports.clearInterval)(poll);
-    const refresh = () => vi(owner);
+    (0, __imports.clearInterval)(pollTimer);
+
+    const refresh = () => fetchVideoOriginTime(owner);
     const render = () => {
-      const seconds = Number(xi());
-      wi(String((0, __imports.k)('yyyy-MM-dd hh:mm:ss', new Date(Number(ui + 1e3 * seconds)))) + '<br/>' + (0, __imports.J)(seconds));
+      const seconds = Number(getHoverShowTimeSeconds());
+      renderHoverTimestampLabel(
+        String((0, __imports.k)('yyyy-MM-dd hh:mm:ss', new Date(Number(currentVideoStartTimeMs + 1000 * seconds)))) +
+        '<br/>' +
+        (0, __imports.J)(seconds)
+      );
     };
+
     refresh();
-    gi = new MutationObserver(owner.guard(refresh));
-    gi.observe(video, {attributes: true, childList: true, subtree: false});
-    fi = new MutationObserver(owner.guard(records => {
+    videoObserver = new MutationObserver(owner.guard(refresh));
+    videoObserver.observe(video, { attributes: true, childList: true, subtree: false });
+
+    shareObserver = new MutationObserver(owner.guard(records => {
       if (records.some(record => record.attributeName === 'hashid')) refresh();
     }));
-    fi.observe(share, {attributes: true});
-    hi = new MutationObserver(owner.guard(records => {
+    shareObserver.observe(share, { attributes: true });
+
+    previewObserver = new MutationObserver(owner.guard(records => {
       for (const record of records) {
         if (record.attributeName === 'showtime') { render(); break; }
         if (record.attributeName === 'isshow') {
-          (0, __imports.clearTimeout)(yi);
-          yi = owner.timeout(render, 0);
+          (0, __imports.clearTimeout)(renderTimer);
+          renderTimer = owner.timeout(render, 0);
           break;
         }
       }
     }));
-    hi.observe(preview, {attributes: true, childList: true, subtree: false});
+    previewObserver.observe(preview, { attributes: true, childList: true, subtree: false });
   }, 1000);
 }
-function videoTimestampPreview() {
+
+function getVideoTimestampPreviewEl() {
   return document.getElementsByTagName('demand-video')[0]?.shadowRoot
     ?.getElementById('demandcontroller-bar')?.shadowRoot
     ?.querySelector('demand-video-controller-progress')?.shadowRoot
     ?.querySelector('demand-video-controller-preview');
 }
-function vi(owner) {
-  var e = (() => {
+
+function fetchVideoOriginTime(owner) {
+  let hashId = (() => {
     try {
-      var e = document
-        .getElementsByTagName("demand-video-toolbar")[0]
-        .shadowRoot.querySelector("share-hover")
-        .getAttribute("hashid");
-      if (e) return e;
-    } catch (e) {}
-    return (e = String(window.location.pathname).split("/"))[e.length - 1];
+      const shareHover = document.getElementsByTagName("demand-video-toolbar")[0]?.shadowRoot?.querySelector("share-hover");
+      const id = shareHover?.getAttribute("hashid");
+      if (id) return id;
+    } catch {}
+    const pathParts = String(window.location.pathname).split("/");
+    return pathParts[pathParts.length - 1];
   })();
-  if (e) {
-    let t = (bi = e);
-    (0, __imports.fetch)("https://v.douyu.com/video/video/getVideoUrl?vid=" + e, {
-      method: "GET",
-      mode: "no-cors",
-      credentials: "include",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+
+  if (!hashId) return;
+
+  currentVideoHashId = hashId;
+  const lockedId = hashId;
+
+  (0, __imports.fetch)(`https://v.douyu.com/video/video/getVideoUrl?vid=${hashId}`, {
+    method: "GET",
+    mode: "no-cors",
+    credentials: "include",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+  })
+    .then(res => res.json())
+    .then(res => {
+      if (!owner.disposed && lockedId === currentVideoHashId && res?.data?.viewthumb?.[0]?.url) {
+        const dateStr = (0, __imports.v)(res.data.viewthumb[0].url, "--", "/");
+        if (dateStr) {
+          const isoStr = dateStr.replace(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/, "$1-$2-$3 $4:$5:$6");
+          currentVideoStartTimeMs = new Date(isoStr).getTime();
+        }
+      }
     })
-      .then((e) => e.json())
-      .then((e) => {
-        !owner.disposed && t === bi &&
-          ((e = (0, __imports.v)(e.data.viewthumb[0].url, "--", "/")),
-          (ui = new Date(
-            e.replace(
-              /^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})$/,
-              "$1-$2-$3 $4:$5:$6",
-            ),
-          ).getTime()));
-      })
-      .catch((e) => {
-        console.log("请求失败!", e);
-      });
+    .catch(err => {
+      console.debug("[DouyuEx NEXT] 录播起播时间戳获取异常:", err);
+    });
+}
+
+function getHoverShowTimeSeconds() {
+  const preview = getVideoTimestampPreviewEl();
+  const showTime = preview?.getAttribute('showtime');
+  return Number(showTime || 0).toFixed(0);
+}
+
+function renderHoverTimestampLabel(htmlContent) {
+  const label = getVideoTimestampPreviewEl()?.shadowRoot?.querySelector('.Preview label');
+  if (label) {
+    label.style.position = "relative";
+    label.style.bottom = "60px";
+    label.style.backgroundColor = "rgba(0,0,0,0.4)";
+    label.innerHTML = htmlContent;
   }
-}
-function xi() {
-  var e = videoTimestampPreview()?.getAttribute('showtime');
-  return Number(e).toFixed(0);
-}
-function wi(e) {
-  var t = videoTimestampPreview()?.shadowRoot?.querySelector('.Preview label');
-  t &&
-    ((t.style.position = "relative"),
-    (t.style.bottom = "60px"),
-    (t.style.backgroundColor = "rgba(0,0,0,0.4)"),
-    (t.innerHTML = e));
 }
 
 }
@@ -14483,1027 +14501,485 @@ function* (__imports) {
 yield {"pipMarkup0": { get: () => pipMarkup0 },
 "renderPipMarkup0": { get: () => renderPipMarkup0, set: value => { renderPipMarkup0 = value; } },
 "renderPipMarkup1": { get: () => renderPipMarkup1, set: value => { renderPipMarkup1 = value; } }};
+/**
+ * 画中画 (PiP) 样式表与独立微窗 HTML 模板工厂
+ */
 const pipMarkup0 = `
-
-            #pip-setting-panel {
-
-                position: fixed;
-
-                width: 440px;
-
-                background: rgba(255, 255, 255, 0.98);
-
-                border: 1px solid rgba(212, 212, 216, 1);
-
-                box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
-
-                border-radius: 12px;
-
-                padding: 24px;
-
-                z-index: 999999;
-
-                font-family: "Helvetica Neue", Helvetica, Arial, "Microsoft Yahei", sans-serif;
-
-                color: #18181b;
-
-                box-sizing: border-box;
-
-                backdrop-filter: blur(10px);
-
-            }
-
-
-
-            .pip-setting-header {
-
-                display: flex;
-
-                align-items: center;
-
-                justify-content: space-between;
-
-                margin: -24px -24px 24px;
-
-                padding: 24px 24px 0;
-
-                cursor: move;
-
-                user-select: none;
-
-            }
-
-
-
-            .pip-setting-title {
-
-                flex: 1;
-
-                min-width: 0;
-
-                font-size: 16px;
-
-                font-weight: 600;
-
-                color: #000000;
-
-                letter-spacing: 0.5px;
-
-                margin: 0;
-
-            }
-
-
-
-            .pip-setting-header-actions {
-
-                display: flex;
-
-                align-items: center;
-
-                gap: 12px;
-
-                flex-shrink: 0;
-
-            }
-
-
-
-            .pip-setting-reset {
-
-                font-size: 13px;
-
-                color: #71717a;
-
-                cursor: pointer;
-
-                transition: color 0.2s;
-
-                text-decoration: underline;
-
-                user-select: none;
-
-                font-weight: 500;
-
-                white-space: nowrap;
-
-            }
-
-
-
-            .pip-setting-reset:hover {
-
-                color: #ff5d23;
-
-            }
-
-
-
-            .pip-setting-dismiss {
-
-                flex-shrink: 0;
-
-                width: 28px;
-
-                height: 28px;
-
-                margin: 0;
-
-                padding: 0;
-
-                border: none;
-
-                border-radius: 6px;
-
-                background: transparent;
-
-                color: #71717a;
-
-                font-size: 22px;
-
-                line-height: 1;
-
-                cursor: pointer;
-
-                user-select: none;
-
-                transition: background 0.2s, color 0.2s;
-
-            }
-
-
-
-            .pip-setting-dismiss:hover {
-
-                background: #f4f4f5;
-
-                color: #18181b;
-
-            }
-
-
-
-            .pip-setting-item {
-
-                margin-bottom: 18px;
-
-                display: flex;
-
-                align-items: center;
-
-                font-size: 13px;
-
-            }
-
-
-
-            .pip-setting-item.item-vertical {
-
-                margin-bottom: 20px;
-
-                flex-direction: column;
-
-                align-items: flex-start;
-
-            }
-
-
-
-            .item-label-row {
-
-                width: 100%;
-
-                display: flex;
-
-                align-items: center;
-
-            }
-
-
-
-            .pip-setting-item span:first-child {
-
-                width: 100px;
-
-                color: #3f3f46;
-
-                font-weight: 600;
-
-            }
-
-
-
-            .pip-setting-item input[type="range"] {
-
-                flex: 1;
-
-                margin: 0 14px;
-
-                -webkit-appearance: none;
-
-                background: #d4d4d8;
-
-                height: 4px;
-
-                border-radius: 2px;
-
-                outline: none;
-
-            }
-
-
-
-            .pip-setting-item input[type="range"]::-webkit-slider-thumb {
-
-                -webkit-appearance: none;
-
-                width: 12px;
-
-                height: 12px;
-
-                border-radius: 50%;
-
-                background: #ff5d23;
-
-                cursor: pointer;
-
-                transition: transform 0.1s;
-
-            }
-
-
-
-            .pip-setting-item input[type="range"]::-webkit-slider-thumb:hover {
-
-                transform: scale(1.2);
-
-            }
-
-
-
-            .pip-setting-item select {
-
-                flex: 1;
-
-                background: #f4f4f5;
-
-                color: #18181b;
-
-                padding: 6px 10px;
-
-                border-radius: 6px;
-
-                border: 1px solid #cdcdd6;
-
-                outline: none;
-
-                font-size: 13px;
-
-                cursor: pointer;
-
-                transition: border-color 0.2s, background 0.2s;
-
-                font-weight: 500;
-
-            }
-
-
-
-            .pip-setting-item select:focus {
-
-                border-color: #ff5d23;
-
-                background: #ffffff;
-
-            }
-
-
-
-            .pip-setting-item span:last-child {
-
-                width: 32px;
-
-                text-align: right;
-
-                color: #ff5d23;
-
-                font-weight: bold;
-
-                font-family: monospace;
-
-            }
-
-
-
-            .pip-setting-tip {
-
-                font-size: 11px;
-
-                color: #52525b;
-
-                margin-top: 6px;
-
-                margin-left: 100px;
-
-                line-height: 1.4;
-
-            }
-
-
-
-        `;
-
-function renderPipMarkup0(value0, value1, value2) { return `
-
-        <style>
-
-            html,body{margin:0;width:100%;height:100%;overflow:hidden;background:black;font-family: sans-serif;}
-
-            #wrap{position:relative;width:100%;height:100%;display:flex;flex-direction:column;}
-
-            #main-view{position:relative;flex:1;width:100%;overflow:hidden;}
-
-            video{width:100%;height:100%;object-fit:contain;}
-
-            #danmaku{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
-
-            
-
-            #pip-back-opener {
-
-                position: absolute;
-
-                top: 10px;
-
-                right: -140px;
-
-                left: auto;
-
-                z-index: 10001;
-
-                padding: 6px 12px;
-
-                font-size: 15px;
-
-                font-weight: 600;
-
-                line-height: 1.25;
-
-                color: #fff;
-
-                background: rgba(0, 0, 0, 0.65);
-
-                border: 1px solid rgba(255, 255, 255, 0.35);
-
-                border-radius: 6px;
-
-                cursor: pointer;
-
-                font-family: "Microsoft YaHei", "SimHei", sans-serif;
-
-                transition: right 0.3s, background 0.2s, border-color 0.2s;
-
-                white-space: nowrap;
-
-                user-select: none;
-
-            }
-
-            #pip-back-opener:hover {
-
-                background: rgba(0, 0, 0, 0.88);
-
-                border-color: rgba(255, 255, 255, 0.55);
-
-            }
-
-            #wrap:hover #pip-back-opener {
-
-                right: 10px;
-
-            }
-
-
-
-            #combo-container {
-
-                position: absolute;
-
-                top: 6px;
-
-                left: 6px;
-
-                right: 6px;
-
-                display: flex;
-
-                flex-direction: row;
-
-                flex-wrap: wrap;
-
-                align-items: flex-start;
-
-                align-content: flex-start;
-
-                gap: 4px;
-
-                max-height: 44px;
-
-                overflow: hidden;
-
-                pointer-events: none;
-
-                z-index: 9999;
-
-            }
-
-            .combo-item {
-
-                background: rgba(0, 0, 0, 0.55);
-
-                color: #fff;
-
-                padding: 2px 8px;
-
-                border-radius: 12px;
-
-                font-size: 11px;
-
-                font-weight: 600;
-
-                line-height: 1.3;
-
-                max-width: calc(50% - 4px);
-
-                overflow: hidden;
-
-                text-overflow: ellipsis;
-
-                white-space: nowrap;
-
-                border: 1px solid rgba(255, 193, 7, 0.45);
-
-                text-shadow: 0 1px 2px #000;
-
-                box-sizing: border-box;
-
-            }
-
-            .combo-item--more {
-
-                max-width: none;
-
-                flex-shrink: 0;
-
-                color: #d4d4d8;
-
-                border-color: rgba(255, 255, 255, 0.2);
-
-                background: rgba(0, 0, 0, 0.4);
-
-                font-size: 10px;
-
-                font-weight: 500;
-
-            }
-
-            .combo-count {
-
-                color: #ffeb3b;
-
-                margin-left: 4px;
-
-                font-weight: 700;
-
-            }
-
-
-
-            .dm{
-
-                position:absolute;
-
-                white-space:nowrap;
-
-                will-change:transform;
-
-                box-sizing: border-box;
-
-                font-weight: 700;
-
-                line-height: 1.2;
-
-                font-family: "SimHei", "Microsoft YaHei", "Arial Black", "Segoe UI Historic", sans-serif;
-
-                text-shadow:
-
-                    1px 0 1px rgba(0, 0, 0, 0.85),
-
-                    -1px 0 1px rgba(0, 0, 0, 0.85),
-
-                    0 1px 1px rgba(0, 0, 0, 0.85),
-
-                    0 -1px 1px rgba(0, 0, 0, 0.85);
-
-            }
-
-            
-
-            .dm-self {
-
-                background-color: rgba(0, 0, 0, 0.35);
-
-                border: 1px solid #00ff66 !important;
-
-                padding: 2px 8px;
-
-                border-radius: 4px;
-
-                box-shadow: 0 0 4px rgba(0, 255, 102, 0.4), inset 0 0 4px rgba(0, 255, 102, 0.15);
-
-            }
-
-
-
-            #pip-btns{
-
-                position: absolute;
-
-                top: 50%;
-
-                transform: translateY(-50%);
-
-                display: flex;
-
-                justify-content: center;
-
-                left: -50px;
-
-                padding: 4px;
-
-                z-index: 1000;
-
-                transition: all 0.3s;
-
-                flex-direction: column;
-
-            }
-
-
-
-            .pip-btn {
-
-                width: 36px;
-
-                height: 36px;
-
-                min-width: 36px;
-
-                min-height: 36px;
-
-                padding: 0;
-
-                box-sizing: border-box;
-
-                flex-shrink: 0;
-
-                border: 2px solid #FFF;
-
-                border-radius: 50%;
-
-                display: flex;
-
-                align-items: center;
-
-                justify-content: center;
-
-                background: #00000094;
-
-                cursor: pointer;
-
-                z-index: 1000;
-
-                transition: all 0.3s;
-
-                margin: 5px 0;
-
-            }
-
-
-
-            .pip-btn img,
-
-            .pip-btn svg {
-
-                display: block;
-
-                width: 24px;
-
-                height: 24px;
-
-                color: #fff;
-
-            }
-
-
-
-            .pip-btn:hover {background:#000000c4;}
-
-            .pip-btn-danmaku {
-
-                position: relative;
-
-                font-size: 15px;
-
-                font-weight: 700;
-
-                color: #fff;
-
-                line-height: 1;
-
-                font-family: "Microsoft YaHei", "SimHei", sans-serif;
-
-            }
-
-            .pip-btn-danmaku.is-off {
-
-                opacity: 0.65;
-
-                border-color: #999;
-
-                color: #ccc;
-
-            }
-
-            .pip-btn-danmaku.is-off::after {
-
-                content: "";
-
-                position: absolute;
-
-                left: 18%;
-
-                top: 50%;
-
-                width: 64%;
-
-                height: 2px;
-
-                background: rgba(255, 255, 255, 0.95);
-
-                transform: translateY(-50%) rotate(-45deg);
-
-                border-radius: 1px;
-
-                pointer-events: none;
-
-            }
-
-            #wrap:hover #pip-btns {left:10px}
-
-
-
-            #pip-toast{
-
-                position:absolute;
-
-                left:50%;top:50%;
-
-                transform:translate(-50%,-50%);
-
-                background:rgba(0,0,0,.75);
-
-                color:#fff;
-
-                padding:10px 16px;
-
-                border-radius:10px;
-
-                font-size:14px;
-
-                z-index:99999;
-
-                opacity:0;
-
-                transition:opacity .3s;
-
-                pointer-events:none;
-
-                text-align:center;
-
-            }
-
-            #pip-toast.show{opacity:1;}
-
-
-
-            #input-panel {
-
-                display: none;
-
-                background: #18181c;
-
-                padding: 8px 12px;
-
-                box-sizing: border-box;
-
-                border-top: 1px solid #2f2f35;
-
-                align-items: center;
-
-                gap: 10px;
-
-                z-index: 10000;
-
-                position: absolute;
-
-                bottom: 0;
-
-                width: 100%;
-
-            }
-
-            #input-panel.active {
-
-                display: flex;
-
-            }
-
-            #pip-input-field {
-
-                flex: 1;
-
-                background: #2a2a30;
-
-                border: 1px solid #3f3f46;
-
-                border-radius: 6px;
-
-                color: #fff;
-
-                padding: 6px 10px;
-
-                font-size: 14px;
-
-                outline: none;
-
-            }
-
-            #pip-input-field:focus {
-
-                border-color: #ff5d23;
-
-            }
-
-            #pip-submit-btn {
-
-                background: #ff5d23;
-
-                color: #fff;
-
-                border: none;
-
-                padding: 6px 14px;
-
-                border-radius: 6px;
-
-                font-size: 14px;
-
-                cursor: pointer;
-
-                font-weight: bold;
-
-                transition: background 0.2s;
-
-            }
-
-            #pip-submit-btn:hover {
-
-                background: #e04e1b;
-
-            }
-
-        </style>
-
-
-
-        <div id="wrap">
-
-            <div id="main-view">
-
-                <div id="pip-back-opener"></div>
-
-                <div id="pip-btns">
-
-                    <div id="pip-reload" class="pip-btn pip-btn-reload">${value0}</div>
-
-                    <div id="pip-danmaku-toggle" class="pip-btn pip-btn-danmaku"></div>
-
-                    <div id="pip-set" class="pip-btn">${value1}</div>
-
-                    <div id="pip-send" class="pip-btn">${value2}</div>
-
-                </div>
-
-                <video id="pip-video" autoplay muted playsinline></video>
-
-                <div id="danmaku"></div>
-
-                <div id="combo-container"></div>
-
-                <div id="pip-toast"></div>
-
+    #pip-setting-panel {
+        position: fixed;
+        width: 440px;
+        background: rgba(255, 255, 255, 0.98);
+        border: 1px solid rgba(212, 212, 216, 1);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        border-radius: 12px;
+        padding: 24px;
+        z-index: 999999;
+        font-family: "Helvetica Neue", Helvetica, Arial, "Microsoft Yahei", sans-serif;
+        color: #18181b;
+        box-sizing: border-box;
+        backdrop-filter: blur(10px);
+    }
+    .pip-setting-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin: -24px -24px 24px;
+        padding: 24px 24px 0;
+        cursor: move;
+        user-select: none;
+    }
+    .pip-setting-title {
+        flex: 1;
+        min-width: 0;
+        font-size: 16px;
+        font-weight: 600;
+        color: #000000;
+        letter-spacing: 0.5px;
+        margin: 0;
+    }
+    .pip-setting-header-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-shrink: 0;
+    }
+    .pip-setting-reset {
+        font-size: 13px;
+        color: #71717a;
+        cursor: pointer;
+        transition: color 0.2s;
+        text-decoration: underline;
+        user-select: none;
+        font-weight: 500;
+        white-space: nowrap;
+    }
+    .pip-setting-reset:hover {
+        color: #ff5d23;
+    }
+    .pip-setting-dismiss {
+        flex-shrink: 0;
+        width: 28px;
+        height: 28px;
+        margin: 0;
+        padding: 0;
+        border: none;
+        border-radius: 6px;
+        background: transparent;
+        color: #71717a;
+        font-size: 22px;
+        line-height: 1;
+        cursor: pointer;
+        user-select: none;
+        transition: background 0.2s, color 0.2s;
+    }
+    .pip-setting-dismiss:hover {
+        background: #f4f4f5;
+        color: #18181b;
+    }
+    .pip-setting-item {
+        margin-bottom: 18px;
+        display: flex;
+        align-items: center;
+        font-size: 13px;
+    }
+    .pip-setting-item.item-vertical {
+        margin-bottom: 20px;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .item-label-row {
+        width: 100%;
+        display: flex;
+        align-items: center;
+    }
+    .pip-setting-item span:first-child {
+        width: 100px;
+        color: #3f3f46;
+        font-weight: 600;
+    }
+    .pip-setting-item input[type="range"] {
+        flex: 1;
+        margin: 0 14px;
+        -webkit-appearance: none;
+        background: #d4d4d8;
+        height: 4px;
+        border-radius: 2px;
+        outline: none;
+    }
+    .pip-setting-item input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: #ff5d23;
+        cursor: pointer;
+        transition: transform 0.1s;
+    }
+    .pip-setting-item input[type="range"]::-webkit-slider-thumb:hover {
+        transform: scale(1.2);
+    }
+    .pip-setting-item select {
+        flex: 1;
+        background: #f4f4f5;
+        color: #18181b;
+        padding: 6px 10px;
+        border-radius: 6px;
+        border: 1px solid #cdcdd6;
+        outline: none;
+        font-size: 13px;
+        cursor: pointer;
+        transition: border-color 0.2s, background 0.2s;
+        font-weight: 500;
+    }
+    .pip-setting-item select:focus {
+        border-color: #ff5d23;
+        background: #ffffff;
+    }
+    .pip-setting-item span:last-child {
+        width: 32px;
+        text-align: right;
+        color: #ff5d23;
+        font-weight: bold;
+        font-family: monospace;
+    }
+    .pip-setting-tip {
+        font-size: 11px;
+        color: #52525b;
+        margin-top: 6px;
+        margin-left: 100px;
+        line-height: 1.4;
+    }
+`;
+
+function renderPipMarkup0(value0, value1, value2) {
+  return `
+    <style>
+        html,body{margin:0;width:100%;height:100%;overflow:hidden;background:black;font-family: sans-serif;}
+        #wrap{position:relative;width:100%;height:100%;display:flex;flex-direction:column;}
+        #main-view{position:relative;flex:1;width:100%;overflow:hidden;}
+        video{width:100%;height:100%;object-fit:contain;}
+        #danmaku{position:absolute;inset:0;pointer-events:none;overflow:hidden;}
+        #pip-back-opener {
+            position: absolute;
+            top: 10px;
+            right: -140px;
+            left: auto;
+            z-index: 10001;
+            padding: 6px 12px;
+            font-size: 15px;
+            font-weight: 600;
+            line-height: 1.25;
+            color: #fff;
+            background: rgba(0, 0, 0, 0.65);
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: "Microsoft YaHei", "SimHei", sans-serif;
+            transition: right 0.3s, background 0.2s, border-color 0.2s;
+            white-space: nowrap;
+            user-select: none;
+        }
+        #pip-back-opener:hover {
+            background: rgba(0, 0, 0, 0.88);
+            border-color: rgba(255, 255, 255, 0.55);
+        }
+        #wrap:hover #pip-back-opener {
+            right: 10px;
+        }
+        #combo-container {
+            position: absolute;
+            top: 6px;
+            left: 6px;
+            right: 6px;
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            align-items: flex-start;
+            align-content: flex-start;
+            gap: 4px;
+            max-height: 44px;
+            overflow: hidden;
+            pointer-events: none;
+            z-index: 9999;
+        }
+        .combo-item {
+            background: rgba(0, 0, 0, 0.55);
+            color: #fff;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            line-height: 1.3;
+            max-width: calc(50% - 4px);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            border: 1px solid rgba(255, 193, 7, 0.45);
+            text-shadow: 0 1px 2px #000;
+            box-sizing: border-box;
+        }
+        .combo-item--more {
+            max-width: none;
+            flex-shrink: 0;
+            color: #d4d4d8;
+            border-color: rgba(255, 255, 255, 0.2);
+            background: rgba(0, 0, 0, 0.4);
+            font-size: 10px;
+            font-weight: 500;
+        }
+        .combo-count {
+            color: #ffeb3b;
+            margin-left: 4px;
+            font-weight: 700;
+        }
+        .dm{
+            position:absolute;
+            white-space:nowrap;
+            will-change:transform;
+            box-sizing: border-box;
+            font-weight: 700;
+            line-height: 1.2;
+            font-family: "SimHei", "Microsoft YaHei", "Arial Black", "Segoe UI Historic", sans-serif;
+            text-shadow:
+                1px 0 1px rgba(0, 0, 0, 0.85),
+                -1px 0 1px rgba(0, 0, 0, 0.85),
+                0 1px 1px rgba(0, 0, 0, 0.85),
+                0 -1px 1px rgba(0, 0, 0, 0.85);
+        }
+        .dm-self {
+            background-color: rgba(0, 0, 0, 0.35);
+            border: 1px solid #00ff66 !important;
+            padding: 2px 8px;
+            border-radius: 4px;
+            box-shadow: 0 0 4px rgba(0, 255, 102, 0.4), inset 0 0 4px rgba(0, 255, 102, 0.15);
+        }
+        #pip-btns{
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            justify-content: center;
+            left: -50px;
+            padding: 4px;
+            z-index: 1000;
+            transition: all 0.3s;
+            flex-direction: column;
+        }
+        .pip-btn {
+            width: 36px;
+            height: 36px;
+            min-width: 36px;
+            min-height: 36px;
+            padding: 0;
+            box-sizing: border-box;
+            flex-shrink: 0;
+            border: 2px solid #FFF;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #00000094;
+            cursor: pointer;
+            z-index: 1000;
+            transition: all 0.3s;
+            margin: 5px 0;
+        }
+        .pip-btn img,
+        .pip-btn svg {
+            display: block;
+            width: 24px;
+            height: 24px;
+            color: #fff;
+        }
+        .pip-btn:hover {background:#000000c4;}
+        .pip-btn-danmaku {
+            position: relative;
+            font-size: 15px;
+            font-weight: 700;
+            color: #fff;
+            line-height: 1;
+            font-family: "Microsoft YaHei", "SimHei", sans-serif;
+        }
+        .pip-btn-danmaku.is-off {
+            opacity: 0.65;
+            border-color: #999;
+            color: #ccc;
+        }
+        .pip-btn-danmaku.is-off::after {
+            content: "";
+            position: absolute;
+            left: 18%;
+            top: 50%;
+            width: 64%;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.95);
+            transform: translateY(-50%) rotate(-45deg);
+            border-radius: 1px;
+            pointer-events: none;
+        }
+        #wrap:hover #pip-btns {left:10px}
+        #pip-toast{
+            position:absolute;
+            left:50%;top:50%;
+            transform:translate(-50%,-50%);
+            background:rgba(0,0,0,.75);
+            color:#fff;
+            padding:10px 16px;
+            border-radius:10px;
+            font-size:14px;
+            z-index:99999;
+            opacity:0;
+            transition:opacity .3s;
+            pointer-events:none;
+            text-align:center;
+        }
+        #pip-toast.show{opacity:1;}
+        #input-panel {
+            display: none;
+            background: #18181c;
+            padding: 8px 12px;
+            box-sizing: border-box;
+            border-top: 1px solid #2f2f35;
+            align-items: center;
+            gap: 10px;
+            z-index: 10000;
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+        }
+        #input-panel.active {
+            display: flex;
+        }
+        #pip-input-field {
+            flex: 1;
+            background: #2a2a30;
+            border: 1px solid #3f3f46;
+            border-radius: 6px;
+            color: #fff;
+            padding: 6px 10px;
+            font-size: 14px;
+            outline: none;
+        }
+        #pip-input-field:focus {
+            border-color: #ff5d23;
+        }
+        #pip-submit-btn {
+            background: #ff5d23;
+            color: #fff;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+        #pip-submit-btn:hover {
+            background: #e04e1b;
+        }
+    </style>
+    <div id="wrap">
+        <div id="main-view">
+            <div id="pip-back-opener"></div>
+            <div id="pip-btns">
+                <div id="pip-reload" class="pip-btn pip-btn-reload">${value0}</div>
+                <div id="pip-danmaku-toggle" class="pip-btn pip-btn-danmaku"></div>
+                <div id="pip-set" class="pip-btn">${value1}</div>
+                <div id="pip-send" class="pip-btn">${value2}</div>
             </div>
-
-            
-
-            <div id="input-panel">
-
-                <input type="text" id="pip-input-field" placeholder="" maxlength="50" autocomplete="off" />
-
-                <button id="pip-submit-btn" type="button"></button>
-
-            </div>
-
+            <video id="pip-video" autoplay muted playsinline></video>
+            <div id="danmaku"></div>
+            <div id="combo-container"></div>
+            <div id="pip-toast"></div>
         </div>
-
-    `; }
-
-function renderPipMarkup1(value0, value1, value2, value3, value4, value5, value6, value7) { return `
-
-        <div class="pip-setting-header">
-
-            <div class="pip-setting-title">画中画弹幕设置</div>
-
-            <div class="pip-setting-header-actions">
-
-                <span class="pip-setting-reset">恢复默认</span>
-
-                <button type="button" class="pip-setting-dismiss" aria-label="关闭">×</button>
-
-            </div>
-
+        <div id="input-panel">
+            <input type="text" id="pip-input-field" placeholder="" maxlength="50" autocomplete="off" />
+            <button id="pip-submit-btn" type="button"></button>
         </div>
+    </div>
+  `;
+}
 
-
-
-        <div class="pip-setting-item">
-
-            <span>弹幕字号</span>
-
-            <input id="pip-fontsize" type="range" min="12" max="48" value="${value0}">
-
-            <span id="pip-fontsize-value">${value1}</span>
-
+function renderPipMarkup1(value0, value1, value2, value3, value4, value5, value6, value7) {
+  return `
+    <div class="pip-setting-header">
+        <div class="pip-setting-title">画中画弹幕设置</div>
+        <div class="pip-setting-header-actions">
+            <span class="pip-setting-reset">恢复默认</span>
+            <button type="button" class="pip-setting-dismiss" aria-label="关闭">×</button>
         </div>
-
-
-
-        <div class="pip-setting-item">
-
-            <span>弹幕上下间距</span>
-
-            <input id="pip-trackheight" type="range" min="14" max="60" value="${value2}">
-
-            <span id="pip-trackheight-value">${value3}</span>
-
-        </div>
-
-
-
-        <div class="pip-setting-item">
-
-            <span>弹幕速度</span>
-
-            <input id="pip-speed" type="range" min="1" max="10" step="0.5" value="${value4}">
-
-            <span id="pip-speed-value">${value5}</span>
-
-        </div>
-
-
-
-        <div class="pip-setting-item">
-
-            <span>弹幕透明度</span>
-
-            <input id="pip-opacity" type="range" min="30" max="100" value="${value6}">
-
-            <span id="pip-opacity-value">${value7}%</span>
-
-        </div>
-
-
-
-        <div class="pip-setting-item">
-
-            <span>弹幕显示区域</span>
-
-            <select id="pip-area">
-
-                <option value="full">全屏</option>
-
-                <option value="half">1/2</option>
-
-                <option value="quarter">1/4</option>
-
+    </div>
+    <div class="pip-setting-item">
+        <span>弹幕字号</span>
+        <input id="pip-fontsize" type="range" min="12" max="48" value="${value0}">
+        <span id="pip-fontsize-value">${value1}</span>
+    </div>
+    <div class="pip-setting-item">
+        <span>弹幕上下间距</span>
+        <input id="pip-trackheight" type="range" min="14" max="60" value="${value2}">
+        <span id="pip-trackheight-value">${value3}</span>
+    </div>
+    <div class="pip-setting-item">
+        <span>弹幕速度</span>
+        <input id="pip-speed" type="range" min="1" max="10" step="0.5" value="${value4}">
+        <span id="pip-speed-value">${value5}</span>
+    </div>
+    <div class="pip-setting-item">
+        <span>弹幕透明度</span>
+        <input id="pip-opacity" type="range" min="30" max="100" value="${value6}">
+        <span id="pip-opacity-value">${value7}%</span>
+    </div>
+    <div class="pip-setting-item">
+        <span>弹幕显示区域</span>
+        <select id="pip-area">
+            <option value="full">全屏</option>
+            <option value="half">1/2</option>
+            <option value="quarter">1/4</option>
+        </select>
+    </div>
+    <div class="pip-setting-item item-vertical">
+        <div class="item-label-row">
+            <span>重复弹幕合并</span>
+            <select id="pip-mergemode">
+                <option value="all">全部显示</option>
+                <option value="single">只显示一条</option>
+                <option value="combo">合并显示（如X5）</option>
             </select>
-
         </div>
-
-
-
-        <div class="pip-setting-item item-vertical">
-
-            <div class="item-label-row">
-
-                <span>重复弹幕合并</span>
-
-                <select id="pip-mergemode">
-
-                    <option value="all">全部显示</option>
-
-                    <option value="single">只显示一条</option>
-
-                    <option value="combo">合并显示（如X5）</option>
-
-                </select>
-
-            </div>
-
-            <div class="pip-setting-tip">短时间内多条相同弹幕内容时的显示方式</div>
-
+        <div class="pip-setting-tip">短时间内多条相同弹幕内容时的显示方式</div>
+    </div>
+    <div class="pip-setting-item item-vertical">
+        <div class="item-label-row">
+            <span>屏蔽机器人弹幕</span>
+            <select id="pip-filterrobot">
+                <option value="on">开启</option>
+                <option value="off">关闭</option>
+            </select>
         </div>
-
-
-
-        <div class="pip-setting-item item-vertical">
-
-            <div class="item-label-row">
-
-                <span>屏蔽机器人弹幕</span>
-
-                <select id="pip-filterrobot">
-
-                    <option value="on">开启</option>
-
-                    <option value="off">关闭</option>
-
-                </select>
-
-            </div>
-
-            <div class="pip-setting-tip">开启后过滤无用户标识的机器人弹幕</div>
-
+        <div class="pip-setting-tip">开启后过滤无用户标识的机器人弹幕</div>
+    </div>
+    <div class="pip-setting-item item-vertical">
+        <div class="item-label-row">
+            <span>原网页低功耗</span>
+            <select id="pip-lowpowermode">
+                <option value="on">开启</option>
+                <option value="off">关闭</option>
+            </select>
         </div>
-
-
-
-        <div class="pip-setting-item item-vertical">
-
-            <div class="item-label-row">
-
-                <span>原网页低功耗</span>
-
-                <select id="pip-lowpowermode">
-
-                    <option value="on">开启</option>
-
-                    <option value="off">关闭</option>
-
-                </select>
-
-            </div>
-
-            <div class="pip-setting-tip">开启后，拉起画中画时将隐藏原网页视频区、飘屏弹幕与礼物动画，保留右侧弹幕列表，以降低 CPU 占用</div>
-
+        <div class="pip-setting-tip">开启后，拉起画中画时将隐藏原网页视频区、飘屏弹幕与礼物动画，保留右侧弹幕列表，以降低 CPU 占用</div>
+    </div>
+    <div class="pip-setting-item item-vertical">
+        <div class="item-label-row">
+            <span>页签防冻结</span>
+            <select id="pip-tabswitch">
+                <option value="on">开启</option>
+                <option value="off">关闭</option>
+            </select>
         </div>
-
-
-
-        <div class="pip-setting-item item-vertical">
-
-            <div class="item-label-row">
-
-                <span>页签防冻结</span>
-
-                <select id="pip-tabswitch">
-
-                    <option value="on">开启</option>
-
-                    <option value="off">关闭</option>
-
-                </select>
-
-            </div>
-
-            <div class="pip-setting-tip">与扩展工具「防页签冻结」共用设置；开启后画中画期间保持源页解码并自动缓解卡屏（关闭需刷新页面后完全生效）</div>
-
-        </div>
-
-
-
-    `; }
+        <div class="pip-setting-tip">与扩展工具「防页签冻结」共用设置；开启后画中画期间保持源页解码并自动缓解卡屏（关闭需刷新页面后完全生效）</div>
+    </div>
+  `;
+}
 
 }
 ,
@@ -15945,13 +15421,29 @@ yield {"Oa": { get: () => Oa, set: value => { Oa = value; } },
 "pipMergeGroups": { get: () => pipMergeGroups, set: value => { pipMergeGroups = value; } },
 "pipPacketTimes": { get: () => pipPacketTimes, set: value => { pipPacketTimes = value; } },
 "za": { get: () => za, set: value => { za = value; } }};
-let pipMergeGroups = new Map(),
-  ja = null,
-  pipPacketTimes = new Map(),
-  za = 2,
-  Oa = 18,
-  pipDedupWindowMs = 3e3,
-  pipDedupCapacity = 800;
+/**
+ * 画中画 (PiP) 运行时共享状态容器
+ */
+// 相似弹幕归并活跃字典 (Key -> { timestamps: number[], dom: HTMLElement|null, displayCount: number })
+let pipMergeGroups = new Map();
+
+// 当前活跃的画中画浮窗顶层容器引用 (DOM 容器)
+let ja = null;
+
+// 弹幕报文时间戳去重滑窗 (Key -> timestampMs)
+let pipPacketTimes = new Map();
+
+// 连击弹幕聚合最小阈值 (>=2 时显示连击气泡)
+let za = 2;
+
+// 历史弹幕最大缓存条数 (默认 18 条)
+let Oa = 18;
+
+// 去重时间滑窗大小 (3000ms)
+let pipDedupWindowMs = 3000;
+
+// 去重缓存最大容量 (800 条)
+let pipDedupCapacity = 800;
 
 }
 ,
@@ -18542,6 +18034,10 @@ Object.freeze(__imports.nextRuntime);
 "src/next/entry.js":
 function* (__imports) {
 yield {};
+/**
+ * DouyuEx-RL NEXT 客户端业务执行总入口
+ * 负责唤醒全站多路由场景导航器与生命周期总装配
+ */
 (0, __imports.installNavigation)();
 
 }

@@ -3,22 +3,28 @@
 ## 1. 交付产物与核心指标
 - **分支定位**: `DYEXRL-NEXT`（绝不合并至 `main`，严格分支隔离）
 - **核心交付产物**: `artifacts/next/DouyuEx_RL_NEXT.user.js`
-- **精确文件体积**: `892,648 字节` (`871.73 KB`)
-- **官方 SHA-256 哈希**: `20d61067ce096ebea3b9b3a6d515961023bf50062de9b0c5191cfcff31a4c1ce`
+- **精确文件体积**: `891,298 字节` (`870.41 KB`)
+- **官方 SHA-256 哈希**: `362dcae1b8af362af8771f862c85748e90d103c83cf869d956f3270dd758d7ba`
 - **根目录主线产物**: `DouyuEx_RL.user.js`（严格保持零污染，构建互不干涉）
 
 ---
 
-## 2. 渐进式绞杀重构实施进展 (第一梯队累计 8 模块现代重写)
-已完成全量 76 个 AST 模块三梯队深度评估（详见 [docs/next/MIGRATION_TIERS_EVALUATION.md](docs/next/MIGRATION_TIERS_EVALUATION.md)），并圆满完成第一梯队首批累计 **8 个零风险模块**的 100% 现代 ES6+ 语法清洗与强语义重写：
-1. `src/next/services/version.js`：消灭老式 `var` 和同步 XHR 回调，引入语义化 Semver 比较算法与 `async/await fetch` 现代化超时控制，彻底消除全局 window 污染；
-2. `src/next/services/pip/packet-dedup.js`：彻底消灭单字母混淆参数（`e, t, o, n, i`），建立语义化滑窗去重状态机（`packetKey`, `currentTimeMs`, `lastSeenTimeMs`），保护容量溢出与自动驱逐；
+## 2. 渐进式绞杀重构实施进展 (第一梯队累计 14 模块现代重写)
+已完成全量 76 个 AST 模块三梯队深度评估（详见 [docs/next/MIGRATION_TIERS_EVALUATION.md](docs/next/MIGRATION_TIERS_EVALUATION.md)），并圆满完成第一梯队累计 **14 个零风险模块**（进度 ~78%）的 100% 现代 ES6+ 语法清洗与强语义重构：
+1. `src/next/services/version.js`：规范 Semver 比较算法与 `async/await fetch` 异步超时控制，消灭全局污染；
+2. `src/next/services/pip/packet-dedup.js`：彻底消灭单字母混淆参数（`e, t, o, n, i`），规范滑窗去重状态机；
 3. `src/next/services/pip/persistence.js`：规范化 LocalStorage JSON 安全反序列化与双向落盘容错；
-4. `src/next/services/pip/merge-rules.js`：提取字符集指纹纯函数 `getUniqueCharFingerprint`，规范连击相似弹幕归并规则；
-5. `src/next/services/pip/packet-parser.js`：现代重构 STT `chatmsg` 原始协议反序列化器，结构化提取 `text`, `color`, `uid`, `msgId` 与机器人标签过滤；
-6. `src/next/services/pip/packet-dispatch.js`：重构弹幕数据包分发管道，消灭单字母混淆，清晰分流全量飘屏、单条模式与连击合并；
-7. `src/next/runtime/heartbeat.js`：规范 60 秒用户经验心跳调度，确保幂等启停；
-8. `src/next/ui/room/last-live.js`：重写未开播卡片与相对开播时间计算器，规范化 DOM 树装配与关闭淡出动画。
+4. `src/next/services/pip/merge-rules.js`：提取字符集指纹纯函数 `getUniqueCharFingerprint`，规范相似弹幕连击归并键识别；
+5. `src/next/services/pip/packet-parser.js`：规范化 STT `chatmsg` 原始协议反序列化器，结构化提取 `text`, `color`, `uid`, `msgId` 与机器人免打扰过滤；
+6. `src/next/services/pip/packet-dispatch.js`：彻底消灭单字母参数，清晰分流全量飘屏、单条模式与连击合并；
+7. `src/next/services/pip/state.js`：结构化状态容器，添加字段注释与生命周期说明；
+8. `src/next/services/pip/markup.js`：规范化画中画样式与骨架 HTML 模板生成；
+9. `src/next/runtime/heartbeat.js`：规范 60 秒全局经验心跳调度，确保幂等启停；
+10. `src/next/ui/room/last-live.js`：重写未开播卡片与人类友好相对时间计算器，规范 DOM 树装配与淡出动画；
+11. `src/next/ui/bindings.js`：规范化 `safeBind` / `safeEl` 全局安全事件绑定装甲，防范 DOM 报错与 Dock 重复绑定；
+12. `src/next/entry.js`：规范化总业务入口调度；
+13. `src/next/services/video-timestamps.js`：重构录播视频时间戳换算与悬停预览标签，消除混淆命名；
+14. `src/next/ui/panels/update.js`：现代重构版本更新三级控制台，规范化按钮多态状态机（我已收到/检查更新/正在检查/已是最新/前往更新）。
 
 ---
 
