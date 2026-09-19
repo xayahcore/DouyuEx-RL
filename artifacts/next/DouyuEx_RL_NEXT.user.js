@@ -78,35 +78,62 @@ yield {"createNextDockOwner": { get: () => createNextDockOwner, set: value => { 
 "nextDockOwners": { get: () => nextDockOwners },
 "nextFeatures": { get: () => nextFeatures },
 "teardownNextDock": { get: () => teardownNextDock, set: value => { teardownNextDock = value; } }};
-// Feature registry owns Dock dispatch and binding lifetimes in its private module.
-// Service actions are explicit live imports; remaining jobs still require reload.
-const nextFeatures = (() => {
+/**
+ * NEXT 特性注册表与 Dock 生命周期管理中枢
+ */
+
+/**
+ * 单例特性调度注册表 (导出兼容 nextFeatures)
+ */
+var nextFeatures = (() => {
   const features = new Map();
   return Object.freeze({
     register(id, adapter) {
-      if (features.has(id)) throw new Error('Duplicate feature: ' + id);
+      if (features.has(id)) throw new Error(`[DouyuEx NEXT] 重复注册功能特性: ${id}`);
       features.set(id, Object.freeze(adapter));
     },
     invoke(id, action, ...args) {
       const adapter = features.get(id);
-      if (!adapter || typeof adapter[action] !== 'function') throw new Error('Unknown feature action: ' + id + '.' + action);
+      if (!adapter || typeof adapter[action] !== 'function') {
+        throw new Error(`[DouyuEx NEXT] 未知功能动作: ${id}.${action}`);
+      }
       return adapter[action](...args);
     },
-    list() { return [...features].map(([id, adapter]) => ({ id, panel: adapter.panel || null, actions: Object.keys(adapter).filter(key => typeof adapter[key] === 'function') })); }
+    list() {
+      return [...features].map(([id, adapter]) => ({
+        id,
+        panel: adapter.panel || null,
+        actions: Object.keys(adapter).filter(k => typeof adapter[k] === 'function')
+      }));
+    }
   });
 })();
-const nextDockOwners = new Map();
+
+/**
+ * 记录活跃 Dock 容器与其生命周期托管者 (导出兼容 nextDockOwners)
+ */
+var nextDockOwners = new Map();
+
+/**
+ * 为 Dock 容器创建生命周期托管者 (支持属性还原与事件解绑)
+ * @param {HTMLElement} wrap - Dock 外层容器
+ * @returns {object}
+ */
 function createNextDockOwner(wrap) {
   const cleanups = [];
   let disposed = false;
+
   const owner = {
     property(target, key, value) {
       const descriptor = Object.getOwnPropertyDescriptor(target, key);
       target[key] = value;
       cleanups.push(() => {
-        if (target[key] !== value) return; // Do not undo a newer owner's replacement.
-        if (descriptor) Object.defineProperty(target, key, descriptor);
-        else delete target[key];
+        if (target[key] !== value) return; // 避免撤销更新的属性赋值
+        if (descriptor) {
+          Object.defineProperty(target, key, descriptor);
+        } else {
+          delete target[key];
+        }
       });
     },
     listen(target, event, listener) {
@@ -121,9 +148,14 @@ function createNextDockOwner(wrap) {
       (0, __imports.clearSubPanelTimer)();
     }
   };
+
   nextDockOwners.set(wrap, owner);
   return owner;
 }
+
+/**
+ * 逆向安全卸载所有已挂载的 Dock 容器
+ */
 function teardownNextDock() {
   [...nextDockOwners.values()].forEach(owner => owner.dispose());
   (0, __imports.clearSubPanelTimer)();
@@ -2166,42 +2198,48 @@ window.openGiftPicker = openGiftPicker;
 "src/next/ui/panel-header.js":
 function* (__imports) {
 yield {"ensureMiuixPanelHeader": { get: () => ensureMiuixPanelHeader, set: value => { ensureMiuixPanelHeader = value; } }};
-/* ==================== DouyuEx-RL 3级控制台右上角吸顶顶栏 ==================== */
+/**
+ * DouyuEx-RL 3级控制台右上角吸顶顶栏规范与 Flex 结构塑形
+ * 消除顶栏漏缝、统一下拉滚动条起始点、绑定右上角关闭动作与悬停防抖连桥
+ * @param {HTMLElement} el - 控制台模态窗 DOM 容器
+ * @param {string} title - 控制台标题
+ */
 function ensureMiuixPanelHeader(el, title) {
   if (!el) return;
   el.classList.add("miuix-modal");
 
-  // 隐藏可能存在的原生粗糙关闭按钮与旧标题栏/功能栏
-  var oldCloses = el.querySelectorAll(
-    ".extool__close, .livetool__close, .bloop__close, #vote__result-close, .ChatToolBar-DanmakuTail-title, .lottery__func",
+  // 1. 隐藏可能存在的原生粗糙关闭按钮与旧标题栏/功能栏
+  const oldCloses = el.querySelectorAll(
+    ".extool__close, .livetool__close, .bloop__close, #vote__result-close, .ChatToolBar-DanmakuTail-title, .lottery__func"
   );
-  oldCloses.forEach(function (c) {
+  oldCloses.forEach((c) => {
     c.style.setProperty("display", "none", "important");
   });
 
-  var header = el.querySelector(".miuix-modal__header");
+  // 2. 注入或更新标准吸顶 Header
+  let header = el.querySelector(".miuix-modal__header");
   if (!header) {
     header = document.createElement("div");
     header.className = "miuix-modal__header";
     header.innerHTML = `
-            <div class="miuix-modal__title-box">
-                <span class="miuix-modal__title">${title}</span>
-            </div>
-            <button type="button" class="miuix-modal__close" title="关闭面板" aria-label="关闭">×</button>
-        `;
+      <div class="miuix-modal__title-box">
+        <span class="miuix-modal__title">${title}</span>
+      </div>
+      <button type="button" class="miuix-modal__close" title="关闭面板" aria-label="关闭">×</button>
+    `;
     el.insertBefore(header, el.firstChild);
   } else {
-    var titleEl = header.querySelector(".miuix-modal__title");
+    const titleEl = header.querySelector(".miuix-modal__title");
     if (titleEl) titleEl.textContent = title;
-    var badge = header.querySelector(".miuix-modal__badge");
+    const badge = header.querySelector(".miuix-modal__badge");
     if (badge) badge.remove();
   }
 
-  // 无论是否新创建，无条件为关闭按钮绑定高优先级关闭事件
-  var closeBtn = header.querySelector(".miuix-modal__close");
+  // 3. 绑定关闭按钮高优先级关闭事件
+  const closeBtn = header.querySelector(".miuix-modal__close");
   if (closeBtn) {
     closeBtn.innerHTML = "×";
-    closeBtn.onclick = function (e) {
+    closeBtn.onclick = (e) => {
       e.stopPropagation();
       el.style.removeProperty("display");
       el.style.setProperty("display", "none", "important");
@@ -2211,35 +2249,39 @@ function ensureMiuixPanelHeader(el, title) {
     };
   }
 
-  // 滚动条起始点统一规定在顶栏下方：将所有非 Header 内容封装进 .miuix-modal__body
-  var body = el.querySelector(":scope > .miuix-modal__body");
+  // 4. 滚动条起始点统一规约在顶栏正下方：非 Header 内容封装进 .miuix-modal__body
+  let body = el.querySelector(":scope > .miuix-modal__body");
   if (!body) {
     body = document.createElement("div");
     body.className = "miuix-modal__body";
     el.appendChild(body);
   }
-  var nodesToMove = [];
-  for (var i = 0; i < el.childNodes.length; i++) {
-    var node = el.childNodes[i];
+
+  const nodesToMove = [];
+  for (let i = 0; i < el.childNodes.length; i++) {
+    const node = el.childNodes[i];
     if (node !== header && node !== body) {
       nodesToMove.push(node);
     }
   }
-  nodesToMove.forEach(function (n) {
-    body.appendChild(n);
-  });
+  nodesToMove.forEach(n => body.appendChild(n));
 
-  // 悬浮连桥双向保护
+  // 5. 悬浮连桥双向保护
   if (!el.dataset.hoverBridgeBound) {
     el.dataset.hoverBridgeBound = "1";
-    el.addEventListener("mouseenter", function () {
-      if (typeof __imports.clearSubPanelTimer === "function") (0, __imports.clearSubPanelTimer)();
+    el.addEventListener("mouseenter", () => {
+      if (typeof __imports.clearSubPanelTimer === "function") {
+        (0, __imports.clearSubPanelTimer)();
+      }
     });
-    el.addEventListener("mouseleave", function () {
-      if (typeof __imports.scheduleSubPanelClose === "function") (0, __imports.scheduleSubPanelClose)();
+    el.addEventListener("mouseleave", () => {
+      if (typeof __imports.scheduleSubPanelClose === "function") {
+        (0, __imports.scheduleSubPanelClose)();
+      }
     });
   }
 }
+
 window.ensureMiuixPanelHeader = ensureMiuixPanelHeader;
 
 }
@@ -11930,34 +11972,47 @@ yield {"$o": { get: () => $o, set: value => { $o = value; } },
 "Qo": { get: () => Qo, set: value => { Qo = value; } },
 "Xo": { get: () => Xo, set: value => { Xo = value; } },
 "Zo": { get: () => Zo, set: value => { Zo = value; } }};
-let Qo =
-    '<svg t="1587640254282" class="icon" viewBox="0 0 1055 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="5670" width="26" height="26"><path d="M388.06497 594.013091c-96.566303-167.253333-39.067152-381.889939 128.217212-478.487273a348.656485 348.656485 0 0 1 256.248242-36.864C623.491879-5.306182 435.417212-11.170909 276.542061 80.616727 37.236364 218.763636-44.776727 524.815515 93.401212 764.152242c138.146909 239.305697 444.198788 321.318788 683.535515 183.140849 158.875152-91.725576 247.870061-257.520485 249.669818-428.559515a348.656485 348.656485 0 0 1-160.085333 203.496727c-167.253333 96.566303-381.889939 39.036121-478.487273-128.217212" p-id="5671" fill="#8a8a8a"></path></svg>',
-  Jo =
-    '<svg t="1587640423416" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2270" width="26" height="26"><path d="M270.016 197.248l-83.84-84.544-69.76 70.464 83.776 84.544 69.76-70.4zM139.648 465.024H0v93.888h139.648V465.024zM558.528 0H465.472v136.192h93.056V0z m349.056 183.168l-69.76-70.464-83.84 84.544L819.2 263.04l88.384-79.872z m-153.6 643.584l83.84 84.48 65.28-65.728L819.2 760.96l-65.216 65.792z m130.368-267.84H1024V465.024h-139.648v93.888zM512.064 230.08C358.4 230.08 232.768 356.992 232.768 512c0 155.008 125.632 281.856 279.296 281.856 153.6 0 279.232-126.848 279.232-281.856 0-154.944-125.632-281.856-279.232-281.856zM465.472 1024h93.056v-136.256H465.472V1024z m-349.056-183.232l69.76 70.4 83.84-84.48L204.8 760.96 116.48 840.768z" p-id="2271" fill="#8a8a8a"></path></svg>',
-  Zo = 0;
+/**
+ * 夜间模式与外观偏好设置管理服务
+ */
+var Qo = `<svg class="icon" viewBox="0 0 1055 1024" width="26" height="26"><path d="M388.06497 594.013091c-96.566303-167.253333-39.067152-381.889939 128.217212-478.487273a348.656485 348.656485 0 0 1 256.248242-36.864C623.491879-5.306182 435.417212-11.170909 276.542061 80.616727 37.236364 218.763636-44.776727 524.815515 93.401212 764.152242c138.146909 239.305697 444.198788 321.318788 683.535515 183.140849 158.875152-91.725576 247.870061-257.520485 249.669818-428.559515a348.656485 348.656485 0 0 1-160.085333 203.496727c-167.253333 96.566303-381.889939 39.036121-478.487273-128.217212" fill="#8a8a8a"></path></svg>`;
+var Jo = `<svg class="icon" viewBox="0 0 1024 1024" width="26" height="26"><path d="M270.016 197.248l-83.84-84.544-69.76 70.464 83.776 84.544 69.76-70.4zM139.648 465.024H0v93.888h139.648V465.024zM558.528 0H465.472v136.192h93.056V0z m349.056 183.168l-69.76-70.464-83.84 84.544L819.2 263.04l88.384-79.872z m-153.6 643.584l83.84 84.48 65.28-65.728L819.2 760.96l-65.216 65.792z m130.368-267.84H1024V465.024h-139.648v93.888zM512.064 230.08C358.4 230.08 232.768 356.992 232.768 512c0 155.008 125.632 281.856 279.296 281.856 153.6 0 279.232-126.848 279.232-281.856 0-154.944-125.632-281.856-279.232-281.856zM465.472 1024h93.056v-136.256H465.472V1024z m-349.056-183.232l69.76 70.4 83.84-84.48L204.8 760.96 116.48 840.768z" fill="#8a8a8a"></path></svg>`;
+var Zo = 0; // 0 = 日间模式, 1 = 夜间模式
+
+/**
+ * 持久化夜间模式开关状态 (导出兼容 Xo)
+ */
 function Xo() {
-  var e = { mode: Zo };
-  __imports.localStorage.setItem("ExSave_Mode", JSON.stringify(e));
+  const cfg = { mode: Zo };
+  __imports.localStorage.setItem("ExSave_Mode", JSON.stringify(cfg));
 }
+
+/**
+ * 注入夜间模式样式 (导出兼容 Ko)
+ */
 function Ko() {
-  !document.getElementsByClassName("live-next-body")[0] &&
-    (0, __imports.tl)("Ex_Style_NightMode", "/* [DouyuEx-Lite] 夜间样式已剥离 */");
+  if (!document.getElementsByClassName("live-next-body")[0]) {
+    (0, __imports.tl)("Ex_Style_NightMode", "/* [DouyuEx] 夜间模式已启用 */");
+  }
 }
+
+/**
+ * 注入鱼吧嵌入 iframe 夜间样式 (导出兼容 $o)
+ */
 function $o() {
-  var e,
-    t,
-    o,
-    n = document
-      .getElementsByClassName("BottomGroup")[0]
-      .getElementsByTagName("iframe")[0];
-  null != n &&
-    ((n = n.contentWindow.document),
-    (e = "Ex_Style_NightModeIframe"),
-    (t = "/* [DouyuEx-Lite] 鱼吧夜间样式已剥离 */"),
-    null == n.getElementById(e)) &&
-    (((o = n.createElement("style")).id = e),
-    (o.innerHTML = t),
-    n.body.append(o));
+  try {
+    const iframe = document.getElementsByClassName("BottomGroup")[0]?.getElementsByTagName("iframe")[0];
+    if (iframe?.contentWindow?.document) {
+      const doc = iframe.contentWindow.document;
+      const styleId = "Ex_Style_NightModeIframe";
+      if (!doc.getElementById(styleId)) {
+        const styleEl = doc.createElement("style");
+        styleEl.id = styleId;
+        styleEl.innerHTML = "/* [DouyuEx] 鱼吧夜间样式适配 */";
+        doc.body.append(styleEl);
+      }
+    }
+  } catch {}
 }
 
 }
@@ -17672,71 +17727,123 @@ yield {"U": { get: () => U, set: value => { U = value; } },
 "el": { get: () => el, set: value => { el = value; } },
 "ol": { get: () => ol, set: value => { ol = value; } },
 "tl": { get: () => tl, set: value => { tl = value; } }};
-function $r(e) {
-  if (e) return e.toString().replace(/@S/g, "/").replace(/@A/g, "@");
+/**
+ * 斗鱼 STT 序列化协议反序列化、TCP/WS 二进制封包与样式注入工具库
+ */
+
+/**
+ * 还原 STT 报文转义字符 (@S -> /, @A -> @)
+ * @param {string} str
+ * @returns {string}
+ */
+function unescapeSttString(str) {
+  if (!str) return "";
+  return str.toString().replace(/@S/g, "/").replace(/@A/g, "@");
 }
-function el(e) {
-  if (e)
-    return e.includes("//")
-      ? e
-          .split("//")
-          .filter((e) => "" !== e)
-          .map((e) => el(e))
-      : e.includes("@=")
-        ? e
-            .split("/")
-            .filter((e) => "" !== e)
-            .reduce((e, t) => {
-              var [t, o] = t.split("@=");
-              return ((e[t] = el($r(o))), e);
-            }, {})
-        : e.includes("@A=")
-          ? el($r(e))
-          : e.toString();
+
+/**
+ * 递归反序列化斗鱼 STT 协议报文为结构化对象或数组 (导出兼容 el)
+ * @param {string} raw
+ * @returns {any}
+ */
+function el(raw) {
+  if (!raw) return "";
+
+  // 1. 数组列表 (// 分割)
+  if (raw.includes("//")) {
+    return raw
+      .split("//")
+      .filter(item => item !== "")
+      .map(item => el(item));
+  }
+
+  // 2. 键值对字典 (@= 分割)
+  if (raw.includes("@=")) {
+    return raw
+      .split("/")
+      .filter(item => item !== "")
+      .reduce((acc, pair) => {
+        const [k, v] = pair.split("@=");
+        acc[k] = el(unescapeSttString(v));
+        return acc;
+      }, {});
+  }
+
+  // 3. 单项转义 (@A=)
+  if (raw.includes("@A=")) {
+    return el(unescapeSttString(raw));
+  }
+
+  return raw.toString();
 }
-function tl(e, t) {
-  var o;
-  null == document.getElementById(e) &&
-    (((o = document.createElement("style")).id = e),
-    (o.innerHTML = t),
-    document.body.append(o));
+
+/**
+ * 动态注入全局 Style 样式表 (导出兼容 tl)
+ * @param {string} id - 样式表 DOM ID
+ * @param {string} cssText - CSS 样式文本
+ */
+function tl(id, cssText) {
+  if (document.getElementById(id) == null) {
+    const styleEl = document.createElement("style");
+    styleEl.id = id;
+    styleEl.innerHTML = cssText;
+    document.body.append(styleEl);
+  }
 }
-function U(e) {
-  null !== document.getElementById(e) && document.getElementById(e).remove();
+
+/**
+ * 安全移除指定 ID 的 DOM 元素 (导出兼容 U)
+ * @param {string} id - 待移除元素的 ID
+ */
+function U(id) {
+  const node = document.getElementById(id);
+  if (node !== null) {
+    node.remove();
+  }
 }
-function ol(e) {
-  var t = ((t) => {
-      var o,
-        n,
-        i = new Array();
-      o = t.length;
-      for (let e = 0; e < o; e++)
-        65536 <= (n = String(t).charCodeAt(e)) && n <= 1114111
-          ? (i.push(((n >> 18) & 7) | 240),
-            i.push(((n >> 12) & 63) | 128),
-            i.push(((n >> 6) & 63) | 128),
-            i.push((63 & n) | 128))
-          : 2048 <= n && n <= 65535
-            ? (i.push(((n >> 12) & 15) | 224),
-              i.push(((n >> 6) & 63) | 128),
-              i.push((63 & n) | 128))
-            : 128 <= n && n <= 2047
-              ? (i.push(((n >> 6) & 31) | 192), i.push((63 & n) | 128))
-              : i.push(255 & n);
-      return i;
-    })(e),
-    e = new Uint8Array(t.length + 4 + 4 + 2 + 1 + 1 + 1),
-    o = new Uint8Array(t.length);
-  for (let e = 0; e < o.length; e++) o[e] = t[e];
-  var n = new Uint32Array([t.length + 4 + 2 + 1 + 1 + 1]),
-    i = new Uint32Array([689]);
-  return (
-    e.set(new Uint8Array(n.buffer), 0),
-    e.set(new Uint8Array(n.buffer), 4),
-    e.set(new Uint8Array(i.buffer), 8),
-    e.set(o, 12),
-    e
-  );
+
+/**
+ * 将字符串编码为斗鱼官方客户端 TCP/WebSocket 二进制协议封包 (导出兼容 ol)
+ * 协议包格式: [4字节总长] + [4字节总长] + [2字节协议代码689] + [2字节保留0] + [Payload] + [\0]
+ * @param {string} text - 待发送的 STT 报文字符串
+ * @returns {Uint8Array} 二进制包
+ */
+function ol(text) {
+  const str = String(text);
+  const bytes = [];
+
+  for (let i = 0; i < str.length; i++) {
+    const code = str.charCodeAt(i);
+    if (code >= 65536 && code <= 1114111) {
+      bytes.push(((code >> 18) & 7) | 240);
+      bytes.push(((code >> 12) & 63) | 128);
+      bytes.push(((code >> 6) & 63) | 128);
+      bytes.push((code & 63) | 128);
+    } else if (code >= 2048 && code <= 65535) {
+      bytes.push(((code >> 12) & 15) | 224);
+      bytes.push(((code >> 6) & 63) | 128);
+      bytes.push((code & 63) | 128);
+    } else if (code >= 128 && code <= 2047) {
+      bytes.push(((code >> 6) & 31) | 192);
+      bytes.push((code & 63) | 128);
+    } else {
+      bytes.push(code & 255);
+    }
+  }
+
+  const packetLength = bytes.length + 4 + 2 + 1 + 1;
+  const fullPacket = new Uint8Array(packetLength + 4);
+  const lengthBuffer = new Uint32Array([packetLength]);
+  const magicCodeBuffer = new Uint32Array([689]); // 斗鱼客户端消息类型代码: 689
+
+  fullPacket.set(new Uint8Array(lengthBuffer.buffer), 0); // 长度 1
+  fullPacket.set(new Uint8Array(lengthBuffer.buffer), 4); // 长度 2 (校验对齐)
+  fullPacket.set(new Uint8Array(magicCodeBuffer.buffer), 8); // 协议代码 689
+
+  const payloadArray = new Uint8Array(bytes);
+  fullPacket.set(payloadArray, 12); // 正文载荷
+
+  return fullPacket;
 }
 
 }

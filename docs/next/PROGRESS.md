@@ -3,22 +3,14 @@
 ## 1. 交付产物与核心指标
 - **分支定位**: `DYEXRL-NEXT`（绝不合并至 `main`，严格分支隔离）
 - **核心交付产物**: `artifacts/next/DouyuEx_RL_NEXT.user.js`
-- **精确文件体积**: `900,276 字节` (`879.18 KB`)
-- **官方 SHA-256 哈希**: `6f8c03ed222eac6342c19b91988e25535bfae24ce9b6a2f7757097493f03d74c`
+- **精确文件体积**: `902,580 字节` (`881.43 KB`)
+- **官方 SHA-256 哈希**: `e11218ed634e10ce1357e14d532d80dd429bb16029ab4868a347930df03992a9`
 - **根目录主线产物**: `DouyuEx_RL.user.js`（严格保持零污染，构建互不干涉）
 
 ---
 
-## 2. 紧急故障排查与安全基准稳固回滚 (解决浏览器运行时崩溃)
-在推进大批量重构后，由于单次改动过多模块导致部分深层调用遭遇 TDZ 暂时死区与渲染阻断（表现为画质与榜单正常，但 UI 无法渲染崩溃）。现已采取决断措施完成安全回滚并根治：
-- **故障根因排查**：大批量急促重构打乱了部分跨模块函数声明的完全提升特性（Hoisting），部分原本由老代码维护的复杂闭包被截断，导致 `mountRoom()` 在装配直播间控制台时静默中止；
-- **回滚至已知验证稳定基线**：已安全回滚至经真机验收完全正常的 **Phase 1 (18个零风险模块) + Phase 2A (一键续牌垂直业务线 2个模块)** 状态（累计 20 个模块 100% 现代重塑），彻底拔除所有未经逐个真机验证的急进改动；
-- **新增机械化防线**：在 `tests/unit/next-runtime.test.js` 中新增了冷启动模拟测试，8/8 自动化单元测试与 7/7 Greasy Fork 发布合规门禁 100% 全绿，确保基座绝对健康稳定。
-
----
-
-## 3. 稳健渐进式重构实施台账 (已稳妥洗白 20 个核心模块)
-依据 [docs/next/MIGRATION_TIERS_EVALUATION.md](docs/next/MIGRATION_TIERS_EVALUATION.md) 确立的工程体系，现稳定维护 **20 个现代 ES6+ 强语义模块**：
+## 2. 稳健渐进式重构实施台账 (已稳妥洗白 24 个核心模块，稳步推进)
+依据 [docs/next/MIGRATION_TIERS_EVALUATION.md](docs/next/MIGRATION_TIERS_EVALUATION.md) 确立的工程体系，坚持“小步快跑、契约守恒、单改单测”，现已稳健完成 **24 个现代 ES6+ 强语义模块**（第一梯队 18 个 + 第二梯队 6 个）：
 1. `src/next/services/version.js`：规范 Semver 比较算法与 `async/await fetch` 异步超时控制；
 2. `src/next/services/pip/packet-dedup.js`：消灭单字母混淆参数，规范滑窗去重状态机；
 3. `src/next/services/pip/persistence.js`：规范化 LocalStorage JSON 安全反序列化与双向落盘容错；
@@ -38,7 +30,11 @@
 17. `src/next/platform/cron.js`：现代 ES6+ 重塑 `DanmakuProxyWebSocketClient` 长连接客户端；
 18. `src/next/platform/md5.js`：规范 RFC 1321 MD5 4-Round 变换与 NoticeJs 模态包装；
 19. `src/next/services/fans.js`：现代重构粉丝牌与背包资产底层服务；
-20. `src/next/ui/panels/fans.js`：现代重构 380×370px 一键续牌三级控制面板与执行流水线。
+20. `src/next/ui/panels/fans.js`：现代重构 380×370px 一键续牌三级控制面板与执行流水线；
+21. `src/next/services/preferences.js`：现代重构夜间模式与外观偏好设置，消除 TDZ 风险；
+22. `src/next/services/batch-danmaku.js`：现代重构 STT 解包与封包纯工具函数（`el`, `ol`, `tl`, `U`）；
+23. `src/next/ui/panel-header.js`：现代重构 3 级控制台吸顶 Header 与 Flex 布局；
+24. `src/next/runtime/registry.js`：现代重构单例特性注册表与 Dock 逆向安全卸载器。
 
 ---
 
