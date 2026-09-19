@@ -4584,252 +4584,175 @@ function mountDanmakuSearch(owner) {
 "src/next/ui/room/last-live.js":
 function* (__imports) {
 yield {"mountLastLiveOverlay": { get: () => mountLastLiveOverlay, set: value => { mountLastLiveOverlay = value; } }};
-// Room assembly section; dependencies are captured per mount, in original order.
+/**
+ * 房间未开播状态下挂载“上次开播时间”卡片
+ * @param {object} owner - 房间装配上下文拥有者 (提供 interval, listen, timeout 统一托管)
+ */
 function mountLastLiveOverlay(owner) {
-    let r = "ex-LastLiveTime-overlay",
-      e = (document.body && document.body.innerHTML) || "";
-    let llt_status =
-        e.match(/show_status\\":(\d+)/) || e.match(/"show_status":(\d+)/),
-      o = llt_status && "1" === llt_status[1];
-    if (!o) {
-      let llt_match =
-        e.match(/show_time\\":(\d+)/) || e.match(/"show_time":(\d+)/);
-      if (llt_match) {
-        let llt_time = 1e3 * parseInt(llt_match[1], 10);
-        let i = (0, __imports.k)("yyyy-MM-dd hh:mm:ss", new Date(llt_time)),
-          a = ((e) => {
-            let t = "",
-              o = new Date().getTime(),
-              n = new Date(e).getTime(),
-              i = Math.floor((o - n) / 1e3);
-            return (t =
-              31536e3 < i
-                ? Math.floor(i / 31536e3) + "年前"
-                : 2592e3 < i
-                  ? Math.floor(i / 2592e3) + "个月前"
-                  : 86400 < i
-                    ? Math.floor(i / 86400) + "天前"
-                    : 3600 < i
-                      ? Math.floor(i / 3600) + "小时前"
-                      : 60 <= i
-                        ? Math.floor(i / 60) + "分钟前"
-                        : "刚刚");
-          })(llt_time);
-        let checkCount = 0,
-          checkTimer = owner.interval(() => {
-            if (180 < ++checkCount) (0, __imports.clearInterval)(checkTimer);
-            else {
-              var e = document.querySelector(".room-Player"),
-                n = 0 < document.getElementsByClassName("LastLiveTime").length;
-              if (
-                e &&
-                n &&
-                ((0, __imports.clearInterval)(checkTimer), !document.getElementById(r))
-              ) {
-                let t = document.createElement("div");
-                ((t.id = r),
-                  (t.style.position = "absolute"),
-                  (t.style.top = "0"),
-                  (t.style.left = "0"),
-                  (t.style.width = "100%"),
-                  (t.style.height = "100%"),
-                  (t.style.display = "flex"),
-                  (t.style.justifyContent = "center"),
-                  (t.style.alignItems = "center"),
-                  (t.style.zIndex = "1"),
-                  (t.style.pointerEvents = "none"));
-                n = document.createElement("style");
-                ((n.textContent = `
-
-        .ex-llt-card {
-
-            position: relative;
-
-            padding: 32px 64px;
-
-            border-radius: 16px;
-
-            background: rgba(24, 24, 24, 0.65);
-
-            backdrop-filter: blur(16px);
-
-            -webkit-backdrop-filter: blur(16px);
-
-            border: 1px solid rgba(255, 215, 0, 0.15);
-
-            box-shadow: 0 16px 32px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-
-            text-align: center;
-
-            font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
-
-            pointer-events: auto;
-
-            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-
-            animation: ex-llt-fade-in 0.5s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
-
-        }
-
-        .ex-llt-card:hover {
-
-            transform: translateY(-6px) scale(1.02);
-
-            box-shadow: 0 24px 48px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.2);
-
-            border: 1px solid rgba(255, 215, 0, 0.35);
-
-            background: rgba(30, 30, 30, 0.75);
-
-        }
-
-        @keyframes ex-llt-fade-in {
-
-            0% { opacity: 0; transform: translateY(20px) scale(0.95); }
-
-            100% { opacity: 1; transform: translateY(0) scale(1); }
-
-        }
-
-        .ex-llt-close {
-
-            position: absolute;
-
-            top: 14px;
-
-            right: 14px;
-
-            width: 32px;
-
-            height: 32px;
-
-            display: flex;
-
-            align-items: center;
-
-            justify-content: center;
-
-            border: none;
-
-            border-radius: 50%;
-
-            cursor: pointer;
-
-            font-size: 22px;
-
-            line-height: 1;
-
-            color: rgba(255, 255, 255, 0.6);
-
-            background: rgba(255, 255, 255, 0.05);
-
-            transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
-
-        }
-
-        .ex-llt-close:hover {
-
-            background: rgba(255, 69, 58, 0.9);
-
-            color: #fff;
-
-            transform: rotate(90deg) scale(1.1);
-
-            box-shadow: 0 4px 12px rgba(255, 69, 58, 0.4);
-
-        }
-
-        .ex-llt-title {
-
-            display: flex;
-
-            align-items: center;
-
-            justify-content: center;
-
-            font-size: 15px;
-
-            color: #e5b855;
-
-            margin-bottom: 12px;
-
-            text-shadow: 0 2px 4px rgba(0,0,0,0.6);
-
-            font-weight: 500;
-
-        }
-
-        .ex-llt-time-ago {
-
-            font-size: 36px;
-
-            color: #eebb4d;
-
-            font-weight: 900;
-
-            letter-spacing: 2px;
-
-            margin-bottom: 10px;
-
-            text-shadow: 0 0 15px rgba(238, 187, 77, 0.35), 0 4px 12px rgba(0,0,0,0.6);
-
-        }
-
-        .ex-llt-time-exact {
-
-            font-size: 15px;
-
-            color: rgba(229, 184, 85, 0.75);
-
-            letter-spacing: 1px;
-
-            font-family: monospace;
-
-            font-weight: 500;
-
-        }
-
-      `),
-                  t.appendChild(n));
-                let o = document.createElement("div");
-                ((o.className = "ex-llt-card"),
-                  (o.innerHTML = `
-
-					<div class="ex-llt-title">
-
-						<span style="display: inline-flex; width: 18px; height: 18px; margin-right: 8px;">
-
-							<svg style="width: 100%; height: 100%; fill: currentColor;"><use xlink:href="#time_92d92c7"></use></svg>
-
-						</span>
-
-						上次开播时间
-
-					</div>
-
-					<div class="ex-llt-time-ago">${a}</div>
-
-					<div class="ex-llt-time-exact">${i}</div>
-
-                    <button type="button" class="ex-llt-close" aria-label="关闭">×</button>
-
-				`),
-                  owner.listen(o
-                    .querySelector(".ex-llt-close"), "click", (e) => {
-                      (e.stopPropagation(),
-                        (t.style.opacity = "0"),
-                        (t.style.transition = "opacity 0.3s ease"),
-                        (o.style.transform = "translateY(10px) scale(0.95)"),
-                        owner.timeout(() => t.remove(), 300));
-                    }),
-                  t.appendChild(o),
-                  e.appendChild(t));
-              }
-            }
-          }, 1e3);
-      }
+  const overlayId = "ex-LastLiveTime-overlay";
+  const bodyHtml = (document.body && document.body.innerHTML) || "";
+
+  // 1. 探测开播状态 (show_status === 1 表示正在直播)
+  const statusMatch = bodyHtml.match(/show_status\\":(\d+)/) || bodyHtml.match(/"show_status":(\d+)/);
+  const isLiving = statusMatch && statusMatch[1] === "1";
+  if (isLiving) return;
+
+  // 2. 提取上次开播时间戳
+  const timeMatch = bodyHtml.match(/show_time\\":(\d+)/) || bodyHtml.match(/"show_time":(\d+)/);
+  if (!timeMatch) return;
+
+  const lastLiveTimestampMs = parseInt(timeMatch[1], 10) * 1000;
+  const formattedExactTime = (0, __imports.k)("yyyy-MM-dd hh:mm:ss", new Date(lastLiveTimestampMs));
+
+  // 计算相对时间
+  const formatTimeAgo = (timeMs) => {
+    const diffSec = Math.floor((Date.now() - new Date(timeMs).getTime()) / 1000);
+    if (diffSec > 31536000) return Math.floor(diffSec / 31536000) + "年前";
+    if (diffSec > 2592000) return Math.floor(diffSec / 2592000) + "个月前";
+    if (diffSec > 86400) return Math.floor(diffSec / 86400) + "天前";
+    if (diffSec > 3600) return Math.floor(diffSec / 3600) + "小时前";
+    if (diffSec >= 60) return Math.floor(diffSec / 60) + "分钟前";
+    return "刚刚";
+  };
+  const relativeTimeAgo = formatTimeAgo(lastLiveTimestampMs);
+
+  // 3. 轮询等待播放器容器加载完成
+  let checkCount = 0;
+  const checkTimer = owner.interval(() => {
+    if (++checkCount > 180) {
+      (0, __imports.clearInterval)(checkTimer);
+      return;
     }
-  }
+
+    const playerContainer = document.querySelector(".room-Player");
+    const hasOfficialBadge = document.getElementsByClassName("LastLiveTime").length > 0;
+
+    if (playerContainer && hasOfficialBadge) {
+      (0, __imports.clearInterval)(checkTimer);
+      if (document.getElementById(overlayId)) return;
+
+      // 创建半透明遮罩与卡片
+      const overlayWrap = document.createElement("div");
+      overlayWrap.id = overlayId;
+      Object.assign(overlayWrap.style, {
+        position: "absolute",
+        top: "0",
+        left: "0",
+        width: "100%",
+        height: "100%",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        zIndex: "1",
+        pointerEvents: "none"
+      });
+
+      const styleEl = document.createElement("style");
+      styleEl.textContent = `
+        .ex-llt-card {
+            position: relative;
+            padding: 32px 64px;
+            border-radius: 16px;
+            background: rgba(24, 24, 24, 0.65);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 215, 0, 0.15);
+            box-shadow: 0 16px 32px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            text-align: center;
+            font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+            pointer-events: auto;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            animation: ex-llt-fade-in 0.5s cubic-bezier(0.25, 0.8, 0.25, 1) forwards;
+        }
+        .ex-llt-card:hover {
+            transform: translateY(-6px) scale(1.02);
+            box-shadow: 0 24px 48px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 215, 0, 0.35);
+            background: rgba(30, 30, 30, 0.75);
+        }
+        @keyframes ex-llt-fade-in {
+            0% { opacity: 0; transform: translateY(20px) scale(0.95); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .ex-llt-close {
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 22px;
+            line-height: 1;
+            color: rgba(255, 255, 255, 0.6);
+            background: rgba(255, 255, 255, 0.05);
+            transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+        .ex-llt-close:hover {
+            background: rgba(255, 69, 58, 0.9);
+            color: #fff;
+            transform: rotate(90deg) scale(1.1);
+            box-shadow: 0 4px 12px rgba(255, 69, 58, 0.4);
+        }
+        .ex-llt-title {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            color: #e5b855;
+            margin-bottom: 12px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.6);
+            font-weight: 500;
+        }
+        .ex-llt-time-ago {
+            font-size: 36px;
+            color: #eebb4d;
+            font-weight: 900;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+            text-shadow: 0 0 15px rgba(238, 187, 77, 0.35), 0 4px 12px rgba(0,0,0,0.6);
+        }
+        .ex-llt-time-exact {
+            font-size: 15px;
+            color: rgba(229, 184, 85, 0.75);
+            letter-spacing: 1px;
+            font-family: monospace;
+            font-weight: 500;
+        }
+      `;
+      overlayWrap.appendChild(styleEl);
+
+      const cardEl = document.createElement("div");
+      cardEl.className = "ex-llt-card";
+      cardEl.innerHTML = `
+        <div class="ex-llt-title">
+          <span style="display: inline-flex; width: 18px; height: 18px; margin-right: 8px;">
+            <svg style="width: 100%; height: 100%; fill: currentColor;"><use xlink:href="#time_92d92c7"></use></svg>
+          </span>
+          上次开播时间
+        </div>
+        <div class="ex-llt-time-ago">${relativeTimeAgo}</div>
+        <div class="ex-llt-time-exact">${formattedExactTime}</div>
+        <button type="button" class="ex-llt-close" aria-label="关闭">×</button>
+      `;
+
+      owner.listen(cardEl.querySelector(".ex-llt-close"), "click", (e) => {
+        e.stopPropagation();
+        overlayWrap.style.opacity = "0";
+        overlayWrap.style.transition = "opacity 0.3s ease";
+        cardEl.style.transform = "translateY(10px) scale(0.95)";
+        owner.timeout(() => overlayWrap.remove(), 300);
+      });
+
+      overlayWrap.appendChild(cardEl);
+      playerContainer.appendChild(overlayWrap);
+    }
+  }, 1000);
+}
 
 }
 ,
@@ -8115,13 +8038,18 @@ function mountRoom() {
 function* (__imports) {
 yield {"startTaskHeartbeat": { get: () => startTaskHeartbeat, set: value => { startTaskHeartbeat = value; } },
 "stopTaskHeartbeat": { get: () => stopTaskHeartbeat, set: value => { stopTaskHeartbeat = value; } }};
-// Own only the level-task heartbeat; other feature jobs have separate lifetimes.
+/**
+ * 全局用户等级任务经验心跳调度器 (60秒幂等定时器)
+ * 仅管理经验心跳生命周期，其他房间与功能任务拥有独立生命周期树
+ */
 let taskHeartbeat = null;
+
 function startTaskHeartbeat() {
   if (taskHeartbeat !== null) return;
   (0, __imports.claimLevelTasks)();
   taskHeartbeat = (0, __imports.setInterval)(__imports.claimLevelTasks, 60000);
 }
+
 function stopTaskHeartbeat() {
   if (taskHeartbeat === null) return;
   (0, __imports.clearInterval)(taskHeartbeat);
@@ -14381,105 +14309,172 @@ function isRepeatedPipPacket(packetKey) {
 "src/next/services/pip/packet-parser.js":
 function* (__imports) {
 yield {"parsePipChatPacket": { get: () => parsePipChatPacket, set: value => { parsePipChatPacket = value; } }};
-function parsePipChatPacket(e) {
-                  if (!e || !e.startsWith("type@=chatmsg/")) return null;
-                  var t,
-                    o = {},
-                    n = e.split("/");
-                  for (let e = 0; e < n.length; e++) {
-                    var i = n[e],
-                      a = i.indexOf("@=");
-                    -1 !== a && (o[i.substring(0, a)] = i.substring(a + 2));
-                  }
-                  return (e = o.txt ? decodeURIComponent(o.txt) : "") &&
-                    (!1 === __imports.pipPreferences.filterRobotDanmaku || o.dms)
-                    ? ((t = o.hash || o.cid || o.dmid || ""),
-                      {
-                        text: e,
-                        color: o.col ? parseInt(o.col) : 0,
-                        uid: o.uid || "",
-                        msgId: t,
-                        dedupKey: t || o.uid + "|" + e,
-                      })
-                    : null;
-                }
+/**
+ * 解析斗鱼原生 STT 弹幕数据包 (type@=chatmsg/...)
+ * @param {string} rawPacket - STT 原始报文字符串
+ * @returns {object|null} 格式化弹幕对象或 null
+ */
+function parsePipChatPacket(rawPacket) {
+  if (!rawPacket || typeof rawPacket !== 'string' || !rawPacket.startsWith('type@=chatmsg/')) {
+    return null;
+  }
+
+  // 解码 STT 键值对字典
+  const props = {};
+  const segments = rawPacket.split('/');
+  for (let i = 0; i < segments.length; i++) {
+    const seg = segments[i];
+    const eqIdx = seg.indexOf('@=');
+    if (eqIdx !== -1) {
+      props[seg.substring(0, eqIdx)] = seg.substring(eqIdx + 2);
+    }
+  }
+
+  // 提取并解码弹幕文本
+  let text = '';
+  if (props.txt) {
+    try {
+      text = decodeURIComponent(props.txt);
+    } catch {
+      text = props.txt;
+    }
+  }
+  if (!text) return null;
+
+  // 机器人水军弹幕过滤检查 (dms: 弹幕等级标识)
+  const allowRobot = __imports.pipPreferences.filterRobotDanmaku === false;
+  if (!allowRobot && !props.dms) {
+    return null;
+  }
+
+  const msgId = props.hash || props.cid || props.dmid || '';
+  const color = props.col ? parseInt(props.col, 10) : 0;
+  const uid = props.uid || '';
+  const dedupKey = msgId || `${uid}|${text}`;
+
+  return {
+    text,
+    color,
+    uid,
+    msgId,
+    dedupKey
+  };
+}
 
 }
 ,
 "src/next/services/pip/merge-rules.js":
 function* (__imports) {
 yield {"findPipMergeKey": { get: () => findPipMergeKey, set: value => { findPipMergeKey = value; } }};
-function findPipMergeKey(e) {
-                      if (!__imports.pipMergeGroups.has(e)) {
-                        var t = (e) =>
-                            e
-                              .replace(/\s+/g, "")
-                              .split("")
-                              .filter((e, t, o) => o.indexOf(e) === t)
-                              .join(""),
-                          o = t(e);
-                        if (o)
-                          for (var n of __imports.pipMergeGroups.keys()) {
-                            var i = t(n);
-                            if (o === i && Math.abs(e.length - n.length) <= 6)
-                              return n;
-                            if (
-                              (e.includes(n) || n.includes(e)) &&
-                              Math.abs(e.length - n.length) <= 4
-                            )
-                              return n;
-                          }
-                      }
-                      return e;
-                    }
+/**
+ * 提取文本的唯一字符指纹 (去除空白后字符去重)
+ * 例如 "666666" -> "6", "哈哈哈" -> "哈"
+ * @param {string} text
+ * @returns {string} 字符指纹
+ */
+function getUniqueCharFingerprint(text) {
+  if (!text || typeof text !== 'string') return '';
+  const cleaned = text.replace(/\s+/g, '');
+  return Array.from(new Set(cleaned)).join('');
+}
+
+/**
+ * 寻找画中画相似弹幕的归并聚合键
+ * @param {string} text - 待判定的弹幕文本
+ * @returns {string} 归并分组 Key
+ */
+function findPipMergeKey(text) {
+  if (!text || typeof text !== 'string') return text;
+
+  // 已有完全相同的分组键，直接复用
+  if (__imports.pipMergeGroups.has(text)) {
+    return text;
+  }
+
+  const fingerprint = getUniqueCharFingerprint(text);
+  if (!fingerprint) return text;
+
+  // 在现有活跃分组中模糊匹配相似连击
+  for (const existingKey of __imports.pipMergeGroups.keys()) {
+    const existingFingerprint = getUniqueCharFingerprint(existingKey);
+
+    // 指纹一致且长度相近 (如 "666" 与 "66666")
+    if (fingerprint === existingFingerprint && Math.abs(text.length - existingKey.length) <= 6) {
+      return existingKey;
+    }
+
+    // 互为包含关系且长度差距极小 (如 "主播下饭" 与 "主播好下饭")
+    if ((text.includes(existingKey) || existingKey.includes(text)) && Math.abs(text.length - existingKey.length) <= 4) {
+      return existingKey;
+    }
+  }
+
+  return text;
+}
 
 }
 ,
 "src/next/services/pip/packet-dispatch.js":
 function* (__imports) {
 yield {"dispatchPipPacket": { get: () => dispatchPipPacket, set: value => { dispatchPipPacket = value; } }};
-function dispatchPipPacket(e, r, t) {
-            if (
-              window.__pip_is_active__ &&
-              !((0, __imports.isRepeatedPipPacket))(e)
-            ) {
-              var e = ((0, __imports.parsePipChatPacket))(e),
-                o = r,
-                n = t;
-              if (
-                e &&
-                e.text &&
-                !1 !== __imports.pipPreferences.danmakuVisible &&
-                (!__imports.I || e.uid !== __imports.I)
-              ) {
-                var i = __imports.pipPreferences.mergeMode || "combo";
-                if ("all" === i) (0, __imports.renderPipDanmaku)(e, o, n);
-                else {
-                  let t = Date.now();
-                  var a = ((0, __imports.findPipMergeKey))(e.text),
-                    a =
-                      (__imports.pipMergeGroups.has(a) ||
-                        __imports.pipMergeGroups.set(a, {
-                          timestamps: [],
-                          dom: null,
-                          displayCount: 0,
-                        }),
-                      __imports.pipMergeGroups.get(a));
-                  (a.timestamps.push(t),
-                    "single" === i
-                      ? 1 < a.timestamps.filter((e) => t - e <= 4e3).length ||
-                        (0, __imports.renderPipDanmaku)(e, o, n)
-                      : ((a.timestamps = a.timestamps.filter(
-                          (e) => t - e <= 8e3,
-                        )),
-                        1 === (i = a.timestamps.length)
-                          ? ((a.displayCount = 0), (0, __imports.renderPipDanmaku)(e, o, n))
-                          : (a.displayCount = i),
-                        (0, __imports.refreshPipCombos)(o)));
-                }
-              }
-            }
-          }
+/**
+ * 画中画实时弹幕数据包分发管道 (淘汰混淆单字母 e, r, t, o, n, i, a)
+ * @param {string} rawPacket - STT 原始弹幕报文
+ * @param {Document} pipDoc - 画中画子窗口 Document
+ * @param {Window} pipWin - 画中画子窗口 Window
+ */
+function dispatchPipPacket(rawPacket, pipDoc, pipWin) {
+  if (!window.__pip_is_active__) return;
+  if ((0, __imports.isRepeatedPipPacket)(rawPacket)) return;
+
+  const packet = (0, __imports.parsePipChatPacket)(rawPacket);
+  if (!packet || !packet.text) return;
+
+  // 弹幕关闭开关或自身已发送弹幕过滤 (自身弹幕有独立绿色边框通道)
+  if (__imports.pipPreferences.danmakuVisible === false) return;
+  if (__imports.I && packet.uid === __imports.I) return;
+
+  const mergeMode = __imports.pipPreferences.mergeMode || 'combo';
+
+  // 1. 全部显示模式：直接挂载飘屏渲染
+  if (mergeMode === 'all') {
+    (0, __imports.renderPipDanmaku)(packet, pipDoc, pipWin);
+    return;
+  }
+
+  // 2. 合并模式 (combo) 或 单条模式 (single)
+  const nowMs = Date.now();
+  const mergeKey = (0, __imports.findPipMergeKey)(packet.text);
+
+  if (!__imports.pipMergeGroups.has(mergeKey)) {
+    __imports.pipMergeGroups.set(mergeKey, {
+      timestamps: [],
+      dom: null,
+      displayCount: 0
+    });
+  }
+  const group = __imports.pipMergeGroups.get(mergeKey);
+  group.timestamps.push(nowMs);
+
+  if (mergeMode === 'single') {
+    // 4 秒内有多条只显示首条
+    const recentCount = group.timestamps.filter(t => nowMs - t <= 4000).length;
+    if (recentCount <= 1) {
+      (0, __imports.renderPipDanmaku)(packet, pipDoc, pipWin);
+    }
+  } else {
+    // combo 模式：8 秒滑窗合并连击
+    group.timestamps = group.timestamps.filter(t => nowMs - t <= 8000);
+    const count = group.timestamps.length;
+    if (count === 1) {
+      group.displayCount = 0;
+      (0, __imports.renderPipDanmaku)(packet, pipDoc, pipWin);
+    } else {
+      group.displayCount = count;
+    }
+    (0, __imports.refreshPipCombos)(pipDoc);
+  }
+}
 
 }
 ,

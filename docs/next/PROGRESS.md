@@ -3,17 +3,22 @@
 ## 1. 交付产物与核心指标
 - **分支定位**: `DYEXRL-NEXT`（绝不合并至 `main`，严格分支隔离）
 - **核心交付产物**: `artifacts/next/DouyuEx_RL_NEXT.user.js`
-- **精确文件体积**: `891,648 字节` (`870.75 KB`)
-- **官方 SHA-256 哈希**: `43c14ac58c31cf5833ccf084194f284de66677f5791db44d8f7a3e05877d406b`
+- **精确文件体积**: `892,648 字节` (`871.73 KB`)
+- **官方 SHA-256 哈希**: `20d61067ce096ebea3b9b3a6d515961023bf50062de9b0c5191cfcff31a4c1ce`
 - **根目录主线产物**: `DouyuEx_RL.user.js`（严格保持零污染，构建互不干涉）
 
 ---
 
-## 2. 渐进式绞杀重构实施进展 (Phase 1 启动)
-已完成全量 76 个 AST 模块三梯队深度评估（详见 [docs/next/MIGRATION_TIERS_EVALUATION.md](docs/next/MIGRATION_TIERS_EVALUATION.md)），并圆满完成第一梯队首批 3 个零风险模块的 100% 现代 ES6+ 重写：
+## 2. 渐进式绞杀重构实施进展 (第一梯队累计 8 模块现代重写)
+已完成全量 76 个 AST 模块三梯队深度评估（详见 [docs/next/MIGRATION_TIERS_EVALUATION.md](docs/next/MIGRATION_TIERS_EVALUATION.md)），并圆满完成第一梯队首批累计 **8 个零风险模块**的 100% 现代 ES6+ 语法清洗与强语义重写：
 1. `src/next/services/version.js`：消灭老式 `var` 和同步 XHR 回调，引入语义化 Semver 比较算法与 `async/await fetch` 现代化超时控制，彻底消除全局 window 污染；
 2. `src/next/services/pip/packet-dedup.js`：彻底消灭单字母混淆参数（`e, t, o, n, i`），建立语义化滑窗去重状态机（`packetKey`, `currentTimeMs`, `lastSeenTimeMs`），保护容量溢出与自动驱逐；
-3. `src/next/services/pip/persistence.js`：规范化 LocalStorage JSON 安全反序列化与双向落盘容错。
+3. `src/next/services/pip/persistence.js`：规范化 LocalStorage JSON 安全反序列化与双向落盘容错；
+4. `src/next/services/pip/merge-rules.js`：提取字符集指纹纯函数 `getUniqueCharFingerprint`，规范连击相似弹幕归并规则；
+5. `src/next/services/pip/packet-parser.js`：现代重构 STT `chatmsg` 原始协议反序列化器，结构化提取 `text`, `color`, `uid`, `msgId` 与机器人标签过滤；
+6. `src/next/services/pip/packet-dispatch.js`：重构弹幕数据包分发管道，消灭单字母混淆，清晰分流全量飘屏、单条模式与连击合并；
+7. `src/next/runtime/heartbeat.js`：规范 60 秒用户经验心跳调度，确保幂等启停；
+8. `src/next/ui/room/last-live.js`：重写未开播卡片与相对开播时间计算器，规范化 DOM 树装配与关闭淡出动画。
 
 ---
 
