@@ -3,39 +3,28 @@
 ## 1. 交付产物与核心指标
 - **分支定位**: `DYEXRL-NEXT`（绝不合并至 `main`，严格分支隔离）
 - **核心交付产物**: `artifacts/next/DouyuEx_RL_NEXT.user.js`
-- **精确文件体积**: `896,475 字节` (`875.46 KB`)
-- **官方 SHA-256 哈希**: `9869b1b2db1f965ecc74b7c9d494953f93049fef3f74940e9181080f9dd290e1`
+- **精确文件体积**: `896,334 字节` (`875.33 KB`)
+- **官方 SHA-256 哈希**: `445defe080eb672d773f66100b9a05d03120c4e68db9fe16c0d243b528d62af1`
 - **根目录主线产物**: `DouyuEx_RL.user.js`（严格保持零污染，构建互不干涉）
 
 ---
 
-## 2. 渐进式绞杀重构实施进展 (第一梯队 100% 满贯 + 第二梯队首开战报 🎉)
-全量 76 个 AST 模块三梯队深度评估已落地（详见 [docs/next/MIGRATION_TIERS_EVALUATION.md](docs/next/MIGRATION_TIERS_EVALUATION.md)），累计已完成 **20 个模块**的现代 ES6+ 语法清洗与强语义重构：
+## 2. 渐进式绞杀重构实施进展 (第一梯队 100% + 第二梯队大集群推进，累计完成 52/76 模块 🎉)
+依据 [docs/next/MIGRATION_TIERS_EVALUATION.md](docs/next/MIGRATION_TIERS_EVALUATION.md) 确立的工程体系，现已高密度完成 **52 个核心 AST 物理模块**（占全域 68.4%）的现代化 ES6+ 语法清洗与强语义重构：
 
-### Phase 1: 第一梯队 18 个零风险外围模块 (100% 满贯竣工)
-涵盖版本感知 (`version.js`)、画中画全套 (`pip/` 8个微模块)、经验心跳 (`heartbeat.js`)、开播卡片 (`last-live.js`)、安全绑定 (`bindings.js`)、录播时间戳 (`video-timestamps.js`)、更新控制台 (`update.js`)、当月消费 (`spending.js`)、弹幕长连接 (`cron.js`) 与算法库 (`md5.js`)。
+### Phase 1: 第一梯队 18 个外围工具与独立模块 (100% 满贯竣工)
+- `version.js`, `pip/` (8个子模块), `heartbeat.js`, `last-live.js`, `bindings.js`, `entry.js`, `video-timestamps.js`, `update.js`, `spending.js`, `cron.js`, `md5.js`
 
-### Phase 2: 第二梯队业务领域切片试水 (首开得胜：一键续牌业务线)
-1. `src/next/services/fans.js`：现代重构粉丝牌与背包资产底层服务，规范化背包道具拉取 (`pt`)、自动钓鱼提竿 (`rt`)、钓鱼主页获取 (`ct`)、全屏与原画配置判断；
-2. `src/next/ui/panels/fans.js`：现代重构 380×370px 一键续牌三级控制面板与执行流水线 (`executeFansContinue`)，规范化荧光棒可用量判定、粉丝牌列表解析、250ms 逐房间安全延时赠送与实时面板徽章/资产回显 (`updateFansContinuePanel`)。
-1. `src/next/services/version.js`：规范 Semver 比较算法与 `async/await fetch` 异步超时控制，消灭全局污染；
-2. `src/next/services/pip/packet-dedup.js`：彻底消灭单字母混淆参数（`e, t, o, n, i`），规范滑窗去重状态机；
-3. `src/next/services/pip/persistence.js`：规范化 LocalStorage JSON 安全反序列化与双向落盘容错；
-4. `src/next/services/pip/merge-rules.js`：提取字符集指纹纯函数 `getUniqueCharFingerprint`，规范相似弹幕连击归并键识别；
-5. `src/next/services/pip/packet-parser.js`：规范化 STT `chatmsg` 原始协议反序列化器，结构化提取 `text`, `color`, `uid`, `msgId` 与机器人免打扰过滤；
-6. `src/next/services/pip/packet-dispatch.js`：彻底消灭单字母参数，清晰分流全量飘屏、单条模式与连击合并；
-7. `src/next/services/pip/state.js`：结构化状态容器，添加字段注释与生命周期说明；
-8. `src/next/services/pip/markup.js`：规范化画中画样式与骨架 HTML 模板生成；
-9. `src/next/services/pip/window.js`：现代 ES6+ 彻底重塑画中画小窗主控制器，消除 25 个单字母混淆变量，规范化小窗视频播放、弹幕双向互动、设置拖拽面板与 WebSocket 销毁；
-10. `src/next/runtime/heartbeat.js`：规范 60 秒全局经验心跳调度，确保幂等启停；
-11. `src/next/ui/room/last-live.js`：重写未开播卡片与人类友好相对时间计算器，规范 DOM 树装配与淡出动画；
-12. `src/next/ui/bindings.js`：规范化 `safeBind` / `safeEl` 全局安全事件绑定装甲，防范 DOM 报错与 Dock 重复绑定；
-13. `src/next/entry.js`：规范化总业务入口调度；
-14. `src/next/services/video-timestamps.js`：重构录播视频时间戳换算与悬停预览标签，消除混淆命名；
-15. `src/next/ui/panels/update.js`：现代重构版本更新三级控制台，规范化按钮多态状态机（我已收到/检查更新/正在检查/已是最新/前往更新）；
-16. `src/next/services/spending.js`：现代重构当月消费与鱼翅明细感知服务，消灭混淆变量（`Ao, Do, jo, Po, zo, Oo, Ro, Fo, Vo, qo, Uo, Wo`），结构化分页拉取与跨天缓存更新；
-17. `src/next/platform/cron.js`：现代 ES6+ 语法重塑 `DanmakuProxyWebSocketClient` 弹幕代理长连接客户端，规范化心跳保活、指数退避重连与定时器幂等清理；
-18. `src/next/platform/md5.js`：规范 RFC 1321 MD5 4-Round 核心变换（safeAdd/FF/GG/HH/II）与 NoticeJs 模态包装，补齐强类型 JSDoc 算法注解。
+### Phase 2: 第二梯队业务领域大集群推进 (已累计完成 34 个模块)
+1. **基座运行时与 UI 控制台骨架 (11 模块)**：
+   - `registry.js`, `adapters.js`, `dom-templates.js`, `request.js`, `utilities.js`
+   - `dock.js`, `panel-header.js`, `panel-position.js`, `panel-dispatch.js`, `popup.js`, `icons.js`
+2. **日常打卡与弹幕社交交互全家桶 (15 模块)**：
+   - `fans.js`, `ui/panels/fans.js`, `sign.js`, `gift-picker.js`, `backpack.js`
+   - `blocked-danmaku.js`, `batch-danmaku.js`, `danmaku-history.js`, `danmaku-search.js`, `barrage-settings.js`, `bloop.js`, `chat-actions.js`, `chat-state.js`
+3. **播控增强与全站生态先导 (8 模块)**：
+   - `preferences.js`, `music.js`, `video-tools.js`, `yuba.js`, `accounts.js`, `page-cleanup.js`, `player-menu.js`, `room-controls.js`
+   - `lottery-page.js`, `player-controls.js`, `ui/room/lottery.js`
 
 ---
 

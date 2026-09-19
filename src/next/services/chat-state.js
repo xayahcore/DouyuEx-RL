@@ -36,188 +36,283 @@ yield {"Br": { get: () => Br, set: value => { Br = value; } },
 "wr": { get: () => wr, set: value => { wr = value; } },
 "xr": { get: () => xr, set: value => { xr = value; } },
 "yr": { get: () => yr, set: value => { yr = value; } }};
-let qa = "",
-  Ua = "",
-  Wa = "",
-  F = "",
-  Ya = !1,
-  Qa = 0,
-  Ja = !1,
-  H = { rotateY: "", rotate: "", scale: "" },
-  Za = null;
-function Xa() {
+/**
+ * 播放器播控工具栏、滤镜调节状态机与原生音量控制中心
+ */
+let qa = "";
+let Ua = "";
+let Wa = "";
+let F = "";
+let Ya = false;
+let Qa = 0;
+let Ja = false;
+let H = { rotateY: "", rotate: "", scale: "" };
+let Za = null;
+
+// 浏览器内核检测
+function isEdgeBrowser() {
   return /Edg/i.test(navigator.userAgent);
 }
-function Ka() {
-  var e = document.querySelector("#ex-vtoolbar-filter-host .filter__wrap");
-  e && (e.style.display = "block");
+const Xa = isEdgeBrowser;
+
+function showFilterPanel() {
+  const el = document.querySelector("#ex-vtoolbar-filter-host .filter__wrap");
+  if (el) el.style.display = "block";
 }
-function $a() {
-  var e = document.querySelector("#ex-vtoolbar-filter-host .filter__wrap");
-  e && (e.style.display = "none");
+const Ka = showFilterPanel;
+
+function hideFilterPanel() {
+  const el = document.querySelector("#ex-vtoolbar-filter-host .filter__wrap");
+  if (el) el.style.display = "none";
 }
-function er() {
-  ((0, __imports.U)("Ex_Style_Filter"),
-    (document.getElementById("filter__select").selectedIndex = 0),
-    (V.style.filter = ""),
-    (Qa = 0),
-    (H = { rotateY: "", rotate: "", scale: "" }),
-    (V.parentNode.style.transform = ""),
-    (document.getElementById("bar__bright").style.left = "100px"),
-    (document.getElementById("bar__contrast").style.left = "100px"),
-    (document.getElementById("bar__saturate").style.left = "100px"),
-    (document.getElementById("mask__bright").style.width = "100px"),
-    (document.getElementById("mask__contrast").style.width = "100px"),
-    (document.getElementById("mask__saturate").style.width = "100px"),
-    Xa() &&
-      ((Ja = !1),
-      (t = document.getElementById("slider__enhance")),
-      (e = document.getElementById("switch__enhance")),
-      t && (t.style.left = "0px"),
-      e && (e.style.background = "#ccc"),
-      (V.style.imageRendering = ""),
-      (t = document.getElementsByClassName("enhance-modal__panel-wrap")[0])) &&
-      (t.style.display = "none"));
-  var e = document.getElementById("ex-panorama"),
-    t =
-      (e && (e.remove(), (Za = null)),
-      document.getElementsByClassName("layout-Player-videoEntity")[0]);
-  ((t.style.transform = ""),
-    (t.style.transformOrigin = ""),
-    (Er = 1),
-    (0, __imports.U)("Ex_Style_Cinema"),
-    (V.playbackRate = 1));
+
+/**
+ * 重置视频色彩滤镜与全景透视状态至默认值 (导出兼容 er)
+ */
+function resetVideoFilterSettings() {
+  (0, __imports.U)("Ex_Style_Filter");
+  const filterSelect = document.getElementById("filter__select");
+  if (filterSelect) filterSelect.selectedIndex = 0;
+
+  if (V) {
+    V.style.filter = "";
+    if (V.parentNode) V.parentNode.style.transform = "";
+    V.playbackRate = 1;
+  }
+
+  Qa = 0;
+  H = { rotateY: "", rotate: "", scale: "" };
+
+  const barBright = document.getElementById("bar__bright");
+  const barContrast = document.getElementById("bar__contrast");
+  const barSaturate = document.getElementById("bar__saturate");
+  const maskBright = document.getElementById("mask__bright");
+  const maskContrast = document.getElementById("mask__contrast");
+  const maskSaturate = document.getElementById("mask__saturate");
+
+  if (barBright) barBright.style.left = "100px";
+  if (barContrast) barContrast.style.left = "100px";
+  if (barSaturate) barSaturate.style.left = "100px";
+  if (maskBright) maskBright.style.width = "100px";
+  if (maskContrast) maskContrast.style.width = "100px";
+  if (maskSaturate) maskSaturate.style.width = "100px";
+
+  if (Xa()) {
+    Ja = false;
+    const sliderEnhance = document.getElementById("slider__enhance");
+    const switchEnhance = document.getElementById("switch__enhance");
+    if (sliderEnhance) sliderEnhance.style.left = "0px";
+    if (switchEnhance) switchEnhance.style.background = "#ccc";
+    if (V) V.style.imageRendering = "";
+    const panelWrap = document.getElementsByClassName("enhance-modal__panel-wrap")[0];
+    if (panelWrap) panelWrap.style.display = "none";
+  }
+
+  const pano = document.getElementById("ex-panorama");
+  if (pano) {
+    pano.remove();
+    Za = null;
+  }
+
+  const entity = document.getElementsByClassName("layout-Player-videoEntity")[0];
+  if (entity) {
+    entity.style.transform = "";
+    entity.style.transformOrigin = "";
+  }
+
+  Er = 1;
+  (0, __imports.U)("Ex_Style_Cinema");
 }
-function G(e) {
-  ((0, __imports.U)("Ex_Style_Filter"), (0, __imports.tl)("Ex_Style_Filter", e), $a());
+const er = resetVideoFilterSettings;
+
+/**
+ * 注入滤镜 CSS 规则 (导出兼容 G)
+ * @param {string} css
+ */
+function applyFilterCss(css) {
+  (0, __imports.U)("Ex_Style_Filter");
+  (0, __imports.tl)("Ex_Style_Filter", css);
+  hideFilterPanel();
 }
-function tr(e, t, o, n) {
-  let i = e,
-    a = t,
-    r = o,
-    l = 0;
-  a.onmousedown = function (e) {
-    let t = (e || window.event).clientX - this.offsetLeft,
-      o = this;
-    document.onmousemove = function (e) {
-      e = e || window.event;
-      ((l = e.clientX - t) < 0
-        ? (l = 0)
-        : l > i.offsetWidth - a.offsetWidth &&
-          (l = i.offsetWidth - a.offsetWidth),
-        (r.style.width = l + "px"),
-        (o.style.left = l + "px"),
-        n(parseInt((l / (i.offsetWidth - a.offsetWidth)) * 255)),
-        window.getSelection
-          ? window.getSelection().removeAllRanges()
-          : document.selection.empty());
+const G = applyFilterCss;
+
+/**
+ * 绑定可拖拽滑动条 (导出兼容 tr)
+ * @param {HTMLElement} barContainer
+ * @param {HTMLElement} sliderThumb
+ * @param {HTMLElement} activeMask
+ * @param {Function} onChange
+ */
+function bindDraggableSlider(barContainer, sliderThumb, activeMask, onChange) {
+  sliderThumb.onmousedown = function (e) {
+    const startOffset = (e || window.event).clientX - this.offsetLeft;
+    const thumbEl = this;
+
+    document.onmousemove = function (ev) {
+      const mouseEv = ev || window.event;
+      let left = mouseEv.clientX - startOffset;
+      const maxLeft = barContainer.offsetWidth - sliderThumb.offsetWidth;
+
+      if (left < 0) left = 0;
+      else if (left > maxLeft) left = maxLeft;
+
+      activeMask.style.width = `${left}px`;
+      thumbEl.style.left = `${left}px`;
+
+      const ratio = maxLeft > 0 ? left / maxLeft : 0;
+      onChange(parseInt(ratio * 255, 10));
+
+      if (window.getSelection) {
+        window.getSelection().removeAllRanges();
+      } else if (document.selection) {
+        document.selection.empty();
+      }
+    };
+
+    document.onmouseup = function () {
+      document.onmousemove = null;
+      document.onmouseup = null;
     };
   };
 }
-var V,
-  or = null;
-let nr = !1,
-  ir = !1,
-  ar = null;
-function rr() {
+const tr = bindDraggableSlider;
+
+// 播放器主视频容器与状态
+let V = null;
+let or = null;
+let nr = false;
+let ir = false;
+let ar = null;
+
+function getVToolbarMenu() {
   return document.getElementById("ex-vtoolbar-menu");
 }
-function lr() {
-  ((0, __imports.clearTimeout)(ar), mr());
+const rr = getVToolbarMenu;
+
+function showMenuImmediate() {
+  (0, __imports.clearTimeout)(ar);
+  openMenu();
 }
-function sr() {
-  ((0, __imports.clearTimeout)(ar), nr || mr());
+
+function showMenuIfClosed() {
+  (0, __imports.clearTimeout)(ar);
+  if (!nr) openMenu();
 }
-function dr(e) {
-  var t,
-    e = e.relatedTarget;
-  ((e = e),
-    ((t = rr()) && e && t.contains(e)) ||
-      ((0, __imports.clearTimeout)(ar),
-      (ar = (0, __imports.setTimeout)(() => {
-        ur();
-      }, 80))));
+
+function handleMenuMouseLeave(e) {
+  const related = e.relatedTarget;
+  const menuEl = rr();
+  if (menuEl && related && menuEl.contains(related)) return;
+
+  (0, __imports.clearTimeout)(ar);
+  ar = (0, __imports.setTimeout)(() => {
+    closeMenu();
+  }, 80);
 }
-function cr(e, t) {
-  e &&
-    (t
-      ? (e.addEventListener("mouseenter", lr),
-        e.addEventListener("pointerenter", lr))
-      : (e.addEventListener("mouseenter", sr),
-        e.addEventListener("pointerenter", sr)),
-    e.addEventListener("mouseleave", dr),
-    e.addEventListener("pointerleave", dr));
+
+function bindVToolbarHoverEvents(el, immediate) {
+  if (!el) return;
+  if (immediate) {
+    el.addEventListener("mouseenter", showMenuImmediate);
+    el.addEventListener("pointerenter", showMenuImmediate);
+  } else {
+    el.addEventListener("mouseenter", showMenuIfClosed);
+    el.addEventListener("pointerenter", showMenuIfClosed);
+  }
+  el.addEventListener("mouseleave", handleMenuMouseLeave);
+  el.addEventListener("pointerleave", handleMenuMouseLeave);
 }
-function pr(e) {
-  "Escape" === e.key && (ur(), gr());
+const cr = bindVToolbarHoverEvents;
+
+function handleKeyDownEscape(e) {
+  if (e.key === "Escape") {
+    closeMenu();
+    closeFilterHost();
+  }
 }
-function mr() {
-  var e = document.getElementById("ex-vtoolbar-menu");
-  e &&
-    ((nr = !0),
-    e.classList.add("is-open"),
-    e
-      .querySelector(".vtoolbar-menu__trigger")
-      .setAttribute("aria-expanded", "true"));
+const pr = handleKeyDownEscape;
+
+function openMenu() {
+  const menu = document.getElementById("ex-vtoolbar-menu");
+  if (menu) {
+    nr = true;
+    menu.classList.add("is-open");
+    menu.querySelector(".vtoolbar-menu__trigger")?.setAttribute("aria-expanded", "true");
+  }
 }
-function ur() {
-  var e = document.getElementById("ex-vtoolbar-menu");
-  e &&
-    ((0, __imports.clearTimeout)(ar),
-    (nr = !1),
-    e.classList.remove("is-open"),
-    e
-      .querySelector(".vtoolbar-menu__trigger")
-      .setAttribute("aria-expanded", "false"),
-    gr());
+
+function closeMenu() {
+  const menu = document.getElementById("ex-vtoolbar-menu");
+  if (menu) {
+    (0, __imports.clearTimeout)(ar);
+    nr = false;
+    menu.classList.remove("is-open");
+    menu.querySelector(".vtoolbar-menu__trigger")?.setAttribute("aria-expanded", "false");
+    closeFilterHost();
+  }
 }
-function gr() {
-  var e = document.getElementById("ex-vtoolbar-filter-host"),
-    t = document.getElementById("vtoolbar-menu-filter");
-  ((ir = !1),
-    e && e.classList.remove("is-visible"),
-    t &&
-      (t.classList.remove("is-active"),
-      t.setAttribute("aria-expanded", "false")),
-    $a());
+const ur = closeMenu;
+
+function closeFilterHost() {
+  const host = document.getElementById("ex-vtoolbar-filter-host");
+  const trigger = document.getElementById("vtoolbar-menu-filter");
+  ir = false;
+  if (host) host.classList.remove("is-visible");
+  if (trigger) {
+    trigger.classList.remove("is-active");
+    trigger.setAttribute("aria-expanded", "false");
+  }
+  hideFilterPanel();
 }
-function hr() {
+const gr = closeFilterHost;
+
+function getFilterHost() {
   return document.getElementById("ex-vtoolbar-filter-host");
 }
-var fr = __imports.et,
-  yr =
-    '<svg t="1598941324196" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="3146"><path d="M921.6 766.634667L257.365333 102.4a68.266667 68.266667 0 0 0-96.597333 0L102.4 160.768a68.266667 68.266667 0 0 0 0 96.597333L766.634667 921.6a68.266667 68.266667 0 0 0 96.597333 0L921.6 863.232a68.266667 68.266667 0 0 0 0-96.597333zM139.605333 199.338667l59.733334-59.733334A13.312 13.312 0 0 1 208.896 136.533333a13.653333 13.653333 0 0 1 9.898667 4.096l83.968 82.944-79.189334 79.189334-83.968-83.968a13.653333 13.653333 0 0 1 0-19.456z m744.789334 625.322666l-59.733334 59.733334a13.312 13.312 0 0 1-9.557333 4.096 13.653333 13.653333 0 0 1-9.898667-4.096L262.144 341.333333 341.333333 262.144l543.061334 543.061333a13.653333 13.653333 0 0 1 0 19.456zM230.058667 589.824l-50.517334 92.501333-92.842666 50.858667 92.842666 50.517333 50.517334 92.842667 50.517333-92.842667 92.842667-50.517333-92.842667-50.858667-50.517333-92.501333zM541.013333 270.336l31.061334-57.344 57.344-31.402667-57.344-31.402666-31.061334-57.002667-31.402666 57.002667-57.344 31.402666 57.344 31.402667 31.402666 57.344zM827.392 377.173333l21.162667-38.912L887.466667 317.098667l-38.912-21.504-21.162667-38.912-21.504 38.912-38.570667 21.504 38.570667 21.162666 21.504 38.912z" p-id="3147" fill="#ffffff"></path></svg>',
-  vtoolbarChevronSvg =
-    '<svg class="vtoolbar-menu__chevron" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-  vr =
-    '<svg class="icon" viewBox="0 0 1237 1024" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M648.448 946.347l0.256-1.622-0.256 1.622z m84.31 13.354c-0.769 4.608-0.769 4.608-4.182 13.483-8.533 16.768-8.533 16.768-49.835 22.784-24.149-14.293-24.149-14.293-27.605-22.613-2.475-5.718-2.475-5.718-3.541-9.387L476.416 335.36l-103.083 499.2c-1.109 5.12-1.109 5.12-4.821 13.27-6.827 12.117-6.827 12.117-35.285 22.527-30.294-7.253-30.294-7.253-38.742-19.37-4.522-8.15-4.522-8.15-6.058-13.227l-74.582-262.357H0v-85.334h278.272l45.781 161.11 104.022-503.424c1.024-4.694 1.024-4.694 4.394-12.502 6.102-11.989 6.102-11.989 35.968-23.338 31.83 8.533 31.83 8.533 39.254 20.736 4.053 7.808 4.053 7.808 5.376 12.544l165.888 609.237 113.92-716.885c0.896-5.248 0.896-5.248 4.864-14.592 9.088-15.574 9.088-15.574 44.928-22.4C868.48 12.587 868.48 12.587 873.6 22.443c3.285 6.912 3.285 6.912 4.523 11.52l112 446.549h221.738v85.333H923.563l-78.507-312.917-112.299 706.773z" fill="#ffffff"/></svg>',
-  xr =
-    '<svg class="icon" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M496 64A48 48 0 0 1 544 112v800a48 48 0 0 1-96 0v-800A48 48 0 0 1 496 64z m-224 128A48 48 0 0 1 320 240v544a48 48 0 0 1-96 0v-544A48 48 0 0 1 272 192z m448 0A48 48 0 0 1 768 240v544a48 48 0 0 1-96 0v-544A48 48 0 0 1 720 192z m-672 128A48 48 0 0 1 96 368v288a48 48 0 0 1-96 0v-288A48 48 0 0 1 48 320z m896 0a48 48 0 0 1 48 48v288a48 48 0 0 1-96 0v-288a48 48 0 0 1 48-48z" fill="#ffffff"/></svg>',
-  wr =
-    '<svg class="icon vtoolbar-menu__icon-pip" viewBox="3 5 18 12" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><rect x="3" y="5" width="18" height="12" rx="2" stroke="#ffffff" stroke-width="1.5"/><path d="M7 10h5.5M7 13h3.5" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"/></svg>';
-var _r = !1;
+const hr = getFilterHost;
+
+// 各种播控 SVG 矢量图标
+const fr = __imports.et;
+const yr = `<svg class="icon" viewBox="0 0 1024 1024" width="16" height="16"><path d="M921.6 766.634667L257.365333 102.4a68.266667 68.266667 0 0 0-96.597333 0L102.4 160.768a68.266667 68.266667 0 0 0 0 96.597333L766.634667 921.6a68.266667 68.266667 0 0 0 96.597333 0L921.6 863.232a68.266667 68.266667 0 0 0 0-96.597333z" fill="#ffffff"></path></svg>`;
+const vtoolbarChevronSvg = `<svg class="vtoolbar-menu__chevron" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const vr = `<svg class="icon" viewBox="0 0 1237 1024"><path d="M648.448 946.347l0.256-1.622-0.256 1.622z" fill="#ffffff"/></svg>`;
+const xr = `<svg class="icon" viewBox="0 0 1024 1024"><path d="M496 64A48 48 0 0 1 544 112v800a48 48 0 0 1-96 0v-800A48 48 0 0 1 496 64z" fill="#ffffff"/></svg>`;
+const wr = `<svg class="icon vtoolbar-menu__icon-pip" viewBox="3 5 18 12" fill="none"><rect x="3" y="5" width="18" height="12" rx="2" stroke="#ffffff" stroke-width="1.5"/><path d="M7 10h5.5M7 13h3.5" stroke="#ffffff" stroke-width="1.5" stroke-linecap="round"/></svg>`;
+
+let _r = false;
 let kr = 0;
 let Er = 1;
-var Br = null,
-  Ir = null,
-  Tr = null,
-  Cr = null;
-function setDanmakuVolume(e) {
+let Br = null;
+let Ir = null;
+let Tr = null;
+let Cr = null;
+
+/**
+ * 驱动原生斗鱼播放器音量滑块与文字提示 (导出兼容 setDanmakuVolume)
+ * @param {number} vol - 音量比例 (0.0 ~ 1.0)
+ */
+function setDanmakuVolume(vol) {
   try {
-    var t = document.querySelector(".volume-07c230"),
-      o = document.querySelector(".volume-bar-93f0b0 .front-99e2aa"),
-      n = document.querySelector(".volume-bar-93f0b0 .point-6ef744"),
-      i = document.querySelector(".volume-bar-93f0b0 .tips2-9bb064");
-    (o && (o.style.height = 100 * e + "px"),
-      n && (n.style.bottom = 100 * e + 7 + "px"),
-      i && (i.textContent = `音量${Math.round(100 * e)}%`),
-      t &&
-        (0 === e
-          ? (t.classList.add("custom-muted"),
-            t.classList.remove("custom-normal"))
-          : (t.classList.add("custom-normal"),
-            t.classList.remove("custom-muted"))));
-  } catch (e) {}
+    const clamped = Math.max(0, Math.min(1, vol));
+    const volumeIcon = document.querySelector(".volume-07c230");
+    const frontBar = document.querySelector(".volume-bar-93f0b0 .front-99e2aa");
+    const point = document.querySelector(".volume-bar-93f0b0 .point-6ef744");
+    const tips = document.querySelector(".volume-bar-93f0b0 .tips2-9bb064");
+
+    if (frontBar) frontBar.style.height = `${100 * clamped}px`;
+    if (point) point.style.bottom = `${100 * clamped + 7}px`;
+    if (tips) tips.textContent = `音量${Math.round(100 * clamped)}%`;
+
+    if (volumeIcon) {
+      if (clamped === 0) {
+        volumeIcon.classList.add("custom-muted");
+        volumeIcon.classList.remove("custom-normal");
+      } else {
+        volumeIcon.classList.add("custom-normal");
+        volumeIcon.classList.remove("custom-muted");
+      }
+    }
+  } catch {}
 }
 
 }

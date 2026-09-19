@@ -5,195 +5,201 @@ yield {"ae": { get: () => ae, set: value => { ae = value; } },
 "ne": { get: () => ne, set: value => { ne = value; } },
 "oe": { get: () => oe, set: value => { oe = value; } },
 "re": { get: () => re, set: value => { re = value; } }};
-let oe =
-    '<svg t="1613993967937" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2122" width="16" height="16"><path d="M217.472 311.808l384.64 384.64-90.432 90.56-384.64-384.64z" fill="#8A8A8A" p-id="2123"></path><path d="M896.32 401.984l-384.64 384.64-90.56-90.496 384.64-384.64z" fill="#8A8A8A" p-id="2124"></path></svg>',
-  ne = 0;
-function ie(e) {
-  var _al = document.getElementById("ex-accountList-content");
-  if (_al)
-    _al.innerHTML = ((e) => {
-      let t = null == e ? JSON.parse((0, __imports.GM_getValue)("Ex_accountList") || "{}") : e,
-        o = "";
-      for (var n in t)
-        "null" != n &&
-          ((n = t[n]),
-          (o += `
+/**
+ * 多账号跨域免密热切换与纯音频独立播放流控制器
+ */
+const DOUBLE_CHEVRON_SVG = `<svg class="icon" viewBox="0 0 1024 1024" width="16" height="16"><path d="M217.472 311.808l384.64 384.64-90.432 90.56-384.64-384.64z" fill="#8A8A8A"></path><path d="M896.32 401.984l-384.64 384.64-90.56-90.496 384.64-384.64z" fill="#8A8A8A"></path></svg>`;
 
-        <div class="ex-accountList-item" uid="${n.uid}">
+let oe = DOUBLE_CHEVRON_SVG;
+let ne = 0;
 
+/**
+ * 渲染多账号管理下拉列表 (导出兼容 ie)
+ * @param {object} [customAccountMap]
+ */
+function renderAccountList(customAccountMap) {
+  const container = document.getElementById("ex-accountList-content");
+  if (!container) return;
+
+  const getAccountListHtml = (accountData) => {
+    let accountsObj = {};
+    if (accountData == null) {
+      try {
+        accountsObj = JSON.parse((0, __imports.GM_getValue)("Ex_accountList") || "{}");
+      } catch {}
+    } else {
+      accountsObj = accountData;
+    }
+
+    let itemsHtml = "";
+    for (const uidKey in accountsObj) {
+      if (uidKey !== "null" && accountsObj[uidKey]) {
+        const item = accountsObj[uidKey];
+        const avatarUrl = decodeURIComponent(item.avatar) + "middle.jpg";
+        const nickName = decodeURIComponent(item.nickname);
+        itemsHtml += `
+          <div class="ex-accountList-item" uid="${item.uid}">
             <div class="ex-accountList-item__imgWrap">
-
-                <img src=${decodeURIComponent(n.avatar) + "middle.jpg"} alt="" class="ex-accountList-item__img">
-
+              <img src="${avatarUrl}" alt="" class="ex-accountList-item__img">
             </div>
-
-            <div class="ex-accountList-item__name">${decodeURIComponent(n.nickname)}</div>
-
+            <div class="ex-accountList-item__name">${nickName}</div>
             <div class="ex-accountList-item__btn">删除</div>
+          </div>
+        `;
+      }
+    }
 
-        </div>`));
-      return (o += `
+    itemsHtml += `
+      <div id="ex-accountList-item-add">
+        <svg class="icon" viewBox="0 0 1024 1024" width="32" height="32"><path d="M577.088 0H448.96v448.512H0v128h448.96V1024h128.128V576.512H1024v-128H577.088z" fill="#8A8A8A"></path></svg>
+      </div>
+    `;
+    return itemsHtml;
+  };
 
-    <div id="ex-accountList-item-add">
+  container.innerHTML = getAccountListHtml(customAccountMap);
 
-        <svg t="1613995373702" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2832" width="32" height="32"><path d="M577.088 0H448.96v448.512H0v128h448.96V1024h128.128V576.512H1024v-128H577.088z" p-id="2833" fill="#8A8A8A"></path></svg>
+  const accountItems = document.getElementsByClassName("ex-accountList-item");
+  for (let i = 0; i < accountItems.length; i++) {
+    const itemEl = accountItems[i];
+    const targetUid = itemEl.getAttribute("uid");
 
-    </div>
-
-    `);
-    })(e);
-  var t = document.getElementsByClassName("ex-accountList-item");
-  for (let e = 0; e < t.length; e++) {
-    var o = t[e];
-    let a = o.getAttribute("uid");
-    (o.addEventListener("click", () => {
+    // 切换账号
+    itemEl.addEventListener("click", () => {
       (0, __imports.T)("【账号管理】正在切换账号，请耐心等待...", "info");
-      {
-        a;
-        var i = () => {};
-        JSON.parse((0, __imports.GM_getValue)("Ex_accountList"));
-        let o = [],
-          n = 0;
-        (0, __imports.GM_cookie)("list", { path: "/" }, function (t) {
-          for (let e = 0; e < t.length; e++)
-            (0, __imports.GM_cookie)("delete", { name: t[e].name }, function (e) {
-              if (++n >= t.length) {
-                let t = 0;
-                for (let e = 0; e < o.length; e++)
-                  (0, __imports.GM_cookie)(
-                    "set",
-                    {
-                      name: o[e].name,
-                      value: o[e].value,
-                      domain: o[e].domain,
-                      path: o[e].path,
-                      secure: o[e].secure,
-                      httpOnly: o[e].httpOnly,
-                      sameSite: o[e].sameSite,
-                      expirationDate: o[e].expirationDate,
-                      hostOnly: o[e].hostOnly,
-                    },
-                    function (e) {
-                      ++t >= o.length && i();
-                    },
-                  );
-              }
-            });
+
+      clearAllCookies(() => {
+        executePassportCommand("switch", targetUid);
+        const iframeBox = document.getElementById("ex-accountList-iframe2");
+        if (iframeBox) {
+          const currentHref = encodeURIComponent(window.location.href);
+          iframeBox.innerHTML = `
+            <iframe id="ex-yuba-iframe" width="100%" height="100%" scrolling="no" frameborder="0" src="https://yuba.douyu.com/iframe/tab/6416853?exClean&domain=${currentHref}&"></iframe>
+            <iframe id="ex-msg-iframe" width="100%" height="100%" scrolling="no" frameborder="0" src="https://msg.douyu.com/web/index.html?exClean&domain=${currentHref}&"></iframe>
+            <iframe id="ex-video-iframe" width="100%" height="100%" scrolling="no" frameborder="0" src="https://v.douyu.com/show/0?exClean&domain=${currentHref}&"></iframe>
+            <iframe id="ex-cz-iframe" width="100%" height="100%" scrolling="no" frameborder="0" src="https://cz.douyu.com/item/gold?exClean&domain=${currentHref}&"></iframe>
+          `;
+        }
+      });
+    });
+
+    // 删除账号
+    const deleteBtn = itemEl.getElementsByClassName("ex-accountList-item__btn")[0];
+    if (deleteBtn) {
+      deleteBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        (0, __imports.T)("【账号管理】正在删除...", "info");
+        try {
+          const accounts = JSON.parse((0, __imports.GM_getValue)("Ex_accountList") || "{}");
+          delete accounts[targetUid];
+          (0, __imports.GM_setValue)("Ex_accountList", JSON.stringify(accounts));
+        } catch {}
+        executePassportCommand("delete", targetUid);
+      });
+    }
+  }
+
+  const addBtn = document.getElementById("ex-accountList-item-add");
+  if (addBtn) {
+    addBtn.addEventListener("click", () => {
+      clearAllCookies(() => {});
+      executePassportCommand("clean", "null");
+    });
+  }
+}
+const ie = renderAccountList;
+
+/**
+ * 清除全站 Cookie 凭据 (导出兼容 ae)
+ * @param {Function} onDone
+ */
+function clearAllCookies(onDone) {
+  let finishedCount = 0;
+  (0, __imports.GM_cookie)("list", { path: "/" }, (cookieList) => {
+    if (cookieList && cookieList.length > 0) {
+      for (let i = 0; i < cookieList.length; i++) {
+        (0, __imports.GM_cookie)("delete", { name: cookieList[i].name }, () => {
+          if (++finishedCount >= cookieList.length && typeof onDone === "function") {
+            onDone();
+          }
         });
       }
-      (re("switch", a),
-        (document.getElementById("ex-accountList-iframe2").innerHTML = `
-
-    <iframe id="ex-yuba-iframe" width="100%" height="100%" scrolling="no" frameborder="0" src="https://yuba.douyu.com/iframe/tab/6416853?exClean&domain=${encodeURIComponent(window.location.href)}&"></iframe>
-
-    <iframe id="ex-msg-iframe" width="100%" height="100%" scrolling="no" frameborder="0" src="https://msg.douyu.com/web/index.html?exClean&domain=${encodeURIComponent(window.location.href)}&"></iframe>
-
-    <iframe id="ex-video-iframe" width="100%" height="100%" scrolling="no" frameborder="0" src="https://v.douyu.com/show/0?exClean&domain=${encodeURIComponent(window.location.href)}&"></iframe>
-
-    <iframe id="ex-cz-iframe" width="100%" height="100%" scrolling="no" frameborder="0" src="https://cz.douyu.com/item/gold?exClean&domain=${encodeURIComponent(window.location.href)}&"></iframe>
-
-    `));
-    }),
-      o
-        .getElementsByClassName("ex-accountList-item__btn")[0]
-        .addEventListener("click", (e) => {
-          var t, o;
-          (e.stopPropagation(),
-            (0, __imports.T)("【账号管理】正在删除...", "info"),
-            (e = a),
-            (t = () => {}),
-            delete (o = JSON.parse((0, __imports.GM_getValue)("Ex_accountList") || "{}"))[e],
-            (0, __imports.GM_setValue)("Ex_accountList", JSON.stringify(o)),
-            t(),
-            re("delete", a));
-        }));
-  }
-  var _addBtn = document.getElementById("ex-accountList-item-add");
-  _addBtn &&
-    _addBtn.addEventListener("click", () => {
-      (ae(() => {}), re("clean", "null"));
-    });
-}
-function ae(o) {
-  let n = 0;
-  (0, __imports.GM_cookie)("list", { path: "/" }, (t) => {
-    if (t)
-      for (let e = 0; e < t.length; e++)
-        (0, __imports.GM_cookie)("delete", { name: t[e].name }, function (e) {
-          ++n >= t.length && o();
-        });
-    else o();
+    } else if (typeof onDone === "function") {
+      onDone();
+    }
   });
 }
-function re(e, t) {
-  var _iframe = document.getElementById("ex-accountList-iframe");
-  if (_iframe)
-    _iframe.innerHTML = `
+const ae = clearAllCookies;
 
-    <iframe id="login-passport-frame" width="100%" height="100%" scrolling="no" frameborder="0" src="https://passport.douyu.com/index/error/show404?&exid=chun&cmd=${e}&uid=${t}&domain=${encodeURIComponent(window.location.href)}&"></iframe>
-
+/**
+ * 挂载 passport 通信隐藏管道执行命令 (导出兼容 re)
+ * @param {'switch'|'delete'|'clean'} cmd
+ * @param {string} uid
+ */
+function executePassportCommand(cmd, uid) {
+  const iframeContainer = document.getElementById("ex-accountList-iframe");
+  if (iframeContainer) {
+    const currentHref = encodeURIComponent(window.location.href);
+    iframeContainer.innerHTML = `
+      <iframe id="login-passport-frame" width="100%" height="100%" scrolling="no" frameborder="0" src="https://passport.douyu.com/index/error/show404?&exid=chun&cmd=${cmd}&uid=${uid}&domain=${currentHref}&"></iframe>
     `;
+  }
 }
-function le() {
-  var e = (0, __imports.E)([".pause-c594e8", ".icon-c8be96"]);
-  (e && e.click(),
-    (0, __imports.qr)(__imports.B, !0, 0, "1428", (e) => {
-      var i, a;
-      ((i = __imports.D.length),
-        (0, __imports.qr)((a = __imports.B), !1, 0, "1", (t) => {
-          if ("" != t || null != t)
-            if ("None" == t) (0, __imports.T)("房间未开播或其他错误", "error");
-            else {
-              var o = String(t).split("/live");
-              let e = "";
-              0 < o.length && (e = o[0]);
-              var o = document.createElement("div"),
-                n = "",
-                n =
-                  ((o.id = "exVideoDiv" + String(i)),
-                  (o.rid = a),
-                  (o.className = "exVideoDiv"),
-                  (n =
-                    (n =
-                      (n =
-                        (n =
-                          (n =
-                            (n +=
-                              "<div class='exVideoInfo' id='exVideoInfo" +
-                              String(i) +
-                              "'><a title='复制直播流地址'><span class='exVideoRID' id='exVideoRID" +
-                              String(i) +
-                              "' style='color:white'>斗鱼音频流 - " +
-                              a +
-                              "</span></a>") +
-                            ("<select style='display:none' class='exVideoQn' id='exVideoQn" +
-                              String(i) +
-                              "'><option value='1'>流畅</option><option value='2'>高清</option><option value='3'>超清</option><option value='0'>蓝光</option></select>")) +
-                          ("<select style='display:none' class='exVideoCDN' id='exVideoCDN" +
-                            String(i) +
-                            "'><option value='1'>主线路</option><option value='2'>备用线路5</option><option value='3'>备用线路6</option></select>")) +
-                        ("<a style='margin-left:5px;display:none' href='" +
-                          e +
-                          "' target='_blank'>无视频？</a>")) +
-                      ("<a><div class='exVideoClose' id='exVideoClose" +
-                        String(i) +
-                        "'>X</div></a>") +
-                      "</div>") +
-                    ("<video controls='controls' class='exVideoPlayer' id='exVideoPlayer" +
-                      String(i) +
-                      "'></video><div class='exVideoScale' id='exVideoScale" +
-                      String(i) +
-                      "'></div>")),
-                  (o.innerHTML = n),
-                  (0, __imports.E)([".layout-Main", ".playerWrap__8wGvw", ".live-next-body"]));
-              (n.insertBefore(o, n.childNodes[0]),
-                (0, __imports.on)(i),
-                (0, __imports.tn)(i),
-                (0, __imports.an)(i, a),
-                (0, __imports.f)(i, t));
-            }
-        }));
-    }));
+const re = executePassportCommand;
+
+/**
+ * 切换为纯音频独立播放器 (导出兼容 le)
+ */
+function launchAudioOnlyPlayer() {
+  const pauseBtn = (0, __imports.E)([".pause-c594e8", ".icon-c8be96"]);
+  if (pauseBtn) pauseBtn.click();
+
+  (0, __imports.qr)(__imports.B, true, 0, "1428", () => {
+    const slotIdx = __imports.D.length;
+    const currentRoom = __imports.B;
+
+    (0, __imports.qr)(currentRoom, false, 0, "1", (audioStreamUrl) => {
+      if (!audioStreamUrl || audioStreamUrl === "None") {
+        (0, __imports.T)("房间未开播或其他错误", "error");
+        return;
+      }
+
+      const parts = String(audioStreamUrl).split("/live");
+      const streamBaseUrl = parts.length > 0 ? parts[0] : "";
+
+      const div = document.createElement("div");
+      div.id = `exVideoDiv${slotIdx}`;
+      div.rid = currentRoom;
+      div.className = "exVideoDiv";
+      div.innerHTML = `
+        <div class='exVideoInfo' id='exVideoInfo${slotIdx}'>
+          <a title='复制直播流地址'>
+            <span class='exVideoRID' id='exVideoRID${slotIdx}' style='color:white'>斗鱼音频流 - ${currentRoom}</span>
+          </a>
+          <select style='display:none' class='exVideoQn' id='exVideoQn${slotIdx}'>
+            <option value='1'>流畅</option><option value='2'>高清</option><option value='3'>超清</option><option value='0'>蓝光</option>
+          </select>
+          <select style='display:none' class='exVideoCDN' id='exVideoCDN${slotIdx}'>
+            <option value='1'>主线路</option><option value='2'>备用线路5</option><option value='3'>备用线路6</option>
+          </select>
+          <a style='margin-left:5px;display:none' href='${streamBaseUrl}' target='_blank'>无视频？</a>
+          <a><div class='exVideoClose' id='exVideoClose${slotIdx}'>X</div></a>
+        </div>
+        <video controls='controls' class='exVideoPlayer' id='exVideoPlayer${slotIdx}'></video>
+        <div class='exVideoScale' id='exVideoScale${slotIdx}'></div>
+      `;
+
+      const targetContainer = (0, __imports.E)([".layout-Main", ".playerWrap__8wGvw", ".live-next-body"]);
+      if (targetContainer) {
+        targetContainer.insertBefore(div, targetContainer.childNodes[0]);
+        (0, __imports.on)(slotIdx);
+        (0, __imports.tn)(slotIdx);
+        (0, __imports.an)(slotIdx, currentRoom);
+        (0, __imports.f)(slotIdx, audioStreamUrl);
+      }
+    });
+  });
 }
+const le = launchAudioOnlyPlayer;
 
 }

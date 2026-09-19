@@ -14,239 +14,313 @@ yield {"$": { get: () => $, set: value => { $ = value; } },
 "v": { get: () => v, set: value => { v = value; } },
 "w": { get: () => w, set: value => { w = value; } },
 "x": { get: () => x, set: value => { x = value; } }};
-function b(t) {
-  return new Promise((e) => (0, __imports.setTimeout)(e, t));
+/**
+ * DouyuEx-RL 核心通用基础工具库
+ */
+
+/**
+ * 异步延时等待
+ * @param {number} ms - 延时毫秒数
+ * @returns {Promise<void>}
+ */
+function sleep(ms) {
+  return new Promise(resolve => (0, __imports.setTimeout)(resolve, ms));
 }
-function Q(e) {
-  let t = parseInt(e),
-    o = 0,
-    n = 0,
-    i =
-      (60 < t &&
-        ((o = parseInt(t / 60)), (t = parseInt(t % 60)), 60 < o) &&
-        ((n = parseInt(o / 60)), (o = parseInt(o % 60))),
-      parseInt(t) + "秒");
-  return (
-    0 < o && (i = parseInt(o) + "分" + i),
-    (i = 0 < n ? parseInt(n) + "小时" + i : i)
-  );
+const b = sleep;
+
+/**
+ * 将秒数格式化为中文时长描述 (如: 1小时23分45秒)
+ * @param {number|string} seconds
+ * @returns {string}
+ */
+function formatDurationChinese(seconds) {
+  let sec = parseInt(seconds, 10) || 0;
+  let min = 0;
+  let hour = 0;
+
+  if (sec > 60) {
+    min = Math.floor(sec / 60);
+    sec = sec % 60;
+    if (min > 60) {
+      hour = Math.floor(min / 60);
+      min = min % 60;
+    }
+  }
+
+  let result = `${sec}秒`;
+  if (min > 0) result = `${min}分` + result;
+  if (hour > 0) result = `${hour}小时` + result;
+  return result;
 }
-function J(e) {
-  var t = 0,
-    o = 0;
-  return (
-    60 < (e = parseInt(e)) &&
-      ((t = parseInt(e / 60)), (e = parseInt(e % 60)), 60 < t) &&
-      ((o = parseInt(t / 60)), (t = parseInt(t % 60))),
-    (e = "" + (parseInt(e) < 10 ? "0" + parseInt(e) : parseInt(e))),
-    (e = (parseInt(t) < 10 ? "0" + parseInt(t) : parseInt(t)) + ":" + e),
-    (e = (parseInt(o) < 10 ? "0" + parseInt(o) : parseInt(o)) + ":" + e)
-  );
+const Q = formatDurationChinese;
+
+/**
+ * 将秒数格式化为标准时间码 (hh:mm:ss)
+ * @param {number|string} seconds
+ * @returns {string}
+ */
+function formatDurationClock(seconds) {
+  let sec = parseInt(seconds, 10) || 0;
+  let min = 0;
+  let hour = 0;
+
+  if (sec > 60) {
+    min = Math.floor(sec / 60);
+    sec = sec % 60;
+    if (min > 60) {
+      hour = Math.floor(min / 60);
+      min = min % 60;
+    }
+  }
+
+  const sStr = String(sec).padStart(2, "0");
+  const mStr = String(min).padStart(2, "0");
+  const hStr = String(hour).padStart(2, "0");
+  return `${hStr}:${mStr}:${sStr}`;
 }
-async function Z() {
-  return !0;
+const J = formatDurationClock;
+
+/**
+ * 正则提取字符串中两个标记之间的内容
+ * @param {string} str - 源文本
+ * @param {string} prefix - 前缀
+ * @param {string} suffix - 后缀
+ * @returns {string|false} 提取的内容或 false
+ */
+function extractBetween(str, prefix, suffix) {
+  if (!str || typeof str !== 'string') return false;
+  const match = str.match(new RegExp(prefix + "(.*?)" + suffix));
+  return Boolean(match) && match[1];
 }
-function v(e, t, o) {
-  e = e.match(new RegExp(t + "(.*?)" + o));
-  return !!e && e[1];
-}
-function x(e) {
+const v = extractBetween;
+
+/**
+ * 安全读取指定 Cookie 键的值
+ * @param {string} name - Cookie 键名
+ * @returns {string|null}
+ */
+function getCookie(name) {
   try {
-    var t = new RegExp("(^| )" + e + "=([^;]*)(;|$)"),
-      n = document.cookie.match(t);
-    return n ? unescape(n[2]) : null;
-  } catch (err) {
+    const reg = new RegExp("(^| )" + name + "=([^;]*)(;|$)");
+    const match = document.cookie.match(reg);
+    return match ? unescape(match[2]) : null;
+  } catch {
     return null;
   }
 }
-function w() {
-  let e = x("acf_ccn");
-  var t, o, n;
-  return (
-    null == e &&
-      ((t = "acf_ccn"),
-      (o = "1"),
-      (n = new Date()).setTime(n.getTime() + 108e5),
-      (document.cookie =
-        t + "=" + escape(o) + "; path=/; expires=" + n.toGMTString()),
-      (e = "1")),
-    e
-  );
+const x = getCookie;
+
+/**
+ * 获取或生成 3 小时有效期的 acf_ccn 安全凭据
+ * @returns {string}
+ */
+function generateCcnToken() {
+  let ccn = getCookie("acf_ccn");
+  if (ccn == null) {
+    const expireDate = new Date();
+    expireDate.setTime(expireDate.getTime() + 10800000); // +3 hours
+    document.cookie = `acf_ccn=1; path=/; expires=${expireDate.toGMTString()}`;
+    ccn = "1";
+  }
+  return ccn;
 }
-function T(e, t = "success", o) {
-  e = { text: e, type: t, position: "bottomLeft", ...o };
-  new NoticeJs(e).show();
+const w = generateCcnToken;
+
+/**
+ * 弹出顶部浮动毛玻璃 NoticeJs 提示胶囊
+ * @param {string} message - 提示消息文本
+ * @param {string} [type='success'] - 类型: success | info | error | warning
+ * @param {object} [options] - 附加配置项
+ */
+function showToast(message, type = "success", options = {}) {
+  const config = { text: message, type, position: "bottomLeft", ...options };
+  try {
+    new NoticeJs(config).show();
+  } catch {
+    console.log(`[Toast ${type}] ${message}`);
+  }
 }
-function _(e, t = !0) {
-  (0, __imports.GM_openInTab)(e, { active: t });
+const T = showToast;
+
+/**
+ * 新标签页打开指定 URL
+ * @param {string} url - 目标地址
+ * @param {boolean} [active=true] - 是否激活焦点
+ */
+function openInNewTab(url, active = true) {
+  (0, __imports.GM_openInTab)(url, { active });
 }
-function r() {
-  (-1 != navigator.userAgent.indexOf("Firefox") ||
-  -1 != navigator.userAgent.indexOf("Chrome")
-    ? (window.location.href = "about:blank")
-    : ((window.opener = null), window.open("", "_self")),
-    window.close());
+const _ = openInNewTab;
+
+/**
+ * 跨浏览器安全关闭当前窗口
+ */
+function closeCurrentWindow() {
+  if (navigator.userAgent.includes("Firefox") || navigator.userAgent.includes("Chrome")) {
+    window.location.href = "about:blank";
+  } else {
+    window.opener = null;
+    window.open("", "_self");
+  }
+  window.close();
 }
-function k(e, t) {
-  var o,
-    n = {
-      "M+": t.getMonth() + 1,
-      "d+": t.getDate(),
-      "h+": t.getHours(),
-      "m+": t.getMinutes(),
-      "s+": t.getSeconds(),
-      "q+": Math.floor((t.getMonth() + 3) / 3),
-      S: t.getMilliseconds(),
-    };
-  for (o in (/(y+)/.test(e) &&
-    (e = e.replace(
-      RegExp.$1,
-      (t.getFullYear() + "").substr(4 - RegExp.$1.length),
-    )),
-  n))
-    new RegExp("(" + o + ")").test(e) &&
-      (e = e.replace(
+
+/**
+ * 标准日期时间格式化 (对齐 yyyy-MM-dd hh:mm:ss)
+ * @param {string} fmt - 格式模板
+ * @param {Date} dateObj - 日期对象
+ * @returns {string}
+ */
+function formatDate(fmt, dateObj) {
+  const date = dateObj || new Date();
+  let res = fmt;
+  const o = {
+    "M+": date.getMonth() + 1,
+    "d+": date.getDate(),
+    "h+": date.getHours(),
+    "m+": date.getMinutes(),
+    "s+": date.getSeconds(),
+    "q+": Math.floor((date.getMonth() + 3) / 3),
+    S: date.getMilliseconds(),
+  };
+
+  if (/(y+)/.test(res)) {
+    res = res.replace(RegExp.$1, String(date.getFullYear()).substr(4 - RegExp.$1.length));
+  }
+
+  for (const k in o) {
+    if (new RegExp("(" + k + ")").test(res)) {
+      res = res.replace(
         RegExp.$1,
-        1 == RegExp.$1.length ? n[o] : ("00" + n[o]).substr(("" + n[o]).length),
-      ));
-  return e;
-}
-function a(e, t) {
-  return Math.floor(Math.random() * (t - e) + e);
-}
-function X(t, o, n) {
-  window.Notification &&
-    "denied" !== Notification.permission &&
-    Notification.requestPermission(function (e) {
-      new Notification(t, { body: o }).onclick = function () {
-        n();
-      };
-    });
-}
-function K() {
-  return new Promise((t) => {
-    var n = x("acf_nickname");
-    if (n) return t(decodeURIComponent(n));
-    try {
-      var e = document.querySelector(
-        ".Barrage-nickName.is-self, .Header-login-avatar img, .UserInfo-nickname",
+        RegExp.$1.length === 1 ? o[k] : String("00" + o[k]).substr(String(o[k]).length)
       );
-      if (e) {
-        var o = e.innerText || e.title || e.alt;
-        if (o) return t(o.trim());
+    }
+  }
+  return res;
+}
+const k = formatDate;
+
+/**
+ * 获取范围内的随机整数 [min, max)
+ * @param {number} min
+ * @param {number} max
+ * @returns {number}
+ */
+function getRandomInt(min, max) {
+  return Math.floor(Math.random() * (max - min) + min);
+}
+const a = getRandomInt;
+
+/**
+ * 发送系统级桌面通知 (HTML5 Notification)
+ * @param {string} title
+ * @param {string} body
+ * @param {Function} onClick
+ */
+function showDesktopNotification(title, body, onClick) {
+  if (window.Notification && Notification.permission !== "denied") {
+    Notification.requestPermission((perm) => {
+      if (perm === "granted") {
+        const notif = new Notification(title, { body });
+        notif.onclick = () => {
+          if (typeof onClick === 'function') onClick();
+        };
       }
-    } catch (e) {}
-    (0, __imports.fetch)("https://www.douyu.com/member/cp", {
-      method: "GET",
-      credentials: "include",
-    })
-      .then((e) => e.text())
-      .then((e) => {
-        var o = new DOMParser()
-          .parseFromString(e, "text/html")
-          .getElementsByClassName("uname_con")[0];
-        t(o ? o.title : "");
-      })
-      .catch((e) => {
-        t("");
-      });
-  });
+    });
+  }
 }
-function $(e) {
-  if ("TEXTAREA" === e.tagName) return e.selectionStart;
-  let t = 0;
-  var o, n, i;
-  return (
-    document.selection
-      ? ((n = document.selection.createRange()),
-        (o = (i = e.createTextRange()).duplicate()).moveToBookmark(
-          n.getBookmark(),
-        ),
-        o.setEndPoint("EndToEnd", i),
-        (t = o.text.length))
-      : window.getSelection &&
-        0 < (n = window.getSelection()).rangeCount &&
-        ((i = n.getRangeAt(0).cloneRange()).selectNodeContents(e),
-        i.setEnd(
-          0 < n.rangeCount ? n.getRangeAt(0).endContainer : e,
-          0 < n.rangeCount ? n.getRangeAt(0).endOffset : 0,
-        ),
-        (t = i.toString().length)),
-    t
-  );
+const X = showDesktopNotification;
+
+/**
+ * 获取输入框的光标字符位置
+ * @param {HTMLElement} el
+ * @returns {number}
+ */
+function getTextareaCursorPosition(el) {
+  if (!el) return 0;
+  if (el.tagName === "TEXTAREA" || el.tagName === "INPUT") {
+    return el.selectionStart || 0;
+  }
+  let pos = 0;
+  if (window.getSelection) {
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0) {
+      const range = sel.getRangeAt(0).cloneRange();
+      range.selectNodeContents(el);
+      range.setEnd(sel.getRangeAt(0).endContainer, sel.getRangeAt(0).endOffset);
+      pos = range.toString().length;
+    }
+  }
+  return pos;
 }
-function l(e, t, o = "download.xlsx") {
-  if ("undefined" == typeof XLSX)
-    return void (0, __imports.ExLoadLib)(
-      __imports.EXURL.xl,
-      () => l(e, t, o),
-      () => T("【下载弹幕】xlsx组件加载失败", "info"),
-    );
-  var n = [],
-    e = (n.push(e, ...t), XLSX.utils.aoa_to_sheet(n)),
-    i =
-      ((t = e),
-      ((n = { SheetNames: [(r = r || "sheet1")], Sheets: {} }).Sheets[r] = t),
-      (r = { bookType: "xlsx", bookSST: !1, type: "binary" }),
-      (t = XLSX.write(n, r)),
-      (n = new Blob(
-        [
-          ((e) => {
-            for (
-              var t = new ArrayBuffer(e.length), o = new Uint8Array(t), n = 0;
-              n != e.length;
-              ++n
-            )
-              o[n] = 255 & e.charCodeAt(n);
-            return t;
-          })(t),
-        ],
-        { type: "application/octet-stream" },
-      ))),
-    e = o;
-  "object" == typeof i && i instanceof Blob && (i = URL.createObjectURL(i));
-  var a,
-    r = document.createElement("a");
-  ((r.href = i),
-    (r.download = e || ""),
-    window.MouseEvent
-      ? (a = new MouseEvent("click"))
-      : (a = document.createEvent("MouseEvents")).initMouseEvent(
-          "click",
-          !0,
-          !1,
-          window,
-          0,
-          0,
-          0,
-          0,
-          0,
-          !1,
-          !1,
-          !1,
-          !1,
-          0,
-          null,
-        ),
-    r.dispatchEvent(a),
-    "string" == typeof i &&
-      0 === i.indexOf("blob:") &&
-      (0, __imports.setTimeout)(function () {
-        try {
-          URL.revokeObjectURL(i);
-        } catch (e) {}
-      }, 1500));
+const $ = getTextareaCursorPosition;
+
+/**
+ * 导出数据为 Excel 文件并自动触发下载
+ * @param {Array<string>} headers - 表头
+ * @param {Array<Array<any>>} rows - 数据行二维数组
+ * @param {string} [filename='download.xlsx'] - 下载文件名
+ */
+function exportToExcel(headers, rows, filename = "download.xlsx") {
+  if (typeof XLSX === "undefined") {
+    if (typeof __imports.ExLoadLib === "function" && __imports.EXURL) {
+      (0, __imports.ExLoadLib)(
+        __imports.EXURL.xl,
+        () => exportToExcel(headers, rows, filename),
+        () => showToast("【下载弹幕】xlsx组件加载失败", "info")
+      );
+    }
+    return;
+  }
+
+  const tableData = [headers, ...rows];
+  const sheet = XLSX.utils.aoa_to_sheet(tableData);
+  const workbook = { SheetNames: ["sheet1"], Sheets: { sheet1: sheet } };
+  const binaryOutput = XLSX.write(workbook, { bookType: "xlsx", bookSST: false, type: "binary" });
+
+  const buffer = new ArrayBuffer(binaryOutput.length);
+  const view = new Uint8Array(buffer);
+  for (let i = 0; i < binaryOutput.length; i++) {
+    view[i] = binaryOutput.charCodeAt(i) & 0xff;
+  }
+
+  const blob = new Blob([buffer], { type: "application/octet-stream" });
+  const objectUrl = URL.createObjectURL(blob);
+
+  const anchor = document.createElement("a");
+  anchor.href = objectUrl;
+  anchor.download = filename;
+  anchor.click();
+
+  (0, __imports.setTimeout)(() => {
+    try {
+      URL.revokeObjectURL(objectUrl);
+    } catch {}
+  }, 1500);
 }
-function te() {
-  var e = new Event("resize");
-  window.dispatchEvent(e);
+const l = exportToExcel;
+
+/**
+ * 触发全局窗口 Resize 布局重排事件
+ */
+function triggerWindowResize() {
+  window.dispatchEvent(new Event("resize"));
 }
-function E(e) {
-  for (var t of e) {
-    let e = null;
-    if ((e = "string" == typeof t ? document.querySelector(t) : t)) return e;
+const te = triggerWindowResize;
+
+/**
+ * 多候选选择器匹配首个存在的 DOM 元素
+ * @param {Array<string|Element>} selectors
+ * @returns {Element|null}
+ */
+function queryFirstMatch(selectors) {
+  if (!Array.isArray(selectors)) return null;
+  for (const s of selectors) {
+    const el = typeof s === "string" ? document.querySelector(s) : s;
+    if (el) return el;
   }
   return null;
 }
+const E = queryFirstMatch;
 
 }

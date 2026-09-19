@@ -1,116 +1,136 @@
 function* (__imports) {
 yield {"Or": { get: () => Or, set: value => { Or = value; } }};
-var Pr = 0,
-  zr = 8;
-function Or(e) {
-  for (
-    var t = ((e, t) => {
-        ((e[t >> 5] |= 128 << (t % 32)), (e[14 + (((t + 64) >>> 9) << 4)] = t));
-        for (
-          var o = 1732584193,
-            n = -271733879,
-            i = -1732584194,
-            a = 271733878,
-            r = 0;
-          r < e.length;
-          r += 16
-        ) {
-          var l = o,
-            s = n,
-            d = i,
-            c = a;
-          ((o = (0, __imports.p)(o, n, i, a, e[r + 0], 7, -680876936)),
-            (a = (0, __imports.p)(a, o, n, i, e[r + 1], 12, -389564586)),
-            (i = (0, __imports.p)(i, a, o, n, e[r + 2], 17, 606105819)),
-            (n = (0, __imports.p)(n, i, a, o, e[r + 3], 22, -1044525330)),
-            (o = (0, __imports.p)(o, n, i, a, e[r + 4], 7, -176418897)),
-            (a = (0, __imports.p)(a, o, n, i, e[r + 5], 12, 1200080426)),
-            (i = (0, __imports.p)(i, a, o, n, e[r + 6], 17, -1473231341)),
-            (n = (0, __imports.p)(n, i, a, o, e[r + 7], 22, -45705983)),
-            (o = (0, __imports.p)(o, n, i, a, e[r + 8], 7, 1770035416)),
-            (a = (0, __imports.p)(a, o, n, i, e[r + 9], 12, -1958414417)),
-            (i = (0, __imports.p)(i, a, o, n, e[r + 10], 17, -42063)),
-            (n = (0, __imports.p)(n, i, a, o, e[r + 11], 22, -1990404162)),
-            (o = (0, __imports.p)(o, n, i, a, e[r + 12], 7, 1804603682)),
-            (a = (0, __imports.p)(a, o, n, i, e[r + 13], 12, -40341101)),
-            (i = (0, __imports.p)(i, a, o, n, e[r + 14], 17, -1502002290)),
-            (n = (0, __imports.p)(n, i, a, o, e[r + 15], 22, 1236535329)),
-            (o = (0, __imports.u)(o, n, i, a, e[r + 1], 5, -165796510)),
-            (a = (0, __imports.u)(a, o, n, i, e[r + 6], 9, -1069501632)),
-            (i = (0, __imports.u)(i, a, o, n, e[r + 11], 14, 643717713)),
-            (n = (0, __imports.u)(n, i, a, o, e[r + 0], 20, -373897302)),
-            (o = (0, __imports.u)(o, n, i, a, e[r + 5], 5, -701558691)),
-            (a = (0, __imports.u)(a, o, n, i, e[r + 10], 9, 38016083)),
-            (i = (0, __imports.u)(i, a, o, n, e[r + 15], 14, -660478335)),
-            (n = (0, __imports.u)(n, i, a, o, e[r + 4], 20, -405537848)),
-            (o = (0, __imports.u)(o, n, i, a, e[r + 9], 5, 568446438)),
-            (a = (0, __imports.u)(a, o, n, i, e[r + 14], 9, -1019803690)),
-            (i = (0, __imports.u)(i, a, o, n, e[r + 3], 14, -187363961)),
-            (n = (0, __imports.u)(n, i, a, o, e[r + 8], 20, 1163531501)),
-            (o = (0, __imports.u)(o, n, i, a, e[r + 13], 5, -1444681467)),
-            (a = (0, __imports.u)(a, o, n, i, e[r + 2], 9, -51403784)),
-            (i = (0, __imports.u)(i, a, o, n, e[r + 7], 14, 1735328473)),
-            (n = (0, __imports.u)(n, i, a, o, e[r + 12], 20, -1926607734)),
-            (o = (0, __imports.g)(o, n, i, a, e[r + 5], 4, -378558)),
-            (a = (0, __imports.g)(a, o, n, i, e[r + 8], 11, -2022574463)),
-            (i = (0, __imports.g)(i, a, o, n, e[r + 11], 16, 1839030562)),
-            (n = (0, __imports.g)(n, i, a, o, e[r + 14], 23, -35309556)),
-            (o = (0, __imports.g)(o, n, i, a, e[r + 1], 4, -1530992060)),
-            (a = (0, __imports.g)(a, o, n, i, e[r + 4], 11, 1272893353)),
-            (i = (0, __imports.g)(i, a, o, n, e[r + 7], 16, -155497632)),
-            (n = (0, __imports.g)(n, i, a, o, e[r + 10], 23, -1094730640)),
-            (o = (0, __imports.g)(o, n, i, a, e[r + 13], 4, 681279174)),
-            (a = (0, __imports.g)(a, o, n, i, e[r + 0], 11, -358537222)),
-            (i = (0, __imports.g)(i, a, o, n, e[r + 3], 16, -722521979)),
-            (n = (0, __imports.g)(n, i, a, o, e[r + 6], 23, 76029189)),
-            (o = (0, __imports.g)(o, n, i, a, e[r + 9], 4, -640364487)),
-            (a = (0, __imports.g)(a, o, n, i, e[r + 12], 11, -421815835)),
-            (i = (0, __imports.g)(i, a, o, n, e[r + 15], 16, 530742520)),
-            (n = (0, __imports.g)(n, i, a, o, e[r + 2], 23, -995338651)),
-            (o = (0, __imports.h)(o, n, i, a, e[r + 0], 6, -198630844)),
-            (a = (0, __imports.h)(a, o, n, i, e[r + 7], 10, 1126891415)),
-            (i = (0, __imports.h)(i, a, o, n, e[r + 14], 15, -1416354905)),
-            (n = (0, __imports.h)(n, i, a, o, e[r + 5], 21, -57434055)),
-            (o = (0, __imports.h)(o, n, i, a, e[r + 12], 6, 1700485571)),
-            (a = (0, __imports.h)(a, o, n, i, e[r + 3], 10, -1894986606)),
-            (i = (0, __imports.h)(i, a, o, n, e[r + 10], 15, -1051523)),
-            (n = (0, __imports.h)(n, i, a, o, e[r + 1], 21, -2054922799)),
-            (o = (0, __imports.h)(o, n, i, a, e[r + 8], 6, 1873313359)),
-            (a = (0, __imports.h)(a, o, n, i, e[r + 15], 10, -30611744)),
-            (i = (0, __imports.h)(i, a, o, n, e[r + 6], 15, -1560198380)),
-            (n = (0, __imports.h)(n, i, a, o, e[r + 13], 21, 1309151649)),
-            (o = (0, __imports.h)(o, n, i, a, e[r + 4], 6, -145523070)),
-            (a = (0, __imports.h)(a, o, n, i, e[r + 11], 10, -1120210379)),
-            (i = (0, __imports.h)(i, a, o, n, e[r + 2], 15, 718787259)),
-            (n = (0, __imports.h)(n, i, a, o, e[r + 9], 21, -343485551)),
-            (o = (0, __imports.Fr)(o, l)),
-            (n = (0, __imports.Fr)(n, s)),
-            (i = (0, __imports.Fr)(i, d)),
-            (a = (0, __imports.Fr)(a, c)));
-        }
-        return Array(o, n, i, a);
-      })(
-        ((e) => {
-          for (
-            var t = Array(), o = (1 << zr) - 1, n = 0;
-            n < e.length * zr;
-            n += zr
-          )
-            t[n >> 5] |= (e.charCodeAt(n / zr) & o) << (n % 32);
-          return t;
-        })(e),
-        e.length * zr,
-      ),
-      o = Pr ? "0123456789ABCDEF" : "0123456789abcdef",
-      n = "",
-      i = 0;
-    i < 4 * t.length;
-    i++
-  )
-    n +=
-      o.charAt((t[i >> 2] >> ((i % 4) * 8 + 4)) & 15) +
-      o.charAt((t[i >> 2] >> ((i % 4) * 8)) & 15);
-  return n;
+/**
+ * 标准 MD5 16 轮消息摘要计算引擎 (导出兼容 Or)
+ */
+const hexCaseUpper = 0;
+const charBits = 8;
+
+/**
+ * 计算输入字符串的 32 位 MD5 十六进制哈希值
+ * @param {string} inputStr - 待签名文本
+ * @returns {string} 32位十六进制小写哈希
+ */
+function computeMd5Hex(inputStr) {
+  const str = String(inputStr);
+
+  const coreMd5 = (x, len) => {
+    x[len >> 5] |= 128 << (len % 32);
+    x[14 + (((len + 64) >>> 9) << 4)] = len;
+
+    let a = 1732584193;
+    let b = -271733879;
+    let c = -1732584194;
+    let d = 271733878;
+
+    for (let i = 0; i < x.length; i += 16) {
+      const olda = a;
+      const oldb = b;
+      const oldc = c;
+      const oldd = d;
+
+      // Round 1
+      a = (0, __imports.p)(a, b, c, d, x[i + 0], 7, -680876936);
+      d = (0, __imports.p)(d, a, b, c, x[i + 1], 12, -389564586);
+      c = (0, __imports.p)(c, d, a, b, x[i + 2], 17, 606105819);
+      b = (0, __imports.p)(b, c, d, a, x[i + 3], 22, -1044525330);
+      a = (0, __imports.p)(a, b, c, d, x[i + 4], 7, -176418897);
+      d = (0, __imports.p)(d, a, b, c, x[i + 5], 12, 1200080426);
+      c = (0, __imports.p)(c, d, a, b, x[i + 6], 17, -1473231341);
+      b = (0, __imports.p)(b, c, d, a, x[i + 7], 22, -45705983);
+      a = (0, __imports.p)(a, b, c, d, x[i + 8], 7, 1770035416);
+      d = (0, __imports.p)(d, a, b, c, x[i + 9], 12, -1958414417);
+      c = (0, __imports.p)(c, d, a, b, x[i + 10], 17, -42063);
+      b = (0, __imports.p)(b, c, d, a, x[i + 11], 22, -1990404162);
+      a = (0, __imports.p)(a, b, c, d, x[i + 12], 7, 1804603682);
+      d = (0, __imports.p)(d, a, b, c, x[i + 13], 12, -40341101);
+      c = (0, __imports.p)(c, d, a, b, x[i + 14], 17, -1502002290);
+      b = (0, __imports.p)(b, c, d, a, x[i + 15], 22, 1236535329);
+
+      // Round 2
+      a = (0, __imports.u)(a, b, c, d, x[i + 1], 5, -165796510);
+      d = (0, __imports.u)(d, a, b, c, x[i + 6], 9, -1069501632);
+      c = (0, __imports.u)(c, d, a, b, x[i + 11], 14, 643717713);
+      b = (0, __imports.u)(b, c, d, a, x[i + 0], 20, -373897302);
+      a = (0, __imports.u)(a, b, c, d, x[i + 5], 5, -701558691);
+      d = (0, __imports.u)(d, a, b, c, x[i + 10], 9, 38016083);
+      c = (0, __imports.u)(c, d, a, b, x[i + 15], 14, -660478335);
+      b = (0, __imports.u)(b, c, d, a, x[i + 4], 20, -405537848);
+      a = (0, __imports.u)(a, b, c, d, x[i + 9], 5, 568446438);
+      d = (0, __imports.u)(d, a, b, c, x[i + 14], 9, -1019803690);
+      c = (0, __imports.u)(c, d, a, b, x[i + 3], 14, -187363961);
+      b = (0, __imports.u)(b, c, d, a, x[i + 8], 20, 1163531501);
+      a = (0, __imports.u)(a, b, c, d, x[i + 13], 5, -1444681467);
+      d = (0, __imports.u)(d, a, b, c, x[i + 2], 9, -51403784);
+      c = (0, __imports.u)(c, d, a, b, x[i + 7], 14, 1735328473);
+      b = (0, __imports.u)(b, c, d, a, x[i + 12], 20, -1926607734);
+
+      // Round 3
+      a = (0, __imports.g)(a, b, c, d, x[i + 5], 4, -378558);
+      d = (0, __imports.g)(d, a, b, c, x[i + 8], 11, -2022574463);
+      c = (0, __imports.g)(c, d, a, b, x[i + 11], 16, 1839030562);
+      b = (0, __imports.g)(b, c, d, a, x[i + 14], 23, -35309556);
+      a = (0, __imports.g)(a, b, c, d, x[i + 1], 4, -1530992060);
+      d = (0, __imports.g)(d, a, b, c, x[i + 4], 11, 1272893353);
+      c = (0, __imports.g)(c, d, a, b, x[i + 7], 16, -155497632);
+      b = (0, __imports.g)(b, c, d, a, x[i + 10], 23, -1094730640);
+      a = (0, __imports.g)(a, b, c, d, x[i + 13], 4, 681279174);
+      d = (0, __imports.g)(d, a, b, c, x[i + 0], 11, -358537222);
+      c = (0, __imports.g)(c, d, a, b, x[i + 3], 16, -722521979);
+      b = (0, __imports.g)(b, c, d, a, x[i + 6], 23, 76029189);
+      a = (0, __imports.g)(a, b, c, d, x[i + 9], 4, -640364487);
+      d = (0, __imports.g)(d, a, b, c, x[i + 12], 11, -421815835);
+      c = (0, __imports.g)(c, d, a, b, x[i + 15], 16, 530742520);
+      b = (0, __imports.g)(b, c, d, a, x[i + 2], 23, -995338651);
+
+      // Round 4
+      a = (0, __imports.h)(a, b, c, d, x[i + 0], 6, -198630844);
+      d = (0, __imports.h)(d, a, b, c, x[i + 7], 10, 1126891415);
+      c = (0, __imports.h)(c, d, a, b, x[i + 14], 15, -1416354905);
+      b = (0, __imports.h)(b, c, d, a, x[i + 5], 21, -57434055);
+      a = (0, __imports.h)(a, b, c, d, x[i + 12], 6, 1700485571);
+      d = (0, __imports.h)(d, a, b, c, x[i + 3], 10, -1894986606);
+      c = (0, __imports.h)(c, d, a, b, x[i + 10], 15, -1051523);
+      b = (0, __imports.h)(b, c, d, a, x[i + 1], 21, -2054922799);
+      a = (0, __imports.h)(a, b, c, d, x[i + 8], 6, 1873313359);
+      d = (0, __imports.h)(d, a, b, c, x[i + 15], 10, -30611744);
+      c = (0, __imports.h)(c, d, a, b, x[i + 6], 15, -1560198380);
+      b = (0, __imports.h)(b, c, d, a, x[i + 13], 21, 1309151649);
+      a = (0, __imports.h)(a, b, c, d, x[i + 4], 6, -145523070);
+      d = (0, __imports.h)(d, a, b, c, x[i + 11], 10, -1120210379);
+      c = (0, __imports.h)(c, d, a, b, x[i + 2], 15, 718787259);
+      b = (0, __imports.h)(b, c, d, a, x[i + 9], 21, -343485551);
+
+      a = (0, __imports.Fr)(a, olda);
+      b = (0, __imports.Fr)(b, oldb);
+      c = (0, __imports.Fr)(c, oldc);
+      d = (0, __imports.Fr)(d, oldd);
+    }
+    return [a, b, c, d];
+  };
+
+  const strToWords = (s) => {
+    const bin = [];
+    const mask = (1 << charBits) - 1;
+    for (let i = 0; i < s.length * charBits; i += charBits) {
+      bin[i >> 5] |= (s.charCodeAt(i / charBits) & mask) << (i % 32);
+    }
+    return bin;
+  };
+
+  const words = strToWords(str);
+  const hashArray = coreMd5(words, str.length * charBits);
+  const hexChars = hexCaseUpper ? "0123456789ABCDEF" : "0123456789abcdef";
+  let output = "";
+
+  for (let i = 0; i < hashArray.length * 4; i++) {
+    output +=
+      hexChars.charAt((hashArray[i >> 2] >> ((i % 4) * 8 + 4)) & 15) +
+      hexChars.charAt((hashArray[i >> 2] >> ((i % 4) * 8)) & 15);
+  }
+
+  return output;
 }
+const Or = computeMd5Hex;
 
 }
