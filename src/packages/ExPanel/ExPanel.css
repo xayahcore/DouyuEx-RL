@@ -4,19 +4,60 @@
 	position: absolute;
 	bottom: 32px;
 	right: 0px;
+	min-width: max-content !important;
+	width: max-content !important;
 	height: 76px !important;
 	border-radius: 38px !important;
-	padding: 10px 16px !important;
+	padding: 10px 18px !important;
 	box-sizing: border-box !important;
 	background: rgba(255, 255, 255, 0.88) !important;
 	backdrop-filter: blur(36px) saturate(220%) !important;
 	-webkit-backdrop-filter: blur(36px) saturate(220%) !important;
 	border: 1px solid rgba(255, 255, 255, 0.95) !important;
 	box-shadow: inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.98), 0 16px 40px rgba(15, 23, 42, 0.18) !important;
-	z-index: 1428;
+	z-index: 10000 !important;
 	user-select: none;
 	display: none;
 	overflow: visible;
+}
+
+/* 二级菜单展开弹簧阻尼微上浮动画 */
+.ex-panel.miuix-dock-in,
+.ex-panel[style*="display: flex"],
+.ex-panel[style*="display: block"] {
+	animation: miuix-dock-spring-in 0.26s cubic-bezier(0.34, 1.56, 0.64, 1) forwards !important;
+	transform-origin: bottom right !important;
+}
+
+.ex-panel.miuix-dock-out {
+	animation: miuix-dock-spring-out 0.16s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+	pointer-events: none !important;
+}
+
+@keyframes miuix-dock-spring-in {
+	0% {
+		opacity: 0;
+		transform: translateY(14px) scale(0.92);
+	}
+	65% {
+		opacity: 1;
+		transform: translateY(-2px) scale(1.02);
+	}
+	100% {
+		opacity: 1;
+		transform: translateY(0) scale(1);
+	}
+}
+
+@keyframes miuix-dock-spring-out {
+	0% {
+		opacity: 1;
+		transform: translateY(0) scale(1);
+	}
+	100% {
+		opacity: 0;
+		transform: translateY(10px) scale(0.94);
+	}
 }
 
 /* 18px 隐形热区连桥 (Hover Bridge)，消灭鼠标上滑盲区 */
@@ -32,30 +73,36 @@
 }
 
 .ex-panel__close {
-	position: absolute;
-	top: -9px;
-	right: -9px;
-	z-index: 3;
-	width: 22px;
-	height: 22px;
-	padding: 0;
-	margin: 0;
-	border: none;
-	border-radius: 50%;
-	background: rgba(255, 255, 255, 0.95);
-	color: #64748b;
-	font-size: 14px;
-	line-height: 22px;
-	text-align: center;
-	cursor: pointer;
-	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-	transition: all 0.18s ease;
+	position: absolute !important;
+	top: -9px !important;
+	right: -9px !important;
+	z-index: 10001 !important;
+	width: 26px !important;
+	height: 26px !important;
+	padding: 0 !important;
+	margin: 0 !important;
+	border: 1px solid rgba(0, 0, 0, 0.08) !important;
+	border-radius: 50% !important;
+	background: #ffffff !important;
+	color: #64748b !important;
+	font-size: 16px !important;
+	font-weight: 700 !important;
+	line-height: 24px !important;
+	text-align: center !important;
+	cursor: pointer !important;
+	display: flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.14) !important;
+	transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
 }
 
 .ex-panel__close:hover {
-	color: #fff;
-	background: #ff5d23;
-	transform: scale(1.1);
+	background: #ef4444 !important;
+	border-color: #ef4444 !important;
+	color: #ffffff !important;
+	transform: scale(1.15) rotate(90deg) !important;
+	box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4) !important;
 }
 
 .ex-panel.ex-panel--floating {
@@ -67,7 +114,7 @@
 	display: flex !important;
 	align-items: center !important;
 	justify-content: center !important;
-	gap: 6px !important;
+	gap: 10px !important;
 	width: 100% !important;
 	height: 100% !important;
 	position: relative !important;
@@ -77,18 +124,49 @@
 .ex-panel__wrap > div {
 	width: 56px !important;
 	height: 56px !important;
-	border-radius: 28px !important;
+	border-radius: 14px !important;
 	display: flex !important;
 	align-items: center !important;
 	justify-content: center !important;
-	transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+	position: relative !important;
+	transition: all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
 	cursor: pointer !important;
-	background: transparent !important;
+	border: 1px solid rgba(255, 255, 255, 0.7) !important;
+	background: rgba(255, 255, 255, 0.45) !important;
+	box-sizing: border-box !important;
 }
 
 .ex-panel__wrap > div:hover {
-	background: rgba(0, 0, 0, 0.06) !important;
-	transform: translateY(-2px) scale(1.06) !important;
+	background: rgba(255, 255, 255, 0.92) !important;
+	transform: translateY(-2.5px) !important;
+	border-color: rgba(0, 102, 255, 0.35) !important;
+	box-shadow: 0 6px 18px rgba(0, 102, 255, 0.24), inset 0 1px 1px #fff !important;
+}
+
+.ex-panel__wrap > div:active {
+	transform: translateY(0) scale(0.96) !important;
+}
+
+/* 磁吸指示器小胶囊 (24x4px 生机蓝) */
+.ex-panel__indicator {
+	position: absolute !important;
+	bottom: 3px !important;
+	left: 50% !important;
+	width: 24px !important;
+	height: 4px !important;
+	border-radius: 2px !important;
+	background: #0066ff !important;
+	box-shadow: 0 0 8px rgba(0, 102, 255, 0.65) !important;
+	transform: translateX(-50%) scaleX(0) !important;
+	opacity: 0 !important;
+	pointer-events: none !important;
+	transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+.ex-panel__wrap > div.is-active .ex-panel__indicator,
+.ex-panel__wrap > div.ex-dock-active .ex-panel__indicator {
+	transform: translateX(-50%) scaleX(1) !important;
+	opacity: 1 !important;
 }
 
 .ex-panel__icon {
@@ -96,16 +174,26 @@
 	align-items: center !important;
 	justify-content: center !important;
 	position: relative !important;
-	width: 100% !important;
-	height: 100% !important;
+	width: 56px !important;
+	height: 56px !important;
 	padding: 0 !important;
 	margin: 0 !important;
 }
 
 .ex-panel__icon svg, .ex-panel__icon img {
-	width: 36px !important;
-	height: 36px !important;
+	width: 38px !important;
+	height: 38px !important;
+	max-width: 38px !important;
+	max-height: 38px !important;
 	object-fit: contain !important;
+	display: block !important;
+	pointer-events: none !important;
+	transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+.ex-panel__wrap > div:hover .ex-panel__icon svg,
+.ex-panel__wrap > div:hover .ex-panel__icon img {
+	transform: scale(1.08) !important;
 }
 
 .ex-panel__tip {
@@ -117,6 +205,8 @@
 	top: 6px;
 	right: 6px;
 	position: absolute;
+	box-shadow: 0 0 6px rgba(255, 59, 48, 0.6);
+}
 	box-shadow: 0 0 6px rgba(255, 59, 48, 0.6);
 }
 

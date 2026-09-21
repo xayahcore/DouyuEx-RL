@@ -1,21 +1,44 @@
+/* ==================== 一级菜单精灵球样式与最右定位 ==================== */
 .ex-icon {
-	display: inline-block;
-	vertical-align: middle;
-	margin-right: 8px;
-
-	-moz-user-select:none; /*火狐*/
-    -webkit-user-select:none; /*webkit浏览器*/
-    -ms-user-select:none; /*IE10*/
-    -khtml-user-select:none; /*早期浏览器*/
-    user-select:none;
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	vertical-align: middle !important;
+	margin-left: auto !important; /* 核心：在 flex/流式布局中强推到最右侧 */
+	margin-right: 8px !important;
+	order: 9999 !important; /* 核心：Flexbox 排序最后，钉在最右侧 */
+	user-select: none !important;
+	cursor: pointer !important;
+	position: relative !important;
+	transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
 }
 
 .ex-icon a {
-    display: flex;
-    justify-items: center;
-    align-items: center;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    width: 38px !important;
+    height: 38px !important;
+    border-radius: 50% !important;
+    background: rgba(255, 255, 255, 0.25) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    transition: all 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
 }
 
-.ex-icon svg:hover {
-    transform: scale(1.1);
+.ex-icon:hover a {
+    background: rgba(255, 255, 255, 0.6) !important;
+    box-shadow: 0 4px 14px rgba(255, 102, 0, 0.35) !important;
+    transform: scale(1.15) rotate(15deg) !important;
+}
+
+.ex-icon:active a {
+    transform: scale(0.92) rotate(0deg) !important;
+}
+
+.ex-icon svg {
+    width: 28px !important;
+    height: 28px !important;
+    display: block !important;
+    transition: transform 0.22s ease !important;
 }

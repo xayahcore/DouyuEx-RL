@@ -26,9 +26,9 @@ function initPkg_ExIcon_insertDom() {
 		|| document.querySelector(".PlayerToolbar")
 		|| document.querySelector(".BackpackButton")?.parentNode
 		|| document.body;
-	if (b) {
-		b.insertBefore(a, b.childNodes[0]);
-	}
+		if (b) {
+			b.appendChild(a);
+		}
 }
 function initPkg_ExIcon_Func() {
 	let icon = document.getElementsByClassName("ex-icon")[0];

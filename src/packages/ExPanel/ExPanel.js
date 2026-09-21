@@ -149,12 +149,31 @@ function initPkg_ExPanel_insertDom() {
   }
 }
 
+function ensureDockIndicators() {
+  let dockWrap = document.querySelector(".ex-panel__wrap");
+  if (!dockWrap) return;
+  dockWrap.querySelectorAll(":scope > div").forEach((btn) => {
+    if (!btn.querySelector(".ex-panel__indicator")) {
+      let ind = document.createElement("span");
+      ind.className = "ex-panel__indicator";
+      btn.appendChild(ind);
+    }
+  });
+}
+
 function hideExPanel() {
   const exPanelDOM = document.querySelector(".ex-panel");
   if (!exPanelDOM) return;
   clearTimeout(exPanelTimer);
   exPanelTimer = null;
-  exPanelDOM.style.display = "none";
+  exPanelDOM.classList.remove("miuix-dock-in");
+  exPanelDOM.classList.add("miuix-dock-out");
+  setTimeout(() => {
+    if (exPanelDOM.classList.contains("miuix-dock-out")) {
+      exPanelDOM.style.display = "none";
+      exPanelDOM.classList.remove("miuix-dock-out");
+    }
+  }, 160);
 }
 
 function autoCloseExPanelHandle() {
@@ -165,15 +184,18 @@ function showExPanel() {
   let a = document.getElementsByClassName("ex-panel")[0];
   if (!a) return;
   ExPanel_syncHost();
-  if (a.style.display !== "block") {
-    a.style.display = "block";
+  ensureDockIndicators();
+  let isShown = a.style.display === "flex" || a.style.display === "block";
+  if (!isShown) {
+    a.classList.remove("miuix-dock-out");
+    a.classList.add("miuix-dock-in");
+    a.style.display = "flex";
     clearTimeout(exPanelTimer);
     if (a.classList.contains("ex-panel--floating")) {
       ExPanel_updateFloatingPosition();
     }
   } else {
-    a.style.display = "none";
-    clearTimeout(exPanelTimer);
+    hideExPanel();
   }
 }
 
