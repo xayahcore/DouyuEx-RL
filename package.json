@@ -1,7 +1,7 @@
 {
-  "name": "douyuex-rl",
+  "name": "DouyuEx_RL",
   "version": "2026.09.18.01",
-  "description": "DouyuEx-RL 纯净重构版",
+  "description": "DouyuEx-RL 斗鱼直播间增强插件 (RL版)",
   "scripts": {
     "build": "node build.js",
     "test": "node tests/test_danmaku_blocked.js && node tests/test_built_bundle.js"

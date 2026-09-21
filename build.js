@@ -46,6 +46,7 @@ function generateVersion() {
     const m = mainContent.match(/\/\/\s*@version\s+([^\r\n]+)/);
     if (m && m[1]) version = m[1].trim();
   }
+  fs.writeFileSync("./dist/DouyuEx_RL_version.txt", version);
   fs.writeFileSync("./dist/douyuex_version.txt", version);
   return version;
 }
@@ -160,6 +161,7 @@ function build() {
     process.exit(1);
   }
 
+  fs.writeFileSync("./dist/DouyuEx_RL.js", unminifiedOutput);
   fs.writeFileSync("./dist/douyuex.js", unminifiedOutput);
 
   const result = uglifyjs.minify(shakenBody, { toplevel: true });
@@ -177,9 +179,10 @@ function build() {
     process.exit(1);
   }
 
+  fs.writeFileSync("./dist/DouyuEx_RL.user.js", minifiedOutput);
   fs.writeFileSync("./dist/douyuex.user.js", minifiedOutput);
   fs.writeFileSync("./DouyuEx_RL.user.js", minifiedOutput);
-  console.log("[Build] 构建成功完成: ./DouyuEx_RL.user.js, ./dist/douyuex.js 和 ./dist/douyuex.user.js");
+  console.log("[Build] 构建成功完成: ./DouyuEx_RL.user.js, ./dist/DouyuEx_RL.js 和 ./dist/DouyuEx_RL.user.js");
 }
 
 build();
