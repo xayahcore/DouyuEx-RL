@@ -77,8 +77,6 @@ ridPos = null;
 var my_uid = getCookieValue("acf_uid"); // 自己的uid
 var myName = "";
 var dyToken = getToken();
-// 功能条的显示定时器
-var exPanelTimer = null;
 
 function sleep(time) {
 	return new Promise((resolve) => setTimeout(resolve, time));

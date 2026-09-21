@@ -178,6 +178,32 @@ async function testBuiltBundle() {
     assert.ok(tailPanel.querySelector("#DanmakuTail-checkbox"), "面板必须具备弹簧开关");
     console.log("✓ 测试场景 5 通过: 弹幕小尾巴独立微悬浮面板与关闭按钮就绪");
 
+    // === 测试 6: 二级 Dock 菜单悬停打开与永久保活（仅点 × 关闭）===
+    console.log("--> 测试场景 6: 验证二级 Dock 菜单悬停展开与永久保活...");
+    const exIcon = win.document.querySelector(".ex-icon");
+    const exPanel = win.document.querySelector(".ex-panel");
+    assert.ok(exIcon, ".ex-icon 精灵球节点必须存在");
+    assert.ok(exPanel, ".ex-panel 二级 Dock 节点必须存在");
+
+    // 模拟鼠标悬停精灵球
+    exIcon.dispatchEvent(new win.Event("mouseenter"));
+    assert.ok(exPanel.style.display === "flex" || exPanel.style.display === "block", "悬停精灵球后二级 Dock 必须打开");
+    assert.ok(exPanel.classList.contains("miuix-dock-in"), "二级 Dock 必须挂载 miuix-dock-in 弹簧动画类");
+
+    // 模拟鼠标离开二级 Dock 并等待 600ms，验证绝不自动关闭
+    exPanel.dispatchEvent(new win.Event("mouseleave"));
+    await new Promise(r => setTimeout(r, 600));
+    assert.ok(exPanel.style.display === "flex" || exPanel.style.display === "block", "鼠标移开后二级 Dock 必须永远保持打开，绝不自动关闭");
+
+    // 验证仅点击 × 关闭按钮才关闭
+    const dockCloseBtn = exPanel.querySelector(".ex-panel__close");
+    assert.ok(dockCloseBtn, "二级 Dock 必须具备 .ex-panel__close 关闭按钮");
+    dockCloseBtn.click();
+    assert.ok(exPanel.classList.contains("miuix-dock-out"), "点击 × 后必须触发 miuix-dock-out 退出动画");
+    await new Promise(r => setTimeout(r, 220));
+    assert.strictEqual(exPanel.style.display, "none", "退出动画结束后面板必须关闭 (display: none)");
+    console.log("✓ 测试场景 6 通过: 二级 Dock 悬停打开、永久保活、点击 × 关闭全链路验证通过");
+
     console.log("=== 端到端集成测试全流程 100% 通过 ===");
     process.exit(0);
 }

@@ -53,12 +53,12 @@
 .ex-panel.miuix-dock-in,
 .ex-panel[style*="display: flex"],
 .ex-panel[style*="display: block"] {
-    animation: miuix-dock-spring-in 0.26s var(--miuix-spring) forwards !important;
+    animation: miuix-dock-spring-in 0.28s var(--miuix-spring) forwards !important;
     transform-origin: bottom right !important;
 }
 
 .ex-panel.miuix-dock-out {
-    animation: miuix-dock-spring-out 0.16s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+    animation: miuix-dock-spring-out 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
     pointer-events: none !important;
 }
 
@@ -71,18 +71,6 @@
 @keyframes miuix-dock-spring-out {
     0% { opacity: 1; transform: translateY(0) scale(1); }
     100% { opacity: 0; transform: translateY(10px) scale(0.94); }
-}
-
-/* 18px 隐形热区连桥 (Hover Bridge) */
-.ex-panel::before {
-    content: "" !important;
-    position: absolute !important;
-    top: -18px !important;
-    left: 0 !important;
-    width: 100% !important;
-    height: 18px !important;
-    background: transparent !important;
-    pointer-events: auto !important;
 }
 
 .ex-panel__close {

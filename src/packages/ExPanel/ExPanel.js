@@ -6,14 +6,6 @@ function initPkg_ExPanel() {
 
   let exPanelDOM = document.querySelector(`.ex-panel`);
   if (exPanelDOM) {
-    exPanelDOM.addEventListener(`mouseenter`, () => {
-      clearTimeout(exPanelTimer);
-    });
-    // 400ms 黄金渐隐防抖，消灭误关
-    exPanelDOM.addEventListener(`mouseleave`, () => {
-      clearTimeout(exPanelTimer);
-      exPanelTimer = setTimeout(autoCloseExPanelHandle, 400);
-    });
     const closeBtn = exPanelDOM.querySelector(".ex-panel__close");
     if (closeBtn) {
       closeBtn.addEventListener("click", (e) => {
@@ -161,26 +153,7 @@ function ensureDockIndicators() {
   });
 }
 
-function hideExPanel() {
-  const exPanelDOM = document.querySelector(".ex-panel");
-  if (!exPanelDOM) return;
-  clearTimeout(exPanelTimer);
-  exPanelTimer = null;
-  exPanelDOM.classList.remove("miuix-dock-in");
-  exPanelDOM.classList.add("miuix-dock-out");
-  setTimeout(() => {
-    if (exPanelDOM.classList.contains("miuix-dock-out")) {
-      exPanelDOM.style.display = "none";
-      exPanelDOM.classList.remove("miuix-dock-out");
-    }
-  }, 160);
-}
-
-function autoCloseExPanelHandle() {
-  hideExPanel();
-}
-
-function showExPanel() {
+function openExPanel() {
   let a = document.getElementsByClassName("ex-panel")[0];
   if (!a) return;
   ExPanel_syncHost();
@@ -190,13 +163,38 @@ function showExPanel() {
     a.classList.remove("miuix-dock-out");
     a.classList.add("miuix-dock-in");
     a.style.display = "flex";
-    clearTimeout(exPanelTimer);
     if (a.classList.contains("ex-panel--floating")) {
       ExPanel_updateFloatingPosition();
     }
-  } else {
-    hideExPanel();
   }
+}
+
+function hideExPanel() {
+  const exPanelDOM = document.querySelector(".ex-panel");
+  if (!exPanelDOM) return;
+  exPanelDOM.classList.remove("miuix-dock-in");
+  exPanelDOM.classList.add("miuix-dock-out");
+  setTimeout(() => {
+    if (exPanelDOM.classList.contains("miuix-dock-out")) {
+      exPanelDOM.style.display = "none";
+      exPanelDOM.classList.remove("miuix-dock-out");
+    }
+  }, 180);
+}
+
+function toggleExPanel() {
+  let a = document.getElementsByClassName("ex-panel")[0];
+  if (!a) return;
+  let isShown = a.style.display === "flex" || a.style.display === "block";
+  if (isShown) {
+    hideExPanel();
+  } else {
+    openExPanel();
+  }
+}
+
+function showExPanel() {
+  openExPanel();
 }
 
 /* ==================== 三维模态脱离聊天区居中锚定与 Sticky Header ==================== */
@@ -242,18 +240,6 @@ function ensureMiuixPanelHeader(el, title) {
   nodesToMove.forEach((n) => {
     body.appendChild(n);
   });
-
-  // 悬浮连桥双向保护
-  if (!el.dataset.hoverBridgeBound) {
-    el.dataset.hoverBridgeBound = "1";
-    el.addEventListener("mouseenter", () => {
-      clearTimeout(exPanelTimer);
-    });
-    el.addEventListener("mouseleave", () => {
-      clearTimeout(exPanelTimer);
-      exPanelTimer = setTimeout(autoCloseExPanelHandle, 400);
-    });
-  }
 
   var closeBtn = header.querySelector(".miuix-modal__close");
   if (closeBtn) {
@@ -326,3 +312,7 @@ function openMiuixPanelCentered(panel, btnEl) {
 
 window.ensureMiuixPanelHeader = ensureMiuixPanelHeader;
 window.openMiuixPanelCentered = openMiuixPanelCentered;
+window.openExPanel = openExPanel;
+window.hideExPanel = hideExPanel;
+window.toggleExPanel = toggleExPanel;
+window.showExPanel = showExPanel;

@@ -33,7 +33,23 @@ function initPkg_ExIcon_insertDom() {
 function initPkg_ExIcon_Func() {
 	let icon = document.getElementsByClassName("ex-icon")[0];
 	if (icon) {
-		icon.addEventListener("click", showExPanel);
+		// 鼠标悬停精灵球即刻展开二级菜单 (丝滑弹簧入场，移开不自动关闭)
+		icon.addEventListener("mouseenter", () => {
+			if (typeof openExPanel === "function") {
+				openExPanel();
+			} else if (typeof showExPanel === "function") {
+				showExPanel();
+			}
+		});
+		// 点击精灵球支持切换展开/折叠
+		icon.addEventListener("click", (e) => {
+			e.stopPropagation();
+			if (typeof toggleExPanel === "function") {
+				toggleExPanel();
+			} else if (typeof showExPanel === "function") {
+				showExPanel();
+			}
+		});
 	}
 }
 
