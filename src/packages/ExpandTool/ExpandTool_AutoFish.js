@@ -11,6 +11,7 @@ function initPkg_ExpandTool_AutoFish() {
 }
 
 function ExpandTool_AutoFish_insertDom() {
+  if (document.getElementById("extool__autofish_start")) return;
   let html = "";
   html += '<label><input id="extool__autofish_start" type="checkbox">自动钓鱼</label><br>';
   html += '<label><input name="autofish_mode" type="radio" value="all" checked>全天</label>';

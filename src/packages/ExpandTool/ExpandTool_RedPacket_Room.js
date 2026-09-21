@@ -8,6 +8,7 @@ function initPkg_ExpandTool_RedPacket_Room() {
 
 
 function ExpandTool_RedPacket_Room_insertDom() {
+    if (document.getElementById("extool__redpacekt_room_start")) return;
     let html = "";
     html += '<label><input id="extool__redpacekt_room_start" type="checkbox">自动抢礼物红包</label>';
     

@@ -4,6 +4,7 @@ function initPkg_ExpandTool_SendGift() {
 }
 
 function ExpandTool_SendGift_insertDom() {
+    if (document.getElementById("extool__sendgift_id")) return;
     let html = "";
     html += '<label>打榜送礼：</label><button type="button" id="extool__sendgift_picker_btn" style="border:1px solid #007aff;color:#007aff;background:#fff;border-radius:6px;padding:2px 8px;font-size:12px;cursor:pointer;margin-left:4px;">选择礼物</button><br />';
     html += '<label>礼物ID：</label><input id="extool__sendgift_id" type="text" style="width:55px;text-align:center;margin-right:6px;" value="20000" />';

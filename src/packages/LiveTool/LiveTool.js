@@ -25,11 +25,17 @@ initPkg_LiveTool_BarrageSendCheck();
 // initPkg_LiveTool_Bojiang_Handle();
 }
 function LiveTool_insertModal() {
-let a = document.createElement("div");
-a.className = "livetool";
+  let existing = document.querySelector(".livetool");
+  if (existing) return;
 
-let b = document.getElementsByClassName("layout-Player-chat")[0] || document.querySelector(".Barrage-main") || document.body;
-if (b) b.insertBefore(a, b.childNodes[0]);
+  let a = document.createElement("div");
+  a.className = "livetool miuix-modal";
+
+  let b = document.getElementsByClassName("layout-Player-chat")[0] || document.querySelector(".Barrage-main") || document.body;
+  if (b) b.insertBefore(a, b.childNodes[0]);
+  if (typeof ensureMiuixPanelHeader === "function") {
+    ensureMiuixPanelHeader(a, "直播间工具");
+  }
 }
 function LiveTool_insertIcon() {
 let a = document.createElement("div");

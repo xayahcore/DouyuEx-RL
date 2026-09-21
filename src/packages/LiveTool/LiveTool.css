@@ -1,40 +1,266 @@
+/* ==================== DouyuEx-RL 直播间工具面板 MIUIX 工业美学样式 ==================== */
+
 .livetool {
-	background-color: rgba(255,255,255,0.9);
-	width: 100%;
-	height: 290px;
-	position: relative;
-	bottom: 290px;
-	display: none;
-	z-index: 1428;
+    width: 380px !important;
+    max-width: calc(100vw - 24px) !important;
+    height: 370px !important;
+    max-height: 370px !important;
+    min-height: 370px !important;
+    box-sizing: border-box !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    display: none;
+    z-index: 100030 !important;
+    border-radius: 22px !important;
+    background: rgba(255, 255, 255, 0.65) !important;
+    backdrop-filter: blur(40px) saturate(220%) !important;
+    -webkit-backdrop-filter: blur(40px) saturate(220%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.85) !important;
+    box-shadow: inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.95), 0 16px 40px rgba(15, 23, 42, 0.14), 0 2px 8px rgba(15, 23, 42, 0.06) !important;
+    color: #0f172a !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif !important;
+    flex-direction: column !important;
 }
 
+.livetool.miuix-modal-in,
+.livetool[style*="display: block"],
+.livetool[style*="display: flex"] {
+    display: flex !important;
+    flex-direction: column !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+    animation: miuix-modal-in 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+}
+
+/* 直播间工具各项单元格升级为标准四级磨砂卡片 (彻底根除死白) */
 .livetool__cell {
-	position: relative;
-    display: -webkit-box;
-    display: -webkit-flex;
-    display: flex;
-    box-sizing: border-box;
-    width: 100%;
-    padding: 10px 16px;
-    overflow: hidden;
-    color: #323233;
-    font-size: 14px;
-    line-height: 24px;
-	background-color: #fff;
-	border-bottom: 1px solid rgba(0,0,0,0.2);
-	flex-wrap: wrap;
-    -webkit-flex-wrap: wrap;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    flex-wrap: wrap !important;
+    gap: 8px 10px !important;
+    padding: 10px 14px !important;
+    margin: 0 12px 10px 12px !important;
+    box-sizing: border-box !important;
+    background: rgba(255, 255, 255, 0.42) !important;
+    border: 1px solid rgba(255, 255, 255, 0.75) !important;
+    border-radius: 14px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+    width: auto !important;
+}
+
+.livetool__cell:hover {
+    background: rgba(255, 255, 255, 0.75) !important;
+    border-color: rgba(0, 102, 255, 0.35) !important;
+    box-shadow: 0 4px 12px rgba(0, 102, 255, 0.08) !important;
 }
 
 .livetool__cell_title {
-	flex: 1;
-    -webkit-box-flex: 1;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    color: #0f172a !important;
+    cursor: pointer !important;
+    user-select: none !important;
 }
 
+/* 标题旁边的小胶囊操作按钮 (导出/导入/名单) */
+.livetool__cell_title span:not([id$="__title"]) {
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    color: #0066ff !important;
+    background: rgba(0, 102, 255, 0.12) !important;
+    border: 1px solid rgba(0, 102, 255, 0.25) !important;
+    padding: 2px 7px !important;
+    border-radius: 6px !important;
+    cursor: pointer !important;
+    box-shadow: 0 1px 3px rgba(0, 102, 255, 0.08) !important;
+    transition: all 0.18s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.livetool__cell_title span:not([id$="__title"]):hover {
+    background: #0066ff !important;
+    color: #ffffff !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 3px 8px rgba(0, 102, 255, 0.35) !important;
+}
+
+/* 开关右对齐容器 */
 .livetool__cell_option {
-	text-align: right;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    flex: 0 0 auto !important;
+    margin-left: auto !important;
+    padding: 0 !important;
 }
 
-.livetool__cell_switch {
-	float: right;
+/* ==================== 澎湃蓝弹簧开关 Switch 规范 ==================== */
+.onoffswitch {
+    position: relative !important;
+    width: 38px !important;
+    height: 22px !important;
+    user-select: none !important;
+    flex-shrink: 0 !important;
+    margin: 0 !important;
+    display: inline-block !important;
+    vertical-align: middle !important;
+}
+
+.onoffswitch-checkbox,
+.onoffswitch input[type="checkbox"] {
+    display: none !important;
+    opacity: 0 !important;
+    width: 0 !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    pointer-events: none !important;
+}
+
+.onoffswitch-checkbox::before,
+.onoffswitch input[type="checkbox"]::before {
+    display: none !important;
+    content: none !important;
+}
+
+.onoffswitch-label {
+    display: block !important;
+    width: 38px !important;
+    height: 22px !important;
+    box-sizing: border-box !important;
+    cursor: pointer !important;
+    border: none !important;
+    border-radius: 22px !important;
+    background: rgba(0, 0, 0, 0.14) !important;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.08) !important;
+    position: relative !important;
+    transition: background-color 0.28s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.28s ease !important;
+}
+
+.onoffswitch-label:before {
+    content: "" !important;
+    display: block !important;
+    width: 18px !important;
+    height: 18px !important;
+    margin: 0 !important;
+    background: #ffffff !important;
+    border: none !important;
+    border-radius: 50% !important;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2) !important;
+    position: absolute !important;
+    top: 2px !important;
+    left: 2px !important;
+    right: auto !important;
+    transform: translateX(0px) !important;
+    transition: transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1), width 0.2s ease !important;
+}
+
+.onoffswitch-label:active:before {
+    width: 22px !important;
+}
+
+.onoffswitch-checkbox:checked + .onoffswitch-label {
+    background: #0066ff !important;
+    box-shadow: 0 2px 8px rgba(0, 102, 255, 0.4) !important;
+}
+
+.onoffswitch-checkbox:checked + .onoffswitch-label:before {
+    transform: translateX(16px) !important;
+}
+
+.onoffswitch-checkbox:checked + .onoffswitch-label:active:before {
+    transform: translateX(12px) !important;
+}
+
+/* ==================== 抽屉折叠面板 (进场欢迎/禁言/谢礼/回复/投票) ==================== */
+.vote__panel,
+.enter__panel,
+.mute__panel,
+.gift__panel,
+.reply__panel {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    margin: 8px 0 2px 0 !important;
+    padding: 10px 12px !important;
+    border-radius: 10px !important;
+    background: rgba(255, 255, 255, 0.55) !important;
+    border: 1px solid rgba(255, 255, 255, 0.75) !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+}
+
+/* 抽屉内的输入框与按钮规范 */
+.livetool select {
+    background: rgba(255, 255, 255, 0.85) !important;
+    border: 1px solid rgba(0, 0, 0, 0.12) !important;
+    border-radius: 6px !important;
+    padding: 2px 6px !important;
+    font-size: 12px !important;
+    outline: none !important;
+    color: #0f172a !important;
+}
+
+.livetool input[type="text"] {
+    background: rgba(255, 255, 255, 0.8) !important;
+    border: 1px solid rgba(0, 0, 0, 0.12) !important;
+    border-radius: 6px !important;
+    padding: 3px 6px !important;
+    font-size: 11.5px !important;
+    outline: none !important;
+    color: #0f172a !important;
+    box-sizing: border-box !important;
+    transition: all 0.18s ease !important;
+}
+
+.livetool input[type="text"]:focus {
+    border-color: #0066ff !important;
+    box-shadow: 0 0 0 2px rgba(0, 102, 255, 0.18) !important;
+}
+
+.livetool input[type="button"] {
+    border: none !important;
+    border-radius: 6px !important;
+    padding: 3px 10px !important;
+    font-size: 11.5px !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    color: #ffffff !important;
+    background: linear-gradient(135deg, #2b7fff, #0055ff) !important;
+    box-shadow: 0 2px 6px rgba(0, 102, 255, 0.28) !important;
+    transition: all 0.18s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+    outline: none !important;
+}
+
+.livetool input[type="button"]:hover {
+    background: linear-gradient(135deg, #3d8bff, #004de6) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 10px rgba(0, 102, 255, 0.4) !important;
+}
+
+.livetool input[id$="__del"] {
+    background: rgba(239, 68, 68, 0.14) !important;
+    border: 1px solid rgba(239, 68, 68, 0.28) !important;
+    color: #ef4444 !important;
+    box-shadow: none !important;
+}
+
+.livetool input[id$="__del"]:hover {
+    background: #ef4444 !important;
+    color: #ffffff !important;
+    border-color: #ef4444 !important;
 }

@@ -17,28 +17,90 @@ function initPkg_BarrageLoop() {
 }
 
 function BarrageLoop_insertModal() {
-	let html = "";
+	let existing = document.querySelector(".bloop");
+	if (existing) return;
+
 	let a = document.createElement("div");
 	a.className = "bloop miuix-modal";
-	html += `
-	<div class="miuix-modal__body">
-		<div class="bloop__header_card">
-			<label style="font-weight:700;font-size:12px;color:#0f172a;white-space:nowrap;">弹幕：</label>
-			<select id="bloop__select"></select>
-			<input type="button" id="bloop__save" value="保存"/>
-			<input type="button" id="bloop__delete" value="删除"/>
+	a.innerHTML = `
+		<div class="miuix-modal__body">
+			<!-- 卡片 1: 预设弹幕库与内容 -->
+			<div class="fans-panel__card">
+				<div class="fans-panel__card-header">
+					<span class="fans-panel__card-title">弹幕词库</span>
+					<span style="font-size: 11px; color: #64748b;">一行一条</span>
+				</div>
+				<div class="bloop__preset_row">
+					<select id="bloop__select"></select>
+					<input type="button" id="bloop__save" value="保存"/>
+					<input type="button" id="bloop__delete" value="删除"/>
+				</div>
+				<textarea placeholder="一行一个，开启舔狗模式后此处不需要输入" id="bloop__textarea" rows="4"></textarea>
+			</div>
+
+			<!-- 卡片 2: 发送速率与限时 -->
+			<div class="fans-panel__card">
+				<div class="fans-panel__card-header">
+					<span class="fans-panel__card-title">速率与限时</span>
+				</div>
+				<div class="bloop__param_grid">
+					<div class="bloop__param_item">
+						<span>速度：</span>
+						<input id="bloop__text_speed1" type="text" style="width:46px;text-align:center;" value="2000" />~<input id="bloop__text_speed2" type="text" style="width:46px;text-align:center;" value="3000" />
+						<span>ms</span>
+					</div>
+					<div class="bloop__param_item">
+						<span>限时：</span>
+						<input id="bloop__text_stoptime" type="text" style="width:46px;text-align:center;" value="1" />
+						<span>min</span>
+					</div>
+				</div>
+			</div>
+
+			<!-- 卡片 3: 发送策略与开关 -->
+			<div class="fans-panel__card">
+				<div class="fans-panel__card-header">
+					<span class="fans-panel__card-title">发送策略与开关</span>
+				</div>
+				<div class="sign-options-list">
+					<label class="sign-option-item">
+						<div class="sign-option-text">
+							<span class="sign-option-title">自动变色</span>
+							<span class="sign-option-desc">发送时随机切换已解锁的粉丝弹幕色</span>
+						</div>
+						<input id="bloop__checkbox_changeColor" class="sign-checkbox" type="checkbox" name="checkbox_changeColor" checked>
+					</label>
+					<label class="sign-option-item">
+						<div class="sign-option-text">
+							<span class="sign-option-title">舔狗模式</span>
+							<span class="sign-option-desc">自动拉取土味情话/舔狗语录循环发送</span>
+						</div>
+						<input id="bloop__checkbox_tiangou" class="sign-checkbox" type="checkbox">
+					</label>
+					<label class="sign-option-item">
+						<div class="sign-option-text">
+							<span class="sign-option-title">随机发送</span>
+							<span class="sign-option-desc">打乱弹幕文本顺序随机轮换发送</span>
+						</div>
+						<input id="bloop__checkbox_random" class="sign-checkbox" type="checkbox">
+					</label>
+					<label class="sign-option-item" style="background: rgba(0, 102, 255, 0.08); border-color: rgba(0, 102, 255, 0.25); margin-top: 2px;">
+						<div class="sign-option-text">
+							<span class="sign-option-title" style="color: #0066ff; font-size: 13px;">循环发送弹幕</span>
+							<span class="sign-option-desc">开启后按设定速度与限时循环自动发送</span>
+						</div>
+						<input id="bloop__checkbox_startSend" class="sign-checkbox" type="checkbox">
+					</label>
+				</div>
+			</div>
 		</div>
-		<textarea placeholder="一行一个，开启舔狗模式后此处不需要输入" id="bloop__textarea" rows="4" cols="50"></textarea>
-		<div style="margin-top:6px;"><label>速度(ms)：</label><input id="bloop__text_speed1" type="text" style="width:50px;text-align:center;" value="2000" />~<input id="bloop__text_speed2" type="text" style="width:50px;text-align:center;" value="3000" /></div>
-		<div style="margin-top:6px;"><label>限时(min)：</label><input id="bloop__text_stoptime" type="text" style="width:50px;text-align:center;" value="1" /></div>
-		<div style="margin-top:6px;"><label><input id="bloop__checkbox_changeColor" type="checkbox" name="checkbox_changeColor" checked>自动变色</label><label><input id="bloop__checkbox_tiangou" type="checkbox">舔狗模式</label><label><input id="bloop__checkbox_random" type="checkbox">随机发送</label></div>
-		<div class="bloop__switch"><label><input id="bloop__checkbox_startSend" type="checkbox">开始发送</label></div>
-	</div>
 	`;
 	
-	a.innerHTML = html;
-	let b = document.getElementsByClassName("layout-Player-chat")[0] || document.body;
-	b.insertBefore(a, b.childNodes[0]);
+	let b = document.getElementsByClassName("layout-Player-chat")[0] || document.querySelector(".Barrage-main") || document.body;
+	if (b) b.insertBefore(a, b.childNodes[0]);
+	if (typeof ensureMiuixPanelHeader === "function") {
+		ensureMiuixPanelHeader(a, "弹幕小助手");
+	}
 }
 function BarrageLoop_insertIcon() {
 	let a = document.createElement("div");

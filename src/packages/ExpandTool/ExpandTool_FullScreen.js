@@ -7,6 +7,7 @@ function initPkg_ExpandTool_FullScreen() {
 }
 
 function ExpandTool_FullScreen_insertDom() {
+    if (document.getElementById("extool__fullscreen")) return;
     let container = document.querySelector(".extool__playback-perf");
     if (!container) {
         container = document.createElement("div");

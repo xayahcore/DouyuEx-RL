@@ -7,6 +7,7 @@ function initPkg_ExpandTool_AutoBarrageColor() {
 }
 
 function ExpandTool_AutoBarrageColor_insertDom() {
+    if (document.getElementById("extool__autobarragecolor")) return;
     let a = document.createElement("span");
     a.innerHTML = '<label title="进入直播间后自动选择当前已解锁的最高档粉丝弹幕颜色"><input id="extool__autobarragecolor" type="checkbox">自动最高弹幕色</label>';
     let b = document.getElementsByClassName("extool")[0];

@@ -1,351 +1,235 @@
+/* ==================== DouyuEx-RL 扩展功能面板 MIUIX 工业美学样式 ==================== */
+
 .extool {
-	background-color: rgba(255, 255, 255, 0.88) !important;
-	color: #0f172a !important;
-	display: none;
+    width: 380px !important;
+    max-width: calc(100vw - 24px) !important;
+    height: 370px !important;
+    max-height: 370px !important;
+    min-height: 370px !important;
+    box-sizing: border-box !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    display: none;
+    z-index: 100030 !important;
+    border-radius: 22px !important;
+    background: rgba(255, 255, 255, 0.65) !important;
+    backdrop-filter: blur(40px) saturate(220%) !important;
+    -webkit-backdrop-filter: blur(40px) saturate(220%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.85) !important;
+    box-shadow: inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.95), 0 16px 40px rgba(15, 23, 42, 0.14), 0 2px 8px rgba(15, 23, 42, 0.06) !important;
+    color: #0f172a !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif !important;
+    flex-direction: column !important;
 }
 
+.extool.miuix-modal-in,
 .extool[style*="display: block"],
 .extool[style*="display: flex"] {
-	display: flex !important;
-	flex-direction: column !important;
-}
-
-.extool > div:not(.ex_giftAnimation):not(.extool__close):not(.miuix-modal__header) {
-	background: rgba(255, 255, 255, 0.82) !important;
-	border: 1px solid rgba(0, 0, 0, 0.08) !important;
-	border-radius: 14px !important;
-	padding: 10px 12px 12px !important;
-	margin: 0 10px 10px 10px !important;
-	box-sizing: border-box !important;
-	box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04) !important;
-	display: flex !important;
-	flex-wrap: wrap !important;
-	gap: 6px 10px !important;
-	align-items: center !important;
-	width: auto !important;
-}
-
-.extool__playback-perf {
-	display: grid !important;
-	grid-template-columns: 1fr 1fr !important;
-	gap: 8px 10px !important;
-	width: auto !important;
-	background: rgba(255, 255, 255, 0.82) !important;
-	border: 1px solid rgba(0, 0, 0, 0.08) !important;
-	border-radius: 14px !important;
-	padding: 10px 12px !important;
-	margin: 0 10px 10px 10px !important;
-	box-sizing: border-box !important;
-}
-
-.extool__playback-perf::before {
-	grid-column: 1 / -1 !important;
-	content: "播放与性能" !important;
-	font-weight: 700 !important;
-	font-size: 12px !important;
-	letter-spacing: .4px !important;
-	color: rgba(0, 0, 0, 0.72) !important;
-	padding-bottom: 4px !important;
-	border-bottom: 1px dashed rgba(0, 0, 0, 0.1) !important;
-}
-
-.extool__close {
-	position: absolute;
-	top: 8px;
-	right: 8px;
-	width: 26px;
-	height: 26px;
-	border-radius: 8px;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	cursor: pointer;
-	user-select: none;
-	background: rgba(0,0,0,0.06);
-	color: rgba(0,0,0,0.72);
-	font-size: 18px;
-	line-height: 26px;
-	z-index: 60;
-}
-
-.extool__close:hover {
-	background: rgba(0,0,0,0.10);
-}
-
-.extool__treasure,
-.extool__sendgift {
-	flex: 1 1 720px;
-}
-.extool__autofish {
-	flex: 1 1 520px;
-}
-.extool__redpacket_room,
-.extool__gold,
-.extool__clearbag,
-.extool__tabswitch,
-.extool__p2p,
-.extool__fullscreen {
-	flex: 1 1 260px;
-}
-
-.extool__treasure::before,
-.extool__sendgift::before,
-.extool__autofish::before,
-.extool__redpacket_room::before,
-.extool__gold::before,
-.extool__clearbag::before,
-.extool__tabswitch::before,
-.extool__p2p::before,
-.extool__fullscreen::before {
-	display: block;
-	width: 100%;
-	content: "";
-	font-weight: 700;
-	font-size: 12px;
-	letter-spacing: .4px;
-	color: rgba(0,0,0,0.72);
-	padding-bottom: 6px;
-	margin-bottom: 2px;
-	border-bottom: 1px dashed rgba(0,0,0,0.12);
-}
-.extool__treasure::before { content: "宝箱"; }
-.extool__sendgift::before { content: "送礼"; }
-.extool__autofish::before { content: "钓鱼"; }
-.extool__redpacket_room::before { content: "礼物红包"; }
-.extool__gold::before { content: "幻神/礼物"; }
-.extool__clearbag::before { content: "背包"; }
-.extool__tabswitch::before { content: "标签/切换"; }
-.extool__p2p::before { content: "网络"; }
-.extool__fullscreen::before { content: "播放器"; }
-
-.extool label {
-	white-space: nowrap;
-	margin-right: 8px;
-	line-height: 22px;
-}
-.extool input[type="text"] {
-	padding: 2px 6px;
-	border: 1px solid rgba(0,0,0,0.18);
-	border-radius: 6px;
-	outline: none;
-	background: rgba(255,255,255,0.95);
-	color: black;
-}
-.extool input[type="checkbox"], .extool input[type="radio"] {
-	vertical-align: middle;
-	margin-right: 4px;
-}
-.extool input[type="button"] {
-	border: 1px solid rgba(0,0,0,0.18);
-	border-radius: 8px;
-	padding: 2px 10px;
-	background: linear-gradient(#ffffff, #f4f6f8);
-	cursor: pointer;
-	color: black;
-}
-.extool input[type="button"]:hover {
-	background: linear-gradient(#ffffff, #e9eef3);
-}
-.extool input[type="button"]:active {
-	transform: translateY(1px);
-}
-.extool a {
-	text-decoration: none;
-}
-.extool .extool__hint {
-	margin-top: 6px;
-	color: #666;
-	font-size: 12px;
-}
-
-/* 兼容某些模块里使用 br 分行的写法，让它在 flex 下表现更一致 */
-.extool br {
-	flex-basis: 100%;
-	width: 0;
-	height: 0;
-}
-
-.extool__switch {
-	position: absolute;
-	right: 0;
-	bottom: 0;
-}
-.extool__bsize,.extool__sendgift {
-	margin-bottom: 5px;
-}
-/* 卡片内部已改为 flex，这里不再强制 inline-block */
-.ex_giftAnimation {
-	width: 100%;
-	height: 100%;
-	position: absolute;
-	z-index: 50;
-	pointer-events: none;
-}
-
-/* ==================== 5级 MIUIX 礼物大选择器样式 ==================== */
-.ex-gift-picker-mask {
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 100vw !important;
-    height: 100vh !important;
-    background: rgba(15, 23, 42, 0.45) !important;
-    backdrop-filter: blur(8px) !important;
-    -webkit-backdrop-filter: blur(8px) !important;
-    z-index: 100040 !important;
-    transition: opacity 0.16s ease !important;
-}
-
-.ex-gift-picker-modal {
-    position: fixed !important;
-    width: 540px !important;
-    max-width: 92vw !important;
-    height: 410px !important;
-    max-height: 85vh !important;
-    left: 50% !important;
-    top: 50% !important;
-    transform: translate(-50%, -50%) !important;
-    box-sizing: border-box !important;
     display: flex !important;
     flex-direction: column !important;
-    z-index: 100050 !important;
-    border-radius: 22px !important;
-    background: rgba(255, 255, 255, 0.92) !important;
-    backdrop-filter: blur(36px) saturate(220%) !important;
-    -webkit-backdrop-filter: blur(36px) saturate(220%) !important;
-    border: 1px solid rgba(255, 255, 255, 0.95) !important;
-    box-shadow: inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.98), 0 24px 60px rgba(15, 23, 42, 0.25) !important;
-    overflow: hidden !important;
-    animation: miuix-modal-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+    animation: miuix-modal-in 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
 }
 
-.ex-gift-picker__header {
-    flex: 0 0 auto !important;
+/* 卡片通透磨砂质感 (消灭死白) */
+.extool .fans-panel__card {
+    margin: 0 12px 10px 12px !important;
+    padding: 10px 14px !important;
+    box-sizing: border-box !important;
+    background: rgba(255, 255, 255, 0.42) !important;
+    border: 1px solid rgba(255, 255, 255, 0.75) !important;
+    border-radius: 14px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02) !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+}
+
+.extool .fans-panel__card-header {
     display: flex !important;
     align-items: center !important;
     justify-content: space-between !important;
-    gap: 10px !important;
-    padding: 12px 16px !important;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
-    background: rgba(255, 255, 255, 0.55) !important;
+    margin-bottom: 8px !important;
+    padding-bottom: 4px !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
 }
 
-.ex-gift-picker__tabs {
-    display: flex !important;
-    gap: 6px !important;
-    background: rgba(0, 0, 0, 0.05) !important;
-    padding: 3px !important;
-    border-radius: 10px !important;
-    flex: 0 0 auto !important;
-}
-
-.ex-gift-picker__tab {
-    border: none !important;
-    background: transparent !important;
-    padding: 5px 14px !important;
-    border-radius: 8px !important;
-    font-size: 12.5px !important;
-    font-weight: 600 !important;
-    color: #64748b !important;
-    cursor: pointer !important;
-    transition: all 0.2s ease !important;
-}
-
-.ex-gift-picker__tab.is-active {
-    background: #ffffff !important;
-    color: #007aff !important;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08) !important;
-}
-
-.ex-gift-picker__search {
-    flex: 1 1 auto !important;
-    max-width: 180px !important;
-    height: 32px !important;
-    padding: 0 10px !important;
-    border-radius: 9px !important;
-    border: 1px solid rgba(0, 0, 0, 0.12) !important;
-    background: rgba(255, 255, 255, 0.85) !important;
-    font-size: 12px !important;
-    outline: none !important;
-}
-
-.ex-gift-picker__search:focus {
-    border-color: #007aff !important;
-    box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.15) !important;
-}
-
-.ex-gift-picker__close {
-    width: 30px !important;
-    height: 30px !important;
-    border-radius: 50% !important;
-    border: none !important;
-    background: rgba(0, 0, 0, 0.05) !important;
-    color: #64748b !important;
-    font-size: 18px !important;
-    line-height: 1 !important;
-    cursor: pointer !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    transition: background 0.15s ease !important;
-}
-
-.ex-gift-picker__close:hover {
-    background: rgba(0, 0, 0, 0.12) !important;
+.extool .fans-panel__card-title {
+    font-size: 13px !important;
+    font-weight: 700 !important;
     color: #0f172a !important;
 }
 
-.ex-gift-picker__body {
-    flex: 1 1 auto !important;
-    overflow-y: auto !important;
-    padding: 12px !important;
-}
-
-.ex-gift-grid {
-    display: grid !important;
-    grid-template-columns: repeat(4, 1fr) !important;
-    gap: 10px !important;
-}
-
-.ex-gift-cell {
-    background: rgba(255, 255, 255, 0.7) !important;
-    border: 1px solid rgba(0, 0, 0, 0.06) !important;
-    border-radius: 12px !important;
-    padding: 8px 6px !important;
+/* 扩展面板选项列表 */
+.extool .sign-options-list {
     display: flex !important;
     flex-direction: column !important;
+    gap: 6px !important;
+    margin-top: 2px !important;
+}
+
+.extool .sign-option-item {
+    display: flex !important;
     align-items: center !important;
-    text-align: center !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+    padding: 7px 10px !important;
+    border-radius: 10px !important;
+    background: rgba(255, 255, 255, 0.35) !important;
+    border: 1px solid rgba(255, 255, 255, 0.6) !important;
     cursor: pointer !important;
+    user-select: none !important;
+    transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+    box-sizing: border-box !important;
+}
+
+.extool .sign-option-item:hover {
+    background: rgba(255, 255, 255, 0.75) !important;
+    border-color: rgba(0, 102, 255, 0.35) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 3px 8px rgba(0, 102, 255, 0.08) !important;
+}
+
+.extool .sign-option-text {
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+}
+
+.extool .sign-option-title {
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    color: #0f172a !important;
+    line-height: 1.3 !important;
+}
+
+.extool .sign-option-desc {
+    font-size: 10.5px !important;
+    color: #64748b !important;
+    line-height: 1.2 !important;
+    margin-top: 1px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+/* ==================== 澎湃蓝弹簧开关 Switch ==================== */
+.extool input[type="checkbox"].sign-checkbox {
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    position: relative !important;
+    width: 38px !important;
+    min-width: 38px !important;
+    height: 22px !important;
+    background: rgba(0, 0, 0, 0.14) !important;
+    border-radius: 22px !important;
+    cursor: pointer !important;
+    outline: none !important;
+    border: none !important;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1) !important;
+    transition: background-color 0.28s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.28s ease !important;
+    flex-shrink: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: inline-block !important;
+    vertical-align: middle !important;
+}
+
+.extool input[type="checkbox"].sign-checkbox::before {
+    content: "" !important;
+    display: block !important;
+    position: absolute !important;
+    top: 2px !important;
+    left: 2px !important;
+    width: 18px !important;
+    height: 18px !important;
+    background: #ffffff !important;
+    border-radius: 50% !important;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.24) !important;
+    transition: transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1), width 0.2s ease !important;
+}
+
+.extool input[type="checkbox"].sign-checkbox:active::before {
+    width: 22px !important;
+}
+
+.extool input[type="checkbox"].sign-checkbox:checked {
+    background: #0066ff !important;
+    box-shadow: 0 2px 8px rgba(0, 102, 255, 0.4) !important;
+}
+
+.extool input[type="checkbox"].sign-checkbox:checked::before {
+    transform: translateX(16px) !important;
+}
+
+.extool input[type="checkbox"].sign-checkbox:checked:active::before {
+    transform: translateX(12px) !important;
+}
+
+/* 选择道具/选择礼物 胶囊小按钮 */
+.ex-picker-btn {
+    border: 1px solid rgba(0, 102, 255, 0.3) !important;
+    background: rgba(0, 102, 255, 0.08) !important;
+    color: #0066ff !important;
+    border-radius: 6px !important;
+    padding: 3px 8px !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    outline: none !important;
     transition: all 0.18s ease !important;
 }
 
-.ex-gift-cell:hover {
-    background: #ffffff !important;
-    transform: translateY(-2px) !important;
-    border-color: rgba(0, 122, 255, 0.4) !important;
-    box-shadow: 0 6px 14px rgba(0, 122, 255, 0.12) !important;
+.ex-picker-btn:hover {
+    background: rgba(0, 102, 255, 0.18) !important;
+    transform: translateY(-1px) !important;
 }
 
-.ex-gift-cell__img {
-    width: 44px !important;
-    height: 44px !important;
-    object-fit: contain !important;
-    margin-bottom: 4px !important;
-}
-
-.ex-gift-cell__name {
+/* 送出 弹簧微按钮 */
+.ex-send-btn {
+    border: none !important;
+    background: linear-gradient(135deg, #2b7fff, #0055ff) !important;
+    color: #ffffff !important;
+    border-radius: 6px !important;
+    padding: 4px 12px !important;
     font-size: 11.5px !important;
     font-weight: 600 !important;
-    color: #1e293b !important;
-    max-width: 100% !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    white-space: nowrap !important;
+    cursor: pointer !important;
+    outline: none !important;
+    box-shadow: 0 2px 6px rgba(0, 102, 255, 0.3) !important;
+    transition: all 0.18s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
 }
 
-.ex-gift-cell__price {
-    font-size: 10px !important;
-    color: #ff5d23 !important;
-    margin-top: 2px !important;
+.ex-send-btn:hover {
+    background: linear-gradient(135deg, #3d8bff, #004de6) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 10px rgba(0, 102, 255, 0.4) !important;
 }
+
+.ex-send-btn:active {
+    transform: scale(0.95) !important;
+}
+
+/* 输入框微质感 */
+.extool input[type="text"],
+.extool input[type="number"] {
+    border: 1px solid rgba(0, 0, 0, 0.12) !important;
+    border-radius: 6px !important;
+    background: rgba(255, 255, 255, 0.8) !important;
+    padding: 2px 6px !important;
+    font-size: 11.5px !important;
+    outline: none !important;
+    color: #0f172a !important;
+    transition: all 0.18s ease !important;
+    box-sizing: border-box !important;
+}
+
+.extool input[type="text"]:focus,
+.extool input[type="number"]:focus {
+    border-color: #0066ff !important;
+    box-shadow: 0 0 0 2px rgba(0, 102, 255, 0.18) !important;
+}
+
+/* 5级模态大选择器专属动画与结构已由 common / GiftPicker 接管 */

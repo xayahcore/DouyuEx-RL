@@ -6,6 +6,7 @@ function initPkg_ExpandTool_TabSwitch() {
 }
 
 function ExpandTool_TabSwitch_insertDom() {
+  if (document.getElementById("extool__tabSwitch")) return;
   let container = document.querySelector(".extool__playback-perf");
   if (!container) {
     container = document.createElement("div");

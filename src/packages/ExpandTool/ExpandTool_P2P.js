@@ -5,6 +5,7 @@ function initPkg_ExpandTool_P2P() {
 }
 
 function ExpandTool_P2P_insertDom() {
+    if (document.getElementById("extool__p2p")) return;
     let container = document.querySelector(".extool__playback-perf");
     if (!container) {
         container = document.createElement("div");

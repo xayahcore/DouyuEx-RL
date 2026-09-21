@@ -7,6 +7,7 @@ function initPkg_ExpandTool_Treasure() {
 
 
 function ExpandTool_Treasure_insertDom() {
+    if (document.getElementById("extool__treasure_start")) return;
     let html = "";
     html += '<label><input style="margin-top:5px" id="extool__treasure_start" type="checkbox">半自动抢宝箱</label>';
     html += '<label style="margin-left:10px;">延迟(抢得过快请调高)：</label><input id="extool__treasure_delay" type="text" style="width:50px;text-align:center;" value="3200" />ms'
