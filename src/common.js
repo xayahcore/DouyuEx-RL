@@ -424,6 +424,14 @@ function showExRightPanel(name, triggerBtn) {
 	if (!targetItem) return;
 
 	let targetDom = document.querySelector("." + targetItem.className);
+	if (!targetDom) {
+		if (targetItem.className === "sign-panel" && typeof createSignPanel === "function") createSignPanel();
+		else if (targetItem.className === "fans-continue-panel" && typeof createFansContinuePanel === "function") createFansContinuePanel();
+		else if (targetItem.className === "popup-player-panel" && typeof createPopupPlayerPanel === "function") createPopupPlayerPanel();
+		else if (targetItem.className === "exupdate-panel" && typeof createExUpdatePanel === "function") createExUpdatePanel();
+		targetDom = document.querySelector("." + targetItem.className);
+	}
+
 	if (targetDom) {
 		let isShowing = targetDom.style.display === "flex" || targetDom.style.display === "block" || (window.getComputedStyle(targetDom).display !== "none" && targetDom.style.display !== "none");
 		if (isShowing) {

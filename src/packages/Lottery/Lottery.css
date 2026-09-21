@@ -1,99 +1,94 @@
-.exlottery {
-	background-color: rgba(255,255,255,1);
-	width: 100%;
-	height: 250px;
-	position: relative;
-	bottom: 250px;
-	display: none;
-	z-index: 1428;
-    overflow: auto;
-    padding: 0 10px;
-    box-sizing: border-box;
+/* ==================== DouyuEx-RL 全站抽奖信息面板样式 ==================== */
+
+.lottery__item {
+    display: flex !important;
+    padding: 8px 6px !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
+    color: #0f172a !important;
+    align-items: center !important;
+    gap: 8px !important;
+    text-decoration: none !important;
+    transition: all 0.16s ease !important;
 }
 
-.lottery__nodata {
-    z-index: 998;
-    position: absolute;
-    left:50%;
-    top:50%;
-    transform: translate(-50%, -50%);
-    color: #606266;
-}
-
-.lottery__wrap {
-    display: flex;
-    flex-direction: column;
-    z-index: 999;
+.lottery__a {
+    text-decoration: none !important;
+    display: block !important;
 }
 
 .lottery__a:hover .lottery__item {
-    background-color: rgb(244,244,244);
+    background: rgba(255, 255, 255, 0.7) !important;
+    border-radius: 8px !important;
+    transform: translateY(-1px) !important;
 }
 
-.lottery__item {
-    display: flex;
-    padding: 5px 0;
-    border-bottom: 1px solid #d0d0d0;
-    color: #606266;
+.lottery__img {
+    position: relative !important;
+    width: 90px !important;
+    height: 54px !important;
+    flex-shrink: 0 !important;
 }
 
 .lottery__img img {
-    width: 150px;
-    border-radius: 5px;
+    width: 90px !important;
+    height: 54px !important;
+    object-fit: cover !important;
+    border-radius: 6px !important;
+    display: block !important;
 }
 
 .lottery__anchor {
-    position: absolute;
-    background-color: rgba(255,255,255,0.9);
-    border-radius: 5px 0px 5px 0px;
-}
-
-.lottery__info {
-    display: flex;
-    justify-content: space-evenly;
-    flex-direction: column;
-    margin-left: 10px;
-    overflow: hidden;
-}
-
-.lottery__prize {
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    word-break: break-all;
-    font-size: 14px;
+    position: absolute !important;
+    top: 2px !important;
+    left: 2px !important;
+    background: rgba(0, 0, 0, 0.55) !important;
+    color: #fff !important;
+    font-size: 10px !important;
+    padding: 1px 4px !important;
+    border-radius: 4px !important;
+    max-width: 80px !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
 }
 
 .lottery__expireTime {
-    position: absolute;
-    margin-top: -18px;
-    background-color: rgba(255,255,255,0.9);
-    border-radius: 0px 5px 0px 5px;
+    position: absolute !important;
+    bottom: 2px !important;
+    right: 2px !important;
+    background: rgba(0, 0, 0, 0.55) !important;
+    color: #fff !important;
+    font-size: 9.5px !important;
+    padding: 1px 4px !important;
+    border-radius: 4px !important;
 }
 
- /*滚动条样式*/
-.exlottery::-webkit-scrollbar {
-    width: 4px;    
-}
-.exlottery::-webkit-scrollbar-thumb {
-    border-radius: 10px;
-    box-shadow: inset 0 0 5px rgba(0,0,0,0.2);
-    background: rgba(0,0,0,0.2);
-}
-.exlottery::-webkit-scrollbar-track {
-    box-shadow: inset 0 0 5px rgba(0,0,0,0.2);
-    border-radius: 0;
-    background: rgba(0,0,0,0.1);
+.lottery__info {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 2px !important;
+    overflow: hidden !important;
+    flex: 1 1 auto !important;
 }
 
-.lottery__func {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 5px;
-    user-select: none;
-    border-bottom: 1px solid #d0d0d0;
+.lottery__prize {
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    color: #0f172a !important;
+    white-space: nowrap !important;
+    text-overflow: ellipsis !important;
+    overflow: hidden !important;
 }
 
-.lottery__notice,#lottery-refresh {
-    cursor: pointer;
-    color: #606266;
+.lottery__jointext {
+    font-size: 11px !important;
+    color: #64748b !important;
+    white-space: nowrap !important;
+    text-overflow: ellipsis !important;
+    overflow: hidden !important;
+}
+
+.lottery__condition {
+    font-size: 10.5px !important;
+    font-weight: 600 !important;
 }

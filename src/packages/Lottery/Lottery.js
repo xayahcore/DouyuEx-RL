@@ -27,23 +27,49 @@ function Lottery_insertIcon() {
 }
 
 function Lottery_insertModal() {
-	let a = document.createElement("div");
-	a.className = "exlottery";
-	a.innerHTML = `
-        <div class="lottery__func">
-            <div id="lottery-refresh">
-                <svg t="1636115506027" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2454" width="16" height="16"><path d="M927.999436 531.028522a31.998984 31.998984 0 0 0-31.998984 31.998984c0 51.852948-10.147341 102.138098-30.163865 149.461048a385.47252 385.47252 0 0 1-204.377345 204.377345c-47.32295 20.016524-97.6081 30.163865-149.461048 30.163865s-102.138098-10.147341-149.461048-30.163865a385.47252 385.47252 0 0 1-204.377345-204.377345c-20.016524-47.32295-30.163865-97.6081-30.163865-149.461048s10.147341-102.138098 30.163865-149.461048a385.47252 385.47252 0 0 1 204.377345-204.377345c47.32295-20.016524 97.6081-30.163865 149.461048-30.163865a387.379888 387.379888 0 0 1 59.193424 4.533611l-56.538282 22.035878A31.998984 31.998984 0 1 0 537.892156 265.232491l137.041483-53.402685a31.998984 31.998984 0 0 0 18.195855-41.434674L639.723197 33.357261a31.998984 31.998984 0 1 0-59.630529 23.23882l26.695923 68.502679a449.969005 449.969005 0 0 0-94.786785-10.060642c-60.465003 0-119.138236 11.8488-174.390489 35.217667a449.214005 449.214005 0 0 0-238.388457 238.388457c-23.361643 55.252253-35.22128 113.925486-35.22128 174.390489s11.8488 119.138236 35.217668 174.390489a449.214005 449.214005 0 0 0 238.388457 238.388457c55.252253 23.368867 113.925486 35.217667 174.390489 35.217667s119.138236-11.8488 174.390489-35.217667A449.210393 449.210393 0 0 0 924.784365 737.42522c23.368867-55.270316 35.217667-113.925486 35.217667-174.390489a31.998984 31.998984 0 0 0-32.002596-32.006209z" fill="" p-id="2455"></path></svg>
+    let existing = document.querySelector(".exlottery");
+    if (existing) return;
+
+    let a = document.createElement("div");
+    a.className = "exlottery miuix-modal";
+    a.innerHTML = `
+        <div class="miuix-modal__body">
+            <!-- 卡片 1: 抽奖提醒设置与刷新 -->
+            <div class="fans-panel__card">
+                <div class="fans-panel__card-header">
+                    <span class="fans-panel__card-title">抽奖提醒</span>
+                    <button type="button" class="ex-picker-btn" id="lottery-refresh" style="display: flex; align-items: center; gap: 4px;">
+                        <svg style="width: 12px; height: 12px;" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg"><path d="M927.999436 531.028522a31.998984 31.998984 0 0 0-31.998984 31.998984c0 51.852948-10.147341 102.138098-30.163865 149.461048a385.47252 385.47252 0 0 1-204.377345 204.377345c-47.32295 20.016524-97.6081 30.163865-149.461048 30.163865s-102.138098-10.147341-149.461048-30.163865a385.47252 385.47252 0 0 1-204.377345-204.377345c-20.016524-47.32295-30.163865-97.6081-30.163865-149.461048s10.147341-102.138098 30.163865-149.461048a385.47252 385.47252 0 0 1 204.377345-204.377345c47.32295-20.016524 97.6081-30.163865 149.461048-30.163865a387.379888 387.379888 0 0 1 59.193424 4.533611l-56.538282 22.035878A31.998984 31.998984 0 1 0 537.892156 265.232491l137.041483-53.402685a31.998984 31.998984 0 0 0 18.195855-41.434674L639.723197 33.357261a31.998984 31.998984 0 1 0-59.630529 23.23882l26.695923 68.502679a449.969005 449.969005 0 0 0-94.786785-10.060642c-60.465003 0-119.138236 11.8488-174.390489 35.217667a449.214005 449.214005 0 0 0-238.388457 238.388457c-23.361643 55.252253-35.22128 113.925486-35.22128 174.390489s11.8488 119.138236 35.217668 174.390489a449.214005 449.214005 0 0 0 238.388457 238.388457c55.252253 23.368867 113.925486 35.217667 174.390489 35.217667s119.138236-11.8488 174.390489-35.217667A449.210393 449.210393 0 0 0 924.784365 737.42522c23.368867-55.270316 35.217667-113.925486 35.217667-174.390489a31.998984 31.998984 0 0 0-32.002596-32.006209z" fill="currentColor"></path></svg>
+                        <span>刷新</span>
+                    </button>
+                </div>
+                <div class="sign-options-list">
+                    <label class="sign-option-item">
+                        <div class="sign-option-text">
+                            <span class="sign-option-title">开启全站抽奖提醒</span>
+                            <span class="sign-option-desc">发现可参与的在播抽奖时实时通知</span>
+                        </div>
+                        <input class="sign-checkbox" id="lottery-notice" type="checkbox">
+                    </label>
+                </div>
             </div>
-            <div class="lottery__notice">
-                <label class="lottery__notice"><input class="lottery__notice" id="lottery-notice" type="checkbox">开启提醒</label>
+
+            <!-- 卡片 2: 抽奖列表卡片 -->
+            <div class="fans-panel__card" style="min-height: 120px;">
+                <div class="fans-panel__card-header">
+                    <span class="fans-panel__card-title">在播抽奖房间</span>
+                </div>
+                <div class="lottery__nodata" style="text-align: center; color: #94a3b8; padding: 20px 0; font-size: 12px;">暂无数据</div>
+                <div class="lottery__wrap"></div>
             </div>
         </div>
-        <div class="lottery__nodata">暂无数据</div>
-        <div class="lottery__wrap"></div>
     `;
-		let b = document.getElementsByClassName("layout-Player-chat")[0] || document.querySelector(".Barrage-main") || document.body;
-		if (b) b.insertBefore(a, b.childNodes[0]);
-	}
+    let b = document.getElementsByClassName("layout-Player-chat")[0] || document.querySelector(".Barrage-main") || document.body;
+    if (b) b.insertBefore(a, b.childNodes[0]);
+    if (typeof ensureMiuixPanelHeader === "function") {
+        ensureMiuixPanelHeader(a, "全站抽奖信息");
+    }
+}
 
 function initPkg_Lottery_Func() {
     let dom_notice = document.getElementById("lottery-notice");
