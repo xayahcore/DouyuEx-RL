@@ -225,13 +225,34 @@ function ensureMiuixPanelHeader(el, title) {
     if (titleEl) titleEl.textContent = title;
   }
 
-  // 自动将非 header 子节点收拢至 .miuix-modal__body，使滚动条起始点统一为顶栏正下方
-  if (!el.querySelector(".miuix-modal__body")) {
-    let bodyWrap = document.createElement("div");
-    bodyWrap.className = "miuix-modal__body";
-    let children = Array.from(el.childNodes).filter((node) => node !== header);
-    children.forEach((child) => bodyWrap.appendChild(child));
-    el.appendChild(bodyWrap);
+  // 滚动条起始点统一规定在顶栏下方：将所有非 Header 内容封装进 .miuix-modal__body
+  var body = el.querySelector(":scope > .miuix-modal__body");
+  if (!body) {
+    body = document.createElement("div");
+    body.className = "miuix-modal__body";
+    el.appendChild(body);
+  }
+  var nodesToMove = [];
+  for (var i = 0; i < el.childNodes.length; i++) {
+    var node = el.childNodes[i];
+    if (node !== header && node !== body) {
+      nodesToMove.push(node);
+    }
+  }
+  nodesToMove.forEach((n) => {
+    body.appendChild(n);
+  });
+
+  // 悬浮连桥双向保护
+  if (!el.dataset.hoverBridgeBound) {
+    el.dataset.hoverBridgeBound = "1";
+    el.addEventListener("mouseenter", () => {
+      clearTimeout(exPanelTimer);
+    });
+    el.addEventListener("mouseleave", () => {
+      clearTimeout(exPanelTimer);
+      exPanelTimer = setTimeout(autoCloseExPanelHandle, 400);
+    });
   }
 
   var closeBtn = header.querySelector(".miuix-modal__close");

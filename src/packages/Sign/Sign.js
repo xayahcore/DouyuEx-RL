@@ -26,13 +26,17 @@ function initPkg_Sign_Func() {
         panel = document.querySelector(".sign-panel");
       }
       if (panel) {
-        if (panel.style.display === "block") {
-          panel.style.display = "none";
+        let isShowing = panel.style.display === "flex" || panel.style.display === "block";
+        if (isShowing) {
+          panel.style.removeProperty("display");
+          panel.style.setProperty("display", "none", "important");
+          panel.classList.remove("miuix-modal-in");
+          if (typeof updateDockActiveIndicator === "function") updateDockActiveIndicator();
         } else {
           if (typeof openMiuixPanelCentered === "function") {
             openMiuixPanelCentered(panel, btn);
           } else {
-            panel.style.display = "block";
+            panel.style.setProperty("display", "flex", "important");
           }
         }
       }
@@ -47,7 +51,6 @@ function createSignPanel() {
   var p = document.createElement("div");
   p.className = "sign-panel miuix-modal";
   p.innerHTML = `
-    <div class="miuix-modal__body">
       <div class="fans-panel__card">
         <div class="fans-panel__card-header">
           <span class="fans-panel__card-title">签到选项</span>
@@ -107,7 +110,6 @@ function createSignPanel() {
           开始签到
         </button>
       </div>
-    </div>
   `;
   document.body.appendChild(p);
   if (typeof ensureMiuixPanelHeader === "function") {
