@@ -128,7 +128,7 @@ async function executeStarDiscoverSign(onLog) {
     onLog("【星推弹幕】当前房间非指定星推参赛直播间，已安全跳过口令发送（避免打扰主播）", true);
   }
 
-  // (5) 任务4：关注5名新主播 (+15金币) - 动态 5 轮 introduce 推荐，严格安全取关闭环
+  // (5) 任务4：关注5名新主播 (+15金币) - 动态建立庞大候选池，持续供给并安全取关
   try {
     var currentTaskList = await fetchStarTaskList();
     var task4Info = currentTaskList.find((t) => Number(t.type) === 4);
@@ -155,52 +155,84 @@ async function executeStarDiscoverSign(onLog) {
         }
       } catch (e) {}
 
-      var newlyFollowedRids = []; // 仅记录本次真正由脚本新添加的主播
-      var processedRids = [];
-      var attemptIndex = 0;
+      var newlyFollowedRids = []; // 仅记录本次由脚本新添加的主播
+      var processedSet = new Set();
+      if (curNumericRid) processedSet.add(curNumericRid);
 
-      while (completedCount < targetCount && attemptIndex < 12) {
-        var sourceRid = (attemptIndex < starRids.length) ? starRids[attemptIndex] : queryRid;
-        attemptIndex++;
+      // 建立动态主播候选池，首先吸纳大盘主播
+      var candidateQueue = [];
+      starRids.forEach((r) => {
+        if (r && !existingFollowSet.has(r) && !processedSet.has(r)) {
+          candidateQueue.push(r);
+        }
+      });
 
-        // 动态向官方 introduce 端点请求专属推荐主播
-        var targetRid = "";
+      var sourceIndex = 0;
+      var maxAttempts = 25; // 扩大尝试轮次，保障 5 位全部跑满
+      var attemptCount = 0;
+
+      async function pullMoreCandidates() {
+        var srcRid = (sourceIndex < starRids.length) ? starRids[sourceIndex] : queryRid;
+        sourceIndex++;
         try {
-          var introRes = await fetch("https://www.douyu.com/japi/livebiznc/web/anchorstardiscover/user/task/follow/introduce?rid=" + sourceRid, {
+          var introRes = await fetch("https://www.douyu.com/japi/livebiznc/web/anchorstardiscover/user/task/follow/introduce?rid=" + srcRid, {
             credentials: "include"
           }).then((r) => r.json()).catch(() => null);
-          if (introRes && introRes.data && Array.isArray(introRes.data.list) && introRes.data.list.length > 0) {
-            targetRid = String(introRes.data.list[0].rid || introRes.data.list[0].rId || "");
+          if (introRes && introRes.data && Array.isArray(introRes.data.list)) {
+            introRes.data.list.forEach((item) => {
+              var candidateRid = String(item.rid || item.rId || "");
+              if (candidateRid && !existingFollowSet.has(candidateRid) && !processedSet.has(candidateRid) && !candidateQueue.includes(candidateRid)) {
+                candidateQueue.push(candidateRid);
+              }
+            });
           }
         } catch (e) {}
+      }
 
-        if (!targetRid || processedRids.indexOf(targetRid) !== -1 || targetRid === curNumericRid) {
-          for (var si = 0; si < starRids.length; si++) {
-            var sCand = starRids[si];
-            if (sCand && sCand !== curNumericRid && processedRids.indexOf(sCand) === -1) {
-              targetRid = sCand;
-              break;
+      // 先行拉取一波推荐主播
+      await pullMoreCandidates();
+
+      while (completedCount < targetCount && attemptCount < maxAttempts) {
+        attemptCount++;
+
+        // 若当前候选队列用尽，向下一个源房间请求补充候选主播
+        if (candidateQueue.length === 0) {
+          await pullMoreCandidates();
+        }
+
+        // 如果依然没有候选主播，再次轮换一个房间尝试拉取
+        if (candidateQueue.length === 0) {
+          if (sourceIndex < starRids.length + 3) {
+            await pullMoreCandidates();
+            if (candidateQueue.length === 0) {
+              await sleep(500);
+              continue;
             }
+          } else {
+            // 实在无法获取新候选人时才退出
+            break;
           }
         }
 
-        if (!targetRid) break;
-        processedRids.push(targetRid);
-
-        // 如果该主播本身就在用户原有的关注列表中，绝不操作该主播，防止误取关
-        if (existingFollowSet.has(targetRid)) {
+        var targetRid = candidateQueue.shift();
+        if (!targetRid || processedSet.has(targetRid) || existingFollowSet.has(targetRid)) {
           continue;
         }
+        processedSet.add(targetRid);
 
         try {
+          // 每次关注前确保凭据新鲜
+          realCtn = await getDouyuCtn();
+
           // 1. 添加关注
           var addRes = await followAnchorApi(targetRid, realCtn);
           if (addRes && (addRes.error === 0 || addRes.code === 0)) {
             newlyFollowedRids.push(targetRid);
-            // 2. 适当驻留 1.8 秒让服务端任务系统结算
+
+            // 2. 适当驻留 1.8 秒让服务端任务系统入账结算
             await sleep(1800);
 
-            // 3. 立即安全取关 (内置自动重试与凭据刷新)
+            // 3. 立即安全取关 (内置 3 次自动重试与凭据刷新)
             for (var retry = 0; retry < 3; retry++) {
               var rmRes = await unfollowAnchorApi(targetRid, realCtn);
               if (rmRes && (rmRes.error === 0 || rmRes.code === 0)) {
@@ -210,7 +242,7 @@ async function executeStarDiscoverSign(onLog) {
               realCtn = await getDouyuCtn();
             }
 
-            // 4. 校验任务进度
+            // 4. 校验任务实时进度
             var updatedList = await fetchStarTaskList();
             var updatedT4 = updatedList.find((t) => Number(t.type) === 4);
             var newCompleted = updatedT4 ? Number(updatedT4.curCompleteNum || 0) : (completedCount + 1);
@@ -219,20 +251,21 @@ async function executeStarDiscoverSign(onLog) {
               completedCount = newCompleted;
               onLog("【星推关注】主播 " + targetRid + " 关注成功并已安全取关 (" + completedCount + "/5)", true);
             } else {
-              onLog("【星推关注】主播 " + targetRid + " 已处理并安全取关", true);
+              onLog("【星推关注】主播 " + targetRid + " 已处理并安全取关 (当前进度 " + completedCount + "/5)", true);
             }
           } else if (addRes && addRes.error === 1) {
-            // 已关注的主播（原有关注），绝对不要取关
+            // 已关注主播，白名单保护，绝不取关
             existingFollowSet.add(targetRid);
           }
         } catch (err) {
-          console.warn("[DouyuEx] 关注任务单步异常:", err);
+          console.warn("[DouyuEx] 关注单步异常:", err);
         }
 
+        // 防风控呼吸间隔 800ms
         await sleep(800);
       }
 
-      // 最终安全巡检：只对本次成功由脚本新增关注的主播执行安全取关兜底，绝不误伤原有关注
+      // 最终安全巡检扫尾：只对本次由脚本成功新增关注的主播执行安全取关兜底，100% 杜绝残留与误伤
       for (var ci = 0; ci < newlyFollowedRids.length; ci++) {
         try {
           await unfollowAnchorApi(newlyFollowedRids[ci], realCtn);
