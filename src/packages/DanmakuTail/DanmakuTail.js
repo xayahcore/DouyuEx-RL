@@ -32,8 +32,8 @@ function initPkg_DanmakuTail_insertDom() {
             </label>
         </div>
         <label class="DanmakuTail-checkbox-label">
-            <input type="checkbox" class="DanmakuTail-checkbox" id="DanmakuTail-checkbox" />
-            启用功能
+            <span>启用小尾巴</span>
+            <input type="checkbox" class="DanmakuTail-checkbox sign-checkbox" id="DanmakuTail-checkbox" />
         </label>
     `;
 }

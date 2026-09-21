@@ -86,10 +86,8 @@ function initPkg() {
   initPkg_Shield();
   initPkg_BagInfo();
   initPkg_Update();
-  // initPkg_SyncJoy();
   initPkg_Monitor();
   initPkg_Lottery();
-  // initPkg_MiniProgram();
   initPkg_PopupPlayer();
   initPkg_LiveTool();
   initPkg_VideoTools();
@@ -97,10 +95,8 @@ function initPkg() {
   initPkg_Refresh();
   initPkg_BarrageLoop();
   initPkg_FansContinue();
-  // initPkg_FishFood();
   initPkg_Sign();
   initPkg_BarragePanel();
-  // initPkg_AdVideo();
   initPkg_AccountList();
   initPkg_ChatTools();
   initPkg_MonthCost();
@@ -113,7 +109,6 @@ function initPkg() {
   initPkg_VolumeMouseScrolling();
 }
 function initPkg_Timer() {
-  // initPkg_FishPond_Timer();
   initPkg_LevelTask_Timer();
   initPkg_DisableCloseJump_Timer();
 }

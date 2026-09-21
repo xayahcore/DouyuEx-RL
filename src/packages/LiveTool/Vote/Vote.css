@@ -1,93 +1,103 @@
+/* ==================== DouyuEx-RL 弹幕投票 MIUIX 样式 ==================== */
+
 .vote__panel {
-    width: 100%;
-    display: none;
-    margin-top: 4px;
+    margin-top: 5px;
+    font-size: 12px;
 }
+
 #vote__title {
     cursor: pointer;
     user-select: none;
-    color: royalblue;
-}
-#vote__select {
-    width: 100px;
-}
-
-.vote__option {
-    margin-top: 5px;
-}
-
-#vote__theme {
-    width: 70px;
-}
-
-#vote__options {
-    width: 133px;
-}
-
-#vote__time {
-    width: 35px;
 }
 
 #vote__show-result {
     cursor: pointer;
-    color: royalblue;
-    margin-left: 10px;
+    color: #0066ff !important;
+    margin-left: 8px;
+    font-size: 11px;
 }
 
+/* 投票浮动结果视窗 */
 .vote__result {
-    position: absolute;
-    top: 0px;
-    width: 300px;
-    background: rgba(255,255,255,0.85);
-    left: 0px;
-    z-index: 999;
-    padding: 5px;
-    border-radius: 10px;
-    user-select: none;
+    position: fixed !important;
+    top: 120px !important;
+    left: 20px !important;
+    width: 320px !important;
+    border-radius: 18px !important;
+    background: rgba(255, 255, 255, 0.72) !important;
+    backdrop-filter: blur(36px) saturate(220%) !important;
+    -webkit-backdrop-filter: blur(36px) saturate(220%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.95) !important;
+    box-shadow: inset 0 1px 1.5px rgba(255, 255, 255, 0.95), 0 16px 40px rgba(15, 23, 42, 0.16) !important;
+    padding: 12px 14px !important;
+    box-sizing: border-box !important;
+    z-index: 100020 !important;
+    user-select: none !important;
     display: none;
-    color: #333;
+    color: #0f172a !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
 }
 
 #vote__result-theme {
-    font-size: 20px;
-    font-weight: 600;
-    margin-bottom: 10px;
+    font-size: 13.5px !important;
+    font-weight: 700 !important;
+    margin-bottom: 8px !important;
+    color: #0f172a !important;
+    padding-right: 28px !important;
 }
+
 #vote__result-close {
-    position: absolute;
-    top: 5px;
-    right: 10px;
-    font-size: 14px;
-    cursor: pointer;
-    color: gray;
+    position: absolute !important;
+    top: 10px !important;
+    right: 10px !important;
+    width: 22px !important;
+    height: 22px !important;
+    border-radius: 6px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 14px !important;
+    cursor: pointer !important;
+    color: #64748b !important;
+    background: rgba(0, 0, 0, 0.05) !important;
+    transition: all 0.16s ease !important;
+}
+
+#vote__result-close:hover {
+    background: #ef4444 !important;
+    color: #ffffff !important;
 }
 
 .vote__option-wrap {
-    margin-bottom: 10px;
+    margin-bottom: 8px !important;
 }
 
 .vote__option-choice {
-    display: inline-block;
-    font-size: 14px;
+    display: inline-block !important;
+    font-size: 12px !important;
+    color: #334155 !important;
 }
 
 .vote__option-num {
-    float: right;
-    font-size: 14px;
+    float: right !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    color: #0066ff !important;
 }
 
 .vote__progress {
-    width: 100%;
-    background-color: #ddd;
-    border-radius: 10px;
+    width: 100% !important;
+    background-color: rgba(0, 0, 0, 0.08) !important;
+    border-radius: 6px !important;
+    overflow: hidden !important;
+    height: 8px !important;
+    margin-top: 3px !important;
 }
 
 .vote__progress-bar {
-    width: 0%;
-    height: 14px;
-    background-color: #4CAF50;
-    text-align: center;
-    line-height: 30px;
-    border-radius: 10px;
+    width: 0% !important;
+    height: 100% !important;
+    background: linear-gradient(90deg, #2b7fff, #0055ff) !important;
+    border-radius: 6px !important;
+    transition: width 0.3s ease !important;
 }
-
