@@ -1,4 +1,4 @@
-var curVersion = (typeof GM_info !== "undefined" && GM_info.script && GM_info.script.version) ? GM_info.script.version : "2026.09.18.01";
+var curVersion = (typeof GM_info !== "undefined" && GM_info.script && GM_info.script.version) ? GM_info.script.version : "2026.09.21.01";
 var isNeedUpdate = false;
 var lastestVersion = "";
 
@@ -19,6 +19,13 @@ function initPkg_Update() {
   initPkg_Update_Dom();
   initPkg_Update_Func();
   initVersionLifecycleNotice();
+
+  // 若存在新版本发布，点亮底栏【版本更新】小红点
+  var lastNotifiedVer = GM_getValue("Ex_LastNotifiedVersion");
+  if (lastNotifiedVer !== curVersion) {
+    var tip = document.getElementById("ex-update__tip");
+    if (tip) tip.style.display = "block";
+  }
 }
 
 function initPkg_Update_Dom() {
@@ -64,35 +71,54 @@ function initPkg_Update_Func() {
 
 function createExUpdatePanel() {
   var existing = document.querySelector(".exupdate-panel");
-  if (existing) return;
+  if (existing) {
+    if (existing.dataset.version === curVersion) return;
+    existing.remove();
+  }
 
   var p = document.createElement("div");
   p.className = "exupdate-panel miuix-modal";
+  p.dataset.version = curVersion;
   p.innerHTML = `
     <div class="miuix-modal__body">
+      <!-- 卡片 1: 功能升级 -->
       <div class="exupdate-panel__card">
         <div class="exupdate-panel__card-header">
-          <span class="exupdate-panel__card-title">新增功能·</span>
+          <span class="exupdate-panel__card-title">功能升级·</span>
         </div>
         <ul class="exupdate-list">
-          <li>① 一键签到三级控制面板完整落地 (createSignPanel / sign-panel)：新增标准 380×370px MIUIX 流式拟态视窗，支持自由勾选 5 大日常签到任务，状态持久化至 ExSave_SignConfig，内嵌实时任务日志视窗</li>
-          <li>② 5 级模态礼物选择器与背包送礼现代化：实时双流并行聚合房间专属礼物与官方通用大盘礼物（140+款），内置触控胶囊即点即选、背包道具现场 0ms 直探与弱鸡独立动图映射</li>
-          <li>③ 现代化星推日常任务全景式自动化打满：深度逆向斗鱼全民星推协议，一键拉满单日 39+ 金币全部零成本收益（活动页打卡 +10、3 房间签到 +9、口令弹幕 +5、互动上报、5 位关注任务 +15）</li>
-          <li>④ 动态逐轮 introduce 推荐与安全取关闭环：每轮动态请求官方推荐单，关注后保持 1.8 秒服务端入账呼吸窗口，随后调用官方标准 follow/rm 执行安全取关，严格保护既有关注，杜绝陌生人残留</li>
+          <li>• <b>【扩展功能】</b>送礼交互升级：彻底淘汰手动 ID 输入框，合二为一升级为可点击礼物徽章，接入 5 级大模态双流礼物池即点即选，全面恢复参数与道具本地记忆。</li>
+          <li>• <b>【一键签到】</b>签到控制台落地：380×370px 独立视窗，自由勾选 5 大日常任务并持久化记忆，集成星推 39+ 金币打满与安全取关闭环。</li>
+          <li>• <b>【直播间工具】</b>五大功能抽屉重塑：进场/禁言/谢礼/回复/投票全面升维为轻薄磨砂折叠卡片，开关统一为右对齐澎湃蓝弹簧 Switch。</li>
+          <li>• <b>【弹幕助手】</b>三大卡片规范化：预设词库、发送参数、发送策略全量换装，挂钩 WebSocket 广播实现 SSOT 发送回执与敏捷屏蔽词判定。</li>
+          <li>• <b>【弹幕小尾巴】</b>精准视口锚定：修复错位至左下角缺陷，严格贴合在聊天栏【尾】按钮正上方，增设右上角关闭按钮与失焦收起。</li>
         </ul>
       </div>
+
+      <!-- 卡片 2: 交互与体验 -->
       <div class="exupdate-panel__card">
         <div class="exupdate-panel__card-header">
-          <span class="exupdate-panel__card-title">优化与修复·</span>
+          <span class="exupdate-panel__card-title">交互与体验·</span>
         </div>
         <ul class="exupdate-list">
-          <li>① 连根拔除原作者恶意关注陌生主播后门与死硬编码“幻神”兜底：彻底清理 anchorstardiscover 偷关逻辑与假数据 fallback，动态提取当前真实粉丝牌</li>
-          <li>② 彻底清除斗鱼早已关停下线的远古车队系统代码：彻底清除腾讯云 IM 通信接口、usersig 打卡及车队周常代码，杜绝无意义网络请求与冗余报错</li>
-          <li>③ 指定星推参赛直播间门禁检测 (isStarCompetitionRoom)：深度逆向 memberInfo 状态机 (hide===0 且 rank>0)，非星推直播间自动跳过助力口令，避免打扰正常看播</li>
-          <li>④ 弹幕发送成功与系统屏蔽词检测系统 (SSOT)：FIFO 队列匹配原生 WebSocket 广播包，2500ms 超时删除线标记与延迟回执自愈恢复</li>
-          <li>⑤ 优雅 WebRTC P2P 阻断器 (GracefulP2PBlocker)：合规 W3C Proxy 阻断 P2P 上传，彻底杜绝官方播放器由于获取空原型而抛出 TypeError 崩溃</li>
+          <li>• <b>【三级菜单悬停即开】</b>鼠标滑过 Dock 图标三级菜单立即展开，移开鼠标绝不自动关闭，支持从容交互。</li>
+          <li>• <b>【二级 Dock 联动收拢】</b>未展开三级菜单时鼠标移出 Dock 自动收拢；已展开三级菜单时 Dock 保持坚挺打开。</li>
+          <li>• <b>【全链路过渡动效】</b>接入 0.28s 弹性上浮与 0.16s 退出动画，彻底清除历史遗留的 18px 隐形热区连桥干扰。</li>
         </ul>
       </div>
+
+      <!-- 卡片 3: 其它 -->
+      <div class="exupdate-panel__card">
+        <div class="exupdate-panel__card-header">
+          <span class="exupdate-panel__card-title">其它·</span>
+        </div>
+        <ul class="exupdate-list">
+          <li>• <b>【核心画质拦截】</b>12s 起播保护窗口与最高原画拦截层 100% 稳定运行，开播无缝极速秒开。</li>
+          <li>• <b>【通用弹窗修复】</b>根治 PostbirdAlertBox 双层嵌套 Bug，导入黑名单/欢迎词弹框居中通透展示，无遮罩卡死。</li>
+          <li>• <b>【统一 UI 引擎】</b>所有弹层、选择器与开关样式 100% 收拢至 ExPanel.css 单一真实信源，通过 3 阶段原生 V8 语法编译与全量 E2E 自动化测试。</li>
+        </ul>
+      </div>
+
       <div class="exupdate-panel__action-wrap">
         <button type="button" class="ex-btn-primary exupdate-panel__submit-btn" id="exupdate-action-btn">我已收到</button>
       </div>

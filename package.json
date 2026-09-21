@@ -1,6 +1,6 @@
 {
   "name": "DouyuEx_RL",
-  "version": "2026.09.18.01",
+  "version": "2026.09.21.01",
   "description": "DouyuEx-RL 斗鱼直播间增强插件 (Reborn Lite)",
   "scripts": {
     "build": "node build.js",

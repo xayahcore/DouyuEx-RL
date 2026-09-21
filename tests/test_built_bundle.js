@@ -53,7 +53,8 @@ async function testBuiltBundle() {
             text: async () => JSON.stringify({ error: 0, data: { list: [], taskIds: [] } })
         };
     };
-    win.GM_info = { script: { version: "2026.09.18.01" } };
+    const metaVer = (code.match(/\/\/\s*@version\s+([^\r\n]+)/) || [])[1] || "2026.09.21.01";
+    win.GM_info = { script: { version: metaVer.trim() } };
     win.GM_getValue = () => null;
     win.GM_setValue = () => {};
     win.GM_addStyle = () => {};
@@ -224,6 +225,35 @@ async function testBuiltBundle() {
     await new Promise(r => setTimeout(r, 220));
     assert.strictEqual(exPanel.style.display, "none", "三级菜单关闭且鼠标不在 Dock 上时，Dock 顺滑收拢");
     console.log("✓ 测试场景 7 通过: 三级菜单悬停打开、移除关闭功能、Dock 联动保活全流程验证通过");
+
+    // === 测试 8: ExpandTool 道具与礼物记忆持久化 ===
+    console.log("--> 测试场景 8: 验证道具与礼物 localStorage 记忆持久化...");
+    const clearBagCnt = win.document.getElementById("extool__clearbag_cnt");
+    clearBagCnt.value = "10";
+    clearBagCnt.dispatchEvent(new win.Event("input"));
+    const savedClearBag = JSON.parse(win.localStorage.getItem("ExSave_ClearBag"));
+    assert.ok(savedClearBag, "ExSave_ClearBag 必须成功持久化到 localStorage");
+    assert.strictEqual(savedClearBag.count, "10", "背包道具送出数量必须正确记忆");
+
+    const sendGiftCnt = win.document.getElementById("extool__sendgift_cnt");
+    sendGiftCnt.value = "66";
+    sendGiftCnt.dispatchEvent(new win.Event("input"));
+    const savedSendGift = JSON.parse(win.localStorage.getItem("ExSave_SendGift"));
+    assert.ok(savedSendGift, "ExSave_SendGift 必须成功持久化到 localStorage");
+    assert.strictEqual(savedSendGift.count, "66", "打榜礼物送出数量必须正确记忆");
+    console.log("✓ 测试场景 8 通过: 选择道具与礼物本地记忆读写正常");
+
+    // === 测试 9: 版本更新三级面板分类与【其它】板块恢复 ===
+    console.log("--> 测试场景 9: 验证版本更新三级控制台与【其它】板块...");
+    assert.strictEqual(win.curVersion, "2026.09.21.01", "全局版本号必须为 2026.09.21.01");
+    win.createExUpdatePanel();
+    const updateModal = win.document.querySelector(".exupdate-panel");
+    assert.ok(updateModal, ".exupdate-panel 必须被创建");
+    const cards = updateModal.querySelectorAll(".exupdate-panel__card");
+    assert.strictEqual(cards.length, 3, "版本更新面板必须包含 3 个标准分类卡片 (功能升级/交互与体验/其它)");
+    const titles = Array.from(cards).map(c => c.querySelector(".exupdate-panel__card-title")?.textContent.trim());
+    assert.ok(titles.includes("其它·"), "版本更新面板必须恢复【其它·】板块");
+    console.log("✓ 测试场景 9 通过: 版本号 2026.09.21.01、三级菜单分类日志与【其它】板块恢复验证通过");
 
     console.log("=== 端到端集成测试全流程 100% 通过 ===");
     process.exit(0);

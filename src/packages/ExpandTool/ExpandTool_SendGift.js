@@ -1,6 +1,46 @@
 function initPkg_ExpandTool_SendGift() {
     ExpandTool_SendGift_insertDom();
+    initPkg_ExpandTool_SendGift_Set();
     ExpandTool_SendGift_insertFunc();
+}
+
+function initPkg_ExpandTool_SendGift_Set() {
+    let ret = localStorage.getItem("ExSave_SendGift");
+    if (ret != null) {
+        try {
+            let data = JSON.parse(ret);
+            if (data.id) {
+                let idEl = document.getElementById("extool__sendgift_id");
+                if (idEl) idEl.value = data.id;
+            }
+            if (data.name) {
+                let nameEl = document.getElementById("extool__sendgift_name") || document.getElementById("extool__sendgift_selected_name");
+                if (nameEl) nameEl.textContent = data.name;
+            }
+            if (data.icon) {
+                let iconEl = document.getElementById("extool__sendgift_icon");
+                if (iconEl) iconEl.src = data.icon;
+            }
+            if (data.count) {
+                let cntEl = document.getElementById("extool__sendgift_cnt");
+                if (cntEl) cntEl.value = data.count;
+            }
+            if (typeof data.delay !== "undefined") {
+                let delayEl = document.getElementById("extool__sendgift_delay");
+                if (delayEl) delayEl.value = data.delay;
+            }
+        } catch(e) {}
+    }
+}
+
+function saveData_ExpandTool_SendGift() {
+    let id = document.getElementById("extool__sendgift_id")?.value || "20000";
+    let name = document.getElementById("extool__sendgift_name")?.textContent || document.getElementById("extool__sendgift_selected_name")?.textContent || "弱鸡";
+    let icon = document.getElementById("extool__sendgift_icon")?.src || "";
+    let count = document.getElementById("extool__sendgift_cnt")?.value || "1";
+    let delay = document.getElementById("extool__sendgift_delay")?.value || "0";
+    let data = { id, name, icon, count, delay };
+    localStorage.setItem("ExSave_SendGift", JSON.stringify(data));
 }
 
 function ExpandTool_SendGift_insertDom() {
@@ -31,9 +71,21 @@ function ExpandTool_SendGift_insertFunc() {
                     if (nameEl) nameEl.textContent = gift.name;
                     let iconEl = document.getElementById("extool__sendgift_icon");
                     if (iconEl && gift.icon) iconEl.src = gift.icon;
+                    saveData_ExpandTool_SendGift();
                 });
             }
         });
+    }
+
+    let cntInput = document.getElementById("extool__sendgift_cnt");
+    if (cntInput) {
+        cntInput.addEventListener("input", saveData_ExpandTool_SendGift);
+        cntInput.addEventListener("change", saveData_ExpandTool_SendGift);
+    }
+    let delayInput = document.getElementById("extool__sendgift_delay");
+    if (delayInput) {
+        delayInput.addEventListener("input", saveData_ExpandTool_SendGift);
+        delayInput.addEventListener("change", saveData_ExpandTool_SendGift);
     }
 
     let sendBtn = document.getElementById("extool__sendgift_btn");

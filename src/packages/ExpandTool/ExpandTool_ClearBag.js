@@ -1,6 +1,41 @@
 function initPkg_ExpandTool_ClearBag() {
     ExpandTool_ClearBag_insertDom();
+    initPkg_ExpandTool_ClearBag_Set();
     ExpandTool_ClearBag_insertFunc();
+}
+
+function initPkg_ExpandTool_ClearBag_Set() {
+    let ret = localStorage.getItem("ExSave_ClearBag");
+    if (ret != null) {
+        try {
+            let data = JSON.parse(ret);
+            if (data.id) {
+                let idEl = document.getElementById("extool__clearbag_id");
+                if (idEl) idEl.value = data.id;
+            }
+            if (data.name) {
+                let nameEl = document.getElementById("extool__clearbag_name") || document.getElementById("extool__clearbag_selected_name");
+                if (nameEl) nameEl.textContent = data.name;
+            }
+            if (data.icon) {
+                let iconEl = document.getElementById("extool__clearbag_icon");
+                if (iconEl) iconEl.src = data.icon;
+            }
+            if (data.count) {
+                let cntEl = document.getElementById("extool__clearbag_cnt");
+                if (cntEl) cntEl.value = data.count;
+            }
+        } catch(e) {}
+    }
+}
+
+function saveData_ExpandTool_ClearBag() {
+    let id = document.getElementById("extool__clearbag_id")?.value || "268";
+    let name = document.getElementById("extool__clearbag_name")?.textContent || document.getElementById("extool__clearbag_selected_name")?.textContent || "荧光棒";
+    let icon = document.getElementById("extool__clearbag_icon")?.src || "";
+    let count = document.getElementById("extool__clearbag_cnt")?.value || "1";
+    let data = { id, name, icon, count };
+    localStorage.setItem("ExSave_ClearBag", JSON.stringify(data));
 }
 
 function ExpandTool_ClearBag_insertDom() {
@@ -34,9 +69,16 @@ function ExpandTool_ClearBag_insertFunc() {
                         let cntEl = document.getElementById("extool__clearbag_cnt");
                         if (cntEl) cntEl.value = gift.count;
                     }
+                    saveData_ExpandTool_ClearBag();
                 });
             }
         });
+    }
+
+    let cntInput = document.getElementById("extool__clearbag_cnt");
+    if (cntInput) {
+        cntInput.addEventListener("input", saveData_ExpandTool_ClearBag);
+        cntInput.addEventListener("change", saveData_ExpandTool_ClearBag);
     }
 
     let sendBtn = document.getElementById("extool__clearbag_sendbtn");
