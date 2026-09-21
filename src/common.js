@@ -1,4 +1,55 @@
 // 全局变量及公共函数
+var EXURL = {
+  flv: "https://registry.npmmirror.com/flv.js/1.6.2/files/dist/flv.min.js",
+  svga: "https://fastly.jsdelivr.net/npm/svgaplayerweb@2.3.1/build/svga.min.js",
+  gif: "https://registry.npmmirror.com/gif.js/0.2.0/files/dist/gif.js",
+  three: "https://registry.npmmirror.com/three/0.80.0/files/build/three.min.js",
+  xl: "https://registry.npmmirror.com/xlsx/0.16.4/files/dist/xlsx.full.min.js",
+  purify: "https://registry.npmmirror.com/dompurify/2.3.6/files/dist/purify.min.js"
+};
+var EXLIB = {};
+
+function ExLoadLib(url, onSuccess, onError) {
+  if (EXLIB[url]) {
+    if (typeof onSuccess === "function") onSuccess();
+    return;
+  }
+  EXLIB[url] = 1;
+  GM_xmlhttpRequest({
+    method: "GET",
+    url: url,
+    onload: (res) => {
+      try {
+        (0, eval)(res.response);
+        if (typeof onSuccess === "function") onSuccess();
+      } catch (err) {
+        EXLIB[url] = 0;
+        console.error("[DouyuEx] 组件加载失败:", url, err);
+        if (typeof onError === "function") onError(err);
+      }
+    },
+    onerror: (err) => {
+      EXLIB[url] = 0;
+      if (typeof onError === "function") onError(err);
+    }
+  });
+}
+
+function safeBind(target, eventName, handler, options) {
+  if (!target || typeof target.addEventListener !== "function") return;
+  target.addEventListener(eventName, function(e) {
+    try {
+      handler.call(this, e);
+    } catch(err) {
+      console.warn("[DouyuEx] 事件监听执行异常:", eventName, err);
+    }
+  }, options);
+}
+
+function safeEl(id) {
+  return typeof id === "string" ? document.getElementById(id) : id;
+}
+
 var exTimer = 0; // 总时钟句柄
 var url = document.getElementsByTagName('html')[0].innerHTML;
 var urlLen = ("$ROOM.room_id =").length;
@@ -152,15 +203,30 @@ function getCCN() {
 }
 
 function getCTN() {
-	// let cookie = document.cookie;
-	// let ret = getStrMiddle(cookie, "acf_ccn=", ";");
-	let ret = getCookieValue("acf_ctn");
-	if (ret == null) {
-		setCookie("acf_ctn", "1");
-		ret = "1";
+		// let cookie = document.cookie;
+		// let ret = getStrMiddle(cookie, "acf_ccn=", ";");
+		let ret = getCookieValue("acf_ctn");
+		if (ret == null) {
+			setCookie("acf_ctn", "1");
+			ret = "1";
+		}
+		return ret;
 	}
-	return ret;
-}
+
+	async function getDouyuCtn() {
+		var m = document.cookie.match(/(?:^|;\s*)ccn=([^;]+)/);
+		if (m && m[1]) return decodeURIComponent(m[1]);
+		try {
+			await fetch("/wgapi/livenc/liveweb/csrfApi/getCsrfCookie", {
+				method: "GET",
+				credentials: "include",
+				cache: "no-store"
+			});
+			var m2 = document.cookie.match(/(?:^|;\s*)ccn=([^;]+)/);
+			if (m2 && m2[1]) return decodeURIComponent(m2[1]);
+		} catch(e) {}
+		return getCookieValue("acf_ccn") || "1";
+	}
 
 function getCSRF() {
 	let ret = getCookieValue("cvl_csrf_token");
@@ -341,7 +407,7 @@ function getTextareaPosition(element) {
 	return cursorPos;
 }
 
-function showExRightPanel(name) {
+function showExRightPanel(name, triggerBtn) {
 	let panels = [
 		{
 			name: "弹幕发送小助手",
@@ -364,14 +430,31 @@ function showExRightPanel(name) {
 			className: "ChatToolBar-DanmakuTail-Panel"
 		},
 	];
+
+	let signPanel = document.querySelector(".sign-panel");
+	if (signPanel) signPanel.style.setProperty("display", "none", "important");
+
 	for (let i = 0; i < panels.length; i++) {
 		let item = panels[i];
 		let dom = document.getElementsByClassName(item.className)[0];
 		if (dom) {
 			if (name === item.name) {
-				dom.style.display = dom.style.display !== "block" ? "block" : "none";
+				let isShowing = dom.style.display === "block" || (window.getComputedStyle(dom).display !== "none" && dom.style.display !== "none");
+				if (isShowing) {
+					dom.style.setProperty("display", "none", "important");
+				} else {
+					if (typeof ensureMiuixPanelHeader === "function") {
+						ensureMiuixPanelHeader(dom, item.name);
+					}
+					if (typeof openMiuixPanelCentered === "function") {
+						openMiuixPanelCentered(dom, triggerBtn);
+					} else {
+						dom.style.removeProperty("display");
+						dom.style.setProperty("display", "block", "important");
+					}
+				}
 			} else {
-				dom.style.display = "none";
+				dom.style.setProperty("display", "none", "important");
 			}
 		}
 	}

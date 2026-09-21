@@ -1,5 +1,5 @@
 let responseHookCallbackList = [];  
-let requestBodyMap = new Map(); // 使用Map来存储请求体和XMLHttpRequest实例的关联  
+let requestBodyMap = new WeakMap(); // 使用WeakMap弱引用存储请求体，随XHR实例自动GC释放，杜绝内存泄漏  
   
 function initResponseHook() {  
   // 保存原始的send方法  

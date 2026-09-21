@@ -76,15 +76,20 @@ function initPkg_RealAudience_Dom() {
 	html += '<span id="real-audience__watchtime" style="white-space: nowrap;display: none;">' + "已观看:" + "****" + "</span>";
 	a.innerHTML = html;
 	
-	let b = getValidDom([".layout-Player-announce", ".layout-Player-rankAll"]);
-	b.insertBefore(a, b.childNodes[0]);
-}
-
-function initPkg_RealAudience_Func() {
-	document.getElementsByClassName("real-audience")[0].addEventListener("click", function() {
-		openPage(`https://www.doseeing.com/room/${rid}`, true);
-	})
-}
+		let b = getValidDom([".layout-Player-announce", ".layout-Player-rankAll", ".layout-Player-rank", ".Barrage-main"]);
+		if (b) {
+			b.insertBefore(a, b.childNodes[0]);
+		}
+	}
+	
+	function initPkg_RealAudience_Func() {
+		let audience = document.getElementsByClassName("real-audience")[0];
+		if (audience) {
+			audience.addEventListener("click", function() {
+				openPage(`https://www.doseeing.com/room/${rid}`, true);
+			});
+		}
+	}
 
 async function setRealViewer() {
 	if(document.querySelector(".MatchSystemChatRoomEntry") != null){
@@ -143,15 +148,21 @@ function setAvatarVideo() {
 	setAvatarVideo_Dom();
 	setAvatarYuba_Dom();
 	setAvatarVideo_Func(videoUrl, videoReplayUrl);
-	document.getElementsByClassName("Title-anchorPic-bottom")[0].style.display = "none";
-	document.getElementsByClassName("Title-anchorPic-bottom")[0].style.height = hasAvatarBottom ? "66px" : "22px";
+		let bottomPic = document.getElementsByClassName("Title-anchorPic-bottom")[0];
+		if (bottomPic) {
+			bottomPic.style.display = "none";
+			bottomPic.style.height = hasAvatarBottom ? "66px" : "22px";
+		}
 
-	document.getElementsByClassName("Title-anchorPicBack")[0].addEventListener("mouseenter", () => {
-		document.getElementsByClassName("Title-anchorPic-bottom")[0].style.display = "block";
-	});
-	document.getElementsByClassName("Title-anchorPicBack")[0].addEventListener("mouseleave", () => {
-		document.getElementsByClassName("Title-anchorPic-bottom")[0].style.display = "none";
-	});
+		let picBack = document.getElementsByClassName("Title-anchorPicBack")[0];
+		if (picBack && bottomPic) {
+			picBack.addEventListener("mouseenter", () => {
+				bottomPic.style.display = "block";
+			});
+			picBack.addEventListener("mouseleave", () => {
+				bottomPic.style.display = "none";
+			});
+		}
 }
 
 function setAvatarVideo_Dom() {

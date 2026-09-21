@@ -6,12 +6,17 @@ function initPkg_ExpandTool_TabSwitch() {
 }
 
 function ExpandTool_TabSwitch_insertDom() {
-  let a = document.createElement("span");
-  // a.className = "extool__bsize";
-  a.innerHTML = '<label title="阻止浏览器页签冻结"><input id="extool__tabSwitch" type="checkbox">防页签冻结</label>';
-  
-  let b = document.getElementsByClassName("extool")[0];
-  b.insertBefore(a, b.childNodes[0]);
+  let container = document.querySelector(".extool__playback-perf");
+  if (!container) {
+    container = document.createElement("div");
+    container.className = "extool__playback-perf";
+    let b = document.getElementsByClassName("extool")[0];
+    if (b) b.insertBefore(container, b.childNodes[0]);
+  }
+  let label = document.createElement("label");
+  label.title = "阻止浏览器页签休眠冻结挂机";
+  label.innerHTML = '<input id="extool__tabSwitch" type="checkbox">防页签冻结';
+  container.appendChild(label);
 }
 
 

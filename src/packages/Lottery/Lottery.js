@@ -10,9 +10,6 @@ function initPkg_Lottery() {
 	initPkg_Lottery_Dom();
 	initPkg_Lottery_Func();
     Lottery_Set();
-    timer_lottery = setInterval(() => {
-        initPkg_Lottery_Timer();
-    }, 60000);
 }
 
 function initPkg_Lottery_Dom() {
@@ -44,35 +41,57 @@ function Lottery_insertModal() {
         <div class="lottery__nodata">暂无数据</div>
         <div class="lottery__wrap"></div>
     `;
-	let b = document.getElementsByClassName("layout-Player-chat")[0];
-	b.insertBefore(a, b.childNodes[0]);
-}
+		let b = document.getElementsByClassName("layout-Player-chat")[0] || document.querySelector(".Barrage-main") || document.body;
+		if (b) b.insertBefore(a, b.childNodes[0]);
+	}
 
 function initPkg_Lottery_Func() {
     let dom_notice = document.getElementById("lottery-notice");
-    document.getElementsByClassName("ex-lottery")[0].addEventListener("click", () => {
-        showExRightPanel("全站抽奖信息");
+    document.getElementsByClassName("ex-lottery")[0].addEventListener("click", function() {
+        showExRightPanel("全站抽奖信息", this);
         let dom = document.getElementsByClassName("lottery__wrap")[0];
         if (dom) {
             dom.innerHTML = lotteryHTML;
         }
-    })
+        if (!lotteryHTML) {
+            initPkg_Lottery_Timer();
+        }
+    });
 
     document.getElementById("lottery-refresh").addEventListener("click", debounce(() => {
         initPkg_Lottery_Timer();
-    }, 3000))
+    }, 3000));
+
+    function startLotteryTimer() {
+        stopLotteryTimer();
+        initPkg_Lottery_Timer();
+        timer_lottery = setInterval(() => {
+            if (isLotteryNotice) {
+                initPkg_Lottery_Timer();
+            } else {
+                stopLotteryTimer();
+            }
+        }, 60000);
+    }
+
+    function stopLotteryTimer() {
+        if (timer_lottery) {
+            clearInterval(timer_lottery);
+            timer_lottery = 0;
+        }
+    }
 
     dom_notice.addEventListener("click", () => {
         let ischecked = dom_notice.checked;
         if (ischecked == true) {
-            // 开启提醒
             isLotteryNotice = true;
-        } else{
-            // 停止提醒
-            isLotteryNotice =  false;
+            startLotteryTimer();
+        } else {
+            isLotteryNotice = false;
+            stopLotteryTimer();
         }
         saveData_Lottery();
-    })
+    });
 }
 
 

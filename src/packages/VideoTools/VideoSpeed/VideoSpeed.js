@@ -22,26 +22,26 @@ function VideoSpeed_insertIcon() {
     `;
 
     let b = document.getElementsByClassName("menu-da2a9e")[0];
-    b.insertBefore(a, b.childNodes[1]);
+    if (b) b.insertBefore(a, b.childNodes[1]);
 }
 
 function initPkg_VideoTools_VideoSpeed_Func() {
-    document.getElementById("videospeed__2.0").addEventListener("click", () => {
-        liveVideoNode.playbackRate = 2;
-    });
-    document.getElementById("videospeed__1.5").addEventListener("click", () => {
-        liveVideoNode.playbackRate = 1.5;
-    });
-    document.getElementById("videospeed__1.25").addEventListener("click", () => {
-        liveVideoNode.playbackRate = 1.25;
-    });
-    document.getElementById("videospeed__1.0").addEventListener("click", () => {
-        liveVideoNode.playbackRate = 1;
-    });
-    document.getElementById("videospeed__0.75").addEventListener("click", () => {
-        liveVideoNode.playbackRate = 0.75;
-    });
-    document.getElementById("videospeed__0.5").addEventListener("click", () => {
-        liveVideoNode.playbackRate = 0.5;
+    const speeds = [
+        { id: "videospeed__2.0", rate: 2 },
+        { id: "videospeed__1.5", rate: 1.5 },
+        { id: "videospeed__1.25", rate: 1.25 },
+        { id: "videospeed__1.0", rate: 1 },
+        { id: "videospeed__0.75", rate: 0.75 },
+        { id: "videospeed__0.5", rate: 0.5 }
+    ];
+    speeds.forEach(item => {
+        let el = document.getElementById(item.id);
+        if (el) {
+            el.addEventListener("click", () => {
+                if (typeof liveVideoNode !== "undefined" && liveVideoNode) {
+                    liveVideoNode.playbackRate = item.rate;
+                }
+            });
+        }
     });
 }

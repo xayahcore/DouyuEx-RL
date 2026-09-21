@@ -1,24 +1,44 @@
 .bloop {
-	background-color: rgba(255,255,255,0.9);
-	width: 100%;
-	height: 200px;
-	position: relative;
-	bottom: 200px;
-	display: none;
-	z-index: 1428;
-	color: #333;
+	background-color: rgba(255, 255, 255, 0.88) !important;
+	color: #0f172a !important;
+}
+
+.bloop__header_card {
+	display: flex !important;
+	align-items: center !important;
+	justify-content: space-between !important;
+	gap: 6px !important;
+	width: 100% !important;
+	box-sizing: border-box !important;
+	margin-bottom: 8px !important;
+}
+
+.bloop__header_card select {
+	flex: 1 1 auto !important;
+	min-width: 70px !important;
+	max-width: 140px !important;
+	height: 28px !important;
+	border-radius: 6px !important;
+	border: 1px solid rgba(0, 0, 0, 0.15) !important;
+	background: rgba(255, 255, 255, 0.95) !important;
+	outline: none !important;
+}
+
+.bloop textarea {
+	width: 100% !important;
+	box-sizing: border-box !important;
+	border-radius: 8px !important;
+	border: 1px solid rgba(0, 0, 0, 0.15) !important;
+	background: rgba(255, 255, 255, 0.95) !important;
+	padding: 6px 8px !important;
+	outline: none !important;
+	resize: vertical !important;
+}
+
+.bloop textarea:focus {
+	border-color: #007aff !important;
 }
 
 .bloop__switch {
-	position: absolute;
-	right: 0;
-	bottom: 0;
-}
-
-.bloop__mode {
-	display: inline-block;
-}
-
-#bloop__select {
-	width: 150px;
+	margin-top: 8px !important;
 }

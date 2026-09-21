@@ -26,14 +26,14 @@ function initPkg_ExpandTool_Dom() {
     ExpandTool_insertIcon();
     
 }
-function ExpandTool_insertModal() {
-	let a = document.createElement("div");
-	a.className = "extool";
-    a.innerHTML = `<div class="extool__close" title="关闭">×</div>`;
-	
-	let b = document.getElementsByClassName("layout-Player-chat")[0];
-	b.insertBefore(a, b.childNodes[0]);
-}
+	function ExpandTool_insertModal() {
+		let a = document.createElement("div");
+		a.className = "extool";
+	    a.innerHTML = `<div class="extool__close" title="关闭">×</div>`;
+		
+		let b = document.getElementsByClassName("layout-Player-chat")[0] || document.querySelector(".Barrage-main") || document.body;
+		if (b) b.insertBefore(a, b.childNodes[0]);
+	}
 function ExpandTool_insertIcon() {
 	let a = document.createElement("div");
 	a.className = "extool-icon";
@@ -49,9 +49,9 @@ function ExpandTool_insertIcon() {
 function initPkg_ExpandTool_Func() {
 	// 函数初始化
 	// 将onclick事件绑定在这里
-	document.getElementsByClassName("extool-icon")[0].addEventListener("click", function() {
-		showExRightPanel("扩展功能");
-	});
+		document.getElementsByClassName("extool-icon")[0].addEventListener("click", function() {
+			showExRightPanel("扩展功能", this);
+		});
 
     const closeBtn = document.getElementsByClassName("extool__close")[0];
     if (closeBtn) {

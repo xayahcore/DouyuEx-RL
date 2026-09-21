@@ -55,9 +55,9 @@ function initScriptHook() {
   const originalInsertBefore = Node.prototype.insertBefore;
 
   Node.prototype.appendChild = function (node) {
-    if (node.tagName === "SCRIPT") {
+    if (node && node.tagName === "SCRIPT") {
       if (node.src && handleExternalScript(node, originalAppendChild, this)) {
-        return document.createDocumentFragment();
+        return node;
       }
       node = applyInlineScriptHooks(node);
     }
@@ -66,9 +66,9 @@ function initScriptHook() {
   };
 
   Node.prototype.insertBefore = function (node, referenceNode) {
-    if (node.tagName === "SCRIPT") {
+    if (node && node.tagName === "SCRIPT") {
       if (node.src && handleExternalScript(node, originalInsertBefore, this)) {
-        return document.createDocumentFragment();
+        return node;
       }
       node = applyInlineScriptHooks(node);
     }

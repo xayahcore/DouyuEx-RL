@@ -52,19 +52,24 @@ function LiveTool_Enter_insertFunc() {
             'title': "请输入json文本（会覆盖原来的设置）",
             'okBtn': '确定',
             onConfirm: function (data) {
-                let select_wordList = document.getElementById("enter__select");
-                let obj = JSON.parse(data || "{}") || {};
-                if (typeof obj == "object") {
-                    enterWordList = {...obj};
-                    select_wordList.options.length = 0;
-                    for (let key in enterWordList) {
-                        if (enterWordList.hasOwnProperty(key)) {
-                            select_wordList.options.add(new Option(key, ""));
+                try {
+                    let parsed = JSON.parse(data || "[]");
+                    let list = [];
+                    if (Array.isArray(parsed)) {
+                        list = parsed.filter(item => item && typeof item.word === "string");
+                    } else if (typeof parsed === "object" && parsed !== null) {
+                        for (let k in parsed) {
+                            list.push({ level: Number(parsed[k]?.level || parsed[k]) || 1, word: k });
                         }
                     }
+                    enterWordList = list;
+                    enterWordList.sort((a, b) => b.level - a.level);
+                    refreshEnterSelectOptions();
                     saveData_Enter();
+                    showMessage("【进场欢迎】导入完毕", "success");
+                } catch (e) {
+                    showMessage("【进场欢迎】JSON格式错误", "error");
                 }
-                showMessage("【进场欢迎】导入完毕", "success");
             },
             onCancel: function (data) {
             },
@@ -105,14 +110,14 @@ function LiveTool_Enter_insertFunc() {
     });
     
     document.getElementById("enter__select").onclick = function() {
-        if (this.options.length == 0) {
+        if (this.options.length == 0 || this.selectedIndex < 0) {
             return;
         }
-        let word = this.options[this.selectedIndex].text;
-        let level = enterWordList[word].enter;
-        document.getElementById("enter__word").value = word;
-        document.getElementById("enter__level").value = level;
-        localStorage.setItem("ExSave_LastEnterWord", word); // 存储弹幕列表
+        let item = enterWordList[this.selectedIndex];
+        if (!item) return;
+        document.getElementById("enter__word").value = item.word || "";
+        document.getElementById("enter__level").value = item.level || 1;
+        localStorage.setItem("ExSave_LastEnterWord", item.word || "");
     };
 
     document.getElementById("enter__add").addEventListener("click", () => {
@@ -259,7 +264,7 @@ function initPkg_LiveTool_Enter_Handle(text) {
         let level = getStrMiddle(text, "level@=", "/");
         for (const item of enterWordList) {
             if (Number(level) >= Number(item.level)) {
-                reply = String(item.word).replace(/<id>/g, nn);
+                let reply = String(item.word).replace(/<id>/g, nn);
                 sendBarrage(reply);
                 break;
             }

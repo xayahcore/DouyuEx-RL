@@ -7,31 +7,37 @@ function initPkg_ChatMemory() {
 }
 
 function initPkg_ChatMemory_Func() {
-    document.getElementsByClassName("ChatSend-txt")[0].addEventListener("keydown", (e) => {
-        let dom = e.target;
-        const isTextarea = dom.tagName === "TEXTAREA";
-        if (e.keyCode == 38) {
-            // ↑
-            if (getTextareaPosition(dom) == 0) {
-                barrageMemoryIndex = barrageMemoryIndex > 0 ? barrageMemoryIndex - 1 : barrageMemoryIndex;
-                chatMemory_setBarrage();
+    let txt = document.getElementsByClassName("ChatSend-txt")[0];
+    if (txt) {
+        txt.addEventListener("keydown", (e) => {
+            let dom = e.target;
+            const isTextarea = dom.tagName === "TEXTAREA";
+            if (e.keyCode == 38) {
+                // ↑
+                if (getTextareaPosition(dom) == 0) {
+                    barrageMemoryIndex = barrageMemoryIndex > 0 ? barrageMemoryIndex - 1 : barrageMemoryIndex;
+                    chatMemory_setBarrage();
+                }
+            } else if (e.keyCode == 40) {
+                // ↓
+                const length = isTextarea ? dom.value.length : dom.innerText.length;
+                if (getTextareaPosition(dom) == length) {
+                    barrageMemoryIndex = barrageMemoryIndex < barrageMemoryArr.length - 1 ? barrageMemoryIndex + 1 : barrageMemoryIndex;
+                    chatMemory_setBarrage();
+                }
+            } else if (e.keyCode == 13) {
+                // enter
+                chatMemory_pushBarrage(getBarrageValue());
             }
-        } else if (e.keyCode == 40) {
-            // ↓
-            const length = isTextarea ? dom.value.length : dom.innerText.length;
-            if (getTextareaPosition(dom) == length) {
-                barrageMemoryIndex = barrageMemoryIndex < barrageMemoryArr.length - 1 ? barrageMemoryIndex + 1 : barrageMemoryIndex;
-                chatMemory_setBarrage();
-            }
-        } else if (e.keyCode == 13) {
-            // enter
+        });
+    }
+    let btn = document.getElementsByClassName("ChatSend-button")[0];
+    if (btn) {
+        btn.addEventListener("click", () => {
+            // 点击弹幕发送按钮
             chatMemory_pushBarrage(getBarrageValue());
-        }
-    });
-    document.getElementsByClassName("ChatSend-button")[0].addEventListener("click", () => {
-        // 点击弹幕发送按钮
-        chatMemory_pushBarrage(getBarrageValue());
-    })
+        });
+    }
 }
 
 function chatMemory_pushBarrage(txt) {

@@ -15,8 +15,8 @@ function AudioLine_insertIcon() {
     if (b && b.childNodes.length > 1) {
         b.insertBefore(a, b.childNodes[1]);
     } else {
-        b = getValidDom([".subTitleContainer__-vzhr"]);
-        b.appendChild(a);
+        b = getValidDom([".subTitleContainer__-vzhr", ".Title-row", ".Title", "header"]);
+        if (b) b.appendChild(a);
     }
 }
 
@@ -29,5 +29,6 @@ function AudioLine_switch() {
 }
 
 function initPkg_AudioLine_Func() {
-	document.getElementById("ex-audio-line").addEventListener("click", AudioLine_switch);
+    let btn = document.getElementById("ex-audio-line");
+    if (btn) btn.addEventListener("click", AudioLine_switch);
 }

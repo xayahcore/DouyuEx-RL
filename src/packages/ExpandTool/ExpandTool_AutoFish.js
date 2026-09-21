@@ -32,6 +32,7 @@ function ExpandTool_AutoFish_insertFunc() {
     const isStart = document.getElementById("extool__autofish_start").checked;
     AutoFish_lockMode(isStart);
     if (!isStart) {
+      clearTimeout(timerAutoFish);
       clearInterval(timerAutoFish);
       return;
     }
@@ -78,35 +79,48 @@ function ExpandTool_AutoFish_insertFunc() {
       await sleep(1000);
     }
 
-    timerAutoFish = setInterval(async () => {
-      // 检查是否在钓鱼大赛时间内
-      if (!isInFishingTime()) return;
-      
-      if (isFishing) {
-        // 正在钓鱼中，检测是否到时间收杆
-        const now = new Date().getTime();
-        if (now <= nextFishEndTime) return;
-        await endFish();
-      } else {
-        const fishRes = await AutoFish_startFish();
-        if (fishRes.error !== 0) {
-          showMessage(`【自动钓鱼】${fishRes.msg}`, "error");
-          console.log(fishRes, "钓鱼失败");
-          if (fishRes.error == 1001007) {
-            // 操作失败
-            await endFish();
+    async function fishLoop() {
+      const isStart = document.getElementById("extool__autofish_start")?.checked;
+      if (!isStart) return;
+      try {
+        if (isInFishingTime()) {
+          if (isFishing) {
+            // 正在钓鱼中，检测是否到时间收杆
+            const now = new Date().getTime();
+            if (now > nextFishEndTime) {
+              await endFish();
+            }
+          } else {
+            const fishRes = await AutoFish_startFish();
+            if (fishRes.error !== 0) {
+              showMessage(`【自动钓鱼】${fishRes.msg}`, "error");
+              console.log(fishRes, "钓鱼失败");
+              if (fishRes.error == 1001007) {
+                // 操作失败
+                await endFish();
+              } else if (fishRes.error == 1005003) {
+                // 鱼饵不足
+                document.getElementById("extool__autofish_start").checked = false;
+                AutoFish_lockMode(false);
+                saveData_AutoFish();
+                return;
+              }
+            } else if (fishRes.data && fishRes.data.fishing) {
+              isFishing = true;
+              nextFishEndTime = fishRes.data.fishing.fishEtMs;
+            }
           }
-          if (fishRes.error == 1005003) {
-            // 鱼饵不足
-            clearInterval(timerAutoFish);
-          }
-          return;
         }
-        isFishing = true;
-
-        nextFishEndTime = fishRes.data.fishing.fishEtMs;
+      } catch (err) {
+        console.error("[DouyuEx] 自动钓鱼轮询异常:", err);
+      } finally {
+        const stillRunning = document.getElementById("extool__autofish_start")?.checked;
+        if (stillRunning) {
+          timerAutoFish = setTimeout(fishLoop, 1500);
+        }
       }
-    }, 1500);
+    }
+    fishLoop();
   });
 }
 

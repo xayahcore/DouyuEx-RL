@@ -155,19 +155,19 @@ function Filter_insertEnhanceModal() {
         </div>
     `;
 
-    let root = document.querySelector("body");
-    root.insertBefore(modal, root.childNodes[0]);
+    let root = document.querySelector("body") || document.body;
+    if (root) root.insertBefore(modal, root.childNodes[0]);
 
     // 添加关闭事件
-    modal.getElementsByClassName("enhance-modal__close")[0].addEventListener("click", () => {
-        modal.style.display = "none";
-    });
+    let closeBtn = modal.getElementsByClassName("enhance-modal__close")[0];
+    if (closeBtn) {
+        closeBtn.addEventListener("click", () => {
+            modal.style.display = "none";
+        });
+    }
 }
 
 function initPkg_VideoTools_Filter_Func() {
-    document.onmouseup = function () {
-        document.onmousemove = null; //弹起鼠标不做任何操作
-    }
     // 只在 Edge 浏览器中添加画质增强功能的事件监听
     if (isEdgeBrowser()) {
         const switchEnhance = document.getElementById("switch__enhance");
@@ -212,61 +212,79 @@ function initPkg_VideoTools_Filter_Func() {
         liveVideoNode.style.filter = `${ currentBrightness } ${ currentContrast } ${ currentSaturate }`;
     });
 
-    document.getElementById("filter__reset").addEventListener("click", () => {
-        resetVideoFilter();
-    });
-    document.getElementById("filter__reset2").addEventListener("click", () => {
-        resetVideoFilter();
-    });
-    document.getElementById("filter__mirror").addEventListener("click", () => {
-        if (!isMirror) {
-            isMirror = true;
-            transformCss.rotateY = "rotateY(180deg)";
-        } else {
-            isMirror = false;
-            transformCss.rotateY = "rotateY(0deg)";
-        }
-        liveVideoNode.parentNode.style.transition = "all .5s";
-        liveVideoNode.parentNode.style.transform = transformCss.rotateY + " " + transformCss.rotate + " " + transformCss.scale;
-    });
-
-    document.getElementById("filter__rotate").addEventListener("click", () => {
-        rotateAngle += 90;
-        transformCss.rotate = `rotate(${String(rotateAngle)}deg)`;
-        liveVideoNode.parentNode.style.transition = "all .5s";
-        if ((rotateAngle/90) % 2 !== 0) {
-            if (window.innerWidth > window.innerHeight) {
-                transformCss.scale = "scale(" + String(liveVideoNode.videoHeight / liveVideoNode.videoWidth) + ")";
+    let btnReset = document.getElementById("filter__reset");
+    if (btnReset) {
+        btnReset.addEventListener("click", () => {
+            resetVideoFilter();
+        });
+    }
+    let btnReset2 = document.getElementById("filter__reset2");
+    if (btnReset2) {
+        btnReset2.addEventListener("click", () => {
+            resetVideoFilter();
+        });
+    }
+    let btnMirror = document.getElementById("filter__mirror");
+    if (btnMirror) {
+        btnMirror.addEventListener("click", () => {
+            if (!isMirror) {
+                isMirror = true;
+                transformCss.rotateY = "rotateY(180deg)";
             } else {
-                transformCss.scale = "scale(" + String(liveVideoNode.videoWidth / liveVideoNode.videoHeight) + ")";
+                isMirror = false;
+                transformCss.rotateY = "rotateY(0deg)";
             }
-        } else {
-            transformCss.scale = "";
-        }
-        liveVideoNode.parentNode.style.transform = transformCss.rotateY + " " + transformCss.rotate + " " + transformCss.scale;
-    });
+            if (liveVideoNode && liveVideoNode.parentNode) {
+                liveVideoNode.parentNode.style.transition = "all .5s";
+                liveVideoNode.parentNode.style.transform = transformCss.rotateY + " " + transformCss.rotate + " " + transformCss.scale;
+            }
+        });
+    }
 
-    document.getElementById("filter__select").onchange = function() {
-        let option = this.options[this.selectedIndex].text;
-        switch (option) {
-            case "default":
-                StyleHook_remove("Ex_Style_Filter")
-                break;
-            case "1977":
-                setVideoFilter(`.${ liveVideoParentClassName }{position:relative;-webkit-filter:contrast(110%)brightness(110%)saturate(130%);filter:contrast(110%)brightness(110%)saturate(130%)}.${ liveVideoParentClassName }::before{content:"";display:block;height:100%;width:100%;top:0;left:0;position:absolute;pointer-events:none;mix-blend-mode:screen;background:rgba(243,106,188,0.3);z-index:10}`)
-                break;
-            case "Aden":
-                setVideoFilter(`.${ liveVideoParentClassName }{position:relative;-webkit-filter:contrast(90%)brightness(120%)saturate(85%)hue-rotate(20deg);filter:contrast(90%)brightness(120%)saturate(85%)hue-rotate(20deg)}.${ liveVideoParentClassName }::before{content:"";display:block;height:100%;width:100%;top:0;left:0;position:absolute;pointer-events:none;mix-blend-mode:darken;background:-webkit-linear-gradient(to right,rgba(66,10,14,0.2)1,rgba(66,10,14,0));background:linear-gradient(to right,rgba(66,10,14,0.2)1,rgba(66,10,14,0));z-index:10}`)
-                break;  
-            case "Amaro":
-                setVideoFilter(`.${ liveVideoParentClassName }{position:relative;-webkit-filter:contrast(90%)brightness(110%)saturate(150%)hue-rotate(-10deg);filter:contrast(90%)brightness(110%)saturate(150%)hue-rotate(-10deg)}`)
-                break;
-            case "Brannan":
-                setVideoFilter(`.${ liveVideoParentClassName }{position:relative;-webkit-filter:contrast(140%)sepia(50%);filter:contrast(140%)sepia(50%)}.${ liveVideoParentClassName }::before{content:"";display:block;height:100%;width:100%;top:0;left:0;position:absolute;pointer-events:none;mix-blend-mode:lighten;background:rgba(161,44,199,0.31);z-index:10}`)
-                break;
-            case "Brooklyn":
-                setVideoFilter(`.${ liveVideoParentClassName }{position:relative;-webkit-filter:contrast(90%)brightness(110%);filter:contrast(90%)brightness(110%)}.${ liveVideoParentClassName }::before{content:"";display:block;height:100%;width:100%;top:0;left:0;position:absolute;pointer-events:none;mix-blend-mode:overlay;background:-webkit-radial-gradient(50%50%,circle closest-corner,rgba(168,223,193,0.4)1,rgba(183,196,200,0.2));background:radial-gradient(50%50%,circle closest-corner,rgba(168,223,193,0.4)1,rgba(183,196,200,0.2));z-index:10}`)
-                break;   
+    let btnRotate = document.getElementById("filter__rotate");
+    if (btnRotate) {
+        btnRotate.addEventListener("click", () => {
+            rotateAngle += 90;
+            transformCss.rotate = `rotate(${String(rotateAngle)}deg)`;
+            if (liveVideoNode && liveVideoNode.parentNode) {
+                liveVideoNode.parentNode.style.transition = "all .5s";
+                if ((rotateAngle/90) % 2 !== 0) {
+                    if (window.innerWidth > window.innerHeight) {
+                        transformCss.scale = "scale(" + String(liveVideoNode.videoHeight / (liveVideoNode.videoWidth || 1)) + ")";
+                    } else {
+                        transformCss.scale = "scale(" + String(liveVideoNode.videoWidth / (liveVideoNode.videoHeight || 1)) + ")";
+                    }
+                } else {
+                    transformCss.scale = "";
+                }
+                liveVideoNode.parentNode.style.transform = transformCss.rotateY + " " + transformCss.rotate + " " + transformCss.scale;
+            }
+        });
+    }
+
+    let selectFilter = document.getElementById("filter__select");
+    if (selectFilter) {
+        selectFilter.onchange = function() {
+            let option = this.options[this.selectedIndex].text;
+            switch (option) {
+                case "default":
+                    StyleHook_remove("Ex_Style_Filter");
+                    break;
+                case "1977":
+                    setVideoFilter(`.${ liveVideoParentClassName }{position:relative;-webkit-filter:contrast(110%)brightness(110%)saturate(130%);filter:contrast(110%)brightness(110%)saturate(130%)}.${ liveVideoParentClassName }::before{content:"";display:block;height:100%;width:100%;top:0;left:0;position:absolute;pointer-events:none;mix-blend-mode:screen;background:rgba(243,106,188,0.3);z-index:10}`);
+                    break;
+                case "Aden":
+                    setVideoFilter(`.${ liveVideoParentClassName }{position:relative;-webkit-filter:contrast(90%)brightness(120%)saturate(85%)hue-rotate(20deg);filter:contrast(90%)brightness(120%)saturate(85%)hue-rotate(20deg)}.${ liveVideoParentClassName }::before{content:"";display:block;height:100%;width:100%;top:0;left:0;position:absolute;pointer-events:none;mix-blend-mode:darken;background:-webkit-linear-gradient(to right,rgba(66,10,14,0.2)1,rgba(66,10,14,0));background:linear-gradient(to right,rgba(66,10,14,0.2)1,rgba(66,10,14,0));z-index:10}`);
+                    break;  
+                case "Amaro":
+                    setVideoFilter(`.${ liveVideoParentClassName }{position:relative;-webkit-filter:contrast(90%)brightness(110%)saturate(150%)hue-rotate(-10deg);filter:contrast(90%)brightness(110%)saturate(150%)hue-rotate(-10deg)}`);
+                    break;
+                case "Brannan":
+                    setVideoFilter(`.${ liveVideoParentClassName }{position:relative;-webkit-filter:contrast(140%)sepia(50%);filter:contrast(140%)sepia(50%)}.${ liveVideoParentClassName }::before{content:"";display:block;height:100%;width:100%;top:0;left:0;position:absolute;pointer-events:none;mix-blend-mode:lighten;background:rgba(161,44,199,0.31);z-index:10}`);
+                    break;
+                case "Brooklyn":
+                    setVideoFilter(`.${ liveVideoParentClassName }{position:relative;-webkit-filter:contrast(90%)brightness(110%);filter:contrast(90%)brightness(110%)}.${ liveVideoParentClassName }::before{content:"";display:block;height:100%;width:100%;top:0;left:0;position:absolute;pointer-events:none;mix-blend-mode:overlay;background:-webkit-radial-gradient(50%50%,circle closest-corner,rgba(168,223,193,0.4)1,rgba(183,196,200,0.2));background:radial-gradient(50%50%,circle closest-corner,rgba(168,223,193,0.4)1,rgba(183,196,200,0.2));z-index:10}`);
+                    break;
             case "Claredon":
                 setVideoFilter(`.${ liveVideoParentClassName }{position:relative;-webkit-filter:contrast(120%)saturate(125%);filter:contrast(120%)saturate(125%)}.${ liveVideoParentClassName }::before{content:"";display:block;height:100%;width:100%;top:0;left:0;position:absolute;pointer-events:none;mix-blend-mode:overlay;background:rgba(127,187,227,0.2);z-index:10}`)
                 break;
@@ -310,26 +328,32 @@ function initPkg_VideoTools_Filter_Func() {
                 setVideoFilter(`.${ liveVideoParentClassName }{position:relative;-webkit-filter:sepia(30%);filter:sepia(30%)}.${ liveVideoParentClassName }::before{content:"";display:block;height:100%;width:100%;top:0;left:0;position:absolute;pointer-events:none;mix-blend-mode:color-burn;background:-webkit-radial-gradient(50%50%,circle closest-corner,rgba(224,231,230,1)40,rgba(43,42,161,0.6));background:radial-gradient(50%50%,circle closest-corner,rgba(224,231,230,1)40,rgba(43,42,161,0.6));z-index:10}`)
                 break;
             default:
-                StyleHook_remove("Ex_Style_Filter")
+                StyleHook_remove("Ex_Style_Filter");
                 break;
         }
+    };
     }
 
-    document.getElementById("filter__panorama").addEventListener("click", () => {
-        let tmp = document.getElementById("ex-panorama");
-        if (tmp) {
-            tmp.remove();
-            panorama = null;
-        } else {
-            let node = document.getElementById("__h5player");
-            let dom = document.createElement("div");
-            dom.id = "ex-panorama";
-            dom.style = "width:100%;height:100%;z-index:1;background:black;"
-            node.insertBefore(dom, node.childNodes[0]);
-            panorama = new PanoramaVideo(dom, liveVideoNode);
-            panoramaAnimation(panorama);
-        }
-    })
+    let btnPanorama = document.getElementById("filter__panorama");
+    if (btnPanorama) {
+        btnPanorama.addEventListener("click", () => {
+            let tmp = document.getElementById("ex-panorama");
+            if (tmp) {
+                tmp.remove();
+                panorama = null;
+            } else {
+                let node = document.getElementById("__h5player");
+                if (node) {
+                    let dom = document.createElement("div");
+                    dom.id = "ex-panorama";
+                    dom.style = "width:100%;height:100%;z-index:1;background:black;";
+                    node.insertBefore(dom, node.childNodes[0]);
+                    panorama = new PanoramaVideo(dom, liveVideoNode);
+                    panoramaAnimation(panorama);
+                }
+            }
+        });
+    }
 }
 
 function Filter_showPanel() {
@@ -420,6 +444,7 @@ function setVideoFilter(style) {
 }
 
 function setScrollFunc(scrollDom, barDom, maskDom, callback) {
+    if (!scrollDom || !barDom || !maskDom) return;
     let scroll = scrollDom;
     let bar = barDom;
     let mask = maskDom;
@@ -428,8 +453,7 @@ function setScrollFunc(scrollDom, barDom, maskDom, callback) {
         let event = e || window.event;
         let leftVal = event.clientX - this.offsetLeft;
         let that = this;
-        // 拖动一定写到 down 里面才可以
-        document.onmousemove = function (e) {
+        function onMouseMove(e) {
             let event = e || window.event;
             barleft = event.clientX - leftVal;
             if (barleft < 0)
@@ -439,9 +463,13 @@ function setScrollFunc(scrollDom, barDom, maskDom, callback) {
             mask.style.width = barleft + 'px';
             that.style.left = barleft + "px";
             callback(parseInt(barleft / (scroll.offsetWidth - bar.offsetWidth) * 255));
-
-            //防止选择内容--当拖动鼠标过快时候，弹起鼠标，bar也会移动，修复bug
             window.getSelection ? window.getSelection().removeAllRanges() : document.selection.empty();
         }
+        function onMouseUp() {
+            document.removeEventListener("mousemove", onMouseMove);
+            document.removeEventListener("mouseup", onMouseUp);
+        }
+        document.addEventListener("mousemove", onMouseMove);
+        document.addEventListener("mouseup", onMouseUp);
     }
 }

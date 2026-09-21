@@ -22,8 +22,8 @@ function Refresh_Video_insertIcon() {
 	let a = document.createElement("li");
     a.id = "refresh-video";
     a.innerText = "隐藏礼物栏";
-    let b = document.getElementsByClassName("menu-da2a9e")[0];
-    b.insertBefore(a, b.childNodes[b.childNodes.length -1]);
+	    let b = document.getElementsByClassName("menu-da2a9e")[0];
+	    if (b) b.insertBefore(a, b.childNodes[b.childNodes.length -1]);
 
     if (!document.getElementById("refresh-video3")) {
         a = document.createElement("div");
@@ -190,9 +190,12 @@ function initPkg_Refresh_Video_Func() {
         resizeWindow();
     }
 
-	document.getElementById("refresh-video").addEventListener("click", (e) => {
-        toggleRefreshVideo();
-    });
+	let refreshVideoBtn = document.getElementById("refresh-video");
+	if (refreshVideoBtn) {
+		refreshVideoBtn.addEventListener("click", (e) => {
+			toggleRefreshVideo();
+		});
+	}
 
     if (refresh_video3) {
         refresh_video3.addEventListener("click", (e) => {
@@ -218,7 +221,7 @@ function updateRefreshSwitchUI(isSimpleMode) {
 
 function refresh_Video_getStatus() {
     let dom_toolbar = document.getElementsByClassName("PlayerToolbar-ContentRow")[0];
-    if (dom_toolbar.style.visibility == "hidden") {
+    if (dom_toolbar && dom_toolbar.style.visibility == "hidden") {
         return true;
     } else {
         return false;

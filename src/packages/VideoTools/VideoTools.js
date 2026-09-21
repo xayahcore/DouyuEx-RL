@@ -41,15 +41,19 @@ function initPkg_VideoTools_Func() {
             Filter_hidePanel();
         }
     };
-    document.getElementById("js-player-toolbar").addEventListener("mouseover", hideFilterOnLeave);
-    document.getElementById("js-player-asideMain").addEventListener("mouseover", hideFilterOnLeave);
-    getValidDom([".inputView-2a65aa", ".inputView-620ab7"]).addEventListener("focus", () => {
-        isInput = true;
-    });
-    
-    getValidDom([".inputView-2a65aa", ".inputView-620ab7"]).addEventListener("blur", () => {
-        isInput = false;
-    });
+    let tb = document.getElementById("js-player-toolbar");
+    if (tb) tb.addEventListener("mouseover", hideFilterOnLeave);
+    let aside = document.getElementById("js-player-asideMain");
+    if (aside) aside.addEventListener("mouseover", hideFilterOnLeave);
+    let inputView = getValidDom([".inputView-2a65aa", ".inputView-620ab7"]);
+    if (inputView) {
+        inputView.addEventListener("focus", () => {
+            isInput = true;
+        });
+        inputView.addEventListener("blur", () => {
+            isInput = false;
+        });
+    }
     let m = new DomHook(".app-f0f9c7", false, (m) => {
         if (m.length > 0) {
             if (m[0].addedNodes.length > 0) {

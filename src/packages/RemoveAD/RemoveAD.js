@@ -1,13 +1,8 @@
 function initPkg_RemoveAD() {
-    let t = setInterval(() => {
-        let a = getValidDom([".PlayerToolbar-ContentCell .PlayerToolbar-Wealth", "#js-backpack-enter"]);
-        if (a != undefined) {
-            clearInterval(t);
-            optimizePageStyle();
-
-            initPkg_RemoveMsgNotice();
-        }
-    }, 1000);
+    optimizePageStyle();
+    if (typeof initPkg_RemoveMsgNotice === "function") {
+        initPkg_RemoveMsgNotice();
+    }
 }
 // .dy-ModalRadius-mask,dy-ModalRadius-wrap{display:none !important;}
 function removeAD() {
@@ -99,6 +94,8 @@ function removeAD() {
 
 function optimizePageStyle() {
     // 弹幕框滚动条隐藏
-    let dom_barrage = document.getElementById("js-barrage-list").parentNode;
-    dom_barrage.id = "js-barrage-list-parent";
+    let list = document.getElementById("js-barrage-list");
+    if (list && list.parentNode) {
+        list.parentNode.id = "js-barrage-list-parent";
+    }
 }

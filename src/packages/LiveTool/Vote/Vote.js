@@ -225,8 +225,8 @@ function LiveTool_Vote_insertDom_VotePanel() {
     `;
     a.innerHTML = panel;
     
-    let b = getValidDom([".layout-Player-main", "main"]);
-    b.insertBefore(a, b.childNodes[0]);
+    let b = getValidDom([".layout-Player-main", "main", ".Barrage-main"]) || document.body;
+    if (b) b.insertBefore(a, b.childNodes[0]);
 
     let box = document.getElementsByClassName("vote__result")[0];
     box.onmousedown = function (event) {
@@ -235,18 +235,20 @@ function LiveTool_Vote_insertDom_VotePanel() {
         let yy = event.clientY - box.offsetTop;
         let mouseX;
         let mouseY;
-        document.onmousemove = function (event) {
+        function onMouseMove(event) {
             event.stopPropagation();
             mouseX = event.clientX - xx;
             mouseY = event.clientY - yy;
             box.style.left = mouseX + "px";
             box.style.top = mouseY + "px";
         }
-        document.onmouseup = function (event) {
+        function onMouseUp(event) {
             event.stopPropagation();
-            document.onmousemove = null;
-            document.onmouseup = null;
+            document.removeEventListener("mousemove", onMouseMove);
+            document.removeEventListener("mouseup", onMouseUp);
         }
+        document.addEventListener("mousemove", onMouseMove);
+        document.addEventListener("mouseup", onMouseUp);
     }
 
     document.getElementById("vote__result-close").addEventListener("click", () => {

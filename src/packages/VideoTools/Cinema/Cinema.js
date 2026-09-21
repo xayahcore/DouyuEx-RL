@@ -37,19 +37,28 @@ function Cinema_insertIcon() {
     `;
 
     let b = document.getElementsByClassName("menu-da2a9e")[0];
-    b.insertBefore(a, b.childNodes[1]);
+    if (b) b.insertBefore(a, b.childNodes[1]);
 }
 
 function initPkg_VideoTools_Cinema_Func() {
-    document.getElementById("cinema__default").addEventListener("click", () => {
-        StyleHook_remove("Ex_Style_Cinema");
-    });
-    document.getElementById("cinema__cover").addEventListener("click", () => {
-        setVideoCinemaMode("cover");
-    });
-    document.getElementById("cinema__fill").addEventListener("click", () => {
-        setVideoCinemaMode("fill");
-    });
+    let btnDef = document.getElementById("cinema__default");
+    if (btnDef) {
+        btnDef.addEventListener("click", () => {
+            StyleHook_remove("Ex_Style_Cinema");
+        });
+    }
+    let btnCov = document.getElementById("cinema__cover");
+    if (btnCov) {
+        btnCov.addEventListener("click", () => {
+            setVideoCinemaMode("cover");
+        });
+    }
+    let btnFil = document.getElementById("cinema__fill");
+    if (btnFil) {
+        btnFil.addEventListener("click", () => {
+            setVideoCinemaMode("fill");
+        });
+    }
 }
 
 function setVideoCinemaMode(fit) {

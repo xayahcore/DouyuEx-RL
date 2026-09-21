@@ -7,12 +7,22 @@ function initPkg_ExpandTool_FullScreen() {
 }
 
 function ExpandTool_FullScreen_insertDom() {
-    let a = document.createElement("span");
-    // a.className = "extool__bsize";
-    a.innerHTML = '<label title="自动网页全屏"><input id="extool__fullscreen" type="checkbox">自动网页全屏</label><label title="自动最高画质"><input id="extool__highestvideoquality" type="checkbox">自动最高画质</label>';
-    
-    let b = document.getElementsByClassName("extool")[0];
-    b.insertBefore(a, b.childNodes[0]);
+    let container = document.querySelector(".extool__playback-perf");
+    if (!container) {
+        container = document.createElement("div");
+        container.className = "extool__playback-perf";
+        let b = document.getElementsByClassName("extool")[0];
+        if (b) b.insertBefore(container, b.childNodes[0]);
+    }
+    let labelQ = document.createElement("label");
+    labelQ.title = "自动最高画质（首流极清秒开）";
+    labelQ.innerHTML = '<input id="extool__highestvideoquality" type="checkbox">自动最高画质';
+    container.appendChild(labelQ);
+
+    let labelF = document.createElement("label");
+    labelF.title = "自动网页全屏";
+    labelF.innerHTML = '<input id="extool__fullscreen" type="checkbox">自动网页全屏';
+    container.appendChild(labelF);
 }
 
 
@@ -57,24 +67,37 @@ function initFullScreen() {
 }
 
 function fullScreen() {
-    let count = 0;
-    let intID1 = setInterval(() => {
-        count++;
-        if (count > 100) clearInterval(intID1);
-        if (getValidDom([".wfs-2a8e83", ".icon-c8be96"])) {
-            clearInterval(intID1);
-            let dom = document.querySelector("div.wfs-2a8e83");
-            if (dom) {
-                dom.click();
-            } else {
-                dom = document.querySelectorAll(".icon-c8be96");
-                if (dom.length >= 2) {
-                    // 因为网页全屏按钮在倒数第二个
-                    dom[dom.length - 2].click();
-                }
-            }
+    function tryClick() {
+        let dom = document.querySelector("div.wfs-2a8e83");
+        if (dom) {
+            dom.click();
+            return true;
         }
-    }, 1000);
+        let icons = document.querySelectorAll(".icon-c8be96");
+        if (icons.length >= 2) {
+            icons[icons.length - 2].click();
+            return true;
+        }
+        return false;
+    }
+
+    if (tryClick()) return;
+
+    let obs = new MutationObserver(() => {
+        if (tryClick()) {
+            obs.disconnect();
+            obs = null;
+        }
+    });
+
+    let target = document.querySelector(".layout-Player") || document.body;
+    obs.observe(target, { childList: true, subtree: true });
+    setTimeout(() => {
+        if (obs) {
+            obs.disconnect();
+            obs = null;
+        }
+    }, 15000);
 }
 
 function getHighestVideoQuality() {
@@ -84,7 +107,7 @@ function ExpandTool_HighestVideoQuality_insertFunc() {
     document.getElementById("extool__highestvideoquality").addEventListener("click", function() {
         saveData_HighestVideoQuality();
         if (getHighestVideoQuality()) {
-            showMessage("刷新页面生效", "success");
+            showMessage("自动最高画质已开启（刷新生效）", "success");
         }
     });
 }
@@ -107,28 +130,9 @@ function initPkg_ExpandTool_HighestVideoQuality_Set() {
 }
 
 function initHighestVideoQuality() {
-	let ret = localStorage.getItem("ExSave_HighestVideoQuality");
-	if (ret != null) {
-		let retJson = JSON.parse(ret);
-        if (retJson.isHighestVideoQuality) {
-            highestVideoQuality();
-        }
-	}
+	// 已由 src/core/quality.js 在原生主上下文最早期全链路接管，此处保持开关状态同步
 }
 
 function highestVideoQuality() {
-    let count = 0;
-    let intID1 = setInterval(() => {
-        count++;
-        if (count > 100) clearInterval(intID1);
-        const qualityContainer = document.querySelector('[class^="tipItem-"]:has([value^="画质"])') || document.querySelector('[class^="tip-"]:has([value^="画质"])');
-        if (qualityContainer) {
-            clearInterval(intID1);
-            const highestQualityOption = qualityContainer.querySelector('ul > li:first-child');
-            if (highestQualityOption) {
-                const isAlreadySelected = highestQualityOption.matches('[class^="selected-"]');
-                if (!isAlreadySelected) highestQualityOption.click(); 
-            }
-        }
-    }, 1000);
+    // 0 轮询协议层强锁，避免与 core/quality.js 发生二次切流冲突
 }

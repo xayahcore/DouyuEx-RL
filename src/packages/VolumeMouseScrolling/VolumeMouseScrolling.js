@@ -46,6 +46,8 @@ function VolumeMouseScrolling_SyncVolumeUI(volume) {
     } catch (e) { }
 }
 
+let _volumeSaveTimer = null;
+
 function VolumeMouseScrolling_Handler(volume) {
     const video = document.getElementById("__video2");
     if (!video) return;
@@ -53,15 +55,18 @@ function VolumeMouseScrolling_Handler(volume) {
     video.muted = (volume === 0);
     video.volume = volume;
 
-    try {
-        const keys = ["volume_muted_before_key", "player_storage_volume_h5p_room"];
-        keys.forEach(key => {
-            let raw = localStorage.getItem(key);
-            if (raw) {
-                let data = JSON.parse(raw);
-                data.v = volume;
-                localStorage.setItem(key, JSON.stringify(data));
-            }
-        });
-    } catch (e) { }
+    clearTimeout(_volumeSaveTimer);
+    _volumeSaveTimer = setTimeout(() => {
+        try {
+            const keys = ["volume_muted_before_key", "player_storage_volume_h5p_room"];
+            keys.forEach(key => {
+                let raw = localStorage.getItem(key);
+                if (raw) {
+                    let data = JSON.parse(raw);
+                    data.v = volume;
+                    localStorage.setItem(key, JSON.stringify(data));
+                }
+            });
+        } catch (e) { }
+    }, 300);
 }

@@ -32,8 +32,8 @@ function AccountList_insertIcon() {
     a.innerHTML = svg_accountList + html;
     // a.innerHTML = svg_accountList + `<div id="ex-accountList-wrap" class="public-DropMenu-drop"><div class="public-DropMenu-drop-main"><div style="width: 300px;font-size: 14px;"></div></div><i></i></div>`;
     // a.title = "账号列表";
-    let b = document.getElementsByClassName("Header-right")[0];
-    b.appendChild(a);
+    let b = document.getElementsByClassName("Header-right")[0] || document.querySelector("header") || document.body;
+    if (b) b.appendChild(a);
 
     addAccount();
 }

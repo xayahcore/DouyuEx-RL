@@ -40,7 +40,7 @@ function initPkg_FansContinue_Func() {
 
 function FansContinue_startSend(sendNum) {
   let giftId = 0;
-  let conut = 0;
+  let count = 0;
 
   getBagGifts(rid, (ret) => {
     let chunkNum = ret.data?.list?.length || 0;

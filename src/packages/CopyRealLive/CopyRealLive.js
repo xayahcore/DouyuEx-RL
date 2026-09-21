@@ -15,8 +15,8 @@ function CopyRealLive_insertIcon() {
     if (b && b.childNodes.length > 1) {
         b.insertBefore(a, b.childNodes[1]);
     } else {
-        b = getValidDom([".subTitleContainer__-vzhr"]);
-        b.appendChild(a);
+        b = getValidDom([".subTitleContainer__-vzhr", ".Title-row", ".Title", "header"]);
+        if (b) b.appendChild(a);
     }
 }
 
@@ -54,7 +54,10 @@ function CopyRealLive_copySelected() {
 }
 
 function initPkg_CopyRealLive_Func() {
-	document.getElementById("copy-real-live").addEventListener("click", CopyRealLive_copySelected);
+    let btn = document.getElementById("copy-real-live");
+    if (btn) {
+        btn.addEventListener("click", CopyRealLive_copySelected);
+    }
 
     let titNode = document.getElementsByClassName("RecommendViewTit-04ebd8");
     let tit = "";

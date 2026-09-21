@@ -39,18 +39,28 @@ function PopupPlayer_insertPrompt() {
 
     a.innerHTML = html;
 
-    let b = getValidDom([".layout-Main", ".playerWrap__8wGvw", ".live-next-body"]);
-    b.insertBefore(a, b.childNodes[0]);
+    let b = getValidDom([".layout-Main", ".playerWrap__8wGvw", ".live-next-body"]) || document.body;
+    if (b) b.insertBefore(a, b.childNodes[0]);
 }
 
 function initPkg_PopupPlayer_Func() {
-    document.getElementsByClassName("popup-player")[0].addEventListener("click", function () {
-        document.getElementById("popup-player__prompt").style.display = "block";
-    });
-    document.getElementById("popup-player__cancel").addEventListener("click", function() {
-        document.getElementById("popup-player__prompt").style.display = "none";
-    })
-    document.getElementById("popup-player__ok").addEventListener("click", function() {
+    let btn = document.getElementsByClassName("popup-player")[0];
+    if (btn) {
+        btn.addEventListener("click", function () {
+            let prompt = document.getElementById("popup-player__prompt");
+            if (prompt) prompt.style.display = "block";
+        });
+    }
+    let cancel = document.getElementById("popup-player__cancel");
+    if (cancel) {
+        cancel.addEventListener("click", function() {
+            let prompt = document.getElementById("popup-player__prompt");
+            if (prompt) prompt.style.display = "none";
+        });
+    }
+    let ok = document.getElementById("popup-player__ok");
+    if (ok) {
+        ok.addEventListener("click", function() {
         let roomUrl = document.getElementById("popup-player__url").value;
         if (roomUrl != "") {
             let isIframe = document.getElementById("popup-player__noiframe").checked;
@@ -86,7 +96,8 @@ function initPkg_PopupPlayer_Func() {
             showMessage("请输入地址", "error");
         }
         document.getElementById("popup-player__prompt").style.display = "none";
-    })
+        });
+    }
     document.getElementById("popup-player__prompt").addEventListener("keydown", function(event) {
         let theEvent = window.event || e;
         let code = theEvent.keyCode || theEvent.which || theEvent.charCode;
@@ -150,24 +161,24 @@ function setElementResize(id) {
         };
         let w;
         let h;
-        document.onmousemove = function (ev) {
+        function onMouseMove(ev) {
             ev.stopPropagation();
             ev.preventDefault();
-            w = Math.max(400, ev.clientX - pos.x + pos.w)
-            h = Math.max(0, ev.clientY - pos.y + pos.h)
-            w = w >= document.offsetWidth - box.offsetLeft ? document.offsetWidth - box.offsetLeft : w
-            h = h >= document.offsetHeight - box.offsetTop ? document.offsetHeight - box.offsetTop : h
+            w = Math.max(400, ev.clientX - pos.x + pos.w);
+            h = Math.max(0, ev.clientY - pos.y + pos.h);
+            w = w >= document.offsetWidth - box.offsetLeft ? document.offsetWidth - box.offsetLeft : w;
+            h = h >= document.offsetHeight - box.offsetTop ? document.offsetHeight - box.offsetTop : h;
             box.style.width = w + 'px';
             box.style.height = h + 'px';
         }
-        document.onmouseup = function (e) {
+        function onMouseUp(e) {
             e.stopPropagation();
             e.preventDefault();
-            
-            
-            document.onmousemove = null;
-            document.onmouseup = null;
+            document.removeEventListener("mousemove", onMouseMove);
+            document.removeEventListener("mouseup", onMouseUp);
         }
+        document.addEventListener("mousemove", onMouseMove);
+        document.addEventListener("mouseup", onMouseUp);
     }
 
 }
@@ -180,18 +191,20 @@ function setElementDrag(id) {
         let yy = event.clientY - box.offsetTop;
         let mouseX;
         let mouseY;
-        document.onmousemove = function (event) {
+        function onMouseMove(event) {
             event.stopPropagation();
             mouseX = event.clientX - xx;
             mouseY = event.clientY - yy;
             box.style.left = mouseX + "px";
             box.style.top = mouseY + "px";
         }
-        document.onmouseup = function (event) {
+        function onMouseUp(event) {
             event.stopPropagation();
-            document.onmousemove = null;
-            document.onmouseup = null;
+            document.removeEventListener("mousemove", onMouseMove);
+            document.removeEventListener("mouseup", onMouseUp);
         }
+        document.addEventListener("mousemove", onMouseMove);
+        document.addEventListener("mouseup", onMouseUp);
     }
 }
 
@@ -633,7 +646,7 @@ function createNewVideo_Stream(id, lurl) {
     a.id = "exVideoDiv" + String(id);
     a.rid = rid;
     a.className = "exVideoDiv";
-    html += "<div class='exVideoInfo' id='exVideoInfo" + String(id) + `'><span class='exVideoRID' id='exVideoRID" + String(id) + "' style='color:white'>直播流${id}</span>`;
+    html += `<div class='exVideoInfo' id='exVideoInfo${id}'><span class='exVideoRID' id='exVideoRID${id}' style='color:white'>直播流${id}</span>`;
     html += `<input id='exVideoEmbed${String(id)}' type='button' value='嵌入视频' style='height:30px;'>`;
     html += `<input id='exVideoUnEmbed${String(id)}' type='button' value='恢复视频' style='height:30px;display:none;'>`;
     html += `<input id='exVideoCopy${String(id)}' type='button' value='复制直播流' style='height:30px;'>`;

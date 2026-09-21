@@ -13,11 +13,13 @@ function Refresh_BarrageFrame_insertIcon() {
     a.id = "refresh-barrage-frame";
 	a.innerHTML = '<svg t="1588051109604" id="refresh-barrage-frame__svg" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="3095" width="16" height="16"><path d="M512 128 192 448h192v448h256V448h192L512 128z" fill="#AFAFAF" p-id="3096"></path></svg><i class="Barrage-toolbarIcon"></i><span id="refresh-barrage-frame__text" class="Barrage-toolbarText">拉高</span>';
 	let b = document.getElementsByClassName("Barrage-toolbar")[0];
-	b.insertBefore(a, b.childNodes[0]);
+	if (b) b.insertBefore(a, b.childNodes[0]);
 }
 
 function initPkg_Refresh_BarrageFrame_Func() {
-	document.getElementById("refresh-barrage-frame").addEventListener("click", function() {
+	let btn = document.getElementById("refresh-barrage-frame");
+	if (btn) {
+		btn.addEventListener("click", function() {
         let dom_rank = document.getElementsByClassName("layout-Player-rank")[0];
         let dom_activity = document.getElementById("js-room-activity");
         let dom_topBarrage = document.getElementsByClassName("Barrage")[0];
@@ -56,11 +58,12 @@ function initPkg_Refresh_BarrageFrame_Func() {
                     }
                     saveData_Refresh();
                 },
-                'onCancel': function () {
-                }
-            });
-        }
-    });
+	                'onCancel': function () {
+	                }
+	            });
+	        }
+	    });
+	}
 }
 
 

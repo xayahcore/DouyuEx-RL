@@ -8,13 +8,13 @@ function initPkg_DanmakuTail_insertDom() {
     let div = document.createElement("div");
     div.className = "ChatToolBar-DanmakuTail";
     div.innerHTML = `<div class="ChatToolBar-DanmakuTail-tip" title="弹幕小尾巴" ></div>`;
-    let b = document.getElementsByClassName("ChatToolBar__left")[0];
-    b.appendChild(div);
+    let b = document.getElementsByClassName("ChatToolBar__left")[0] || document.querySelector(".ChatToolBar") || document.body;
+    if (b) b.appendChild(div);
 
     let panel = document.createElement("div");
     panel.className = "ChatToolBar-DanmakuTail-Panel";
-    let chat_panel = document.getElementsByClassName("layout-Player-chat")[0];
-    chat_panel.insertBefore(panel, chat_panel.childNodes[0]);
+    let chat_panel = document.getElementsByClassName("layout-Player-chat")[0] || document.querySelector(".Barrage-main") || document.body;
+    if (chat_panel) chat_panel.insertBefore(panel, chat_panel.childNodes[0]);
 
     if (!window.location.href.includes("/beta")) {
         panel.style.bottom = "140px";
@@ -71,9 +71,12 @@ function saveData_DanmakuTail() {
 
 
 function initPkg_DanmakuTail_Func() {
-    document.getElementsByClassName("ChatToolBar-DanmakuTail")[0].addEventListener("click", function () {
-        showExRightPanel("弹幕小尾巴");
-    });
+    let tipBtn = document.getElementsByClassName("ChatToolBar-DanmakuTail")[0];
+    if (tipBtn) {
+        tipBtn.addEventListener("click", function () {
+            showExRightPanel("弹幕小尾巴", this);
+        });
+    }
 
     initPkg_DanmakuTail_HandleFunc("#DanmakuTail-checkbox", "#DanmakuTail-input");
 

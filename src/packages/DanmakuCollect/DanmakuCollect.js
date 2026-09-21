@@ -2,17 +2,22 @@ function initPkg_DanmakuCollect() {
   initPkg_DanmakuCollect_Dom();
   const textarea = document.getElementsByClassName("ChatSend-txt")[0];
   const collectButton = document.getElementsByClassName("ChatBarrageCollect")[0];
-  textarea.addEventListener("keyup", () => {
-    const length = typeof textarea.value === "string" ? textarea.value.length : textarea.innerText.length;
-    if (length > 25) {
-      collectButton.style.display = "none";
-    } else {
+  if (textarea && collectButton) {
+    textarea.addEventListener("keyup", () => {
+      const length = typeof textarea.value === "string" ? textarea.value.length : textarea.innerText.length;
+      if (length > 25) {
+        collectButton.style.display = "none";
+      } else {
+        collectButton.style.display = "";
+      }
+    });
+  }
+  const sendBtn = document.getElementsByClassName("ChatSend-button")[0];
+  if (sendBtn && collectButton) {
+    sendBtn.addEventListener("click", () => {
       collectButton.style.display = "";
-    }
-  });
-  document.getElementsByClassName("ChatSend-button")[0].addEventListener("click", () => {
-    collectButton.style.display = "";
-  });
+    });
+  }
   responseHook((url, text) => {
     if (url.includes(`bulletscreen/query`)) {
       let obj = JSON.parse(text);

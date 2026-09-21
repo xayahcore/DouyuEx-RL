@@ -1,9 +1,4 @@
 function initRouter(href) {
-    // 用于优先载入夜间模式
-    // if (String(href).indexOf("www.douyu.com") && String(href).indexOf("getFansBadgeList") == -1) {
-    //     initPkg_Night_Set_Fast();
-    // }
-
     // 路由转发
     if (String(href).indexOf("yuba.douyu.com") !== -1) {
         // 鱼吧
@@ -18,11 +13,8 @@ function initRouter(href) {
         // 账号
         initRouter_Passport();
     } else if (String(href).indexOf("msg.douyu.com") !== -1) {
-        // 车队
         if (href.indexOf("?exClean") !== -1) {
             initRouter_CleanMsg();
-        } else {
-            initRouter_Motorcade();
         }
     } else if (String(href).indexOf("v.douyu.com") !== -1) {
         // 视频
@@ -49,13 +41,6 @@ function initRouter(href) {
             }
             initRouter_DouyuRoom_Main();
         }
-    }
-}
-
-function initRouter_Motorcade() {
-    // 车队
-    if (getQueryString("exid") == "chun") {
-        signMotorcade_Sign();
     }
 }
 

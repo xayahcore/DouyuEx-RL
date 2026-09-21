@@ -1,7 +1,10 @@
 function initPkg_DisableCloseJump_Timer() {
-  setInterval(() => {
+  const observer = new MutationObserver(() => {
     const x = document.querySelector(".ClosingRecommend .dy-ModalRadius-close-x");
-    if (!x) return;
-    x.click();
-  }, 1000);
+    if (x) {
+      x.click();
+    }
+  });
+  const container = document.querySelector(".layout-Player") || document.body;
+  observer.observe(container, { childList: true, subtree: true });
 }

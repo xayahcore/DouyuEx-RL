@@ -1,0 +1,100 @@
+.exupdate-panel {
+    width: 380px !important;
+    height: 370px !important;
+    min-height: 370px !important;
+    max-height: 370px !important;
+}
+
+.exupdate-panel__card {
+    margin: 0 10px 10px 10px !important;
+    padding: 10px 12px !important;
+    box-sizing: border-box !important;
+    background: rgba(255, 255, 255, 0.7) !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    border-radius: 14px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03) !important;
+}
+
+.exupdate-panel__card-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    margin-bottom: 6px !important;
+    padding-bottom: 4px !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
+}
+
+.exupdate-panel__card-title {
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    color: #0f172a !important;
+}
+
+.exupdate-list {
+    margin: 0 !important;
+    padding: 0 !important;
+    list-style: none !important;
+    font-size: 11.5px !important;
+    line-height: 18px !important;
+    color: #334155 !important;
+}
+
+.exupdate-list li {
+    margin-bottom: 6px !important;
+    word-break: break-word !important;
+}
+
+.exupdate-panel__action-wrap {
+    padding: 0 10px !important;
+    margin-top: 8px !important;
+    margin-bottom: 8px !important;
+}
+
+.exupdate-panel__submit-btn {
+    width: 100% !important;
+    height: 36px !important;
+    border-radius: 10px !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    border: none !important;
+    transition: all 0.16s ease !important;
+}
+
+.exupdate-state-btn--ack {
+    background: linear-gradient(135deg, #2b7fff, #0055ff) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 14px rgba(0, 102, 255, 0.35) !important;
+}
+
+.exupdate-state-btn--ack:hover {
+    transform: translateY(-1px) !important;
+}
+
+.exupdate-state-btn--check {
+    background: linear-gradient(135deg, #2b7fff, #0055ff) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 14px rgba(0, 102, 255, 0.3) !important;
+}
+
+.exupdate-state-btn--check:hover {
+    transform: translateY(-1px) !important;
+}
+
+.exupdate-state-btn--checking {
+    background: rgba(0, 0, 0, 0.08) !important;
+    color: #64748b !important;
+    cursor: wait !important;
+}
+
+.exupdate-state-btn--latest {
+    background: rgba(16, 185, 129, 0.15) !important;
+    color: #059669 !important;
+    border: 1px solid rgba(16, 185, 129, 0.3) !important;
+}
+
+.exupdate-state-btn--upgrade {
+    background: linear-gradient(135deg, #ff6a00, #ee5a24) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 14px rgba(238, 90, 36, 0.4) !important;
+}

@@ -470,7 +470,12 @@ function PictureInPictureControl_startDocObserver() {
     if (pipDocObserver || PictureInPictureControl_isPipBindingValid()) {
         return;
     }
-    pipDocObserver = new DomHook("body", true, (records) => {
+    const targetSelector = document.getElementById("js-player-controlbar") ? "#js-player-controlbar" : (document.querySelector(".layout-Player") ? ".layout-Player" : null);
+    if (!targetSelector) {
+        setTimeout(PictureInPictureControl_startDocObserver, 1000);
+        return;
+    }
+    pipDocObserver = new DomHook(targetSelector, true, (records) => {
         if (PictureInPictureControl_isPipBindingValid()) {
             PictureInPictureControl_stopDocObserver();
             return;

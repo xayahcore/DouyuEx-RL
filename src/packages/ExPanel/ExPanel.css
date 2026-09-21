@@ -1,13 +1,34 @@
+/* ==================== DouyuEx-RL 二级 Dock 与 MIUIX 核心质感体系 ==================== */
+
 .ex-panel {
 	position: absolute;
 	bottom: 32px;
 	right: 0px;
-	background-color: rgba(255,255,255,0.9);
-	border: 2px rgb(234,173,26) solid;
+	height: 76px !important;
+	border-radius: 38px !important;
+	padding: 10px 16px !important;
+	box-sizing: border-box !important;
+	background: rgba(255, 255, 255, 0.88) !important;
+	backdrop-filter: blur(36px) saturate(220%) !important;
+	-webkit-backdrop-filter: blur(36px) saturate(220%) !important;
+	border: 1px solid rgba(255, 255, 255, 0.95) !important;
+	box-shadow: inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.98), 0 16px 40px rgba(15, 23, 42, 0.18) !important;
 	z-index: 1428;
 	user-select: none;
 	display: none;
 	overflow: visible;
+}
+
+/* 18px 隐形热区连桥 (Hover Bridge)，消灭鼠标上滑盲区 */
+.ex-panel::before {
+	content: "" !important;
+	position: absolute !important;
+	top: -18px !important;
+	left: 0 !important;
+	width: 100% !important;
+	height: 18px !important;
+	background: transparent !important;
+	pointer-events: auto !important;
 }
 
 .ex-panel__close {
@@ -15,8 +36,8 @@
 	top: -9px;
 	right: -9px;
 	z-index: 3;
-	width: 18px;
-	height: 18px;
+	width: 22px;
+	height: 22px;
 	padding: 0;
 	margin: 0;
 	border: none;
@@ -24,59 +45,338 @@
 	background: rgba(255, 255, 255, 0.95);
 	color: #64748b;
 	font-size: 14px;
-	line-height: 16px;
+	line-height: 22px;
 	text-align: center;
 	cursor: pointer;
-	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
-	transition: color 0.15s ease, background-color 0.15s ease;
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+	transition: all 0.18s ease;
 }
 
 .ex-panel__close:hover {
 	color: #fff;
-	background: #f60;
+	background: #ff5d23;
+	transform: scale(1.1);
 }
 
-.ex-panel__close:focus-visible {
-	outline: 2px solid #ff7700;
-	outline-offset: 1px;
-}
-
-/* 隐藏礼物栏时挂到播放器层，位置由 ExPanel_updateFloatingPosition 计算（视频工具条上方） */
 .ex-panel.ex-panel--floating {
 	position: fixed;
 	z-index: 10000;
 }
+
 .ex-panel__wrap {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	width: 100%;
-	height: 100%;
-	position: relative;
-	z-index: 1;
-}
-.ex-panel__icon {
-	margin: 0 10px;
-	display: block;
-	position: relative;
-	padding: 5px;
-	transition: 0.5s;
-}
-.ex-panel__icon:hover {
-	transform: scale(1.15);
-}
-.ex-panel__tip {
-	display:none;
-	background:#f00;
-	border-radius:50%;
-	width:8px;
-	height:8px;
-	top:0px;
-	right:0px;
-	position:absolute;
+	display: flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	gap: 6px !important;
+	width: 100% !important;
+	height: 100% !important;
+	position: relative !important;
+	z-index: 1 !important;
 }
 
-/* 新版斗鱼右侧弹幕Panel的bottom */
-.live-next-body .layout-Player-chat>* {
+.ex-panel__wrap > div {
+	width: 56px !important;
+	height: 56px !important;
+	border-radius: 28px !important;
+	display: flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+	cursor: pointer !important;
+	background: transparent !important;
+}
+
+.ex-panel__wrap > div:hover {
+	background: rgba(0, 0, 0, 0.06) !important;
+	transform: translateY(-2px) scale(1.06) !important;
+}
+
+.ex-panel__icon {
+	display: flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	position: relative !important;
+	width: 100% !important;
+	height: 100% !important;
+	padding: 0 !important;
+	margin: 0 !important;
+}
+
+.ex-panel__icon svg, .ex-panel__icon img {
+	width: 36px !important;
+	height: 36px !important;
+	object-fit: contain !important;
+}
+
+.ex-panel__tip {
+	display: none;
+	background: #ff3b30;
+	border-radius: 50%;
+	width: 8px;
+	height: 8px;
+	top: 6px;
+	right: 6px;
+	position: absolute;
+	box-shadow: 0 0 6px rgba(255, 59, 48, 0.6);
+}
+
+/* ==================== 三维铁壁尺寸锁定 (380×370px) 与 MIUIX 拟态质感 ==================== */
+.miuix-modal,
+.sign-panel,
+.fans-panel,
+.extool,
+.livetool,
+.bloop,
+.exlottery {
+	width: 380px !important;
+	height: 370px !important;
+	min-height: 370px !important;
+	max-height: 370px !important;
+	border-radius: 22px !important;
+	background: rgba(255, 255, 255, 0.88) !important;
+	backdrop-filter: blur(36px) saturate(220%) !important;
+	-webkit-backdrop-filter: blur(36px) saturate(220%) !important;
+	border: 1px solid rgba(255, 255, 255, 0.95) !important;
+	box-shadow: inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.98), 0 20px 50px rgba(15, 23, 42, 0.22) !important;
+	display: none;
+	flex-direction: column !important;
+	overflow: hidden !important;
+	padding: 0 !important;
+	box-sizing: border-box !important;
+	z-index: 100030 !important;
+}
+
+.miuix-modal__header {
+	position: sticky !important;
+	top: 0 !important;
+	z-index: 50 !important;
+	display: flex !important;
+	align-items: center !important;
+	justify-content: space-between !important;
+	padding: 12px 16px !important;
+	width: 100% !important;
+	box-sizing: border-box !important;
+	border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
+	background: rgba(255, 255, 255, 0.6) !important;
+	backdrop-filter: blur(20px) !important;
+	-webkit-backdrop-filter: blur(20px) !important;
+}
+
+.miuix-modal__title {
+	font-size: 15px !important;
+	font-weight: 700 !important;
+	color: #0f172a !important;
+	letter-spacing: -0.2px !important;
+}
+
+.miuix-modal__close {
+	width: 26px !important;
+	height: 26px !important;
+	border-radius: 8px !important;
+	border: none !important;
+	background: rgba(0, 0, 0, 0.05) !important;
+	color: #64748b !important;
+	font-size: 18px !important;
+	line-height: 1 !important;
+	cursor: pointer !important;
+	display: flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	transition: all 0.16s ease !important;
+}
+
+.miuix-modal__close:hover {
+	background: rgba(0, 0, 0, 0.12) !important;
+	color: #0f172a !important;
+}
+
+.miuix-modal__body {
+	flex: 1 1 auto !important;
+	overflow-y: auto !important;
+	overflow-x: hidden !important;
+	padding: 12px !important;
+	scrollbar-width: thin !important;
+	scrollbar-color: rgba(0, 0, 0, 0.18) transparent !important;
+}
+
+.miuix-modal__body::-webkit-scrollbar {
+	width: 4px !important;
+}
+
+.miuix-modal__body::-webkit-scrollbar-thumb {
+	background: rgba(0, 0, 0, 0.18) !important;
+	border-radius: 4px !important;
+}
+
+/* 跑道开关与右对齐规范 */
+.livetool__cell_option {
+	margin-left: auto !important;
+}
+
+.onoffswitch {
+	position: relative !important;
+	width: 38px !important;
+	height: 22px !important;
+	user-select: none !important;
+}
+
+.onoffswitch-checkbox {
+	display: none !important;
+}
+
+.onoffswitch-label {
+	display: block !important;
+	overflow: hidden !important;
+	cursor: pointer !important;
+	height: 22px !important;
+	padding: 0 !important;
+	line-height: 22px !important;
+	border: 0 solid #ffffff !important;
+	border-radius: 22px !important;
+	background-color: rgba(0, 0, 0, 0.14) !important;
+	transition: background-color 0.2s ease-in !important;
+}
+
+.onoffswitch-label:before {
+	content: "" !important;
+	display: block !important;
+	width: 16px !important;
+	height: 16px !important;
+	margin: 3px !important;
+	background: #ffffff !important;
+	position: absolute !important;
+	top: 0 !important;
 	bottom: 0 !important;
+	right: 16px !important;
+	border-radius: 16px !important;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+	transition: all 0.2s ease-in-out !important;
+}
+
+.onoffswitch-checkbox:checked + .onoffswitch-label {
+	background-color: #0066FF !important;
+}
+
+.onoffswitch-checkbox:checked + .onoffswitch-label:before {
+	right: 0px !important;
+}
+
+.onoffswitch-inner {
+	display: none !important;
+}
+
+/* 签到面板卡片与选项 */
+.fans-panel__card {
+	background: rgba(255, 255, 255, 0.8) !important;
+	border: 1px solid rgba(0, 0, 0, 0.08) !important;
+	border-radius: 14px !important;
+	padding: 10px 12px !important;
+	margin-bottom: 10px !important;
+}
+
+.fans-panel__card-header {
+	display: flex !important;
+	justify-content: space-between !important;
+	align-items: center !important;
+	padding-bottom: 6px !important;
+	margin-bottom: 6px !important;
+	border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
+}
+
+.fans-panel__card-title {
+	font-weight: 700 !important;
+	font-size: 13px !important;
+	color: #0f172a !important;
+}
+
+.sign-options-list {
+	display: flex !important;
+	flex-direction: column !important;
+	gap: 6px !important;
+}
+
+.sign-option-item {
+	display: flex !important;
+	align-items: center !important;
+	gap: 8px !important;
+	cursor: pointer !important;
+	padding: 4px 0 !important;
+}
+
+.sign-option-title {
+	font-weight: 600 !important;
+	font-size: 12px !important;
+	color: #1e293b !important;
+}
+
+.sign-option-desc {
+	font-size: 11px !important;
+	color: #64748b !important;
+	display: block !important;
+}
+
+.sign-log-box {
+	font-family: monospace !important;
+	font-size: 11px !important;
+	line-height: 1.4 !important;
+	color: #334155 !important;
+	background: rgba(0, 0, 0, 0.03) !important;
+	border-radius: 8px !important;
+	padding: 8px !important;
+	max-height: 85px !important;
+	overflow-y: auto !important;
+}
+
+.sign-status-tag {
+	font-size: 11px !important;
+	font-weight: 600 !important;
+	color: #007aff !important;
+}
+
+.fans-panel__action-wrap {
+	margin-top: 8px !important;
+	text-align: center !important;
+}
+
+.ex-btn-primary {
+	width: 100% !important;
+	height: 36px !important;
+	border-radius: 10px !important;
+	border: none !important;
+	background: #007aff !important;
+	color: #fff !important;
+	font-weight: 600 !important;
+	font-size: 13px !important;
+	cursor: pointer !important;
+	transition: background 0.16s ease !important;
+}
+
+.ex-btn-primary:hover {
+	background: #0066ee !important;
+}
+
+.ex-btn-primary:disabled {
+	background: #94a3b8 !important;
+	cursor: not-allowed !important;
+}
+
+/* 强命名空间样式隔离，杜绝破坏斗鱼原生播放器与控件 */
+.miuix-modal input[type="text"],
+.sign-panel input[type="text"],
+.fans-panel input[type="text"],
+.extool input[type="text"],
+.livetool input[type="text"],
+.bloop input[type="text"] {
+	border: 1px solid rgba(0, 0, 0, 0.15) !important;
+	border-radius: 8px !important;
+	background: rgba(255, 255, 255, 0.95) !important;
+	outline: none !important;
+	padding: 4px 8px !important;
+	font-size: 12px !important;
+	color: #0f172a !important;
+}
+
+.miuix-modal input[type="text"]:focus {
+	border-color: #007aff !important;
+	box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.18) !important;
 }

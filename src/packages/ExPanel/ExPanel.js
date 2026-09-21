@@ -2,182 +2,254 @@ let ExPanel_anchorParent = null;
 let ExPanel_anchorNextSibling = null;
 
 function initPkg_ExPanel() {
-    initPkg_ExPanel_insertDom();
+  initPkg_ExPanel_insertDom();
 
-    let exPanelDOM = document.querySelector(`.ex-panel`);
+  let exPanelDOM = document.querySelector(`.ex-panel`);
+  if (exPanelDOM) {
     exPanelDOM.addEventListener(`mouseenter`, () => {
-        clearTimeout(exPanelTimer);
+      clearTimeout(exPanelTimer);
     });
+    // 400ms 黄金渐隐防抖，消灭误关
     exPanelDOM.addEventListener(`mouseleave`, () => {
-        clearTimeout(exPanelTimer);
-        exPanelTimer = setTimeout(autoCloseExPanelHandle, 800);
+      clearTimeout(exPanelTimer);
+      exPanelTimer = setTimeout(autoCloseExPanelHandle, 400);
     });
     const closeBtn = exPanelDOM.querySelector(".ex-panel__close");
     if (closeBtn) {
-        closeBtn.addEventListener("click", (e) => {
-            e.stopPropagation();
-            hideExPanel();
-        });
+      closeBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        hideExPanel();
+      });
     }
+  }
 }
 
 function ExPanel_getGiftBarAnchor() {
-    return document.querySelector(".PlayerToolbar-ContentCell .PlayerToolbar-Wealth")
-        || document.querySelector(".PlayerToolbar-ContentRow");
+  return document.querySelector(".PlayerToolbar-ContentCell .PlayerToolbar-Wealth")
+    || document.querySelector(".PlayerToolbar-ContentRow");
 }
 
 function ExPanel_isGiftBarHidden() {
-    const row = document.getElementsByClassName("PlayerToolbar-ContentRow")[0];
-    return !!(row && row.style.visibility === "hidden");
+  const row = document.getElementsByClassName("PlayerToolbar-ContentRow")[0];
+  return !!(row && row.style.visibility === "hidden");
 }
 
 function ExPanel_getFloatingHost() {
-    return document.getElementById("js-player-dialog")
-        || document.getElementsByClassName("room-Player-Box")[0]
-        || document.body;
+  return document.getElementById("js-player-dialog")
+    || document.getElementsByClassName("room-Player-Box")[0]
+    || document.body;
 }
 
 function ExPanel_saveAnchor(panel) {
-    if (!ExPanel_anchorParent) {
-        ExPanel_anchorParent = panel.parentNode;
-        ExPanel_anchorNextSibling = panel.nextSibling;
-    }
+  if (!ExPanel_anchorParent) {
+    ExPanel_anchorParent = panel.parentNode;
+    ExPanel_anchorNextSibling = panel.nextSibling;
+  }
 }
 
 function ExPanel_updateFloatingPosition() {
-    const panel = document.querySelector(".ex-panel.ex-panel--floating");
-    if (!panel) {
-        return;
-    }
-    const playerToolbar = document.getElementById("js-player-toolbar");
-    const vtoolbarMenu = document.getElementById("ex-vtoolbar-menu");
-    const gap = 8;
-    panel.style.position = "fixed";
-    panel.style.top = "auto";
+  const panel = document.querySelector(".ex-panel.ex-panel--floating");
+  if (!panel) return;
+  const playerToolbar = document.getElementById("js-player-toolbar");
+  const vtoolbarMenu = document.getElementById("ex-vtoolbar-menu");
+  const gap = 8;
+  panel.style.position = "fixed";
+  panel.style.top = "auto";
 
-    // Vertical: prefer vtoolbarMenu (actual bottom control bar),
-    // fall back to playerToolbar, then hardcoded value
-    if (vtoolbarMenu) {
-        const menuRect = vtoolbarMenu.getBoundingClientRect();
-        panel.style.bottom = `${window.innerHeight - menuRect.top + gap}px`;
-        const panelWidth = panel.offsetWidth || panel.scrollWidth || 320;
-        let left = menuRect.left + menuRect.width / 2 - panelWidth / 2;
-        left = Math.max(8, Math.min(left, window.innerWidth - panelWidth - 8));
-        panel.style.left = `${left}px`;
-        panel.style.right = "auto";
-    } else if (playerToolbar) {
-        const toolbarRect = playerToolbar.getBoundingClientRect();
-        panel.style.bottom = `${window.innerHeight - toolbarRect.top + gap}px`;
-        const panelWidth = panel.offsetWidth || panel.scrollWidth || 320;
-        let left = toolbarRect.left + toolbarRect.width / 2 - panelWidth / 2;
-        left = Math.max(8, Math.min(left, window.innerWidth - panelWidth - 8));
-        panel.style.left = `${left}px`;
-        panel.style.right = "auto";
-    } else {
-        panel.style.bottom = "72px";
-        panel.style.right = "12px";
-        panel.style.left = "";
-    }
+  if (vtoolbarMenu) {
+    const menuRect = vtoolbarMenu.getBoundingClientRect();
+    panel.style.bottom = `${window.innerHeight - menuRect.top + gap}px`;
+    const panelWidth = panel.offsetWidth || panel.scrollWidth || 360;
+    let left = menuRect.left + menuRect.width / 2 - panelWidth / 2;
+    left = Math.max(8, Math.min(left, window.innerWidth - panelWidth - 8));
+    panel.style.left = `${left}px`;
+    panel.style.right = "auto";
+  } else if (playerToolbar) {
+    const toolbarRect = playerToolbar.getBoundingClientRect();
+    panel.style.bottom = `${window.innerHeight - toolbarRect.top + gap}px`;
+    const panelWidth = panel.offsetWidth || panel.scrollWidth || 360;
+    let left = toolbarRect.left + toolbarRect.width / 2 - panelWidth / 2;
+    left = Math.max(8, Math.min(left, window.innerWidth - panelWidth - 8));
+    panel.style.left = `${left}px`;
+    panel.style.right = "auto";
+  } else {
+    panel.style.bottom = "76px";
+    panel.style.right = "12px";
+    panel.style.left = "";
+  }
 }
 
 function ExPanel_attachToFloatingHost() {
-    const panel = document.querySelector(".ex-panel");
-    if (!panel || panel.classList.contains("ex-panel--floating")) {
-        ExPanel_updateFloatingPosition();
-        return;
-    }
-    ExPanel_saveAnchor(panel);
-    ExPanel_getFloatingHost().appendChild(panel);
-    panel.classList.add("ex-panel--floating");
+  const panel = document.querySelector(".ex-panel");
+  if (!panel || panel.classList.contains("ex-panel--floating")) {
     ExPanel_updateFloatingPosition();
+    return;
+  }
+  ExPanel_saveAnchor(panel);
+  ExPanel_getFloatingHost().appendChild(panel);
+  panel.classList.add("ex-panel--floating");
+  ExPanel_updateFloatingPosition();
 }
 
 function ExPanel_restoreToGiftBar() {
-    const panel = document.querySelector(".ex-panel");
-    const anchor = ExPanel_getGiftBarAnchor();
-    if (!panel || !anchor || !panel.classList.contains("ex-panel--floating")) {
-        return;
-    }
-    if (ExPanel_anchorNextSibling && ExPanel_anchorNextSibling.parentNode === anchor) {
-        anchor.insertBefore(panel, ExPanel_anchorNextSibling);
-    } else {
-        anchor.insertBefore(panel, anchor.childNodes[0]);
-    }
-    panel.classList.remove("ex-panel--floating");
+  const panel = document.querySelector(".ex-panel");
+  const anchor = ExPanel_getGiftBarAnchor();
+  if (!panel || !anchor || !panel.classList.contains("ex-panel--floating")) {
+    return;
+  }
+  if (ExPanel_anchorNextSibling && ExPanel_anchorNextSibling.parentNode === anchor) {
+    anchor.insertBefore(panel, ExPanel_anchorNextSibling);
+  } else {
+    anchor.insertBefore(panel, anchor.childNodes[0]);
+  }
+  panel.classList.remove("ex-panel--floating");
 }
 
 function ExPanel_syncHost() {
-    if (ExPanel_isGiftBarHidden()) {
-        ExPanel_attachToFloatingHost();
-    } else {
-        ExPanel_restoreToGiftBar();
-    }
+  if (ExPanel_isGiftBarHidden()) {
+    ExPanel_attachToFloatingHost();
+  } else {
+    ExPanel_restoreToGiftBar();
+  }
 }
 
 function ExPanel_onGiftBarHide() {
-    const panel = document.querySelector(".ex-panel");
-    if (panel && panel.style.display === "block") {
-        ExPanel_attachToFloatingHost();
-        ExPanel_updateFloatingPosition();
-    }
+  const panel = document.querySelector(".ex-panel");
+  if (panel && panel.style.display === "block") {
+    ExPanel_attachToFloatingHost();
+    ExPanel_updateFloatingPosition();
+  }
 }
 
 function ExPanel_onGiftBarShow() {
-    ExPanel_restoreToGiftBar();
+  ExPanel_restoreToGiftBar();
 }
 
 function initPkg_ExPanel_insertDom() {
-	let a = document.createElement("div");
-	a.className = "ex-panel";
-	a.innerHTML = `<button type="button" class="ex-panel__close" title="关闭工具条" aria-label="关闭 DouyuEx 工具条">×</button><div class="ex-panel__wrap"></div>`;
-	
-    let b = ExPanel_getGiftBarAnchor();
-    if (!b) {
-        b = ExPanel_getFloatingHost();
-        a.classList.add("ex-panel--floating");
+  let a = document.createElement("div");
+  a.className = "ex-panel";
+  a.innerHTML = `<button type="button" class="ex-panel__close" title="关闭工具条" aria-label="关闭 DouyuEx 工具条">×</button><div class="ex-panel__wrap"></div>`;
+
+  let b = ExPanel_getGiftBarAnchor();
+  if (!b) {
+    b = ExPanel_getFloatingHost();
+    a.classList.add("ex-panel--floating");
+  } else {
+    const domPlayerToolbar = document.querySelector(".PlayerToolbar");
+    if (domPlayerToolbar) {
+      a.style.bottom = (domPlayerToolbar.offsetHeight + 4) + "px";
     } else {
-        const domPlayerToolbar = document.querySelector(".PlayerToolbar");
-        if (domPlayerToolbar) {
-            a.style.bottom = domPlayerToolbar.offsetHeight + "px";
-        } else {
-            a.style.bottom = "76px";
-        }
+      a.style.bottom = "76px";
     }
-    b.insertBefore(a, b.childNodes[0]);
-    ExPanel_saveAnchor(a);
-    if (ExPanel_isGiftBarHidden()) {
-        ExPanel_attachToFloatingHost();
-    }
+  }
+  b.insertBefore(a, b.childNodes[0]);
+  ExPanel_saveAnchor(a);
+  if (ExPanel_isGiftBarHidden()) {
+    ExPanel_attachToFloatingHost();
+  }
 }
 
 function hideExPanel() {
-    const exPanelDOM = document.querySelector(".ex-panel");
-    if (!exPanelDOM) {
-        return;
-    }
-    clearTimeout(exPanelTimer);
-    exPanelTimer = null;
-    exPanelDOM.style.display = "none";
+  const exPanelDOM = document.querySelector(".ex-panel");
+  if (!exPanelDOM) return;
+  clearTimeout(exPanelTimer);
+  exPanelTimer = null;
+  exPanelDOM.style.display = "none";
 }
 
 function autoCloseExPanelHandle() {
-    hideExPanel();
+  hideExPanel();
 }
 
 function showExPanel() {
-	let a = document.getElementsByClassName("ex-panel")[0];
-    if (!a) {
-        return;
+  let a = document.getElementsByClassName("ex-panel")[0];
+  if (!a) return;
+  ExPanel_syncHost();
+  if (a.style.display !== "block") {
+    a.style.display = "block";
+    clearTimeout(exPanelTimer);
+    if (a.classList.contains("ex-panel--floating")) {
+      ExPanel_updateFloatingPosition();
     }
-    ExPanel_syncHost();
-	if (a.style.display !== 'block') {
-        a.style.display = 'block';
-        clearTimeout(exPanelTimer);
-        if (a.classList.contains("ex-panel--floating")) {
-            ExPanel_updateFloatingPosition();
-        }
-    } else {
-        a.style.display = 'none';
-        clearTimeout(exPanelTimer);
-    }
+  } else {
+    a.style.display = "none";
+    clearTimeout(exPanelTimer);
+  }
 }
+
+/* ==================== 三维模态脱离聊天区居中锚定与 Sticky Header ==================== */
+function ensureMiuixPanelHeader(el, title) {
+  if (!el) return;
+  el.classList.add("miuix-modal");
+
+  var oldCloses = el.querySelectorAll(".extool__close, .livetool__close, .bloop__close, #vote__result-close, .lottery__func");
+  oldCloses.forEach((c) => {
+    c.style.setProperty("display", "none", "important");
+  });
+
+  var header = el.querySelector(".miuix-modal__header");
+  if (!header) {
+    header = document.createElement("div");
+    header.className = "miuix-modal__header";
+    header.innerHTML = `
+      <div class="miuix-modal__title-box">
+        <span class="miuix-modal__title">${title}</span>
+      </div>
+      <button type="button" class="miuix-modal__close" title="关闭面板" aria-label="关闭">×</button>
+    `;
+    el.insertBefore(header, el.firstChild);
+  } else {
+    var titleEl = header.querySelector(".miuix-modal__title");
+    if (titleEl) titleEl.textContent = title;
+  }
+
+  var closeBtn = header.querySelector(".miuix-modal__close");
+  if (closeBtn) {
+    closeBtn.onclick = function (e) {
+      e.stopPropagation();
+      el.style.removeProperty("display");
+      el.style.setProperty("display", "none", "important");
+    };
+  }
+}
+
+function openMiuixPanelCentered(panel, btnEl) {
+  if (!panel) return;
+  if (panel.parentNode !== document.body) {
+    document.body.appendChild(panel);
+  }
+
+  // 互斥关闭其他已打开面板
+  var allPanels = document.querySelectorAll(".sign-panel, .fans-panel, .extool, .livetool, .bloop, .exlottery");
+  allPanels.forEach((p) => {
+    if (p !== panel) {
+      p.style.setProperty("display", "none", "important");
+    }
+  });
+
+  var panelWidth = 380;
+  panel.style.width = panelWidth + "px";
+  var left = (window.innerWidth - panelWidth) / 2;
+  var bottom = 90;
+
+  if (btnEl && typeof btnEl.getBoundingClientRect === "function") {
+    var rect = btnEl.getBoundingClientRect();
+    if (rect.width > 0 || rect.left > 0) {
+      left = rect.left + rect.width / 2 - panelWidth / 2;
+      left = Math.max(12, Math.min(window.innerWidth - panelWidth - 12, left));
+      bottom = Math.max(20, window.innerHeight - rect.top + 12);
+    }
+  }
+
+  panel.style.position = "fixed";
+  panel.style.left = left + "px";
+  panel.style.bottom = bottom + "px";
+  panel.style.top = "auto";
+  panel.style.right = "auto";
+  panel.style.zIndex = "100030";
+  panel.style.removeProperty("display");
+  panel.style.setProperty("display", "block", "important");
+}
+
+window.ensureMiuixPanelHeader = ensureMiuixPanelHeader;
+window.openMiuixPanelCentered = openMiuixPanelCentered;

@@ -21,18 +21,20 @@ function initPkg_ExIcon_insertDom() {
 	let a = document.createElement("div");
 	a.className = "ex-icon";
 	a.innerHTML = `<a title="DouyuEx ver.${curVersion}">${PokeballIcon_svg}<i id="ex-icon__tip" class="ex-panel__tip"></i></a>`;
-	let b = document.querySelector(".PlayerToolbar-ContentCell .PlayerToolbar-Wealth");
+	let b = document.querySelector(".PlayerToolbar-ContentCell .PlayerToolbar-Wealth")
+		|| document.querySelector(".ToolbarGiftArea-container")
+		|| document.querySelector(".PlayerToolbar")
+		|| document.querySelector(".BackpackButton")?.parentNode
+		|| document.body;
 	if (b) {
 		b.insertBefore(a, b.childNodes[0]);
-	} else {
-		a.className += " ToolbarGiftArea-backpack";
-		a.style.width = "52px";
-		b = document.querySelector(".ToolbarGiftArea-container");
-		b.appendChild(a);
 	}
 }
 function initPkg_ExIcon_Func() {
-	document.getElementsByClassName("ex-icon")[0].addEventListener("click", showExPanel);
+	let icon = document.getElementsByClassName("ex-icon")[0];
+	if (icon) {
+		icon.addEventListener("click", showExPanel);
+	}
 }
 
 function ExIcon_showTip(a) {

@@ -19,23 +19,25 @@ function initPkg_BarrageLoop() {
 function BarrageLoop_insertModal() {
 	let html = "";
 	let a = document.createElement("div");
-	a.className = "bloop";
-	html += '<div style="display:inline-block"><label>弹幕：</label></div>';
+	a.className = "bloop miuix-modal";
 	html += `
-	<span style="float:right;margin-right:15px;">
-		<select id="bloop__select"></select>
-		<input style="margin-left:10px;" type="button" id="bloop__save" value="保存"/>
-		<input style="margin-left:10px;" type="button" id="bloop__delete" value="删除"/>
-	</span>
+	<div class="miuix-modal__body">
+		<div class="bloop__header_card">
+			<label style="font-weight:700;font-size:12px;color:#0f172a;white-space:nowrap;">弹幕：</label>
+			<select id="bloop__select"></select>
+			<input type="button" id="bloop__save" value="保存"/>
+			<input type="button" id="bloop__delete" value="删除"/>
+		</div>
+		<textarea placeholder="一行一个，开启舔狗模式后此处不需要输入" id="bloop__textarea" rows="4" cols="50"></textarea>
+		<div style="margin-top:6px;"><label>速度(ms)：</label><input id="bloop__text_speed1" type="text" style="width:50px;text-align:center;" value="2000" />~<input id="bloop__text_speed2" type="text" style="width:50px;text-align:center;" value="3000" /></div>
+		<div style="margin-top:6px;"><label>限时(min)：</label><input id="bloop__text_stoptime" type="text" style="width:50px;text-align:center;" value="1" /></div>
+		<div style="margin-top:6px;"><label><input id="bloop__checkbox_changeColor" type="checkbox" name="checkbox_changeColor" checked>自动变色</label><label><input id="bloop__checkbox_tiangou" type="checkbox">舔狗模式</label><label><input id="bloop__checkbox_random" type="checkbox">随机发送</label></div>
+		<div class="bloop__switch"><label><input id="bloop__checkbox_startSend" type="checkbox">开始发送</label></div>
+	</div>
 	`;
-	html += '<textarea placeholder="一行一个，开启舔狗模式后此处不需要输入" id="bloop__textarea" rows="5" cols="50"></textarea>';
-	html += '<div><label>速度(ms)：</label><input id="bloop__text_speed1" type="text" style="width:50px;text-align:center;" value="2000" />~<input id="bloop__text_speed2" type="text" style="width:50px;text-align:center;" value="3000" /></div>';
-	html += '<div><label>限时(min)：</label><input id="bloop__text_stoptime" type="text" style="width:50px;text-align:center;" value="1" /></div>';
-	html += '<div><label><input id="bloop__checkbox_changeColor" type="checkbox" name="checkbox_changeColor" checked>自动变色</label><label><input id="bloop__checkbox_tiangou" type="checkbox">舔狗模式</label><label><input id="bloop__checkbox_random" type="checkbox">随机发送</label></div>';
-	html += '<div class="bloop__switch"><label><input id="bloop__checkbox_startSend" type="checkbox">开始发送</label></div>';
 	
 	a.innerHTML = html;
-	let b = document.getElementsByClassName("layout-Player-chat")[0];
+	let b = document.getElementsByClassName("layout-Player-chat")[0] || document.body;
 	b.insertBefore(a, b.childNodes[0]);
 }
 function BarrageLoop_insertIcon() {
@@ -198,9 +200,9 @@ async function doLoopBarrage() {
 function initPkg_BarrageLoop_Func() {
 	// 函数初始化
 	// 将onclick事件绑定在这里
-	document.getElementsByClassName("bloop-icon")[0].addEventListener("click", function() {
-		showExRightPanel("弹幕发送小助手");
-	});
+		document.getElementsByClassName("bloop-icon")[0].addEventListener("click", function() {
+			showExRightPanel("弹幕发送小助手", this);
+		});
 	document.getElementById("bloop__checkbox_changeColor").addEventListener("click", function() {
 		isChangeColor = document.getElementById("bloop__checkbox_changeColor").checked;
 	});
@@ -267,8 +269,8 @@ function initPkg_BarrageLoop_Func() {
 		let select_bloop = document.getElementById("bloop__select");
     let index = select_bloop.options[select_bloop.selectedIndex];
     if (!index) return;
-    let text = index.text;
-    barrageOptions = barrageOptions.filter(item => item === text);
+    let text = index.text.replace(/\\r/g, "\n");
+    barrageOptions = barrageOptions.filter(item => item !== text && item !== index.text);
     select_bloop.options.remove(select_bloop.selectedIndex);
     saveData_BarrageLoop();
 	});

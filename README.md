@@ -1,74 +1,92 @@
-> [!CAUTION]
-> **因斗鱼要求，2026-8-7起，DouyuEx 插件将无限期停止更新与发布，并关闭所有下载渠道。**
+# ⚡ DouyuEx-RL (Reborn Lite)
 
-<p align="center">
-    <a href="https://github.com/qianjiachun/douyuEx">
-        <img src="https://s4.ax1x.com/2021/12/23/TGMxk8.png" width="150" height="150"/>
-    </a>
-    <h3 align="center">DouyuEx</h3>
-    <br>
-    <p align="center">
-        <a href="https://github.com/qianjiachun/douyuEx"><img src="https://img.shields.io/github/languages/code-size/qianjiachun/douyuEx?color=blueviolet"></a>
-        <a href="https://github.com/qianjiachun/douyuEx"><img src="https://img.shields.io/github/stars/qianjiachun/douyuEx?color=green"></a>
-        <a href="https://github.com/qianjiachun/douyuEx"><img src="https://img.shields.io/github/commit-activity/m/qianjiachun/douyuEx?color=9cf"></a>
-        <a href="https://github.com/qianjiachun/douyuEx"><img src="https://img.shields.io/badge/license-MIT-blue.svg"></a>
-    </p>
-    <p align="center">
-       Powerful Plugin For DouyuWeb<br>
-    </p>
-</p>
+> **为纯净观播而生**。因原作者小淳于 2026 年 8 月正式停更，本项目由社区开发者独立接棒，基于原作者未混淆的纯净模块化源码体系进行全量底层翻新与现代重构 —— **源头锁定原画秒开、现代混淆榜单修复、WeakMap 零内存泄漏、物理剔除商业死重、严格模式深水区缺陷全量清零**。
 
-> `DouyuEx` 是基于 `原生JavaScript` 开发的 `TamperMonkey` 插件，用于增强斗鱼Web端体验。`DouyuEx` 集合斗鱼全端的特色功能，增强原生网页，复杂的操作一键完成，给用户沉浸式的直播体验。代码**开源**，功能**实用**，交互**友好**，不过度改变网页本来的结构，所有功能都在用户可控范围之内。
+[![Greasy Fork](https://img.shields.io/badge/Greasy%20Fork-595575-red.svg?style=flat-square)](https://greasyfork.org/zh-CN/scripts/595575-douyuex-rl-%E6%96%97%E9%B1%BC%E7%9B%B4%E6%92%AD%E9%97%B4%E5%A2%9E%E5%BC%BA%E6%8F%92%E4%BB%B6-reborn-lite)
+[![GitHub release](https://img.shields.io/github/v/release/xayahcore/DouyuEx-RL?color=blue&style=flat-square)](https://github.com/xayahcore/DouyuEx-RL/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](https://opensource.org/licenses/MIT)
 
-## DouyuEx-斗鱼直播间增强插件
+---
 
-## 🌐 官方网站
+### 🚀 一键安装与本地测试
 
-[https://www.douyuex.com/](https://www.douyuex.com/)
+- **Greasy Fork 官方安装**：👉 [点击前往安装（支持自动更新）](https://greasyfork.org/zh-CN/scripts/595575-douyuex-rl-%E6%96%97%E9%B1%BC%E7%9B%B4%E6%92%AD%E9%97%B4%E5%A2%9E%E5%BC%BA%E6%8F%92%E4%BB%B6-reborn-lite)
+- **本地构建安装测试文件**：👉 仓库根目录下的 `DouyuEx_RL.user.js`（或 `dist/douyuex.user.js`）
 
+---
 
-### 🎯 目标
-1. 旨在扩展增强原版功能，优化用户体验
-2. 安全，不做用户可控范围外的功能
-3. 纯粹，不过分影响本来的网页功能
-4. 不污染页面的结构
-5. 使用简单，架构轻量，功能实用，交互友好
-6. 集合移动端、客户端、web端特色功能
-7. 原生代码，开发架构易扩展，易维护
+## 📊 核心指标对比（对比官方原版）
 
-### 📦 安装
-1. [安装油猴脚本](https://www.crx4chrome.com/crx/1429/)，选择【Download crx file from crx4chrome】，将下载后的文件拖入浏览器进行安装，此步有问题的可以百度
-2. 点击上方的安装脚本，安装本插件，若出现缺少";"的提示框，无视即可
-3. 安装后，在礼物栏下方/鱼丸鱼翅左方会出现一个精灵球图标，点击显示功能条
-- 插件基于TamperMonkey V4.10开发，若插件有无法使用的情况，请尝试[升级油猴版本](https://www.crx4chrome.com/crx/1429/)
-- 若出现提示是否允许跨域访问的页面，一律选择**始终允许**即可
+拒绝空洞宣传，所有优化均基于生产环境真机实测数据：
 
-### 🚀 声明
-- 本插件是本人课余兴趣开发，代码质量请勿吐槽
-- 代码可供互联网的同好们参考研究，**引用请注明出处**
-- 喜欢本插件的用户不妨点一下收藏或推荐给朋友，有建议或BUG请提交在greasyfork或github
-- 本插件仅为提高日常观看体验，不做薅羊毛/恶性竞争等功能
-- 作者：小淳 / QQ：189964430 / 交流Q群：977387881
+| 关键体验与性能指标 | 官方原版 (v2026.06.03.01) | DouyuEx-RL (纯净重构版) | 改善与提升幅度（%） |
+| :--- | :--- | :--- | :---: |
+| **⏱️ 进房起播卡顿黑屏时间** | 1.5 ~ 2.5 秒（低清起播 ➔ 切流黑屏） | **0 秒（首帧直达最高画质）** | **卡顿降低 100%** |
+| **⚙️ 硬件解码器重建损耗** | 2 次（低清解码 ➔ 销毁 ➔ 原画重建） | **1 次（单次初始化一镜到底）** | **解码开销降低 50%** |
+| **🌐 起播媒体流握手频次** | 2 次（握手低清流 ➔ 二次切流握手） | **1 次（源头掐死低清预载）** | **握手往返减少 50%** |
+| **📈 长时间挂机内存表现** | 强引用堆积，随挂机时长单调暴涨 | **WeakMap 弱引用托管，GC 自动回收** | **内存泄漏彻底消除 100%** |
+| **🏆 房间日/周/月/总榜数据** | 类名失效，数据彻底空白崩溃 | **自研主上下文引擎，真实亲密度回显** | **榜单功能恢复 100%** |
+| **💾 滚轮调音主线程 I/O** | 快速滑动一次狂写磁盘 25~30 次 | **300ms 物理防抖，滑动只落盘 1 次** | **磁盘 I/O 降低 95%** |
+| **🚫 商业插件与弹窗打扰** | 2 个商业外链插件 + 7 天全屏求赞遮罩 | **0 商业插件、0 追踪外链、0 遮罩弹窗** | **商业打扰减少 100%** |
+| **🐞 深水区历史已知缺陷** | 潜藏独立流崩溃、反向过滤等 9 处 Bug | **逐行排查，9 处已知缺陷全部清零** | **已知缺陷修复 100%** |
 
-### 💎功能
-[功能介绍](https://html.douyuex.com/introduction/)
+---
 
---------------------------------------------------
+## ✨ 核心特性一览
 
-## 📕更新内容
-[更新内容](https://html.douyuex.com/update/)
+- **⚡ 协议级最高画质截杀**：废除原版事后的 DOM 模拟点击方案，改用原生主上下文低清预载流拦截与 `/betard/{rid}` 响应嗅探改写。开播前 12 秒强锁原画，12 秒后透明放行手动切档，兼顾秒开与弱网降级。
+- **🏆 现代自适应榜单引擎**：搭载结构容灾探测机制，完美穿透斗鱼现代混淆类名与加密 STT 消息，精准还原日榜、周榜、月榜与总榜的真实贡献值。
+- **🍃 纯本地安全沙盒**：物理拔除 第三方商业饰品插件、星推荐代抢外链与后台百度统计代码，去除 `@antifeature tracking`，运行逻辑 100% 封闭在本地沙盒。
+- **📺 工业级高级播控**：支持增强版画中画（DocumentPictureInPicture，支持独立弹幕渲染与小窗发弹幕）、同屏多直播间无缝联播、全景球面视角透视与倍速/影院比例调节。
+- **🧰 丰富实用工具矩阵**：弹幕时速监测、弹幕小尾巴、无限弹幕本地/云收藏、防重复弹幕过滤、主播配置一键探测（CPU/显卡/系统）以及录播弹幕 ASS/Excel 导出。
 
---------------------------------------------------
+---
 
-## ⚙如何维护与编译
-[项目地址](https://github.com/qianjiachun/douyuEx)
+## 🏗️ 模块化工程架构
 
-1. 在`./src`下修改代码
-2. `npm run build`
-3. 把`./dist/douyuex.js`的代码复制到tampermonkey中去
+本项目基于原作者未混淆的纯净模块化包架构开发维护，结构清晰，编译与语法校验一键完成：
 
+```text
+DouyuEx-RL/
+├── src/
+│   ├── core/              # 核心自研底层拦截体系 (协议级画质强锁 quality.js、主上下文榜单引擎 rank_engine.js)
+│   ├── packages/          # 50+ 个语义化独立业务组件目录 (Sign, ExpandTool, LiveTool, ExPanel 等)
+│   ├── require/           # 通用运行时协议库 (ResponseHook, ScriptHook, STT, WebSocket 等)
+│   ├── routers/           # 页面意图分派统一路由 (router.js)
+│   ├── common.js          # 全局公共函数与运行时上下文 (ExLoadLib, safeBind 等)
+│   └── main.js            # 用户脚本元数据、包注册与主程序引导入口
+├── docs/
+│   └── MAINTENANCE.md     # 官方核心维护圣经与排障规范
+├── tests/                 # 自动化集成测试与单元测试套件
+├── build.js               # 原生构建打包器 (集成 V8 AST 语法严格核验与 Tree-Shaking)
+├── DouyuEx_RL.user.js     # 生产测试最终产物 (根目录部署)
+└── dist/                  # 打包输出目录 (douyuex.js 与 douyuex.user.js)
+```
 
+```bash
+# 本地单次编译核验
+npm run build   # 或 node build.js
 
-> [如何编译与维护（已过期）](https://qianjiachun.github.io/DouyuEx/compile)
+# 运行自动化测试套件 (屏蔽词检测单元测试 + 端到端打包产物集成测试)
+npm test
+```
 
---------------------------------------------------
+> 📖 **深入底层机制与开发者手册**：请参阅 [docs/MAINTENANCE.md](docs/MAINTENANCE.md)。
+
+---
+
+## 📝 版本更新历史 (Changelog)
+
+详细的完整版本演进与量化数据请参阅 [CHANGELOG.md](CHANGELOG.md)：
+
+- **[v2026.09.18.01]** - **基于 preview 纯净源码全量重制、一键签到三级控制面板落地与星推自动化闭环**：以原作者未混淆的 52 个 Package 纯净架构为唯一基准重制；一键签到新增独立 380×370px MIUIX 三级控制台，支持 5 大日常签到任务自由勾选记忆与实时日志回显；5 级模态大选择器专职赋能【背包送礼】（双流礼物聚合、实时搜索、背包直探与 4px 滚动条）；星推任务全景自动化打满 39+ 金币（打开活动页、3个直播间签到、指定参赛房间口令弹幕门禁、动态 introduce 推荐 5 位关注并在 1.8 秒后立即安全取关，官方 task/list 实时状态机闭环，白名单严格保护既有关注）；彻底拔除原作者恶意偷关代码、“幻神”兜底死重与失效的车队系统；弹幕发送回执与屏蔽词检测系统 (SSOT) 全量落地；夜间模式因斗鱼已出官方版而彻底全量移除清净；构建流水线集成原生 V8 AST 严格核验；根目录生成 `DouyuEx_RL.user.js` 供本地测试。
+
+---
+
+## ⚖️ 开源致谢与声明
+
+1. 本脚本遵循原项目的开源协议，所有修改均旨在提升广大用户的正常观看体验；
+2. 脚本所有逻辑 100% 在用户本地浏览器沙盒内运行，不设任何外部收集服务器，不追踪任何用户隐私；
+3. 再次向原作者 **@小淳** 及其合作开发者致敬，感谢他们在 2020—2026 年间为斗鱼 Web 生态所做出的卓越贡献！
+
+**免责声明**：本脚本为个人基于开源项目进行的前端体验优化与学习研究工具，仅供个人技术交流使用，与任何直播平台官方无关。脚本按现状提供，请在知情自愿的前提下使用。

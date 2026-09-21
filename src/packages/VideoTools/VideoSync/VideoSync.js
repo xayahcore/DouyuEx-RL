@@ -16,18 +16,21 @@ function VideoSync_insertIcon() {
     let b = document.getElementsByClassName("left-d3671e")[0];
     if (b) {
         a.style.marginLeft = "20px";
-        b.insertBefore(a, b.childNodes[3]);
+        b.insertBefore(a, b.childNodes[3] || b.firstChild);
     } else {
         a.style.marginLeft = "8px";
         b = getValidDom([".left-bfab3b"]);
-        b.insertBefore(a, b.childNodes[2]);
+        if (b) b.insertBefore(a, b.childNodes[2] || b.firstChild);
     }
 }
 
 function initPkg_VideoTools_VideoSync_Func() {
-    document.getElementById("ex-videosync").addEventListener("click", () => {
-        setVideoSync();
-    })
+    let btn = document.getElementById("ex-videosync");
+    if (btn) {
+        btn.addEventListener("click", () => {
+            setVideoSync();
+        });
+    }
 }
 
 function setVideoSync() {

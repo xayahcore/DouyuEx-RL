@@ -119,5 +119,22 @@ function getTreasure_Existing() {
 }
 
 function getTslist(callback) {
-    unsafeWindow.socketProxy.socketStream.subscribe('tslist', callback);
+    if (unsafeWindow.socketProxy?.socketStream?.subscribe) {
+        try {
+            unsafeWindow.socketProxy.socketStream.subscribe('tslist', callback);
+        } catch(e) {}
+    } else {
+        let retry = 0;
+        let t = setInterval(() => {
+            retry++;
+            if (unsafeWindow.socketProxy?.socketStream?.subscribe) {
+                clearInterval(t);
+                try {
+                    unsafeWindow.socketProxy.socketStream.subscribe('tslist', callback);
+                } catch(e) {}
+            } else if (retry > 30) {
+                clearInterval(t);
+            }
+        }, 1000);
+    }
 }

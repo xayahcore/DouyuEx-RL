@@ -5,11 +5,11 @@ function initPkg_ExpandTool_ClearBag() {
 
 function ExpandTool_ClearBag_insertDom() {
     let html = "";
-    html += '<label>背包送礼：[速度并不快,间隔>0.1s]</label><a id="extool__clearbag_showid" style="margin-left:10px;color:blue;" href="javascript:void(0);">礼物id示例</a><br />';
-    html += '<label>礼物ID：</label><input id="extool__clearbag_id" type="text" style="width:50px;text-align:center;margin-right:10px;" value="268" />';
-    html += '<label>数量：</label><input id="extool__clearbag_cnt" type="text" style="width:30px;text-align:center;" value="1" />';
+    html += '<label>背包送礼：</label><button type="button" id="extool__clearbag_picker_btn" style="border:1px solid #007aff;color:#007aff;background:#fff;border-radius:6px;padding:2px 8px;font-size:12px;cursor:pointer;margin-left:4px;">选择道具</button><br />';
+    html += '<label>礼物ID：</label><input id="extool__clearbag_id" type="text" style="width:55px;text-align:center;margin-right:6px;" value="268" />';
+    html += '<span id="extool__clearbag_selected_name" style="color:#007aff;font-size:12px;margin-right:8px;">(荧光棒)</span>';
+    html += '<label>数量：</label><input id="extool__clearbag_cnt" type="text" style="width:36px;text-align:center;" value="1" />';
     html += '<input style="margin-left:10px;" type="button" id="extool__clearbag_sendbtn" value="送出" />';
-    // html += '<input style="width:60px;margin-left:10px;" type="button" id="extool__clearbag_clearbtn" value="清空背包" />';
     let a = document.createElement("div");
     a.className = "extool__clearbag";
     a.innerHTML = html;
@@ -18,6 +18,22 @@ function ExpandTool_ClearBag_insertDom() {
 }
 
 function ExpandTool_ClearBag_insertFunc() {
+    let pickerBtn = document.getElementById("extool__clearbag_picker_btn");
+    if (pickerBtn) {
+        pickerBtn.addEventListener("click", () => {
+            if (typeof openGiftPicker === "function") {
+                openGiftPicker("backpack", (gift) => {
+                    document.getElementById("extool__clearbag_id").value = gift.id;
+                    let nameEl = document.getElementById("extool__clearbag_selected_name");
+                    if (nameEl) nameEl.textContent = `(${gift.name})`;
+                    if (gift.count) {
+                        document.getElementById("extool__clearbag_cnt").value = gift.count;
+                    }
+                });
+            }
+        });
+    }
+
     document.getElementById("extool__clearbag_sendbtn").addEventListener("click", async function() {
         if (confirm("确认送出？") != true) {
             return;
@@ -40,30 +56,6 @@ function ExpandTool_ClearBag_insertFunc() {
 
         }
         showMessage("【背包送礼】执行完毕！", "success");
-    });
-    // document.getElementById("extool__clearbag_clearbtn").addEventListener("click", function() {
-    //     if (confirm("确认清空？") != true) {
-    //         return;
-    //     }
-    //     showMessage("【清空背包】执行中...", "info");
-    //     getBagGifts(rid, (ret) => {
-    //         clearBagGifts(ret, rid);
-    //     })
-    // });
-    document.getElementById("extool__clearbag_showid").addEventListener("click", function() {
-        getBagGifts(rid, (ret) => {
-            let chunkNum = ret.data.list.length;
-            if (chunkNum > 0) {
-                for (let i = 0; i < chunkNum; i++) {
-                    let gift_id = ret.data.list[i].id;
-                    let gift_name = ret.data.list[i].name;
-                    console.log("【" + gift_name + "】 id:" + gift_id);
-                }
-                showMessage("请按F12到控制台(console)查看背包礼物id", "success");
-            } else {
-                showMessage("背包礼物为空", "error");
-            }
-        });
     });
 }
 

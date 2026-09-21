@@ -28,8 +28,8 @@ function LiveTool_insertModal() {
 let a = document.createElement("div");
 a.className = "livetool";
 
-let b = document.getElementsByClassName("layout-Player-chat")[0];
-b.insertBefore(a, b.childNodes[0]);
+let b = document.getElementsByClassName("layout-Player-chat")[0] || document.querySelector(".Barrage-main") || document.body;
+if (b) b.insertBefore(a, b.childNodes[0]);
 }
 function LiveTool_insertIcon() {
 let a = document.createElement("div");
@@ -43,7 +43,7 @@ b.insertBefore(a, b.childNodes[0]);
 
 function initPkg_LiveTool_Func() {
 document.getElementsByClassName("livetool-icon")[0].addEventListener("click", function() {
-	showExRightPanel("直播间工具");
+	showExRightPanel("直播间工具", this);
 });
 }
 
