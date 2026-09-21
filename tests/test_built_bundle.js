@@ -245,7 +245,7 @@ async function testBuiltBundle() {
 
     // === 测试 9: 版本更新三级面板分类与【其它】板块恢复 ===
     console.log("--> 测试场景 9: 验证版本更新三级控制台与【其它】板块...");
-    assert.strictEqual(win.curVersion, "2026.09.21.01", "全局版本号必须为 2026.09.21.01");
+    assert.strictEqual(win.curVersion, "2026.09.22.01", "全局版本号必须为 2026.09.22.01");
     win.createExUpdatePanel();
     const updateModal = win.document.querySelector(".exupdate-panel");
     assert.ok(updateModal, ".exupdate-panel 必须被创建");
@@ -253,7 +253,7 @@ async function testBuiltBundle() {
     assert.strictEqual(cards.length, 3, "版本更新面板必须包含 3 个标准分类卡片 (功能升级/交互与体验/其它)");
     const titles = Array.from(cards).map(c => c.querySelector(".exupdate-panel__card-title")?.textContent.trim());
     assert.ok(titles.includes("其它·"), "版本更新面板必须恢复【其它·】板块");
-    console.log("✓ 测试场景 9 通过: 版本号 2026.09.21.01、三级菜单分类日志与【其它】板块恢复验证通过");
+    console.log("✓ 测试场景 9 通过: 版本号 2026.09.22.01、三级菜单分类日志与【其它】板块恢复验证通过");
 
     // === 测试 10: 检查更新按钮状态机流转与多源容灾 ===
     console.log("--> 测试场景 10: 验证检查更新按钮状态流转 (ack -> check -> checking -> latest/upgrade/error)...");
@@ -266,10 +266,10 @@ async function testBuiltBundle() {
     assert.strictEqual(updateBtn.dataset.state, "check", "确认后状态必须流转为 check");
     assert.strictEqual(updateBtn.textContent, "检查更新");
 
-    // 2. 模拟点击“检查更新”，此时远程返回与当前相同版本 (2026.09.21.01)
+    // 2. 模拟点击“检查更新”，此时远程返回与当前相同版本 (2026.09.22.01)
     win.GM_xmlhttpRequest = (opts) => {
         setTimeout(() => {
-            opts.onload({ status: 200, responseText: JSON.stringify({ version: "2026.09.21.01" }) });
+            opts.onload({ status: 200, responseText: JSON.stringify({ version: "2026.09.22.01" }) });
         }, 10);
     };
     updateBtn.click();
@@ -278,10 +278,10 @@ async function testBuiltBundle() {
     assert.strictEqual(updateBtn.dataset.state, "latest", "版本相同时状态必须流转为 latest");
     assert.ok(updateBtn.textContent.includes("已是最新"), "按钮文本必须提示已是最新");
 
-    // 3. 模拟检测到更高的新版本 (2026.09.22.01)
+    // 3. 模拟检测到更高的新版本 (2026.09.23.01)
     win.GM_xmlhttpRequest = (opts) => {
         setTimeout(() => {
-            opts.onload({ status: 200, responseText: JSON.stringify({ version: "2026.09.22.01" }) });
+            opts.onload({ status: 200, responseText: JSON.stringify({ version: "2026.09.23.01" }) });
         }, 10);
     };
     updateBtn.click();
