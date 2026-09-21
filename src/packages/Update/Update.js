@@ -69,6 +69,65 @@ function initPkg_Update_Func() {
   }
 }
 
+function fetchLatestVersion(callback) {
+  const sources = [
+    "https://cdn.jsdelivr.net/gh/xayahcore/DouyuEx-RL@main/package.json",
+    "https://fastly.jsdelivr.net/gh/xayahcore/DouyuEx-RL@main/package.json",
+    "https://raw.githubusercontent.com/xayahcore/DouyuEx-RL/main/package.json",
+    "https://greasyfork.org/scripts/595575.json"
+  ];
+
+  function trySource(index) {
+    if (index >= sources.length) {
+      return callback(null);
+    }
+    const url = sources[index] + (sources[index].includes("?") ? "&" : "?") + "_t=" + Date.now();
+
+    function handleResponse(content) {
+      if (!content) return trySource(index + 1);
+      try {
+        const json = typeof content === "string" ? JSON.parse(content) : content;
+        const ver = json && json.version;
+        if (ver && /^\d{4}\.\d{2}\.\d{2}\.\d{2}$/.test(String(ver).trim())) {
+          return callback(String(ver).trim());
+        }
+      } catch (e) {}
+      trySource(index + 1);
+    }
+
+    if (typeof GM_xmlhttpRequest === "function") {
+      GM_xmlhttpRequest({
+        method: "GET",
+        url: url,
+        timeout: 6000,
+        onload: function (res) {
+          if (res.status === 200 && (res.response || res.responseText)) {
+            handleResponse(res.response || res.responseText);
+          } else {
+            trySource(index + 1);
+          }
+        },
+        onerror: function () {
+          trySource(index + 1);
+        },
+        ontimeout: function () {
+          trySource(index + 1);
+        }
+      });
+    } else {
+      fetch(url, { cache: "no-store" })
+        .then((res) => {
+          if (res.ok) return res.json();
+          throw new Error("HTTP " + res.status);
+        })
+        .then((json) => handleResponse(json))
+        .catch(() => trySource(index + 1));
+    }
+  }
+
+  trySource(0);
+}
+
 function createExUpdatePanel() {
   var existing = document.querySelector(".exupdate-panel");
   if (existing) {
@@ -152,6 +211,9 @@ function createExUpdatePanel() {
     } else if (state === "upgrade") {
       btn.classList.add("exupdate-state-btn--upgrade");
       btn.textContent = text || "前往更新";
+    } else if (state === "error") {
+      btn.classList.add("exupdate-state-btn--error");
+      btn.textContent = text || "检查失败，点击重试";
     }
   }
 
@@ -170,45 +232,36 @@ function createExUpdatePanel() {
       var tip = document.getElementById("ex-update__tip");
       if (tip) tip.style.display = "none";
       setBtnState("check", "检查更新");
-    } else if (st === "check") {
+    } else if (st === "check" || st === "latest" || st === "error") {
       setBtnState("checking", "正在检查更新...");
-      var handleUpdateData = function (data) {
-        if (data && data.version && isNewerVersion(data.version, curVersion)) {
-          setBtnState("upgrade", "前往更新");
+      fetchLatestVersion(function (remoteVer) {
+        if (!remoteVer) {
+          setBtnState("error", "检查失败，点击重试");
+          if (typeof showMessage === "function") {
+            showMessage("【版本更新】检查更新失败，无法连接到更新服务器", "error");
+          }
+          return;
+        }
+        if (isNewerVersion(remoteVer, curVersion)) {
+          setBtnState("upgrade", "前往更新 (v" + remoteVer + ")");
           var tip = document.getElementById("ex-update__tip");
           if (tip) tip.style.display = "block";
-        } else {
-          setBtnState("latest", "已是最新");
-        }
-      };
-      if (typeof GM_xmlhttpRequest === "function") {
-        GM_xmlhttpRequest({
-          method: "GET",
-          url: "https://greasyfork.org/scripts/595575.json",
-          responseType: "json",
-          onload: function (res) {
-            var data = res.response;
-            if (typeof data === "string") {
-              try { data = JSON.parse(data); } catch (e) {}
-            }
-            handleUpdateData(data);
-          },
-          onerror: function () {
-            setBtnState("latest", "已是最新");
+          if (typeof showMessage === "function") {
+            showMessage("【版本更新】检测到新版本 v" + remoteVer + "，点击前往更新", "info");
           }
-        });
-      } else {
-        fetch("https://greasyfork.org/scripts/595575.json")
-          .then((res) => res.json())
-          .then(handleUpdateData)
-          .catch(() => {
-            setBtnState("latest", "已是最新");
-          });
-      }
-    } else if (st === "latest") {
-      setBtnState("check", "检查更新");
+        } else {
+          setBtnState("latest", "已是最新 (v" + curVersion + ")");
+          if (typeof showMessage === "function") {
+            showMessage("【版本更新】当前版本 v" + curVersion + " 已是最新版本", "success");
+          }
+        }
+      });
     } else if (st === "upgrade") {
-      GM_openInTab("https://greasyfork.org/zh-CN/scripts/595575", { active: true });
+      if (typeof GM_openInTab === "function") {
+        GM_openInTab("https://greasyfork.org/zh-CN/scripts/595575-douyuex-rl-%E6%96%97%E9%B1%BC%E7%9B%B4%E6%92%AD%E9%97%B4%E5%A2%9E%E5%BC%BA%E6%8F%92%E4%BB%B6-reborn-lite", { active: true });
+      } else {
+        window.open("https://greasyfork.org/zh-CN/scripts/595575-douyuex-rl-%E6%96%97%E9%B1%BC%E7%9B%B4%E6%92%AD%E9%97%B4%E5%A2%9E%E5%BC%BA%E6%8F%92%E4%BB%B6-reborn-lite", "_blank");
+      }
     }
   };
 }
@@ -225,26 +278,12 @@ function initVersionLifecycleNotice() {
   if (now - lastCheckTime > 12 * 3600 * 1000) {
     GM_setValue("Ex_LastUpdateCheckTime", String(now));
     setTimeout(() => {
-      var handleRemoteData = function (data) {
-        if (data && data.version && isNewerVersion(data.version, curVersion)) {
+      fetchLatestVersion(function (remoteVer) {
+        if (remoteVer && isNewerVersion(remoteVer, curVersion)) {
           var tip = document.getElementById("ex-update__tip");
           if (tip) tip.style.display = "block";
         }
-      };
-      if (typeof GM_xmlhttpRequest === "function") {
-        GM_xmlhttpRequest({
-          method: "GET",
-          url: "https://greasyfork.org/scripts/595575.json",
-          responseType: "json",
-          onload: function (res) {
-            var data = res.response;
-            if (typeof data === "string") {
-              try { data = JSON.parse(data); } catch (e) {}
-            }
-            handleRemoteData(data);
-          }
-        });
-      }
+      });
     }, 5000);
   }
 }

@@ -1241,3 +1241,59 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
     background: rgba(0, 0, 0, 0.1) !important;
     color: #0f172a !important;
 }
+
+/* ==========================================================================
+   14. 版本更新控制台多态操作按钮状态微交互
+   ========================================================================== */
+.exupdate-state-btn--ack,
+.exupdate-state-btn--check {
+    background: linear-gradient(135deg, #2b7fff, #0055ff) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 14px rgba(0, 102, 255, 0.35) !important;
+}
+
+.exupdate-state-btn--ack:hover,
+.exupdate-state-btn--check:hover {
+    background: linear-gradient(135deg, #3d8bff, #004de6) !important;
+    box-shadow: 0 6px 18px rgba(0, 102, 255, 0.45) !important;
+    transform: translateY(-1px) !important;
+}
+
+.exupdate-state-btn--checking {
+    background: #94a3b8 !important;
+    box-shadow: none !important;
+    cursor: wait !important;
+}
+
+.exupdate-state-btn--latest {
+    background: linear-gradient(135deg, #10b981, #059669) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3) !important;
+}
+
+.exupdate-state-btn--latest:hover {
+    background: linear-gradient(135deg, #059669, #047857) !important;
+    transform: translateY(-1px) !important;
+}
+
+.exupdate-state-btn--upgrade {
+    background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4) !important;
+}
+
+.exupdate-state-btn--upgrade:hover {
+    background: linear-gradient(135deg, #d97706, #b45309) !important;
+    transform: translateY(-1px) !important;
+}
+
+.exupdate-state-btn--error {
+    background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+    color: #ffffff !important;
+    box-shadow: 0 4px 14px rgba(239, 68, 68, 0.3) !important;
+}
+
+.exupdate-state-btn--error:hover {
+    background: linear-gradient(135deg, #dc2626, #b91c1c) !important;
+    transform: translateY(-1px) !important;
+}

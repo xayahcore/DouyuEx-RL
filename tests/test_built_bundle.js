@@ -255,6 +255,53 @@ async function testBuiltBundle() {
     assert.ok(titles.includes("其它·"), "版本更新面板必须恢复【其它·】板块");
     console.log("✓ 测试场景 9 通过: 版本号 2026.09.21.01、三级菜单分类日志与【其它】板块恢复验证通过");
 
+    // === 测试 10: 检查更新按钮状态机流转与多源容灾 ===
+    console.log("--> 测试场景 10: 验证检查更新按钮状态流转 (ack -> check -> checking -> latest/upgrade/error)...");
+    const updateBtn = updateModal.querySelector("#exupdate-action-btn");
+    assert.ok(updateBtn, "#exupdate-action-btn 按钮必须存在");
+
+    // 1. 点击“我已收到”进入“检查更新”
+    updateBtn.dataset.state = "ack";
+    updateBtn.click();
+    assert.strictEqual(updateBtn.dataset.state, "check", "确认后状态必须流转为 check");
+    assert.strictEqual(updateBtn.textContent, "检查更新");
+
+    // 2. 模拟点击“检查更新”，此时远程返回与当前相同版本 (2026.09.21.01)
+    win.GM_xmlhttpRequest = (opts) => {
+        setTimeout(() => {
+            opts.onload({ status: 200, responseText: JSON.stringify({ version: "2026.09.21.01" }) });
+        }, 10);
+    };
+    updateBtn.click();
+    assert.strictEqual(updateBtn.dataset.state, "checking", "请求期间按钮必须处于 checking 禁用状态");
+    await new Promise(r => setTimeout(r, 60));
+    assert.strictEqual(updateBtn.dataset.state, "latest", "版本相同时状态必须流转为 latest");
+    assert.ok(updateBtn.textContent.includes("已是最新"), "按钮文本必须提示已是最新");
+
+    // 3. 模拟检测到更高的新版本 (2026.09.22.01)
+    win.GM_xmlhttpRequest = (opts) => {
+        setTimeout(() => {
+            opts.onload({ status: 200, responseText: JSON.stringify({ version: "2026.09.22.01" }) });
+        }, 10);
+    };
+    updateBtn.click();
+    await new Promise(r => setTimeout(r, 60));
+    assert.strictEqual(updateBtn.dataset.state, "upgrade", "检测到更高版本时状态必须流转为 upgrade");
+    assert.ok(updateBtn.textContent.includes("前往更新"), "按钮文本必须引导前往更新");
+
+    // 4. 模拟网络请求彻底失败
+    win.GM_xmlhttpRequest = (opts) => {
+        setTimeout(() => {
+            opts.onerror(new Error("Network Error"));
+        }, 10);
+    };
+    updateBtn.dataset.state = "check";
+    updateBtn.click();
+    await new Promise(r => setTimeout(r, 60));
+    assert.strictEqual(updateBtn.dataset.state, "error", "网络完全异常时状态必须流转为 error，禁止误报已是最新");
+    assert.ok(updateBtn.textContent.includes("检查失败"), "必须明确告知用户检查失败");
+    console.log("✓ 测试场景 10 通过: 检查更新按钮多态流转与容灾状态判定 100% 正确");
+
     console.log("=== 端到端集成测试全流程 100% 通过 ===");
     process.exit(0);
 }
