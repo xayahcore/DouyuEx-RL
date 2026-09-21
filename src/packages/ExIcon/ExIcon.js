@@ -32,14 +32,27 @@ function initPkg_ExIcon_insertDom() {
 }
 function initPkg_ExIcon_Func() {
 	let icon = document.getElementsByClassName("ex-icon")[0];
+	let exIconLeaveTimer = null;
 	if (icon) {
-		// 鼠标悬停精灵球即刻展开二级菜单 (丝滑弹簧入场，移开不自动关闭)
+		// 鼠标悬停精灵球即刻展开二级菜单 (丝滑弹簧入场)
 		icon.addEventListener("mouseenter", () => {
+			clearTimeout(exIconLeaveTimer);
 			if (typeof openExPanel === "function") {
 				openExPanel();
 			} else if (typeof showExPanel === "function") {
 				showExPanel();
 			}
+		});
+		// 鼠标移出精灵球时，若未展开三级菜单且鼠标未在二级菜单内，则自动收拢
+		icon.addEventListener("mouseleave", () => {
+			clearTimeout(exIconLeaveTimer);
+			exIconLeaveTimer = setTimeout(() => {
+				let anyThirdOpen = typeof isAnyThirdLevelPanelOpen === "function" ? isAnyThirdLevelPanelOpen() : false;
+				let overDock = typeof isMouseOverExPanel === "function" ? isMouseOverExPanel() : false;
+				if (!anyThirdOpen && !overDock) {
+					if (typeof hideExPanel === "function") hideExPanel();
+				}
+			}, 250);
 		});
 		// 点击精灵球支持切换展开/折叠
 		icon.addEventListener("click", (e) => {

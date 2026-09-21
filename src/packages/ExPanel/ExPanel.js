@@ -1,16 +1,58 @@
 let ExPanel_anchorParent = null;
 let ExPanel_anchorNextSibling = null;
+let isMouseOverExPanel = false;
+let exPanelLeaveTimer = null;
+
+function isAnyThirdLevelPanelOpen() {
+  const panels = document.querySelectorAll(
+    ".sign-panel, .fans-continue-panel, .fans-panel, .extool, .livetool, .bloop, .exlottery, .popup-player-panel, .exupdate-panel"
+  );
+  for (let i = 0; i < panels.length; i++) {
+    const p = panels[i];
+    let isShowing = p.style.display === "flex" || p.style.display === "block" || (window.getComputedStyle(p).display !== "none" && p.style.display !== "none");
+    if (isShowing) {
+      return true;
+    }
+  }
+  return false;
+}
 
 function initPkg_ExPanel() {
   initPkg_ExPanel_insertDom();
 
   let exPanelDOM = document.querySelector(`.ex-panel`);
   if (exPanelDOM) {
+    exPanelDOM.addEventListener("mouseenter", () => {
+      isMouseOverExPanel = true;
+      clearTimeout(exPanelLeaveTimer);
+    });
+    // 只要没展开三级菜单，鼠标移开二级菜单就自动关闭
+    exPanelDOM.addEventListener("mouseleave", () => {
+      isMouseOverExPanel = false;
+      clearTimeout(exPanelLeaveTimer);
+      exPanelLeaveTimer = setTimeout(() => {
+        if (!isAnyThirdLevelPanelOpen() && !isMouseOverExPanel) {
+          hideExPanel();
+        }
+      }, 200);
+    });
+
     const closeBtn = exPanelDOM.querySelector(".ex-panel__close");
     if (closeBtn) {
       closeBtn.addEventListener("click", (e) => {
         e.stopPropagation();
         hideExPanel();
+        var allPanels = document.querySelectorAll(
+          ".sign-panel, .fans-continue-panel, .fans-panel, .extool, .livetool, .bloop, .exlottery, .popup-player-panel, .exupdate-panel"
+        );
+        allPanels.forEach((p) => {
+          p.style.removeProperty("display");
+          p.style.setProperty("display", "none", "important");
+          p.classList.remove("miuix-modal-in");
+        });
+        if (typeof updateDockActiveIndicator === "function") {
+          updateDockActiveIndicator();
+        }
       });
     }
   }
@@ -144,11 +186,39 @@ function initPkg_ExPanel_insertDom() {
 function ensureDockIndicators() {
   let dockWrap = document.querySelector(".ex-panel__wrap");
   if (!dockWrap) return;
+
+  const mapping = {
+    "ex-sign": "一键签到",
+    "fans-continue": "一键续牌",
+    "extool-icon": "扩展功能",
+    "livetool-icon": "直播间工具",
+    "bloop-icon": "弹幕发送小助手",
+    "ex-lottery": "全站抽奖信息",
+    "exlottery-icon": "全站抽奖信息",
+    "popup-player": "同屏播放",
+    "ex-update": "版本更新"
+  };
+
   dockWrap.querySelectorAll(":scope > div").forEach((btn) => {
     if (!btn.querySelector(".ex-panel__indicator")) {
       let ind = document.createElement("span");
       ind.className = "ex-panel__indicator";
       btn.appendChild(ind);
+    }
+
+    if (!btn.dataset.hoverBound) {
+      btn.dataset.hoverBound = "1";
+      btn.style.cursor = "pointer";
+      btn.addEventListener("mouseenter", () => {
+        for (let cls in mapping) {
+          if (btn.classList.contains(cls)) {
+            if (typeof showExRightPanel === "function") {
+              showExRightPanel(mapping[cls], btn, true);
+            }
+            break;
+          }
+        }
+      });
     }
   });
 }
@@ -179,7 +249,7 @@ function hideExPanel() {
       exPanelDOM.style.display = "none";
       exPanelDOM.classList.remove("miuix-dock-out");
     }
-  }, 180);
+  }, 160);
 }
 
 function toggleExPanel() {
@@ -251,6 +321,9 @@ function ensureMiuixPanelHeader(el, title) {
       if (typeof updateDockActiveIndicator === "function") {
         updateDockActiveIndicator();
       }
+      if (!isMouseOverExPanel && !isAnyThirdLevelPanelOpen()) {
+        hideExPanel();
+      }
     };
   }
 }
@@ -316,3 +389,5 @@ window.openExPanel = openExPanel;
 window.hideExPanel = hideExPanel;
 window.toggleExPanel = toggleExPanel;
 window.showExPanel = showExPanel;
+window.isAnyThirdLevelPanelOpen = isAnyThirdLevelPanelOpen;
+window.isMouseOverExPanel = () => isMouseOverExPanel;

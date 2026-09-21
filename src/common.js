@@ -405,7 +405,7 @@ function getTextareaPosition(element) {
 	return cursorPos;
 }
 
-	function showExRightPanel(name, triggerBtn) {
+	function showExRightPanel(name, triggerBtn, forceOpen) {
 		let panels = [
 			{ name: "弹幕发送小助手", className: "bloop" },
 			{ name: "扩展功能", className: "extool" },
@@ -417,28 +417,31 @@ function getTextareaPosition(element) {
 			{ name: "版本更新", className: "exupdate-panel" }
 		];
 
-	let targetItem = panels.find(p => p.name === name);
-	if (!targetItem) return;
+		let targetItem = panels.find(p => p.name === name);
+		if (!targetItem) return;
 
-	let targetDom = document.querySelector("." + targetItem.className);
-	if (!targetDom) {
-		if (targetItem.className === "sign-panel" && typeof createSignPanel === "function") createSignPanel();
-		else if (targetItem.className === "fans-continue-panel" && typeof createFansContinuePanel === "function") createFansContinuePanel();
-		else if (targetItem.className === "popup-player-panel" && typeof createPopupPlayerPanel === "function") createPopupPlayerPanel();
-		else if (targetItem.className === "exupdate-panel" && typeof createExUpdatePanel === "function") createExUpdatePanel();
-		targetDom = document.querySelector("." + targetItem.className);
-	}
-
-	if (targetDom) {
-		let isShowing = targetDom.style.display === "flex" || targetDom.style.display === "block" || (window.getComputedStyle(targetDom).display !== "none" && targetDom.style.display !== "none");
-		if (isShowing) {
-			targetDom.style.removeProperty("display");
-			targetDom.style.setProperty("display", "none", "important");
-			targetDom.classList.remove("miuix-modal-in");
-			if (typeof updateDockActiveIndicator === "function") updateDockActiveIndicator();
-			return;
+		let targetDom = document.querySelector("." + targetItem.className);
+		if (!targetDom) {
+			if (targetItem.className === "sign-panel" && typeof createSignPanel === "function") createSignPanel();
+			else if (targetItem.className === "fans-continue-panel" && typeof createFansContinuePanel === "function") createFansContinuePanel();
+			else if (targetItem.className === "popup-player-panel" && typeof createPopupPlayerPanel === "function") createPopupPlayerPanel();
+			else if (targetItem.className === "exupdate-panel" && typeof createExUpdatePanel === "function") createExUpdatePanel();
+			targetDom = document.querySelector("." + targetItem.className);
 		}
-	}
+
+		if (targetDom) {
+			let isShowing = targetDom.style.display === "flex" || targetDom.style.display === "block" || (window.getComputedStyle(targetDom).display !== "none" && targetDom.style.display !== "none");
+			if (isShowing) {
+				if (!forceOpen) {
+					targetDom.style.removeProperty("display");
+					targetDom.style.setProperty("display", "none", "important");
+					targetDom.classList.remove("miuix-modal-in");
+					if (typeof updateDockActiveIndicator === "function") updateDockActiveIndicator();
+					return;
+				}
+				return;
+			}
+		}
 
 	for (let i = 0; i < panels.length; i++) {
 		let item = panels[i];
