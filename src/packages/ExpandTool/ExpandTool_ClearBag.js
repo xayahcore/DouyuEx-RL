@@ -19,45 +19,52 @@ function ExpandTool_ClearBag_insertDom() {
 }
 
 function ExpandTool_ClearBag_insertFunc() {
-    let pickerBtn = document.getElementById("extool__clearbag_picker_btn");
-    if (pickerBtn) {
-        pickerBtn.addEventListener("click", () => {
+    let pickerTrigger = document.getElementById("extool__clearbag_badge") || document.getElementById("extool__clearbag_picker_btn");
+    if (pickerTrigger) {
+        pickerTrigger.addEventListener("click", () => {
             if (typeof openGiftPicker === "function") {
                 openGiftPicker("backpack", (gift) => {
-                    document.getElementById("extool__clearbag_id").value = gift.id;
-                    let nameEl = document.getElementById("extool__clearbag_selected_name");
-                    if (nameEl) nameEl.textContent = `(${gift.name})`;
+                    let idEl = document.getElementById("extool__clearbag_id");
+                    if (idEl) idEl.value = gift.id;
+                    let nameEl = document.getElementById("extool__clearbag_name") || document.getElementById("extool__clearbag_selected_name");
+                    if (nameEl) nameEl.textContent = gift.name;
+                    let iconEl = document.getElementById("extool__clearbag_icon");
+                    if (iconEl && gift.icon) iconEl.src = gift.icon;
                     if (gift.count) {
-                        document.getElementById("extool__clearbag_cnt").value = gift.count;
+                        let cntEl = document.getElementById("extool__clearbag_cnt");
+                        if (cntEl) cntEl.value = gift.count;
                     }
                 });
             }
         });
     }
 
-    document.getElementById("extool__clearbag_sendbtn").addEventListener("click", async function() {
-        if (confirm("确认送出？") != true) {
-            return;
-        }
-        let id = document.getElementById("extool__clearbag_id").value;
-        let n = Number(document.getElementById("extool__clearbag_cnt").value);
-        showMessage("【背包送礼】执行中...", "info");
-        for (let i = 0; i < n; i++) {
-            await sleep(100).then(() => {
-                sendGift_bag(id, 1, rid).then(data => {
-                    if (data.msg != "success") {
-                        showMessage("【背包送礼】" + rid + "赠送失败 " + data.msg, "error");
-                        console.log(rid, data);
-                    }
-                }).catch(err => {
-                    showMessage("【背包送礼】" + rid + "赠送失败", "error");
-                    console.log(rid, err);
+    let sendBtn = document.getElementById("extool__clearbag_sendbtn");
+    if (sendBtn) {
+        sendBtn.addEventListener("click", async function() {
+            if (confirm("确认送出？") != true) {
+                return;
+            }
+            let id = document.getElementById("extool__clearbag_id").value;
+            let n = Number(document.getElementById("extool__clearbag_cnt").value);
+            showMessage("【背包送礼】执行中...", "info");
+            for (let i = 0; i < n; i++) {
+                await sleep(100).then(() => {
+                    sendGift_bag(id, 1, rid).then(data => {
+                        if (data.msg != "success") {
+                            showMessage("【背包送礼】" + rid + "赠送失败 " + data.msg, "error");
+                            console.log(rid, data);
+                        }
+                    }).catch(err => {
+                        showMessage("【背包送礼】" + rid + "赠送失败", "error");
+                        console.log(rid, err);
+                    })
                 })
-            })
 
-        }
-        showMessage("【背包送礼】执行完毕！", "success");
-    });
+            }
+            showMessage("【背包送礼】执行完毕！", "success");
+        });
+    }
 }
 
 function getBagGifts(room_id, callback) {

@@ -756,3 +756,500 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
 .sign-log-box::-webkit-scrollbar-track {
     background: transparent !important;
 }
+
+/* ==========================================================================
+   10. MIUIX 礼物徽章选择组件 (可点击礼物徽章替代繁琐 ID 输入)
+   ========================================================================== */
+.miuix-gift-row {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+    margin-top: 2px !important;
+}
+
+.miuix-gift-badge {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    background: rgba(255, 255, 255, 0.75) !important;
+    border: 1px solid rgba(0, 102, 255, 0.25) !important;
+    border-radius: 8px !important;
+    padding: 3px 8px !important;
+    cursor: pointer !important;
+    user-select: none !important;
+    transition: all 0.2s var(--miuix-spring) !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+    max-width: 170px !important;
+}
+
+.miuix-gift-badge:hover {
+    background: rgba(255, 255, 255, 0.95) !important;
+    border-color: var(--miuix-blue) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 3px 8px var(--miuix-blue-glow) !important;
+}
+
+.miuix-gift-badge:active {
+    transform: scale(0.96) !important;
+}
+
+.miuix-gift-badge__icon {
+    width: 24px !important;
+    height: 24px !important;
+    object-fit: contain !important;
+    border-radius: 4px !important;
+    flex-shrink: 0 !important;
+}
+
+.miuix-gift-badge__name {
+    font-size: 11.5px !important;
+    font-weight: 600 !important;
+    color: #0f172a !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+.miuix-gift-badge__arrow {
+    font-size: 13px !important;
+    color: var(--miuix-blue) !important;
+    font-weight: bold !important;
+    line-height: 1 !important;
+    margin-left: 2px !important;
+}
+
+.miuix-gift-action-wrap {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    margin-left: auto !important;
+}
+
+/* ==========================================================================
+   11. Level 5 模态大选择器 (礼物大盘与背包双流资产选择器)
+   ========================================================================== */
+.ex-gift-picker-mask {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    background: rgba(15, 23, 42, 0.42) !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+    z-index: 100080 !important;
+    transition: opacity 0.2s ease !important;
+}
+
+.ex-gift-picker-modal {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    width: 520px !important;
+    max-width: 92vw !important;
+    height: 420px !important;
+    max-height: 85vh !important;
+    border-radius: 20px !important;
+    background: rgba(255, 255, 255, 0.8) !important;
+    backdrop-filter: blur(40px) saturate(220%) !important;
+    -webkit-backdrop-filter: blur(40px) saturate(220%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.95) !important;
+    box-shadow: inset 0 1px 1.5px rgba(255, 255, 255, 0.95), 0 24px 60px rgba(15, 23, 42, 0.25) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    z-index: 100090 !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    color: #0f172a !important;
+    user-select: none !important;
+}
+
+.ex-gift-picker-modal.miuix-modal-in {
+    animation: miuix-picker-in 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+}
+
+.ex-gift-picker-modal.miuix-modal-out {
+    animation: miuix-picker-out 0.16s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+}
+
+@keyframes miuix-picker-in {
+    0% { opacity: 0; transform: translate(-50%, -46%) scale(0.96); }
+    100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+@keyframes miuix-picker-out {
+    0% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -46%) scale(0.96); }
+}
+
+.ex-gift-picker__header {
+    flex: 0 0 54px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 0 16px !important;
+    background: rgba(255, 255, 255, 0.5) !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
+    gap: 12px !important;
+}
+
+.ex-gift-picker__tabs {
+    display: flex !important;
+    background: rgba(0, 0, 0, 0.06) !important;
+    border-radius: 9px !important;
+    padding: 2px !important;
+    gap: 2px !important;
+}
+
+.ex-gift-picker__tab {
+    border: none !important;
+    background: transparent !important;
+    padding: 4px 12px !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    color: #64748b !important;
+    border-radius: 7px !important;
+    cursor: pointer !important;
+    transition: all 0.18s ease !important;
+    outline: none !important;
+}
+
+.ex-gift-picker__tab.is-active {
+    background: #ffffff !important;
+    color: var(--miuix-blue) !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+}
+
+.ex-gift-picker__search {
+    flex: 1 1 auto !important;
+    height: 32px !important;
+    border-radius: 8px !important;
+    border: 1px solid rgba(0, 0, 0, 0.12) !important;
+    background: rgba(255, 255, 255, 0.85) !important;
+    padding: 4px 10px !important;
+    font-size: 12px !important;
+    color: #0f172a !important;
+    outline: none !important;
+    transition: all 0.18s ease !important;
+}
+
+.ex-gift-picker__search:focus {
+    border-color: var(--miuix-blue) !important;
+    box-shadow: 0 0 0 2px var(--miuix-blue-glow) !important;
+}
+
+.ex-gift-picker__close {
+    border: none !important;
+    background: transparent !important;
+    font-size: 20px !important;
+    line-height: 1 !important;
+    color: #94a3b8 !important;
+    cursor: pointer !important;
+    width: 28px !important;
+    height: 28px !important;
+    border-radius: 6px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: all 0.16s ease !important;
+}
+
+.ex-gift-picker__close:hover {
+    background: rgba(0, 0, 0, 0.08) !important;
+    color: #0f172a !important;
+}
+
+.ex-gift-picker__body {
+    flex: 1 1 auto !important;
+    overflow-y: auto !important;
+    padding: 14px !important;
+    box-sizing: border-box !important;
+}
+
+.ex-gift-picker__body::-webkit-scrollbar {
+    width: 4px !important;
+}
+
+.ex-gift-picker__body::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2) !important;
+    border-radius: 4px !important;
+}
+
+.ex-gift-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 10px !important;
+}
+
+.ex-gift-cell {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 10px 8px !important;
+    border-radius: 12px !important;
+    background: rgba(255, 255, 255, 0.6) !important;
+    border: 1px solid rgba(255, 255, 255, 0.9) !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+    cursor: pointer !important;
+    transition: all 0.18s var(--miuix-spring) !important;
+    text-align: center !important;
+}
+
+.ex-gift-cell:hover {
+    background: rgba(255, 255, 255, 0.95) !important;
+    border-color: rgba(0, 102, 255, 0.4) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 12px var(--miuix-blue-glow) !important;
+}
+
+.ex-gift-cell:active {
+    transform: scale(0.96) !important;
+}
+
+.ex-gift-cell__img {
+    width: 44px !important;
+    height: 44px !important;
+    object-fit: contain !important;
+    margin-bottom: 6px !important;
+}
+
+.ex-gift-cell__name {
+    font-size: 11.5px !important;
+    font-weight: 600 !important;
+    color: #0f172a !important;
+    line-height: 1.25 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    width: 100% !important;
+}
+
+.ex-gift-cell__price {
+    font-size: 10px !important;
+    color: #64748b !important;
+    margin-top: 2px !important;
+}
+
+/* ==========================================================================
+   12. 弹幕小尾巴独立微悬浮面板 (聊天栏正上方 0px 精准定位 + 澎湃毛玻璃)
+   ========================================================================== */
+.ChatToolBar-DanmakuTail-Panel {
+    position: fixed !important;
+    border-radius: 16px !important;
+    background: rgba(255, 255, 255, 0.78) !important;
+    backdrop-filter: blur(36px) saturate(220%) !important;
+    -webkit-backdrop-filter: blur(36px) saturate(220%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.95) !important;
+    box-shadow: inset 0 1px 1.5px rgba(255, 255, 255, 0.95), 0 16px 40px rgba(15, 23, 42, 0.16) !important;
+    padding: 12px 14px !important;
+    box-sizing: border-box !important;
+    z-index: 100050 !important;
+    color: #0f172a !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    user-select: none !important;
+}
+
+.ChatToolBar-DanmakuTail-Panel.miuix-modal-in {
+    animation: miuix-modal-in 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+}
+
+.DanmakuTail-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    margin-bottom: 8px !important;
+}
+
+.DanmakuTail-title {
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    color: #0f172a !important;
+    letter-spacing: -0.2px !important;
+}
+
+.DanmakuTail-close {
+    font-size: 16px !important;
+    line-height: 1 !important;
+    color: #94a3b8 !important;
+    cursor: pointer !important;
+    width: 20px !important;
+    height: 20px !important;
+    border-radius: 4px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: all 0.16s ease !important;
+}
+
+.DanmakuTail-close:hover {
+    background: rgba(0, 0, 0, 0.08) !important;
+    color: #0f172a !important;
+}
+
+/* ==========================================================================
+   13. PostbirdAlertBox 通用提示/确认/输入弹框 (MIUIX 统一居中模态设计系统)
+   ========================================================================== */
+.postbird-box-container {
+    width: 100vw !important;
+    height: 100vh !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    z-index: 100060 !important;
+    background: rgba(15, 23, 42, 0.42) !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+    display: none;
+    align-items: center !important;
+    justify-content: center !important;
+    user-select: none !important;
+}
+
+.postbird-box-container.active {
+    display: flex !important;
+}
+
+.postbird-box-dialog {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+.postbird-box-content {
+    min-width: 360px !important;
+    max-width: 440px !important;
+    border-radius: 20px !important;
+    background: rgba(255, 255, 255, 0.78) !important;
+    backdrop-filter: blur(40px) saturate(220%) !important;
+    -webkit-backdrop-filter: blur(40px) saturate(220%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.95) !important;
+    box-shadow: inset 0 1px 1.5px rgba(255, 255, 255, 0.98), 0 20px 50px rgba(15, 23, 42, 0.2) !important;
+    overflow: hidden !important;
+    position: relative !important;
+    display: flex !important;
+    flex-direction: column !important;
+    animation: miuix-modal-in 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    margin: 0 !important;
+    top: 0 !important;
+    left: 0 !important;
+    transform: none !important;
+}
+
+.postbird-box-header {
+    width: 100% !important;
+    padding: 12px 16px !important;
+    box-sizing: border-box !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
+    background: rgba(255, 255, 255, 0.45) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+}
+
+.postbird-box-title {
+    font-size: 13.5px !important;
+    font-weight: 700 !important;
+    color: #0f172a !important;
+    letter-spacing: -0.2px !important;
+}
+
+.postbird-box-close-btn {
+    cursor: pointer !important;
+    font-size: 16px !important;
+    line-height: 1 !important;
+    color: #64748b !important;
+    width: 24px !important;
+    height: 24px !important;
+    border-radius: 6px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: all 0.16s ease !important;
+}
+
+.postbird-box-close-btn:hover {
+    background: rgba(0, 0, 0, 0.08) !important;
+    color: #0f172a !important;
+}
+
+.postbird-box-text {
+    padding: 16px 20px !important;
+    font-size: 13px !important;
+    color: #334155 !important;
+    line-height: 1.5 !important;
+    text-align: left !important;
+    box-sizing: border-box !important;
+}
+
+.postbird-prompt-input {
+    width: 100% !important;
+    height: 36px !important;
+    border-radius: 8px !important;
+    border: 1px solid rgba(0, 0, 0, 0.14) !important;
+    background: rgba(255, 255, 255, 0.9) !important;
+    padding: 6px 10px !important;
+    font-size: 12.5px !important;
+    color: #0f172a !important;
+    outline: none !important;
+    box-sizing: border-box !important;
+    margin-top: 8px !important;
+    transition: all 0.18s ease !important;
+}
+
+.postbird-prompt-input:focus {
+    border-color: var(--miuix-blue) !important;
+    box-shadow: 0 0 0 2px var(--miuix-blue-glow) !important;
+}
+
+.postbird-box-footer {
+    width: 100% !important;
+    height: 46px !important;
+    border-top: 1px solid rgba(0, 0, 0, 0.06) !important;
+    background: rgba(255, 255, 255, 0.45) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    gap: 8px !important;
+    padding: 0 16px !important;
+    box-sizing: border-box !important;
+    position: relative !important;
+}
+
+.postbird-box-footer .btn-footer {
+    height: 32px !important;
+    border-radius: 8px !important;
+    padding: 0 14px !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    border: none !important;
+    outline: none !important;
+    transition: all 0.16s ease !important;
+}
+
+.postbird-box-footer .btn-footer-ok {
+    background: linear-gradient(135deg, #2b7fff, #0055ff) !important;
+    color: #ffffff !important;
+    box-shadow: 0 2px 6px var(--miuix-blue-glow) !important;
+}
+
+.postbird-box-footer .btn-footer-ok:hover {
+    background: linear-gradient(135deg, #3d8bff, #004de6) !important;
+    transform: translateY(-1px) !important;
+}
+
+.postbird-box-footer .btn-footer-cancel {
+    background: rgba(0, 0, 0, 0.05) !important;
+    color: #475569 !important;
+}
+
+.postbird-box-footer .btn-footer-cancel:hover {
+    background: rgba(0, 0, 0, 0.1) !important;
+    color: #0f172a !important;
+}

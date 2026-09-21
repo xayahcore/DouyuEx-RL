@@ -33,24 +33,23 @@
     background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACQAAAAkCAMAAADW3miqAAAAPFBMVEUAAAD6aDP7ZTD2cUHxeU/pjGvmkHPfjnH4azj4bDruf1fshWHrhmLpjW3njm3kk3/ugFnugVn/XSP+YCg/+VboAAAAEnRSTlMA/P3z4XQyCPr5za2namIOx8bnayGzAAAA3klEQVQ4y43U2w6EIAxF0dNyc7xP+///Ook6EEHA/UTMSukDEUdhna0hVokpD8ZOy4aY/5I8pTT6iwRHUo1dOJD7SKOPO+5iaUYe2EbptAcs/4VQdo1aMWk0NTXDShdZmITkVkIGQ38SgRtIzhhaR3KlkGKnaGI3hFgHJVFBkkQVFfvXrmsivFk8fc0OJUJeiYAa0sreklJwtpKUJwY9INwPA0yOyksNbP4un57vXD7ezOiElaQTLQh7D40b4Duj2L/9YSA4bizkAs78SPpMdo/YtkzWDPffIRk7r+eYH6dAOJwNbfZEAAAAAElFTkSuQmCC) 50% / 18px 18px no-repeat;
 }
 
-/* 弹幕小尾巴独立微悬浮面板 */
+/* 弹幕小尾巴独立微悬浮面板 (已接入统一 UI 引擎 ExPanel.css) */
 .ChatToolBar-DanmakuTail-Panel {
-    position: absolute !important;
-    bottom: 38px !important;
-    left: 0 !important;
-    width: 280px !important;
+    position: fixed !important;
+    width: 270px !important;
     border-radius: 16px !important;
-    background: rgba(255, 255, 255, 0.76) !important;
+    background: rgba(255, 255, 255, 0.78) !important;
     backdrop-filter: blur(36px) saturate(220%) !important;
     -webkit-backdrop-filter: blur(36px) saturate(220%) !important;
     border: 1px solid rgba(255, 255, 255, 0.95) !important;
     box-shadow: inset 0 1px 1.5px rgba(255, 255, 255, 0.95), 0 16px 40px rgba(15, 23, 42, 0.16) !important;
     padding: 12px 14px !important;
     box-sizing: border-box !important;
-    z-index: 1015 !important;
+    z-index: 100050 !important;
     display: none;
     color: #0f172a !important;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    user-select: none !important;
 }
 
 .ChatToolBar-DanmakuTail-title {

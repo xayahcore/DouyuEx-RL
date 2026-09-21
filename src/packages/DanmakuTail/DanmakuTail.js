@@ -13,15 +13,14 @@ function initPkg_DanmakuTail_insertDom() {
 
     let panel = document.createElement("div");
     panel.className = "ChatToolBar-DanmakuTail-Panel";
-    let chat_panel = document.getElementsByClassName("layout-Player-chat")[0] || document.querySelector(".Barrage-main") || document.body;
-    if (chat_panel) chat_panel.insertBefore(panel, chat_panel.childNodes[0]);
-
-    if (!window.location.href.includes("/beta")) {
-        panel.style.bottom = "140px";
-    }
+    panel.style.display = "none";
+    document.body.appendChild(panel);
 
     panel.innerHTML = `
-        <div class="ChatToolBar-DanmakuTail-title">弹幕小尾巴</div>
+        <div class="DanmakuTail-header">
+            <span class="DanmakuTail-title">弹幕小尾巴</span>
+            <span class="DanmakuTail-close" title="关闭">×</span>
+        </div>
         <input type="text" class="DanmakuTail-input" id="DanmakuTail-input" placeholder="请输入小尾巴内容"/>
         <div class="DanmakuTail-option-label">
             <label for="DanmakuTail-option-label1">
@@ -72,9 +71,51 @@ function saveData_DanmakuTail() {
 
 function initPkg_DanmakuTail_Func() {
     let tipBtn = document.getElementsByClassName("ChatToolBar-DanmakuTail")[0];
-    if (tipBtn) {
-        tipBtn.addEventListener("click", function () {
-            showExRightPanel("弹幕小尾巴", this);
+    let panel = document.querySelector(".ChatToolBar-DanmakuTail-Panel");
+
+    if (tipBtn && panel) {
+        tipBtn.addEventListener("click", function (e) {
+            e.stopPropagation();
+            let isVisible = panel.style.display === "block" || panel.classList.contains("active");
+            if (isVisible) {
+                panel.style.display = "none";
+                panel.classList.remove("active", "miuix-modal-in");
+                return;
+            }
+
+            let rect = tipBtn.getBoundingClientRect();
+            let panelWidth = 270;
+            let left = rect.left + rect.width / 2 - panelWidth / 2;
+            left = Math.max(12, Math.min(window.innerWidth - panelWidth - 12, left));
+            let bottom = Math.max(20, window.innerHeight - rect.top + 8);
+
+            panel.style.position = "fixed";
+            panel.style.left = left + "px";
+            panel.style.bottom = bottom + "px";
+            panel.style.top = "auto";
+            panel.style.right = "auto";
+            panel.style.width = panelWidth + "px";
+            panel.style.display = "block";
+            panel.classList.remove("miuix-modal-out");
+            panel.classList.add("active", "miuix-modal-in");
+        });
+
+        let closeBtn = panel.querySelector(".DanmakuTail-close");
+        if (closeBtn) {
+            closeBtn.addEventListener("click", function (e) {
+                e.stopPropagation();
+                panel.style.display = "none";
+                panel.classList.remove("active", "miuix-modal-in");
+            });
+        }
+
+        document.addEventListener("click", function (e) {
+            if (panel.style.display === "block" || panel.classList.contains("active")) {
+                if (!panel.contains(e.target) && !tipBtn.contains(e.target)) {
+                    panel.style.display = "none";
+                    panel.classList.remove("active", "miuix-modal-in");
+                }
+            }
         });
     }
 

@@ -124,21 +124,27 @@ function ExpandTool_insertModal() {
       <div class="fans-panel__card">
         <div class="fans-panel__card-header">
           <span class="fans-panel__card-title">送礼与背包</span>
+          <span style="font-size: 11px; color: #64748b;">点击图标更换</span>
         </div>
         <div class="sign-options-list">
           <!-- 背包送礼 -->
           <div class="sign-option-item" style="flex-direction: column; align-items: stretch; gap: 8px;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
               <span class="sign-option-title">背包道具赠送</span>
-              <button type="button" class="ex-picker-btn" id="extool__clearbag_picker_btn">选择道具</button>
+              <span style="font-size: 10.5px; color: #64748b;">支持道具一键拉取</span>
             </div>
-            <div style="display: flex; align-items: center; gap: 6px; font-size: 11.5px; flex-wrap: wrap;">
-              <span>ID:</span>
-              <input id="extool__clearbag_id" type="text" style="width: 50px; text-align: center;" value="268" />
-              <span id="extool__clearbag_selected_name" style="color: #0066ff; font-weight: 600;">(荧光棒)</span>
-              <span style="margin-left: auto;">数量:</span>
-              <input id="extool__clearbag_cnt" type="number" min="1" style="width: 45px; text-align: center;" value="1" />
-              <button type="button" class="ex-send-btn" id="extool__clearbag_sendbtn">送出</button>
+            <div class="miuix-gift-row">
+              <div class="miuix-gift-badge" id="extool__clearbag_badge" title="点击选择背包道具">
+                <input type="hidden" id="extool__clearbag_id" value="268" />
+                <img class="miuix-gift-badge__icon" id="extool__clearbag_icon" src="https://gfs-op.douyucdn.cn/dygift/1806/08/01/2fa7f551b9e54d310cae7992cb59ff0b.png" alt="荧光棒" />
+                <span class="miuix-gift-badge__name" id="extool__clearbag_name">荧光棒</span>
+                <span class="miuix-gift-badge__arrow">›</span>
+              </div>
+              <div class="miuix-gift-action-wrap">
+                <span style="font-size: 11.5px; color: #475569;">数量:</span>
+                <input id="extool__clearbag_cnt" type="number" min="1" style="width: 44px; text-align: center;" value="1" />
+                <button type="button" class="ex-send-btn" id="extool__clearbag_sendbtn">送出</button>
+              </div>
             </div>
           </div>
 
@@ -146,17 +152,22 @@ function ExpandTool_insertModal() {
           <div class="sign-option-item" style="flex-direction: column; align-items: stretch; gap: 8px;">
             <div style="display: flex; justify-content: space-between; align-items: center;">
               <span class="sign-option-title">打榜批量送礼</span>
-              <button type="button" class="ex-picker-btn" id="extool__sendgift_picker_btn">选择礼物</button>
+              <span style="font-size: 10.5px; color: #64748b;">全站大盘礼物池</span>
             </div>
-            <div style="display: flex; align-items: center; gap: 6px; font-size: 11.5px; flex-wrap: wrap;">
-              <span>ID:</span>
-              <input id="extool__sendgift_id" type="text" style="width: 50px; text-align: center;" value="20000" />
-              <span id="extool__sendgift_selected_name" style="color: #0066ff; font-weight: 600;">(弱鸡)</span>
-              <span>数量:</span>
-              <input id="extool__sendgift_cnt" type="number" min="1" style="width: 40px; text-align: center;" value="1" />
-              <span>间隔:</span>
-              <input id="extool__sendgift_delay" type="number" min="0" style="width: 40px; text-align: center;" value="0" />
-              <button type="button" class="ex-send-btn" id="extool__sendgift_btn" style="margin-left: auto;">送出</button>
+            <div class="miuix-gift-row">
+              <div class="miuix-gift-badge" id="extool__sendgift_badge" title="点击选择打榜礼物">
+                <input type="hidden" id="extool__sendgift_id" value="20000" />
+                <img class="miuix-gift-badge__icon" id="extool__sendgift_icon" src="https://gfs-op.douyucdn.cn/dygift/2019/05/30/ed7b5926f169266173584bbd11139815.gif" alt="弱鸡" />
+                <span class="miuix-gift-badge__name" id="extool__sendgift_name">弱鸡</span>
+                <span class="miuix-gift-badge__arrow">›</span>
+              </div>
+              <div class="miuix-gift-action-wrap">
+                <span style="font-size: 11.5px; color: #475569;">数量:</span>
+                <input id="extool__sendgift_cnt" type="number" min="1" style="width: 38px; text-align: center;" value="1" />
+                <span style="font-size: 11.5px; color: #475569;">间隔:</span>
+                <input id="extool__sendgift_delay" type="number" min="0" style="width: 38px; text-align: center;" value="0" title="间隔毫秒数" />
+                <button type="button" class="ex-send-btn" id="extool__sendgift_btn">送出</button>
+              </div>
             </div>
           </div>
         </div>

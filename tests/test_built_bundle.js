@@ -122,6 +122,62 @@ async function testBuiltBundle() {
     assert.strictEqual(tipEl.title, "该条弹幕发送失败/可能被系统屏蔽，不会被其他人看到（可能会误判）");
     console.log("✓ 测试场景 2 通过: 屏蔽弹幕准确识别并渲染删除线与(可能发送失败)提示");
 
+    // === 测试 3: PostbirdAlertBox 通用弹框渲染与交互 ===
+    console.log("--> 测试场景 3: 验证 PostbirdAlertBox 通用弹窗...");
+    assert.ok(win.PostbirdAlertBox, "PostbirdAlertBox 必须挂载在全局");
+    let promptResult = null;
+    win.PostbirdAlertBox.prompt({
+        title: "导入黑名单",
+        onConfirm: (val) => { promptResult = val; }
+    });
+    const promptContainer = win.document.querySelector(".postbird-box-container");
+    assert.ok(promptContainer && promptContainer.classList.contains("active"), "弹窗容器必须具备 active 类");
+    const promptDialog = promptContainer.querySelector(".postbird-box-dialog");
+    assert.ok(promptDialog, "弹窗必须具备 postbird-box-dialog 居中结构");
+    const promptInput = promptContainer.querySelector(".postbird-prompt-input");
+    assert.ok(promptInput, "输入框必须可读写");
+    promptInput.value = "test_blacklist_user";
+    const okBtn = promptContainer.querySelector(".btn-footer-ok");
+    assert.ok(okBtn, "确认按钮必须存在");
+    okBtn.click();
+    assert.strictEqual(promptResult, "test_blacklist_user", "点击确认必须正确触发回调并传递输入值");
+    assert.strictEqual(win.document.querySelector(".postbird-box-container"), null, "确认后弹窗容器必须从 DOM 中销毁");
+    console.log("✓ 测试场景 3 通过: PostbirdAlertBox 居中交互与回调正常，无蒙层卡死");
+
+    // === 测试 4: ExpandTool 礼物徽章与 5 级模态选择器 ===
+    console.log("--> 测试场景 4: 验证 ExpandTool 礼物徽章与 5 级模态选择器...");
+    const clearBagBadge = win.document.getElementById("extool__clearbag_badge");
+    const sendGiftBadge = win.document.getElementById("extool__sendgift_badge");
+    assert.ok(clearBagBadge, "背包送礼必须具备可点击礼物徽章 #extool__clearbag_badge");
+    assert.ok(sendGiftBadge, "打榜送礼必须具备可点击礼物徽章 #extool__sendgift_badge");
+    const clearBagId = win.document.getElementById("extool__clearbag_id");
+    const sendGiftId = win.document.getElementById("extool__sendgift_id");
+    assert.strictEqual(clearBagId.type, "hidden", "礼物 ID 必须收纳为 hidden 输入框，对用户隐藏");
+    assert.strictEqual(sendGiftId.type, "hidden", "打榜 ID 必须收纳为 hidden 输入框，对用户隐藏");
+
+    assert.ok(typeof win.openGiftPicker === "function", "openGiftPicker 必须成功注册到全局");
+    let selectedGift = null;
+    win.openGiftPicker("backpack", (gift) => { selectedGift = gift; });
+    const pickerModal = win.document.querySelector(".ex-gift-picker-modal");
+    const pickerMask = win.document.querySelector(".ex-gift-picker-mask");
+    assert.ok(pickerModal && pickerMask, "打开礼物选择器时必须在 body 创建 modal 与 mask");
+    assert.ok(pickerModal.querySelector(".ex-gift-picker__tabs"), "必须包含选项卡切换区");
+    assert.ok(pickerModal.querySelector(".ex-gift-picker__search"), "必须包含搜索输入框");
+    const closePickerBtn = pickerModal.querySelector(".ex-gift-picker__close");
+    assert.ok(closePickerBtn, "必须包含关闭按钮");
+    closePickerBtn.click();
+    console.log("✓ 测试场景 4 通过: 礼物徽章与 5 级模态大选择器渲染完备");
+
+    // === 测试 5: DanmakuTail 弹幕小尾巴弹窗 ===
+    console.log("--> 测试场景 5: 验证 DanmakuTail 弹幕小尾巴弹窗...");
+    const tailBtn = win.document.querySelector(".ChatToolBar-DanmakuTail");
+    const tailPanel = win.document.querySelector(".ChatToolBar-DanmakuTail-Panel");
+    assert.ok(tailBtn, "工具栏必须存在 .ChatToolBar-DanmakuTail 按钮");
+    assert.ok(tailPanel, "必须存在 .ChatToolBar-DanmakuTail-Panel 面板");
+    assert.ok(tailPanel.querySelector(".DanmakuTail-close"), "面板必须具备关闭按钮");
+    assert.ok(tailPanel.querySelector("#DanmakuTail-checkbox"), "面板必须具备弹簧开关");
+    console.log("✓ 测试场景 5 通过: 弹幕小尾巴独立微悬浮面板与关闭按钮就绪");
+
     console.log("=== 端到端集成测试全流程 100% 通过 ===");
     process.exit(0);
 }

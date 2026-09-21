@@ -20,20 +20,25 @@ function ExpandTool_SendGift_insertDom() {
 }
 
 function ExpandTool_SendGift_insertFunc() {
-    let pickerBtn = document.getElementById("extool__sendgift_picker_btn");
-    if (pickerBtn) {
-        pickerBtn.addEventListener("click", () => {
+    let pickerTrigger = document.getElementById("extool__sendgift_badge") || document.getElementById("extool__sendgift_picker_btn");
+    if (pickerTrigger) {
+        pickerTrigger.addEventListener("click", () => {
             if (typeof openGiftPicker === "function") {
                 openGiftPicker("room", (gift) => {
-                    document.getElementById("extool__sendgift_id").value = gift.id;
-                    let nameEl = document.getElementById("extool__sendgift_selected_name");
-                    if (nameEl) nameEl.textContent = `(${gift.name})`;
+                    let idEl = document.getElementById("extool__sendgift_id");
+                    if (idEl) idEl.value = gift.id;
+                    let nameEl = document.getElementById("extool__sendgift_name") || document.getElementById("extool__sendgift_selected_name");
+                    if (nameEl) nameEl.textContent = gift.name;
+                    let iconEl = document.getElementById("extool__sendgift_icon");
+                    if (iconEl && gift.icon) iconEl.src = gift.icon;
                 });
             }
         });
     }
 
-    document.getElementById("extool__sendgift_btn").addEventListener("click", async () => {
+    let sendBtn = document.getElementById("extool__sendgift_btn");
+    if (sendBtn) {
+        sendBtn.addEventListener("click", async () => {
         if (confirm("确认送出？") != true) {
             return;
         }
@@ -66,7 +71,8 @@ function ExpandTool_SendGift_insertFunc() {
             }
         }
         showMessage("【送礼】执行中...", "info");
-    });
+        });
+    }
 }
 
 function sendGift_any(gid, count, rid) {

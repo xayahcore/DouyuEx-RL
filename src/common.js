@@ -407,18 +407,17 @@ function getTextareaPosition(element) {
 	return cursorPos;
 }
 
-function showExRightPanel(name, triggerBtn) {
-	let panels = [
-		{ name: "弹幕发送小助手", className: "bloop" },
-		{ name: "扩展功能", className: "extool" },
-		{ name: "直播间工具", className: "livetool" },
-		{ name: "全站抽奖信息", className: "exlottery" },
-		{ name: "弹幕小尾巴", className: "ChatToolBar-DanmakuTail-Panel" },
-		{ name: "一键签到", className: "sign-panel" },
-		{ name: "一键续牌", className: "fans-continue-panel" },
-		{ name: "同屏播放", className: "popup-player-panel" },
-		{ name: "版本更新", className: "exupdate-panel" }
-	];
+	function showExRightPanel(name, triggerBtn) {
+		let panels = [
+			{ name: "弹幕发送小助手", className: "bloop" },
+			{ name: "扩展功能", className: "extool" },
+			{ name: "直播间工具", className: "livetool" },
+			{ name: "全站抽奖信息", className: "exlottery" },
+			{ name: "一键签到", className: "sign-panel" },
+			{ name: "一键续牌", className: "fans-continue-panel" },
+			{ name: "同屏播放", className: "popup-player-panel" },
+			{ name: "版本更新", className: "exupdate-panel" }
+		];
 
 	let targetItem = panels.find(p => p.name === name);
 	if (!targetItem) return;
