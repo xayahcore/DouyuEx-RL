@@ -470,3 +470,172 @@
 	border-color: #007aff !important;
 	box-shadow: 0 0 0 2px rgba(0, 122, 255, 0.18) !important;
 }
+
+/* ==================== 三级控制台通用四级卡片与 MIUIX 组件 ==================== */
+.fans-panel__card, .popup-panel__card, .exupdate-panel__card {
+    margin: 0 12px 10px 12px !important;
+    padding: 12px 14px !important;
+    box-sizing: border-box !important;
+    background: rgba(255, 255, 255, 0.65) !important;
+    border: 1px solid rgba(255, 255, 255, 0.95) !important;
+    border-radius: 14px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03) !important;
+}
+
+.fans-panel__card-header, .popup-panel__card-header, .exupdate-panel__card-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    margin-bottom: 8px !important;
+}
+
+.fans-panel__card-title, .popup-panel__card-title, .exupdate-panel__card-title {
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    color: #0f172a !important;
+}
+
+.fans-panel__badge-tag {
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    color: #0066ff !important;
+    background: rgba(0, 102, 255, 0.1) !important;
+    padding: 2px 8px !important;
+    border-radius: 6px !important;
+}
+
+.fans-panel__asset-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr 1fr !important;
+    gap: 8px !important;
+    text-align: center !important;
+}
+
+.fans-panel__asset-item {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 4px !important;
+}
+
+.fans-panel__asset-label {
+    font-size: 11px !important;
+    color: #64748b !important;
+}
+
+.fans-panel__asset-value {
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    color: #0f172a !important;
+}
+
+.fans-panel__status--ok {
+    color: #10b981 !important;
+}
+
+.fans-panel__input-group {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 6px !important;
+}
+
+.fans-panel__input-label {
+    font-size: 12px !important;
+    color: #334155 !important;
+    font-weight: 500 !important;
+}
+
+.fans-panel__input-box {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+}
+
+.fans-panel__input-box input {
+    width: 80px !important;
+    height: 32px !important;
+    padding: 4px 8px !important;
+    text-align: center !important;
+    border-radius: 8px !important;
+}
+
+.fans-panel__input-hint {
+    font-size: 11px !important;
+    color: #64748b !important;
+}
+
+.popup-panel__input-box input {
+    width: 100% !important;
+    height: 34px !important;
+    padding: 4px 10px !important;
+    border-radius: 8px !important;
+    box-sizing: border-box !important;
+}
+
+.popup-panel__paste-btn {
+    font-size: 11px !important;
+    padding: 2px 8px !important;
+    border-radius: 6px !important;
+    border: 1px solid rgba(0, 102, 255, 0.3) !important;
+    background: rgba(0, 102, 255, 0.08) !important;
+    color: #0066ff !important;
+    cursor: pointer !important;
+    transition: all 0.16s ease !important;
+}
+
+.popup-panel__paste-btn:hover {
+    background: rgba(0, 102, 255, 0.16) !important;
+}
+
+.popup-panel__seg-switch {
+    display: flex !important;
+    gap: 8px !important;
+    background: rgba(0, 0, 0, 0.04) !important;
+    padding: 4px !important;
+    border-radius: 10px !important;
+}
+
+.popup-panel__seg-item {
+    flex: 1 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: 0 !important;
+    cursor: pointer !important;
+}
+
+.popup-panel__seg-item input {
+    display: none !important;
+}
+
+.popup-panel__seg-thumb {
+    width: 100% !important;
+    text-align: center !important;
+    padding: 6px 0 !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    border-radius: 8px !important;
+    color: #64748b !important;
+    transition: all 0.2s ease !important;
+}
+
+.popup-panel__seg-item input:checked + .popup-panel__seg-thumb {
+    background: #fff !important;
+    color: #0066ff !important;
+    font-weight: 700 !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+}
+
+.fans-panel__action-wrap, .popup-panel__action-wrap {
+    padding: 0 12px !important;
+    margin-top: 10px !important;
+}
+
+.fans-panel__submit-btn, .popup-panel__submit-btn {
+    width: 100% !important;
+    height: 36px !important;
+    border-radius: 10px !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+}
+

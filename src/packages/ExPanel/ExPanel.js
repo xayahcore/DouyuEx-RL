@@ -204,7 +204,7 @@ function ensureMiuixPanelHeader(el, title) {
   if (!el) return;
   el.classList.add("miuix-modal");
 
-  var oldCloses = el.querySelectorAll(".extool__close, .livetool__close, .bloop__close, #vote__result-close, .lottery__func");
+  var oldCloses = el.querySelectorAll(".extool__close, .livetool__close, .bloop__close, #vote__result-close, .lottery__func, .ChatToolBar-DanmakuTail-title");
   oldCloses.forEach((c) => {
     c.style.setProperty("display", "none", "important");
   });
@@ -225,12 +225,25 @@ function ensureMiuixPanelHeader(el, title) {
     if (titleEl) titleEl.textContent = title;
   }
 
+  // 自动将非 header 子节点收拢至 .miuix-modal__body，使滚动条起始点统一为顶栏正下方
+  if (!el.querySelector(".miuix-modal__body")) {
+    let bodyWrap = document.createElement("div");
+    bodyWrap.className = "miuix-modal__body";
+    let children = Array.from(el.childNodes).filter((node) => node !== header);
+    children.forEach((child) => bodyWrap.appendChild(child));
+    el.appendChild(bodyWrap);
+  }
+
   var closeBtn = header.querySelector(".miuix-modal__close");
   if (closeBtn) {
     closeBtn.onclick = function (e) {
       e.stopPropagation();
       el.style.removeProperty("display");
       el.style.setProperty("display", "none", "important");
+      el.classList.remove("miuix-modal-in");
+      if (typeof updateDockActiveIndicator === "function") {
+        updateDockActiveIndicator();
+      }
     };
   }
 }
@@ -241,13 +254,28 @@ function openMiuixPanelCentered(panel, btnEl) {
     document.body.appendChild(panel);
   }
 
-  // 互斥关闭其他已打开面板
-  var allPanels = document.querySelectorAll(".sign-panel, .fans-panel, .extool, .livetool, .bloop, .exlottery");
+  // 互斥关闭所有其他三级面板
+  var allPanels = document.querySelectorAll(
+    ".sign-panel, .fans-continue-panel, .fans-panel, .extool, .livetool, .bloop, .exlottery, .popup-player-panel, .exupdate-panel, .ChatToolBar-DanmakuTail-Panel"
+  );
   allPanels.forEach((p) => {
     if (p !== panel) {
+      p.style.removeProperty("display");
       p.style.setProperty("display", "none", "important");
+      p.classList.remove("miuix-modal-in");
     }
   });
+
+  // 更新 Dock 激活指示器
+  if (typeof updateDockActiveIndicator === "function") {
+    updateDockActiveIndicator();
+    if (btnEl) {
+      var btnWrap = btnEl.closest ? btnEl.closest(".ex-panel__wrap > div") : null;
+      if (btnWrap) {
+        btnWrap.classList.add("is-active", "ex-dock-active");
+      }
+    }
+  }
 
   var panelWidth = 380;
   panel.style.width = panelWidth + "px";
@@ -270,7 +298,9 @@ function openMiuixPanelCentered(panel, btnEl) {
   panel.style.right = "auto";
   panel.style.zIndex = "100030";
   panel.style.removeProperty("display");
-  panel.style.setProperty("display", "block", "important");
+  panel.style.setProperty("display", "flex", "important");
+  panel.classList.remove("miuix-modal-out");
+  panel.classList.add("miuix-modal-in");
 }
 
 window.ensureMiuixPanelHeader = ensureMiuixPanelHeader;

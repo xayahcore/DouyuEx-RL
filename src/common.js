@@ -409,53 +409,51 @@ function getTextareaPosition(element) {
 
 function showExRightPanel(name, triggerBtn) {
 	let panels = [
-		{
-			name: "弹幕发送小助手",
-			className: "bloop",
-		},
-		{
-			name: "扩展功能",
-			className: "extool",
-		},
-		{
-			name: "直播间工具",
-			className: "livetool",
-		},
-		{
-			name: "全站抽奖信息",
-			className: "exlottery"
-		},
-		{
-			name: "弹幕小尾巴",
-			className: "ChatToolBar-DanmakuTail-Panel"
-		},
+		{ name: "弹幕发送小助手", className: "bloop" },
+		{ name: "扩展功能", className: "extool" },
+		{ name: "直播间工具", className: "livetool" },
+		{ name: "全站抽奖信息", className: "exlottery" },
+		{ name: "弹幕小尾巴", className: "ChatToolBar-DanmakuTail-Panel" },
+		{ name: "一键签到", className: "sign-panel" },
+		{ name: "一键续牌", className: "fans-continue-panel" },
+		{ name: "同屏播放", className: "popup-player-panel" },
+		{ name: "版本更新", className: "exupdate-panel" }
 	];
 
-	let signPanel = document.querySelector(".sign-panel");
-	if (signPanel) signPanel.style.setProperty("display", "none", "important");
+	let targetItem = panels.find(p => p.name === name);
+	if (!targetItem) return;
+
+	let targetDom = document.querySelector("." + targetItem.className);
+	if (targetDom) {
+		let isShowing = targetDom.style.display === "flex" || targetDom.style.display === "block" || (window.getComputedStyle(targetDom).display !== "none" && targetDom.style.display !== "none");
+		if (isShowing) {
+			targetDom.style.removeProperty("display");
+			targetDom.style.setProperty("display", "none", "important");
+			targetDom.classList.remove("miuix-modal-in");
+			if (typeof updateDockActiveIndicator === "function") updateDockActiveIndicator();
+			return;
+		}
+	}
 
 	for (let i = 0; i < panels.length; i++) {
 		let item = panels[i];
-		let dom = document.getElementsByClassName(item.className)[0];
-		if (dom) {
-			if (name === item.name) {
-				let isShowing = dom.style.display === "block" || (window.getComputedStyle(dom).display !== "none" && dom.style.display !== "none");
-				if (isShowing) {
-					dom.style.setProperty("display", "none", "important");
-				} else {
-					if (typeof ensureMiuixPanelHeader === "function") {
-						ensureMiuixPanelHeader(dom, item.name);
-					}
-					if (typeof openMiuixPanelCentered === "function") {
-						openMiuixPanelCentered(dom, triggerBtn);
-					} else {
-						dom.style.removeProperty("display");
-						dom.style.setProperty("display", "block", "important");
-					}
-				}
-			} else {
-				dom.style.setProperty("display", "none", "important");
-			}
+		let dom = document.querySelector("." + item.className);
+		if (dom && item.name !== name) {
+			dom.style.removeProperty("display");
+			dom.style.setProperty("display", "none", "important");
+			dom.classList.remove("miuix-modal-in");
+		}
+	}
+
+	if (targetDom) {
+		if (typeof ensureMiuixPanelHeader === "function") {
+			ensureMiuixPanelHeader(targetDom, targetItem.name);
+		}
+		if (typeof openMiuixPanelCentered === "function") {
+			openMiuixPanelCentered(targetDom, triggerBtn);
+		} else {
+			targetDom.style.removeProperty("display");
+			targetDom.style.setProperty("display", "flex", "important");
 		}
 	}
 }
