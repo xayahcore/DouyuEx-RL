@@ -1,31 +1,8 @@
 let exAutoBarrageColorTimer = null;
 
 function initPkg_ExpandTool_AutoBarrageColor() {
-    ExpandTool_AutoBarrageColor_insertDom();
     ExpandTool_AutoBarrageColor_insertFunc();
     initPkg_ExpandTool_AutoBarrageColor_Set();
-}
-
-function ExpandTool_AutoBarrageColor_insertDom() {
-    if (document.getElementById("extool__autobarragecolor")) return;
-    let a = document.createElement("span");
-    a.innerHTML = '<label title="进入直播间后自动选择当前已解锁的最高档粉丝弹幕颜色"><input id="extool__autobarragecolor" type="checkbox">自动最高弹幕色</label>';
-    let b = document.getElementsByClassName("extool")[0];
-    // 插到勾选项末尾（防页签冻结之后），避免落到送礼等模块下面
-    let tabInput = document.getElementById("extool__tabSwitch");
-    let anchor = tabInput ? tabInput.parentElement : null;
-    while (anchor && anchor.parentElement !== b) {
-        anchor = anchor.parentElement;
-    }
-    if (anchor) {
-        if (anchor.nextSibling) {
-            b.insertBefore(a, anchor.nextSibling);
-        } else {
-            b.appendChild(a);
-        }
-    } else {
-        b.insertBefore(a, b.childNodes[0]);
-    }
 }
 
 function getAutoBarrageColor() {

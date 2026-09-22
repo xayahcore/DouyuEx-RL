@@ -1683,7 +1683,8 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
     height: 28px !important;
     border-radius: 8px !important;
     border: 1px solid rgba(0, 0, 0, 0.12) !important;
-    background: rgba(255, 255, 255, 0.85) !important;
+    /* 用 background-color 而非 background 简写，避免重置统一引擎自绘的下拉箭头 */
+    background-color: rgba(255, 255, 255, 0.85) !important;
     font-size: 12px !important;
     color: #0f172a !important;
     outline: none !important;
@@ -1867,4 +1868,74 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
 .lottery__condition {
     font-size: 10.5px !important;
     font-weight: 600 !important;
+}
+
+/* ==========================================================================
+   17. 下拉框与数字输入框的原生外观抹除（MIUIX 自绘控件）
+   浏览器不允许自定义 select 展开后的选项列表，此处仅统一「收起态」外观：
+   appearance:none 抹掉系统边框/箭头，改用内联 SVG 自绘澎湃箭头 + 磨砂底 + 聚焦环。
+   ========================================================================== */
+.miuix-modal select,
+.sign-panel select,
+.fans-continue-panel select,
+.extool select,
+.livetool select,
+.bloop select,
+.popup-player-panel select,
+.exlottery select,
+.exupdate-panel select {
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    padding-right: 22px !important;
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%2364748b' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 7px center !important;
+    background-size: 10px 6px !important;
+    cursor: pointer !important;
+    text-overflow: ellipsis !important;
+}
+
+.miuix-modal select:hover,
+.sign-panel select:hover,
+.fans-continue-panel select:hover,
+.extool select:hover,
+.livetool select:hover,
+.bloop select:hover {
+    border-color: rgba(0, 102, 255, 0.35) !important;
+}
+
+.miuix-modal select:focus,
+.sign-panel select:focus,
+.fans-continue-panel select:focus,
+.extool select:focus,
+.livetool select:focus,
+.bloop select:focus,
+.popup-player-panel select:focus,
+.exlottery select:focus,
+.exupdate-panel select:focus {
+    border-color: var(--miuix-blue) !important;
+    box-shadow: 0 0 0 2px var(--miuix-blue-glow) !important;
+    background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%230066ff' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+}
+
+/* 数字输入的上下微调箭头：磨砂面板里露出系统控件会破坏质感，统一抹除 */
+.miuix-modal input[type="number"]::-webkit-outer-spin-button,
+.miuix-modal input[type="number"]::-webkit-inner-spin-button,
+.extool input[type="number"]::-webkit-outer-spin-button,
+.extool input[type="number"]::-webkit-inner-spin-button,
+.livetool input[type="number"]::-webkit-outer-spin-button,
+.livetool input[type="number"]::-webkit-inner-spin-button,
+.fans-continue-panel input[type="number"]::-webkit-outer-spin-button,
+.fans-continue-panel input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    margin: 0 !important;
+}
+
+.miuix-modal input[type="number"],
+.extool input[type="number"],
+.livetool input[type="number"],
+.fans-continue-panel input[type="number"] {
+    -moz-appearance: textfield !important;
+    text-align: center !important;
 }

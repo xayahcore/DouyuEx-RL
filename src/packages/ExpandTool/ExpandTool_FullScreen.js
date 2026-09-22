@@ -1,31 +1,9 @@
 function initPkg_ExpandTool_FullScreen() {
-    ExpandTool_FullScreen_insertDom();
     ExpandTool_FullScreen_insertFunc();
     ExpandTool_HighestVideoQuality_insertFunc();
     initPkg_ExpandTool_FullScreen_Set();
     initPkg_ExpandTool_HighestVideoQuality_Set();
 }
-
-function ExpandTool_FullScreen_insertDom() {
-    if (document.getElementById("extool__fullscreen")) return;
-    let container = document.querySelector(".extool__playback-perf");
-    if (!container) {
-        container = document.createElement("div");
-        container.className = "extool__playback-perf";
-        let b = document.getElementsByClassName("extool")[0];
-        if (b) b.insertBefore(container, b.childNodes[0]);
-    }
-    let labelQ = document.createElement("label");
-    labelQ.title = "自动最高画质（首流极清秒开）";
-    labelQ.innerHTML = '<input id="extool__highestvideoquality" type="checkbox">自动最高画质';
-    container.appendChild(labelQ);
-
-    let labelF = document.createElement("label");
-    labelF.title = "自动网页全屏";
-    labelF.innerHTML = '<input id="extool__fullscreen" type="checkbox">自动网页全屏';
-    container.appendChild(labelF);
-}
-
 
 function getFullScreen() {
     return document.getElementById("extool__fullscreen").checked;

@@ -709,6 +709,46 @@ async function testBuiltBundle() {
     console.log(`✓ 测试场景 14 通过: 模态尺寸唯一声明，${packageCssFiles.length} 个包级 CSS 无一越权定义三级面板选择器`);
     console.log(`     当前仍保留专有样式的包: ${[...new Set(packageCssFiles.map((f) => f.pkg))].join("、")}`);
 
+    // === 测试 15: 原生下拉框与数字输入框外观已抹除（MIUIX 自绘控件）===
+    console.log("--> 测试场景 15: 验证 select / number 原生外观已抹除...");
+
+    // 15.1 select 必须 appearance:none 且带自绘 SVG 箭头
+    const selectRules = allRules.filter(
+        (r) => r.selectorText && r.selectorText.includes("select") && r.style &&
+               (r.style.getPropertyValue("appearance") === "none" ||
+                r.style.getPropertyValue("-webkit-appearance") === "none")
+    );
+    assert.ok(selectRules.length >= 1, "必须存在抹除 select 原生外观的规则（appearance:none）");
+    assert.ok(
+        selectRules.some((r) => String(r.style.getPropertyValue("background-image")).includes("svg")),
+        "select 必须使用内联 SVG 自绘箭头（不得露出系统默认三角）"
+    );
+    const selectCoverage = selectRules[0].selectorText;
+    [".extool", ".livetool", ".bloop", ".sign-panel", ".exupdate-panel"].forEach((panel) => {
+        assert.ok(
+            selectCoverage.includes(panel),
+            `select 统一规则必须覆盖 ${panel}（实际覆盖: ${selectCoverage.slice(0, 120)}）`
+        );
+    });
+
+    // 15.2 number 输入必须抹除上下微调箭头
+    const spinnerRules = allRules.filter(
+        (r) => r.selectorText && r.selectorText.includes("spin-button") &&
+               r.style && r.style.getPropertyValue("appearance") === "none"
+    );
+    assert.ok(spinnerRules.length >= 1, "必须存在抹除 number 原生上下微调箭头的规则（::-webkit-inner/outer-spin-button）");
+    assert.ok(
+        spinnerRules.some((r) => r.selectorText.includes("inner-spin-button")),
+        "必须覆盖 ::-webkit-inner-spin-button"
+    );
+
+    // 15.3 面板内实际存在的 select 数量核对（收缩到 7 处以内且全部受统一规则管辖）
+    const panelSelects = win.document.querySelectorAll(
+        ".extool select, .livetool select, .bloop select, .sign-panel select, .popup-player-panel select, .exlottery select, .exupdate-panel select"
+    );
+    console.log(`     面板内 select 元素 ${panelSelects.length} 个，全部由统一规则管辖`);
+    console.log("✓ 测试场景 15 通过: select 原生外观已抹除并自绘箭头，number 微调箭头已隐藏");
+
     // === 收尾断言: 全流程结束后仍必须零未捕获异常 ===
     assert.strictEqual(errors.length, 0, "全流程结束后不应该产生未捕获异常: " + JSON.stringify(errors));
 

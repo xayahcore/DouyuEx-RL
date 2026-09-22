@@ -1,24 +1,7 @@
 function initPkg_ExpandTool_P2P() {
-    ExpandTool_P2P_insertDom();
     ExpandTool_P2P_insertFunc();
     initPkg_ExpandTool_P2P_Set();
 }
-
-function ExpandTool_P2P_insertDom() {
-    if (document.getElementById("extool__p2p")) return;
-    let container = document.querySelector(".extool__playback-perf");
-    if (!container) {
-        container = document.createElement("div");
-        container.className = "extool__playback-perf";
-        let b = document.getElementsByClassName("extool")[0];
-        if (b) b.insertBefore(container, b.childNodes[0]);
-    }
-    let label = document.createElement("label");
-    label.title = "阻止P2P在后台占用上传带宽，降低延迟";
-    label.innerHTML = '<input id="extool__p2p" type="checkbox">阻止P2P上传';
-    container.appendChild(label);
-}
-
 
 function getP2P() {
     return document.getElementById("extool__p2p").checked;

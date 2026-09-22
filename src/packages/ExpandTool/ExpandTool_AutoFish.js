@@ -5,24 +5,10 @@ let isFishing = false;
 let timerAutoFish = 0;
 
 function initPkg_ExpandTool_AutoFish() {
-  ExpandTool_AutoFish_insertDom();
   ExpandTool_AutoFish_insertFunc();
   ExpandTool_AutoFish_Set();
 }
 
-function ExpandTool_AutoFish_insertDom() {
-  if (document.getElementById("extool__autofish_start")) return;
-  let html = "";
-  html += '<label><input id="extool__autofish_start" type="checkbox">自动钓鱼</label><br>';
-  html += '<label><input name="autofish_mode" type="radio" value="all" checked>全天</label>';
-  html += '<label style="margin-left:5px;"><input name="autofish_mode" type="radio" value="contest">钓鱼大赛</label>';
-
-  let a = document.createElement("div");
-  a.className = "extool__autofish";
-  a.innerHTML = html;
-  let b = document.getElementsByClassName("extool")[0];
-  b.insertBefore(a, b.childNodes[0]);
-}
 function ExpandTool_AutoFish_insertFunc() {
   document.querySelectorAll('input[name="autofish_mode"]').forEach(radio => {
     radio.addEventListener("change", saveData_AutoFish);

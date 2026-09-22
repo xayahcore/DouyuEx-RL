@@ -1,25 +1,10 @@
 var isGetTreasure = false;
 function initPkg_ExpandTool_Treasure() {
-    ExpandTool_Treasure_insertDom();
     ExpandTool_Treasure_insertFunc();
     ExpandTool_Treasure_Set();
 }
 
 
-function ExpandTool_Treasure_insertDom() {
-    if (document.getElementById("extool__treasure_start")) return;
-    let html = "";
-    html += '<label><input style="margin-top:5px" id="extool__treasure_start" type="checkbox">半自动抢宝箱</label>';
-    html += '<label style="margin-left:10px;">延迟(抢得过快请调高)：</label><input id="extool__treasure_delay" type="text" style="width:50px;text-align:center;" value="3200" />ms'
-    html += '<div class="extool__hint">说明：遇到验证码会自动弹出验证框，需要手动完成后才能领取。</div>';
-    
-    let a = document.createElement("div");
-    a.className = "extool__treasure";
-    a.innerHTML = html;
-    let b = document.getElementsByClassName("extool")[0];
-    b.insertBefore(a, b.childNodes[0]);
-
-}
 function ExpandTool_Treasure_insertFunc() {
     document.getElementById("extool__treasure_start").addEventListener("click", function() {
         verifyFans("5189167", 9).then(r => { // 请尊重作者劳动成果，在此感谢

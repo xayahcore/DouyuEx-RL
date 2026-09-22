@@ -1,24 +1,11 @@
 let redpackets_room_arr = [];
 let redpacket_room_timer; // 时钟句柄
 function initPkg_ExpandTool_RedPacket_Room() {
-    ExpandTool_RedPacket_Room_insertDom();
     ExpandTool_RedPacket_Room_insertFunc();
     ExpandTool_RedPacket_Room_Set();
 }
 
 
-function ExpandTool_RedPacket_Room_insertDom() {
-    if (document.getElementById("extool__redpacekt_room_start")) return;
-    let html = "";
-    html += '<label><input id="extool__redpacekt_room_start" type="checkbox">自动抢礼物红包</label>';
-    
-    let a = document.createElement("div");
-    a.className = "extool__redpacket_room";
-    a.innerHTML = html;
-    let b = document.getElementsByClassName("extool")[0];
-    b.insertBefore(a, b.childNodes[0]);
-
-}
 function ExpandTool_RedPacket_Room_insertFunc() {
     document.getElementById("extool__redpacekt_room_start").addEventListener("click", function() {
         verifyFans("5189167", 6).then(r => {
