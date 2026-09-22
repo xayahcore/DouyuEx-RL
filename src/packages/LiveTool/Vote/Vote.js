@@ -20,10 +20,9 @@ function LiveTool_Vote_insertDom() {
             <span id='vote__title'>弹幕投票</span><span id='vote__show-result'>面板</span>
         </div>
         <div class='livetool__cell_option'>
-            <label style="margin-right:10px;"><input id="vote__repeat" type="checkbox">重复投票</label>
-            <div class="onoffswitch livetool__cell_switch">
-                <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="vote__switch" tabindex="0" checked>
-                <label class="onoffswitch-label" for="vote__switch"></label>
+            <label class="vote__repeat-label"><span>重复投票</span><input id="vote__repeat" type="checkbox" class="sign-checkbox"></label>
+            <div class="livetool__cell_switch">
+                <input type="checkbox" class="sign-checkbox" id="vote__switch" tabindex="0" checked>
             </div>
         </div>
     `;

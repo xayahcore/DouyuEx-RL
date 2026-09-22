@@ -7,9 +7,6 @@
     padding-bottom: 20px;
 }
 
-li {
-    list-style: none;
-}
 
 .layui-timeline-item:first-child::before {
     display: block;
@@ -34,8 +31,7 @@ li {
     height: 100%;
 }
 
-.layui-timeline-item::before,
-hr {
+.layui-timeline-item::before {
     background-color: #e6e6e6;
 }
 

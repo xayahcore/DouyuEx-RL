@@ -18,9 +18,8 @@ function LiveTool_Reply_insertDom() {
             <span id='reply__import'>导入</span>
         </div>
         <div class='livetool__cell_option'>
-            <div class="onoffswitch livetool__cell_switch">
-                <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="reply__switch" tabindex="0" checked>
-                <label class="onoffswitch-label" for="reply__switch"></label>
+            <div class="livetool__cell_switch">
+                <input type="checkbox" class="sign-checkbox" id="reply__switch" tabindex="0" checked>
             </div>
         </div>
     `;

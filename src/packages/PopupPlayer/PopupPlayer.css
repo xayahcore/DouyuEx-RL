@@ -52,10 +52,6 @@
     display: none;
 }
 
-.postbird-box-header {
-    width: auto !important;
-}
-
-.postbird-box-dialog {
-    color: #333;
-}
+/* 说明：PostbirdAlertBox 样式已 100% 归入统一引擎 ExPanel.css §13。
+   此处原先残留的 .postbird-box-header{width:auto} 会覆盖统一弹窗的全宽顶栏、
+   .postbird-box-dialog{color:#333} 会覆盖统一文字色，二者均已移除。 */

@@ -652,6 +652,63 @@ async function testBuiltBundle() {
     );
     console.log("✓ 测试场景 13 通过: 五个抽屉标题色值统一、无 royalblue 残留、iOS 披露箭头互斥联动正确");
 
+    // === 测试 14: 统一 UI 引擎单一归属（源码级 + 产物级双重护栏）===
+    console.log("--> 测试场景 14: 验证三级面板样式 100% 单一归属 ExPanel.css...");
+
+    // 14.1 产物级：模态铁壁尺寸必须且只能声明一次（ExPanel 使用 :root 设计令牌）
+    const modalWidthDecls = allRules.filter((r) => {
+        const w = String(r.style && r.style.getPropertyValue("width") || "");
+        return w === "380px" || w === "var(--miuix-modal-width)";
+    });
+    assert.strictEqual(
+        modalWidthDecls.length,
+        1,
+        `模态宽度必须只声明一次（实际 ${modalWidthDecls.length} 次），多一处即为包级 CSS 静默覆盖隐患: ` +
+            modalWidthDecls.map((r) => r.selectorText).join(" | ")
+    );
+    assert.ok(
+        modalWidthDecls[0].selectorText.includes(".extool") &&
+        modalWidthDecls[0].selectorText.includes(".livetool") &&
+        modalWidthDecls[0].selectorText.includes(".bloop") &&
+        modalWidthDecls[0].selectorText.includes(".exupdate-panel"),
+        "唯一那条模态宽度规则必须同时覆盖全部三级面板（九面板分组规则）"
+    );
+    const modalHeightDecls = allRules.filter((r) => {
+        const h = String(r.style && r.style.getPropertyValue("height") || "");
+        return h === "370px" || h === "var(--miuix-modal-height)";
+    });
+    assert.strictEqual(modalHeightDecls.length, 1, `模态高度必须只声明一次（实际 ${modalHeightDecls.length} 次）`);
+    assert.ok(
+        modalWidthDecls[0].selectorText.includes(".sign-panel") &&
+        modalWidthDecls[0].selectorText.includes(".exlottery") &&
+        modalWidthDecls[0].selectorText.includes(".popup-player-panel"),
+        "九面板分组规则必须覆盖全部三级控制台"
+    );
+
+    // 14.2 源码级：任何包级 CSS 都不得再定义三级面板选择器
+    const PANEL_SELECTOR = /\.(sign-panel|fans-continue-panel|extool|livetool|bloop|exlottery|popup-player-panel|exupdate-panel)(?![\w-])/;
+    const packageCssFiles = [];
+    const packagesRoot = path.join(__dirname, "../src/packages");
+    fs.readdirSync(packagesRoot).forEach((pkg) => {
+        const dir = path.join(packagesRoot, pkg);
+        if (!fs.statSync(dir).isDirectory()) return;
+        fs.readdirSync(dir).forEach((f) => {
+            if (f.endsWith(".css")) packageCssFiles.push({ pkg, file: path.join(dir, f) });
+        });
+    });
+    const offenders = packageCssFiles.filter(({ pkg, file }) => {
+        if (pkg === "ExPanel") return false; // 统一引擎本体
+        return PANEL_SELECTOR.test(fs.readFileSync(file, "utf8"));
+    });
+    assert.strictEqual(
+        offenders.length,
+        0,
+        `包级 CSS 不得定义三级面板选择器（应全部上收 ExPanel.css），违规文件: ` +
+            offenders.map((o) => o.pkg + "/" + path.basename(o.file)).join(" | ")
+    );
+    console.log(`✓ 测试场景 14 通过: 模态尺寸唯一声明，${packageCssFiles.length} 个包级 CSS 无一越权定义三级面板选择器`);
+    console.log(`     当前仍保留专有样式的包: ${[...new Set(packageCssFiles.map((f) => f.pkg))].join("、")}`);
+
     // === 收尾断言: 全流程结束后仍必须零未捕获异常 ===
     assert.strictEqual(errors.length, 0, "全流程结束后不应该产生未捕获异常: " + JSON.stringify(errors));
 

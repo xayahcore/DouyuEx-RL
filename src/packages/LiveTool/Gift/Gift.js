@@ -16,9 +16,8 @@ function LiveTool_Gift_insertDom() {
             <span id='gift__import'>导入</span>
         </div>
         <div class='livetool__cell_option'>
-            <div class="onoffswitch livetool__cell_switch">
-                <input type="checkbox" name="onoffswitch" class="onoffswitch-checkbox" id="gift__switch" tabindex="0" checked>
-                <label class="onoffswitch-label" for="gift__switch"></label>
+            <div class="livetool__cell_switch">
+                <input type="checkbox" class="sign-checkbox" id="gift__switch" tabindex="0" checked>
             </div>
         </div>
     `;

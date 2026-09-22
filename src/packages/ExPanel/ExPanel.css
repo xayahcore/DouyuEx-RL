@@ -547,6 +547,44 @@
     padding: 0 !important;
 }
 
+/* 弹簧开关定位容器（原 .onoffswitch 包裹层，已并入统一引擎） */
+.livetool__cell_switch {
+    display: flex !important;
+    align-items: center !important;
+    flex-shrink: 0 !important;
+}
+
+/* 弹幕投票的「重复投票」行内开关标签 */
+.vote__repeat-label {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    margin-right: 10px !important;
+    font-size: 11.5px !important;
+    font-weight: 600 !important;
+    color: #334155 !important;
+    cursor: pointer !important;
+    user-select: none !important;
+}
+
+/* 抽屉展开后的内容面板（原 LiveTool.css 独有声明，已上收） */
+.vote__panel,
+.enter__panel,
+.mute__panel,
+.gift__panel,
+.reply__panel {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    margin: 8px 0 2px 0 !important;
+    padding: 10px 12px !important;
+    border-radius: 10px !important;
+    background: rgba(255, 255, 255, 0.55) !important;
+    border: 1px solid rgba(255, 255, 255, 0.75) !important;
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+}
+
 /* 抽屉内的下拉框补充规范（与统一输入框同族） */
 .livetool select {
     background: rgba(255, 255, 255, 0.85) !important;
@@ -977,6 +1015,7 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
 .sign-log-box {
     min-height: 52px !important;
     max-height: 72px !important;
+    margin-top: 4px !important;
     overflow-y: auto !important;
     font-size: 11px !important;
     color: #334155 !important;
@@ -1279,10 +1318,46 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
 }
 
 /* ==========================================================================
-   12. 弹幕小尾巴独立微悬浮面板 (聊天栏正上方 0px 精准定位 + 澎湃毛玻璃)
+   12. 弹幕小尾巴（聊天栏按钮 / 独立微悬浮面板 / 面板内控件）
+   原 DanmakuTail.css 独有声明全部上收至此，实现全文件归并。
    ========================================================================== */
+/* 聊天工具栏的「尾」按钮 */
+.ChatToolBar-DanmakuTail {
+    display: inline-block !important;
+    vertical-align: middle !important;
+    width: 18px !important;
+    height: 18px !important;
+    border-radius: 4px !important;
+    margin-right: 8px !important;
+    color: #bbb !important;
+    cursor: pointer !important;
+}
+
+.ChatToolBar-DanmakuTail-tip {
+    width: 18px !important;
+    height: 18px !important;
+    text-align: center !important;
+    line-height: 18px !important;
+    border-radius: 4px !important;
+    font-size: 12px !important;
+    color: #fff !important;
+    cursor: pointer !important;
+    box-sizing: border-box !important;
+    background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACQAAAAkCAMAAADW3miqAAAAPFBMVEUAAADKy8zKy8zExMzKy83Ky83KzMzKzM7Kys3Ky8zKy83Jy8zJy83Ky8zLzMzJzMzIyM3MzMzKzMzKy8zUpkOsAAAAE3RSTlMA5PgF2qdrQ+rqysOOhzw3HBnqZkz8cgAAAN5JREFUOMuNlEkOAyEMBNs2y+xL/P+/JgoJaGCAqZOFSk0fLOOL7M7ONLBGeDCTdZsgcq6kdzAtBwLiSauMPoR5ow2Mx4dj1CZ0ArJoh1Ww/Quh5Be1w3F0apaD1a5kMSVJLyRphuknEYaGpIEXuC7pD4YWnaITuUiIdKRkVCRNRlUq+te+a0p4Ujy9ZkMpIaeUgJrEld6aYAxZJS2nF+hGwnUwmHOp/HSCzffybn1dubyZww47aQfaIGtPWgQ4O1Hj8fRgQPzYKOQFgWMhvlfWExHZnJ3M9RzSbN0eYt4fdzsuAVjiHAAAAABJRU5ErkJggg==) 50% / 18px 18px no-repeat !important;
+}
+
+[data-mantine-color-scheme=dark] .ChatToolBar-DanmakuTail-tip {
+    background: url(data:image/png;base64,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) 50% / 18px 18px no-repeat !important;
+}
+
+.ChatToolBar-DanmakuTail-tip-active,
+.ChatToolBar-DanmakuTail-tip:hover {
+    background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACQAAAAkCAMAAADW3miqAAAAPFBMVEUAAAD6aDP7ZTD2cUHxeU/pjGvmkHPfjnH4azj4bDruf1fshWHrhmLpjW3njm3kk3/ugFnugVn/XSP+YCg/+VboAAAAEnRSTlMA/P3z4XQyCPr5za2namIOx8bnayGzAAAA3klEQVQ4y43U2w6EIAxF0dNyc7xP+///Ook6EEHA/UTMSukDEUdhna0hVokpD8ZOy4aY/5I8pTT6iwRHUo1dOJD7SKOPO+5iaUYe2EbptAcs/4VQdo1aMWk0NTXDShdZmITkVkIGQ38SgRtIzhhaR3KlkGKnaGI3hFgHJVFBkkQVFfvXrmsivFk8fc0OJUJeiYAa0sreklJwtpKUJwY9INwPA0yOyksNbP4un57vXD7ezOiElaQTLQh7D40b4Duj2L/9YSA4bizkAs78SPpMdo/YtkzWDPffIRk7r+eYH6dAOJwNbfZEAAAAAElFTkSuQmCC) 50% / 18px 18px no-repeat !important;
+}
+
 .ChatToolBar-DanmakuTail-Panel {
     position: fixed !important;
+    width: 270px !important;
     border-radius: 16px !important;
     background: rgba(255, 255, 255, 0.78) !important;
     backdrop-filter: blur(36px) saturate(220%) !important;
@@ -1292,9 +1367,41 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
     padding: 12px 14px !important;
     box-sizing: border-box !important;
     z-index: 100050 !important;
+    display: none;
     color: #0f172a !important;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
     user-select: none !important;
+}
+
+.DanmakuTail-input {
+    width: 100% !important;
+    height: 32px !important;
+    border-radius: 8px !important;
+    border: 1px solid rgba(0, 0, 0, 0.12) !important;
+    background: rgba(255, 255, 255, 0.85) !important;
+    padding: 4px 8px !important;
+    font-size: 12px !important;
+    color: #0f172a !important;
+    outline: none !important;
+    box-sizing: border-box !important;
+    margin-bottom: 8px !important;
+}
+
+.DanmakuTail-input:focus {
+    border-color: var(--miuix-blue) !important;
+    box-shadow: 0 0 0 2px var(--miuix-blue-glow) !important;
+}
+
+.DanmakuTail-checkbox-label {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    font-size: 12.5px !important;
+    font-weight: 600 !important;
+    color: #0f172a !important;
+    cursor: pointer !important;
+    border-top: 1px solid rgba(0, 0, 0, 0.05) !important;
+    padding-top: 8px !important;
 }
 
 .ChatToolBar-DanmakuTail-Panel.miuix-modal-in {
@@ -1553,4 +1660,211 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
 .exupdate-state-btn--error:hover {
     background: linear-gradient(135deg, #dc2626, #b91c1c) !important;
     transform: translateY(-1px) !important;
+}
+
+/* ==========================================================================
+   15. 面板专有控件（原 ExpandTool.css / BarrageLoopStyle.css 独有声明上收）
+   ========================================================================== */
+.extool input[type="text"]:focus,
+.extool input[type="number"]:focus {
+    border-color: var(--miuix-blue) !important;
+    box-shadow: 0 0 0 2px var(--miuix-blue-glow) !important;
+}
+
+.bloop__preset_row {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    margin-bottom: 8px !important;
+}
+
+.bloop__preset_row select#bloop__select {
+    flex: 1 1 auto !important;
+    height: 28px !important;
+    border-radius: 8px !important;
+    border: 1px solid rgba(0, 0, 0, 0.12) !important;
+    background: rgba(255, 255, 255, 0.85) !important;
+    font-size: 12px !important;
+    color: #0f172a !important;
+    outline: none !important;
+    padding: 0 8px !important;
+}
+
+.bloop__preset_row input[type="button"]#bloop__save {
+    flex-shrink: 0 !important;
+    height: 28px !important;
+    padding: 0 10px !important;
+    font-size: 11.5px !important;
+    font-weight: 600 !important;
+    color: #ffffff !important;
+    background: linear-gradient(135deg, #2b7fff, #0055ff) !important;
+    border: none !important;
+    border-radius: 6px !important;
+    cursor: pointer !important;
+    box-shadow: 0 2px 6px rgba(0, 102, 255, 0.28) !important;
+    transition: all 0.16s ease !important;
+}
+
+.bloop__preset_row input[type="button"]#bloop__save:hover {
+    background: linear-gradient(135deg, #3d8bff, #004de6) !important;
+    transform: translateY(-1px) !important;
+}
+
+.bloop__preset_row input[type="button"]#bloop__delete {
+    flex-shrink: 0 !important;
+    height: 28px !important;
+    padding: 0 10px !important;
+    font-size: 11.5px !important;
+    font-weight: 600 !important;
+    color: #ef4444 !important;
+    background: rgba(239, 68, 68, 0.12) !important;
+    border: 1px solid rgba(239, 68, 68, 0.25) !important;
+    border-radius: 6px !important;
+    cursor: pointer !important;
+    transition: all 0.16s ease !important;
+}
+
+.bloop__preset_row input[type="button"]#bloop__delete:hover {
+    background: #ef4444 !important;
+    color: #ffffff !important;
+    transform: translateY(-1px) !important;
+}
+
+.bloop textarea#bloop__textarea {
+    width: 100% !important;
+    height: 72px !important;
+    box-sizing: border-box !important;
+    border-radius: 8px !important;
+    border: 1px solid rgba(0, 0, 0, 0.12) !important;
+    background: rgba(255, 255, 255, 0.75) !important;
+    padding: 6px 8px !important;
+    font-size: 12px !important;
+    color: #0f172a !important;
+    line-height: 1.4 !important;
+    outline: none !important;
+    resize: none !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    transition: all 0.18s ease !important;
+}
+
+.bloop textarea#bloop__textarea:focus {
+    border-color: var(--miuix-blue) !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+    box-shadow: 0 0 0 2px var(--miuix-blue-glow) !important;
+}
+
+.bloop textarea#bloop__textarea:disabled {
+    background: rgba(0, 0, 0, 0.05) !important;
+    color: #94a3b8 !important;
+    cursor: not-allowed !important;
+}
+
+.bloop__param_grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px 12px !important;
+}
+
+.bloop__param_item {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    font-size: 11.5px !important;
+    color: #334155 !important;
+}
+
+/* ==========================================================================
+   16. 全站抽奖信息房间卡片（原 Lottery.css 独有声明上收）
+   ========================================================================== */
+.lottery__item {
+    display: flex !important;
+    padding: 8px 6px !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
+    color: #0f172a !important;
+    align-items: center !important;
+    gap: 8px !important;
+    text-decoration: none !important;
+    transition: all 0.16s ease !important;
+}
+
+.lottery__a {
+    text-decoration: none !important;
+    display: block !important;
+}
+
+.lottery__a:hover .lottery__item {
+    background: rgba(255, 255, 255, 0.7) !important;
+    border-radius: 8px !important;
+    transform: translateY(-1px) !important;
+}
+
+.lottery__img {
+    position: relative !important;
+    width: 90px !important;
+    height: 54px !important;
+    flex-shrink: 0 !important;
+}
+
+.lottery__img img {
+    width: 90px !important;
+    height: 54px !important;
+    object-fit: cover !important;
+    border-radius: 6px !important;
+    display: block !important;
+}
+
+.lottery__anchor {
+    position: absolute !important;
+    top: 2px !important;
+    left: 2px !important;
+    background: rgba(0, 0, 0, 0.55) !important;
+    color: #fff !important;
+    font-size: 10px !important;
+    padding: 1px 4px !important;
+    border-radius: 4px !important;
+    max-width: 80px !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+
+.lottery__expireTime {
+    position: absolute !important;
+    bottom: 2px !important;
+    right: 2px !important;
+    background: rgba(0, 0, 0, 0.55) !important;
+    color: #fff !important;
+    font-size: 9.5px !important;
+    padding: 1px 4px !important;
+    border-radius: 4px !important;
+}
+
+.lottery__info {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 2px !important;
+    overflow: hidden !important;
+    flex: 1 1 auto !important;
+}
+
+.lottery__prize {
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    color: #0f172a !important;
+    white-space: nowrap !important;
+    text-overflow: ellipsis !important;
+    overflow: hidden !important;
+}
+
+.lottery__jointext {
+    font-size: 11px !important;
+    color: #64748b !important;
+    white-space: nowrap !important;
+    text-overflow: ellipsis !important;
+    overflow: hidden !important;
+}
+
+.lottery__condition {
+    font-size: 10.5px !important;
+    font-weight: 600 !important;
 }
