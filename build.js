@@ -40,7 +40,7 @@ function generateVersion() {
   if (!fs.existsSync("./dist")) {
     fs.mkdirSync("./dist", { recursive: true });
   }
-  let version = "2026.09.22.01";
+  let version = "2026.09.22.02";
   if (fs.existsSync("./src/main.js")) {
     const mainContent = fs.readFileSync("./src/main.js", "utf8");
     const m = mainContent.match(/\/\/\s*@version\s+([^\r\n]+)/);
