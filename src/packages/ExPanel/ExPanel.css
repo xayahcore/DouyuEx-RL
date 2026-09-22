@@ -451,6 +451,25 @@
     color: #0f172a !important;
 }
 
+/* 版本更新日志列表（原 Update.css 内联规则上收至统一引擎） */
+.exupdate-list {
+    margin: 0 !important;
+    padding: 0 !important;
+    list-style: none !important;
+    font-size: 11.5px !important;
+    line-height: 18px !important;
+    color: #334155 !important;
+}
+
+.exupdate-list li {
+    margin-bottom: 6px !important;
+    word-break: break-word !important;
+}
+
+.exupdate-list li:last-child {
+    margin-bottom: 0 !important;
+}
+
 /* ==========================================================================
    6. 选项列表与选项项 (.sign-options-list, .sign-option-item, .miuix-item)
    ========================================================================== */
@@ -579,6 +598,17 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
 /* ==========================================================================
    8. 通用按钮微质感 (大弹簧操作按钮、胶囊操作按钮、送出按钮)
    ========================================================================== */
+/* 操作区容器统一规范：左右留白必须与四级卡片保持一致(12px)，
+   否则同一面板内的按钮会比卡片更宽/更窄，造成跨面板宽度不一致。 */
+.fans-panel__action-wrap,
+.popup-panel__action-wrap,
+.exupdate-panel__action-wrap {
+    padding: 0 12px !important;
+    margin-top: 10px !important;
+    margin-bottom: 8px !important;
+    box-sizing: border-box !important;
+}
+
 .ex-btn-primary,
 .fans-panel__submit-btn,
 .popup-panel__submit-btn,

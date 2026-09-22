@@ -355,6 +355,62 @@ async function testBuiltBundle() {
     assert.ok(updateBtn.textContent.includes("检查失败"), "必须明确告知用户检查失败");
     console.log("✓ 测试场景 10 通过: 检查更新按钮多态流转与容灾状态判定 100% 正确");
 
+    // === 测试 11: 三大面板操作区宽度一致性（统一 UI 引擎单一归属）===
+    console.log("--> 测试场景 11: 验证 检查更新/开始签到/立即开始续牌 按钮宽度一致...");
+    const allRules = [];
+    Array.from(win.document.styleSheets).forEach((sheet) => {
+        try { Array.from(sheet.cssRules).forEach((r) => allRules.push(r)); } catch (e) {}
+    });
+
+    const ACTION_WRAPS = [
+        ".fans-panel__action-wrap",
+        ".popup-panel__action-wrap",
+        ".exupdate-panel__action-wrap",
+    ];
+    const awRules = allRules.filter(
+        (r) => r.selectorText && ACTION_WRAPS.some((c) => r.selectorText.includes(c))
+    );
+    assert.strictEqual(
+        awRules.length,
+        1,
+        `操作区容器必须且只能有一条统一规则（实际 ${awRules.length} 条），禁止任何包再用独立 CSS 覆盖，命中: ` +
+            awRules.map((r) => r.selectorText).join(" | ")
+    );
+    ACTION_WRAPS.forEach((cls) => {
+        assert.ok(
+            awRules[0].selectorText.includes(cls),
+            `统一规则必须同时覆盖 ${cls}，否则该面板按钮宽度会与其他面板不一致`
+        );
+    });
+    assert.strictEqual(
+        awRules[0].style.getPropertyValue("padding-left"),
+        "12px",
+        "操作区左右留白必须为 12px（与四级卡片侧边距对齐）"
+    );
+    assert.strictEqual(
+        awRules[0].style.getPropertyValue("padding-right"),
+        "12px",
+        "操作区左右留白必须为 12px（与四级卡片侧边距对齐）"
+    );
+
+    // 按钮本体规格也必须由同一条统一规则驱动（排除 :hover/:active/:disabled 等伪类变体）
+    const submitRules = allRules.filter(
+        (r) => r.selectorText &&
+               !r.selectorText.includes(":") &&
+               r.selectorText.includes(".exupdate-panel__submit-btn") &&
+               r.selectorText.includes(".fans-panel__submit-btn") &&
+               r.selectorText.includes(".popup-panel__submit-btn")
+    );
+    assert.strictEqual(
+        submitRules.length,
+        1,
+        `三个提交按钮必须共用同一条基础规格规则（实际 ${submitRules.length} 条）: ` +
+            submitRules.map((r) => r.selectorText).join(" | ")
+    );
+    assert.strictEqual(submitRules[0].style.getPropertyValue("height"), "38px", "提交按钮高度必须统一为 38px");
+    assert.strictEqual(submitRules[0].style.getPropertyValue("font-size"), "14px", "提交按钮字号必须统一为 14px");
+    console.log("✓ 测试场景 11 通过: 三大面板操作区与提交按钮均由统一 UI 引擎单条规则驱动，宽度一致");
+
     // === 收尾断言: 全流程结束后仍必须零未捕获异常 ===
     assert.strictEqual(errors.length, 0, "全流程结束后不应该产生未捕获异常: " + JSON.stringify(errors));
 
