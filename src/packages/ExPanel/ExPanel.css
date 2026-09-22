@@ -1939,3 +1939,64 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
     -moz-appearance: textfield !important;
     text-align: center !important;
 }
+
+/* ==========================================================================
+   18. 主播配置信息悬浮卡（原 MetaData.css 独有声明上收 + MIUIX 重制）
+   原实现为 2020 年的死白样式（1px #e5e5e5 边框 / 纯白底 / 硬编码 left:199px），
+   此处换装为与全站一致的磨砂玻璃卡，并补上三种状态的提示样式。
+   ========================================================================== */
+#ex-metadata {
+    position: relative !important;
+    cursor: pointer !important;
+}
+
+#ex-metadata > .metadata__wrap {
+    display: none;
+}
+
+#ex-metadata:hover > .metadata__wrap {
+    display: block !important;
+}
+
+.metadata__wrap {
+    position: absolute !important;
+    left: 100% !important;
+    top: 0 !important;
+    margin: 0 0 0 6px !important;
+    padding: 8px 10px !important;
+    min-width: 132px !important;
+    max-width: 240px !important;
+    box-sizing: border-box !important;
+    list-style: none !important;
+    border-radius: 12px !important;
+    background: rgba(255, 255, 255, 0.78) !important;
+    backdrop-filter: blur(28px) saturate(200%) !important;
+    -webkit-backdrop-filter: blur(28px) saturate(200%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.95) !important;
+    box-shadow: inset 0 1px 1.5px rgba(255, 255, 255, 0.95), 0 12px 30px rgba(15, 23, 42, 0.18) !important;
+    z-index: 100010 !important;
+    color: #0f172a !important;
+    font-size: 11.5px !important;
+    line-height: 1.45 !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif !important;
+    white-space: normal !important;
+    word-break: break-all !important;
+    user-select: none !important;
+}
+
+.metadata__wrap > li {
+    padding: 3px 0 !important;
+    color: #0f172a !important;
+}
+
+.metadata__wrap > li + li {
+    border-top: 1px solid rgba(0, 0, 0, 0.05) !important;
+}
+
+/* 「探测失败 重试」提示中的动作文字 */
+.metadata__retry {
+    font-style: normal !important;
+    margin-left: 4px !important;
+    font-weight: 600 !important;
+    color: var(--miuix-blue) !important;
+}
