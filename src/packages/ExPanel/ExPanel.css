@@ -1774,14 +1774,6 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
     color: #334155 !important;
 }
 
-/* 自选直播线路下拉框（扩展功能 · 播放与性能卡片） */
-.extool__cdn-select {
-    flex: 0 0 auto !important;
-    margin-left: auto !important;
-    width: 148px !important;
-    height: 28px !important;
-}
-
 /* ==========================================================================
    16. 全站抽奖信息房间卡片（原 Lottery.css 独有声明上收）
    ========================================================================== */
