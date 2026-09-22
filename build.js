@@ -8,7 +8,7 @@ let js = "";
 let coreJs = "";
 
 function handleCoreFolder() {
-  const coreFiles = ["./src/core/quality.js", "./src/core/rank_engine.js"];
+  const coreFiles = ["./src/core/quality.js", "./src/core/rank_engine.js", "./src/core/cdn.js"];
   coreFiles.forEach((file) => {
     if (fs.existsSync(file)) {
       coreJs += fs.readFileSync(file, "utf8") + "\r\n";

@@ -14,6 +14,103 @@ function initPkg_ExpandTool_Module() {
   initPkg_ExpandTool_P2P();
   initPkg_ExpandTool_FullScreen();
   initPkg_ExpandTool_AutoBarrageColor();
+  initPkg_ExpandTool_Cdn();
+}
+
+/* ==================== 自选直播线路 CDN ====================
+ * 面板侧只负责「选择与持久化」，真正的请求改写由核心层 src/core/cdn.js 在页面主上下文完成。
+ * 跨上下文通过 localStorage 通信：
+ *   ExSave_CDN     本模块写入用户所选线路
+ *   ExSave_CDNList 核心层从播放器自身的取流响应里采集，供本面板展示（因此无需额外请求）
+ */
+function ExpandTool_Cdn_loadJSON(key) {
+  try {
+    var raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function ExpandTool_Cdn_currentRid() {
+  return String((typeof rid !== "undefined" && rid) || "");
+}
+
+function ExpandTool_Cdn_bind() {
+  var sel = document.getElementById("extool__cdn_select");
+  if (!sel || sel.dataset.bound) return;
+  sel.dataset.bound = "1";
+
+  function render() {
+    var saved = ExpandTool_Cdn_loadJSON("ExSave_CDN");
+    var listData = ExpandTool_Cdn_loadJSON("ExSave_CDNList");
+    var list = (listData && Array.isArray(listData.list)) ? listData.list : [];
+
+    var html = '<option value="">自动（平台分配）</option>';
+    list.forEach(function (it) {
+      if (!it || !it.cdn) return;
+      html += '<option value="' + it.cdn + '">' + (it.name || it.cdn) + "</option>";
+    });
+    // 已选线路不在当前房间清单里时仍保留可选项，避免用户的选择被静默吞掉
+    var savedCdn = saved && saved.cdn ? saved.cdn : "";
+    if (savedCdn && !list.some(function (it) { return it && it.cdn === savedCdn; })) {
+      html += '<option value="' + savedCdn + '">' + (saved.name || savedCdn) + "（本房间列表未含）</option>";
+    }
+    sel.innerHTML = html;
+    sel.value = savedCdn;
+
+    var desc = document.getElementById("extool__cdn_desc");
+    if (desc) {
+      if (savedCdn) desc.textContent = "已选：" + (saved.name || savedCdn) + "，刷新后生效";
+      else if (list.length) desc.textContent = "跟随平台自动分配（当前 " + list.length + " 条线路可选）";
+      else desc.textContent = "跟随平台自动分配，起播后自动获取线路";
+    }
+  }
+
+  sel.addEventListener("change", function () {
+    var val = sel.value;
+    var listData = ExpandTool_Cdn_loadJSON("ExSave_CDNList");
+    var list = (listData && Array.isArray(listData.list)) ? listData.list : [];
+    var hit = null;
+    list.forEach(function (it) { if (it && it.cdn === val) hit = it; });
+
+    localStorage.setItem("ExSave_CDN", JSON.stringify({ cdn: val, name: hit ? hit.name : val }));
+    render();
+
+    if (typeof showMessage === "function") {
+      showMessage(
+        val
+          ? "【直播线路】已切换为 " + (hit ? hit.name : val) + "，刷新页面后生效"
+          : "【直播线路】已恢复为平台自动分配，刷新页面后生效",
+        "success"
+      );
+    }
+  });
+
+  render();
+
+  // 线路清单由核心层在起播后写入，此处做有限次刷新即可（不做长期轮询）
+  var tries = 0;
+  var timer = setInterval(function () {
+    tries++;
+    render();
+    var listData = ExpandTool_Cdn_loadJSON("ExSave_CDNList");
+    var got = listData && listData.rid === ExpandTool_Cdn_currentRid() &&
+      Array.isArray(listData.list) && listData.list.length > 0;
+    if (got || tries >= 15) clearInterval(timer);
+  }, 2000);
+
+  // 展开面板、以及直接拉开下拉框之前，都同步一次最新清单
+  var panel = document.querySelector(".extool");
+  if (panel && !panel.dataset.cdnBound) {
+    panel.dataset.cdnBound = "1";
+    panel.addEventListener("mouseenter", render);
+  }
+  sel.addEventListener("mouseenter", render);
+}
+
+function initPkg_ExpandTool_Cdn() {
+  ExpandTool_Cdn_bind();
 }
 
 function initPkg_ExpandTool_Dom() {
@@ -43,6 +140,15 @@ function ExpandTool_insertModal() {
             </div>
             <input id="extool__highestvideoquality" class="sign-checkbox" type="checkbox">
           </label>
+          <div class="sign-option-item" title="手动指定直播流线路；不同线路在上行质量与延迟上存在差异，遇到卡顿可换线">
+            <div class="sign-option-text">
+              <span class="sign-option-title">直播线路</span>
+              <span class="sign-option-desc" id="extool__cdn_desc">跟随平台自动分配</span>
+            </div>
+            <select id="extool__cdn_select" class="extool__cdn-select">
+              <option value="">自动（平台分配）</option>
+            </select>
+          </div>
           <label class="sign-option-item" title="自动展开网页全屏观播">
             <div class="sign-option-text">
               <span class="sign-option-title">自动网页全屏</span>

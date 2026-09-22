@@ -749,6 +749,41 @@ async function testBuiltBundle() {
     console.log(`     面板内 select 元素 ${panelSelects.length} 个，全部由统一规则管辖`);
     console.log("✓ 测试场景 15 通过: select 原生外观已抹除并自绘箭头，number 微调箭头已隐藏");
 
+    // === 测试 16: 自选直播线路 CDN（UI 入口 + 持久化 + 核心层注入）===
+    console.log("--> 测试场景 16: 验证自选直播线路 CDN...");
+    const cdnSelect = win.document.getElementById("extool__cdn_select");
+    assert.ok(cdnSelect, "扩展功能面板必须存在 #extool__cdn_select 线路选择器");
+    assert.ok(cdnSelect.querySelector('option[value=""]'), '必须包含「自动（平台分配）」选项');
+    assert.ok(
+        String(cdnSelect.options[0].textContent).includes("自动"),
+        "首项必须是自动，保证默认不干预平台选路"
+    );
+
+    // 线路清单来自核心层采集，此处写入一条模拟数据并触发重渲染
+    win.localStorage.setItem("ExSave_CDNList", JSON.stringify({
+        rid: "9999",
+        list: [{ name: "线路7", cdn: "hw-h5" }],
+    }));
+    cdnSelect.dispatchEvent(new win.Event("mouseenter"));
+    cdnSelect.value = "hw-h5";
+    cdnSelect.dispatchEvent(new win.Event("change"));
+
+    const savedCdn = JSON.parse(win.localStorage.getItem("ExSave_CDN") || "null");
+    assert.ok(savedCdn, "选择线路后必须持久化到 ExSave_CDN");
+    assert.strictEqual(savedCdn.cdn, "hw-h5", "必须持久化所选线路标识");
+    assert.strictEqual(savedCdn.name, "线路7", "必须同时持久化线路展示名");
+
+    // 恢复自动：cdn 必须写为空串（核心层据此透明放行）
+    cdnSelect.value = "";
+    cdnSelect.dispatchEvent(new win.Event("change"));
+    const backToAuto = JSON.parse(win.localStorage.getItem("ExSave_CDN"));
+    assert.strictEqual(backToAuto.cdn, "", "恢复自动时必须写入空串，核心层据此放行平台选路");
+
+    // 核心层必须已注入产物（函数名会被压缩混淆，改用 sourceURL 与存储键这两个稳定标记断言）
+    assert.ok(code.includes("SelfSelectCDN.js"), "核心层 cdn.js 必须被注入到产物中（sourceURL 标记）");
+    assert.ok(code.includes("ExSave_CDNList"), "核心层必须包含线路清单采集逻辑");
+    console.log("✓ 测试场景 16 通过: 线路选择器就绪，选择与恢复自动均正确持久化，核心层已注入");
+
     // === 收尾断言: 全流程结束后仍必须零未捕获异常 ===
     assert.strictEqual(errors.length, 0, "全流程结束后不应该产生未捕获异常: " + JSON.stringify(errors));
 
