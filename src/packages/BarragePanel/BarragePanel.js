@@ -255,7 +255,8 @@ function setBarrgePanelFunc(parentDom, id) {
     document.getElementById("barragePanel__search").onclick = async () => {
         let uid = await getUserUid(id);
         if (uid !== "") {
-            openPage(`https://www.doseeing.com/data/fan/${uid}?type=chat&dt=0`, true);
+            // dt=0（“全部日期”模式）在数据源端已返回 502 Bad Gateway，必须传具体直播日
+            openPage(`https://www.doseeing.com/data/fan/${uid}?type=chat&dt=${getLocalDateStr()}`, true);
         }
     };
 }

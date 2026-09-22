@@ -3,7 +3,7 @@ let ExPanel_anchorNextSibling = null;
 
 function isAnyThirdLevelPanelOpen() {
   const panels = document.querySelectorAll(
-    ".sign-panel, .fans-continue-panel, .fans-panel, .extool, .livetool, .bloop, .exlottery, .popup-player-panel, .exupdate-panel"
+    ".sign-panel, .fans-continue-panel, .fans-panel, .extool, .livetool, .bloop, .exlottery, .popup-player-panel, .exupdate-panel, .danmaku-history-panel"
   );
   for (let i = 0; i < panels.length; i++) {
     const p = panels[i];
@@ -28,7 +28,7 @@ function initPkg_ExPanel() {
         e.stopPropagation();
         hideExPanel();
         var allPanels = document.querySelectorAll(
-          ".sign-panel, .fans-continue-panel, .fans-panel, .extool, .livetool, .bloop, .exlottery, .popup-player-panel, .exupdate-panel"
+          ".sign-panel, .fans-continue-panel, .fans-panel, .extool, .livetool, .bloop, .exlottery, .popup-player-panel, .exupdate-panel, .danmaku-history-panel"
         );
         allPanels.forEach((p) => {
           p.style.removeProperty("display");
@@ -319,7 +319,7 @@ function openMiuixPanelCentered(panel, btnEl) {
 
   // 互斥关闭所有其他三级面板
   var allPanels = document.querySelectorAll(
-    ".sign-panel, .fans-continue-panel, .fans-panel, .extool, .livetool, .bloop, .exlottery, .popup-player-panel, .exupdate-panel, .ChatToolBar-DanmakuTail-Panel"
+    ".sign-panel, .fans-continue-panel, .fans-panel, .extool, .livetool, .bloop, .exlottery, .popup-player-panel, .exupdate-panel, .ChatToolBar-DanmakuTail-Panel, .danmaku-history-panel"
   );
   allPanels.forEach((p) => {
     if (p !== panel) {

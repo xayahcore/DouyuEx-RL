@@ -257,6 +257,14 @@ function openPage(url, b=true) {
 	});
 }
 
+// 本机日期 YYYY-MM-DD。绝不能用 toISOString().slice(0,10)：那是 UTC 日期，
+// 在国内时区凌晨 8 点前会算成前一天，按"直播日"查询时会整体错位一天。
+function getLocalDateStr(date) {
+	let d = date ? new Date(date.getTime()) : new Date();
+	let pad = (v) => (v < 10 ? "0" + v : "" + v);
+	return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+}
+
 function closePage() {
 	if (navigator.userAgent.indexOf("Firefox") != -1 || navigator.userAgent.indexOf("Chrome") != -1) {
 		window.location.href = "about:blank";

@@ -2000,3 +2000,172 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
     font-weight: 600 !important;
     color: var(--miuix-blue) !important;
 }
+
+/* ==========================================================================
+   19. 历史弹幕弹窗（用户卡片入口）
+   .miuix-modal__body 是 10 个面板共用的滚动容器，直接改会波及全部；此处只在
+   自己的面板上做作用域覆盖，把 body 变成三段式：工具栏与状态行固定、仅中间列表滚动。
+   面板同时挂着 .miuix-modal 类，因此尺寸与打开态自动继承第 2 节铁壁组，无需重复声明。
+   ========================================================================== */
+.danmaku-history-panel.miuix-modal > .miuix-modal__body {
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+}
+
+/* 顶部：日期切换 + 已加载条数 */
+.danmaku-history-panel__toolbar {
+    flex: 0 0 auto !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    padding: 8px 12px !important;
+    box-sizing: border-box !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
+}
+
+.danmaku-history-panel__date-btn {
+    width: 24px !important;
+    min-width: 24px !important;
+    height: 24px !important;
+    padding: 0 !important;
+    border-radius: 8px !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    background: rgba(255, 255, 255, 0.7) !important;
+    color: #0f172a !important;
+    font-size: 14px !important;
+    line-height: 1 !important;
+    cursor: pointer !important;
+    outline: none !important;
+    transition: all 0.18s ease !important;
+}
+
+.danmaku-history-panel__date-btn:hover:not(.is-disabled) {
+    background: rgba(0, 102, 255, 0.12) !important;
+    border-color: rgba(0, 102, 255, 0.3) !important;
+    color: var(--miuix-blue) !important;
+}
+
+.danmaku-history-panel__date-btn.is-disabled {
+    opacity: 0.35 !important;
+    cursor: default !important;
+}
+
+.danmaku-history-panel__date {
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    color: #0f172a !important;
+    font-variant-numeric: tabular-nums !important;
+}
+
+.danmaku-history-panel__count {
+    margin-left: auto !important;
+    font-size: 10.5px !important;
+    color: #64748b !important;
+}
+
+/* 中间：唯一滚动区（仅此处滚动，工具栏与状态行常驻可见） */
+.danmaku-history-panel__list {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    padding: 8px 12px !important;
+    box-sizing: border-box !important;
+}
+
+.danmaku-history-panel__list::-webkit-scrollbar {
+    width: 4px !important;
+}
+
+.danmaku-history-panel__list::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.18) !important;
+    border-radius: 4px !important;
+}
+
+.danmaku-history-panel__list::-webkit-scrollbar-track {
+    background: transparent !important;
+}
+
+/* 行：基底复用 .sign-option-item，这里只收紧内边距并补上单行省略 */
+.danmaku-history-panel__row {
+    padding: 5px 8px !important;
+}
+
+.danmaku-history-panel__row .sign-option-title {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+.danmaku-history-panel__badge {
+    flex: 0 0 auto !important;
+    width: 22px !important;
+    height: 22px !important;
+    border-radius: 6px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    overflow: hidden !important;
+}
+
+.danmaku-history-panel__badge.is-chat {
+    background: rgba(0, 102, 255, 0.12) !important;
+    color: var(--miuix-blue) !important;
+}
+
+.danmaku-history-panel__badge.is-gift {
+    background: rgba(255, 149, 0, 0.14) !important;
+    color: #b26a00 !important;
+}
+
+.danmaku-history-panel__gift-img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain !important;
+    display: block !important;
+}
+
+.danmaku-history-panel__room {
+    flex: 0 0 auto !important;
+    padding: 2px 6px !important;
+}
+
+/* 底部：状态行（加载中 / 未登录可跳转 / 失败可重试 / 没有更多了） */
+.danmaku-history-panel__status {
+    flex: 0 0 auto !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    min-height: 26px !important;
+    padding: 4px 12px 8px 12px !important;
+    box-sizing: border-box !important;
+}
+
+.danmaku-history-panel__status-text {
+    font-size: 10.5px !important;
+    color: #64748b !important;
+    line-height: 1.3 !important;
+}
+
+.danmaku-history-panel__status-text.is-error {
+    color: #d60909 !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+}
+
+.danmaku-history-panel__status-text.is-error:hover {
+    text-decoration: underline !important;
+}
+
+.danmaku-history-panel__more {
+    margin-left: auto !important;
+    display: none !important;
+}
+
+.danmaku-history-panel__more.is-visible {
+    display: inline-block !important;
+}

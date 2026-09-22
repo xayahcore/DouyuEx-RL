@@ -8,6 +8,22 @@ try {
     JSDOM = require("D:/harness/_cdp/node_modules/jsdom").JSDOM;
 }
 
+// 从源码读取 @version 作为期望值：既避免每次发版都要手改这里的版本字面量，
+// 也让断言真正校验「产物版本 == 源码版本」，而不是校验一个被同步改过的常量。
+const SRC_VERSION = (fs.readFileSync(path.join(__dirname, "../src/main.js"), "utf8")
+    .match(/\/\/\s*@version\s+([^\r\n]+)/) || [])[1];
+if (!SRC_VERSION) throw new Error("无法从 src/main.js 解析 @version");
+
+// 生成"下一个版本号"（仅递增末段），供版本比对场景推导期望值。
+// 否则这些场景会把某个历史版本字面量写死，一旦发版超过它就莫名失败。
+function bumpVersion(v) {
+    const parts = v.split(".");
+    const last = parts[parts.length - 1];
+    const next = String(Number(last) + 1);
+    parts[parts.length - 1] = next.length < last.length ? next.padStart(last.length, "0") : next;
+    return parts.join(".");
+}
+
 async function testBuiltBundle() {
     console.log("=== 正在对编译生成的 douyuex.user.js 开展端到端集成测试 ===");
 
@@ -302,7 +318,7 @@ async function testBuiltBundle() {
 
     // === 测试 9: 版本更新三级面板三大板块与条目格式 ===
     console.log("--> 测试场景 9: 验证版本更新三级控制台三大板块与条目格式...");
-    assert.strictEqual(win.curVersion, "2026.09.22.04", "全局版本号必须为 2026.09.22.04");
+    assert.strictEqual(win.curVersion, SRC_VERSION, `全局版本号必须与源码 @version 一致 (${SRC_VERSION})`);
     win.createExUpdatePanel();
     const updateModal = win.document.querySelector(".exupdate-panel");
     assert.ok(updateModal, ".exupdate-panel 必须被创建");
@@ -328,7 +344,7 @@ async function testBuiltBundle() {
         const name = card.querySelector(".exupdate-panel__card-title").textContent.trim();
         assert.ok(n > 0, `板块【${name}】不得为空`);
     });
-    console.log(`✓ 测试场景 9 通过: 版本号 2026.09.22.04、三大板块 新增功能/改进与修复/其它 与 ${logItems.length} 条 "• 【分类】" 格式日志校验通过`);
+    console.log(`✓ 测试场景 9 通过: 版本号 ${SRC_VERSION}、三大板块 新增功能/改进与修复/其它 与 ${logItems.length} 条 "• 【分类】" 格式日志校验通过`);
 
     // === 测试 10: 检查更新按钮状态机流转与多源容灾 ===
     console.log("--> 测试场景 10: 验证检查更新按钮状态流转 (ack -> check -> checking -> latest/upgrade/error)...");
@@ -341,10 +357,10 @@ async function testBuiltBundle() {
     assert.strictEqual(updateBtn.dataset.state, "check", "确认后状态必须流转为 check");
     assert.strictEqual(updateBtn.textContent, "检查更新");
 
-    // 2. 模拟点击“检查更新”，此时远程返回与当前相同版本 (2026.09.22.04)
+    // 2. 模拟点击“检查更新”，此时远程返回与当前相同版本
     win.GM_xmlhttpRequest = (opts) => {
         setTimeout(() => {
-            opts.onload({ status: 200, responseText: JSON.stringify({ version: "2026.09.22.04" }) });
+            opts.onload({ status: 200, responseText: JSON.stringify({ version: SRC_VERSION }) });
         }, 10);
     };
     updateBtn.click();
@@ -385,11 +401,11 @@ async function testBuiltBundle() {
         setTimeout(() => {
             let v;
             if (opts.url.includes("update.greasyfork.org")) {
-                v = "2026.09.22.04"; // 权威源返回陈旧版本（模拟 CDN 缓存未刷新）
+                v = SRC_VERSION; // 权威源返回陈旧版本（模拟 CDN 缓存未刷新）
             } else if (opts.url.includes("raw.githubusercontent.com")) {
-                v = "2026.09.24.01"; // 备选源返回真实最新版本
+                v = bumpVersion(SRC_VERSION); // 备选源返回真实最新版本
             } else {
-                v = "2026.09.22.04"; // jsDelivr 同样陈旧
+                v = SRC_VERSION; // jsDelivr 同样陈旧
             }
             const body = opts.url.includes(".meta.js")
                 ? "// ==UserScript==\n// @version      " + v + "\n// ==/UserScript=="
@@ -415,22 +431,23 @@ async function testBuiltBundle() {
         "权威源返回陈旧版本、备选源返回新版本时，必须识别出更新，不得漏检"
     );
     assert.ok(
-        updateBtn.textContent.includes("2026.09.24.01"),
+        updateBtn.textContent.includes(bumpVersion(SRC_VERSION)),
         `必须采用各源中的最大版本号，实际按钮文本: ${updateBtn.textContent}`
     );
     console.log(`✓ 测试场景 10.1 通过: 并发探测 ${versionRequests.length} 个源并取最大值，权威源陈旧不漏检`);
 
     // === 测试 10.2: meta.js 与 package.json 两种载荷均须正确解析 ===
     console.log("--> 测试场景 10.2: 验证 meta.js 与 package.json 双格式版本解析...");
+    const dualPayloadVersion = bumpVersion(SRC_VERSION);
     win.GM_xmlhttpRequest = (opts) => {
         setTimeout(() => {
             if (opts.url.includes(".meta.js")) {
                 opts.onload({
                     status: 200,
-                    responseText: "// ==UserScript==\n// @name  x\n// @version      2026.10.01.01\n// ==/UserScript==",
+                    responseText: "// ==UserScript==\n// @name  x\n// @version      " + dualPayloadVersion + "\n// ==/UserScript==",
                 });
             } else if (opts.url.includes("package.json")) {
-                opts.onload({ status: 200, responseText: JSON.stringify({ name: "x", version: "2026.10.01.01" }) });
+                opts.onload({ status: 200, responseText: JSON.stringify({ name: "x", version: dualPayloadVersion }) });
             } else {
                 opts.onload({ status: 200, responseText: "<!DOCTYPE html><html>Just a moment...</html>" });
             }
@@ -440,7 +457,7 @@ async function testBuiltBundle() {
     updateBtn.click();
     await new Promise(r => setTimeout(r, 80));
     assert.strictEqual(updateBtn.dataset.state, "upgrade", "两种载荷格式都必须被正确解析");
-    assert.ok(updateBtn.textContent.includes("2026.10.01.01"), "必须解析出 meta.js 中的 @version");
+    assert.ok(updateBtn.textContent.includes(dualPayloadVersion), "必须解析出 meta.js 中的 @version");
     console.log("✓ 测试场景 10.2 通过: meta.js 的 @version 与 package.json 的 version 均能正确解析，HTML 垃圾载荷被拒绝");
 
     // === 测试 11: 三大面板操作区宽度一致性（统一 UI 引擎单一归属）===
