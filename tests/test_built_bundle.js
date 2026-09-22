@@ -289,8 +289,8 @@ async function testBuiltBundle() {
     const titles = Array.from(cards).map(c => c.querySelector(".exupdate-panel__card-title")?.textContent.trim());
     assert.deepStrictEqual(
         titles,
-        ["新增功能·", "改进与修复·", "其它·"],
-        "三大板块标题必须严格为 新增功能· / 改进与修复· / 其它·，且顺序固定"
+        ["新增功能", "改进与修复", "其它"],
+        "三大板块标题必须严格为 新增功能 / 改进与修复 / 其它（不带尾部点缀符），且顺序固定"
     );
 
     // 每个条目必须严格为 "• 【分类】说明" 格式，且三大板块均不得为空
@@ -306,7 +306,7 @@ async function testBuiltBundle() {
         const name = card.querySelector(".exupdate-panel__card-title").textContent.trim();
         assert.ok(n > 0, `板块【${name}】不得为空`);
     });
-    console.log(`✓ 测试场景 9 通过: 版本号 2026.09.22.01、三大板块 新增功能·/改进与修复·/其它· 与 ${logItems.length} 条 "• 【分类】" 格式日志校验通过`);
+    console.log(`✓ 测试场景 9 通过: 版本号 2026.09.22.01、三大板块 新增功能/改进与修复/其它 与 ${logItems.length} 条 "• 【分类】" 格式日志校验通过`);
 
     // === 测试 10: 检查更新按钮状态机流转与多源容灾 ===
     console.log("--> 测试场景 10: 验证检查更新按钮状态流转 (ack -> check -> checking -> latest/upgrade/error)...");

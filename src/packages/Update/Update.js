@@ -175,7 +175,7 @@ function buildExUpdateCardsHtml() {
     return (
       '<div class="exupdate-panel__card">' +
         '<div class="exupdate-panel__card-header">' +
-          '<span class="exupdate-panel__card-title">' + escapeUpdateLogText(name) + '·</span>' +
+          '<span class="exupdate-panel__card-title">' + escapeUpdateLogText(name) + '</span>' +
         '</div>' +
         '<ul class="exupdate-list">' + lis + '</ul>' +
       '</div>'
