@@ -278,17 +278,35 @@ async function testBuiltBundle() {
     assert.strictEqual(savedSendGift.count, "66", "打榜礼物送出数量必须正确记忆");
     console.log("✓ 测试场景 8 通过: 选择道具与礼物本地记忆读写正常");
 
-    // === 测试 9: 版本更新三级面板分类与【其它】板块恢复 ===
-    console.log("--> 测试场景 9: 验证版本更新三级控制台与【其它】板块...");
+    // === 测试 9: 版本更新三级面板三大板块与条目格式 ===
+    console.log("--> 测试场景 9: 验证版本更新三级控制台三大板块与条目格式...");
     assert.strictEqual(win.curVersion, "2026.09.22.01", "全局版本号必须为 2026.09.22.01");
     win.createExUpdatePanel();
     const updateModal = win.document.querySelector(".exupdate-panel");
     assert.ok(updateModal, ".exupdate-panel 必须被创建");
     const cards = updateModal.querySelectorAll(".exupdate-panel__card");
-    assert.strictEqual(cards.length, 3, "版本更新面板必须包含 3 个标准分类卡片 (功能升级/交互与体验/其它)");
+    assert.strictEqual(cards.length, 3, "版本更新面板必须包含 3 个标准分类卡片");
     const titles = Array.from(cards).map(c => c.querySelector(".exupdate-panel__card-title")?.textContent.trim());
-    assert.ok(titles.includes("其它·"), "版本更新面板必须恢复【其它·】板块");
-    console.log("✓ 测试场景 9 通过: 版本号 2026.09.22.01、三级菜单分类日志与【其它】板块恢复验证通过");
+    assert.deepStrictEqual(
+        titles,
+        ["新增功能·", "改进与修复·", "其它·"],
+        "三大板块标题必须严格为 新增功能· / 改进与修复· / 其它·，且顺序固定"
+    );
+
+    // 每个条目必须严格为 "• 【分类】说明" 格式，且三大板块均不得为空
+    const logItems = Array.from(updateModal.querySelectorAll(".exupdate-list li"));
+    assert.ok(logItems.length >= 3, "更新日志条目总数不得少于 3 条");
+    logItems.forEach((li, i) => {
+        const text = li.textContent;
+        assert.ok(text.startsWith("• 【"), `第 ${i + 1} 条必须以 "• 【" 开头，实际: ${text.slice(0, 24)}`);
+        assert.ok(/^• 【[^】]+】.+/.test(text), `第 ${i + 1} 条格式不合规: ${text.slice(0, 40)}`);
+    });
+    cards.forEach((card) => {
+        const n = card.querySelectorAll(".exupdate-list li").length;
+        const name = card.querySelector(".exupdate-panel__card-title").textContent.trim();
+        assert.ok(n > 0, `板块【${name}】不得为空`);
+    });
+    console.log(`✓ 测试场景 9 通过: 版本号 2026.09.22.01、三大板块 新增功能·/改进与修复·/其它· 与 ${logItems.length} 条 "• 【分类】" 格式日志校验通过`);
 
     // === 测试 10: 检查更新按钮状态机流转与多源容灾 ===
     console.log("--> 测试场景 10: 验证检查更新按钮状态流转 (ack -> check -> checking -> latest/upgrade/error)...");

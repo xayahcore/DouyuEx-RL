@@ -51,6 +51,74 @@ function generateVersion() {
   return version;
 }
 
+/**
+ * 版本更新日志数据源强校验门禁。
+ * 约束：当前 @version 必须在 UpdateLog.js 中存在条目，且三大板块齐备、非空、条目格式合规。
+ * 任一不满足直接中断构建，从机制上杜绝"发版漏写更新日志"与"格式跑偏"。
+ */
+function verifyUpdateLog(version) {
+  const logPath = "./src/packages/Update/UpdateLog.js";
+  if (!fs.existsSync(logPath)) {
+    console.error("[Verify] 版本更新日志数据源缺失:", logPath);
+    process.exit(1);
+  }
+
+  const src = fs.readFileSync(logPath, "utf8");
+  const sandbox = {};
+  let data;
+  try {
+    vm.createContext(sandbox);
+    vm.runInContext(
+      src + "\n;globalThis.__EXLOG__ = { log: EX_UPDATE_LOG, sections: EX_UPDATE_LOG_SECTIONS };",
+      sandbox
+    );
+    data = sandbox.__EXLOG__;
+  } catch (err) {
+    console.error("[Verify] 版本更新日志数据源解析失败:", err.message);
+    process.exit(1);
+  }
+
+  const sections = data.sections;
+  const log = data.log;
+  if (!Array.isArray(sections) || sections.length === 0 || !log || typeof log !== "object") {
+    console.error("[Verify] 版本更新日志数据源结构非法（缺少 EX_UPDATE_LOG / EX_UPDATE_LOG_SECTIONS）");
+    process.exit(1);
+  }
+
+  const entry = log[version];
+  if (!entry) {
+    console.error(`[Verify] 版本更新日志缺少当前版本 ${version} 的条目，请先在 UpdateLog.js 中补充`);
+    process.exit(1);
+  }
+
+  const unknown = Object.keys(entry).filter((k) => sections.indexOf(k) === -1);
+  if (unknown.length > 0) {
+    console.error(`[Verify] 版本 ${version} 存在未声明的板块: ${unknown.join("、")}`);
+    process.exit(1);
+  }
+
+  let total = 0;
+  sections.forEach((name) => {
+    const items = entry[name];
+    if (!Array.isArray(items) || items.length === 0) {
+      console.error(`[Verify] 版本 ${version} 的板块【${name}】缺失或为空，不允许留空占位`);
+      process.exit(1);
+    }
+    items.forEach((item, idx) => {
+      const text = typeof item === "string" ? item.trim() : "";
+      if (!/^【[^】]+】.+/.test(text)) {
+        console.error(
+          `[Verify] 版本 ${version} 板块【${name}】第 ${idx + 1} 条格式不合规（必须以 【分类】 开头且有说明文字）: ${JSON.stringify(item)}`
+        );
+        process.exit(1);
+      }
+    });
+    total += items.length;
+  });
+
+  console.log(`[Verify] 版本更新日志校验通过 (版本 ${version}，${sections.length} 大板块，共 ${total} 条)`);
+}
+
 function treeShakeOnce(code) {
   return uglifyjs.minify(code, {
     toplevel: true,
@@ -130,6 +198,9 @@ function build() {
   handleCoreFolder();
   handleFolder("./src", "main.js");
   css = css.replace(/\r\n/g, "");
+
+  // 版本更新日志数据源强校验（早于语法核验，缺失即中断）
+  verifyUpdateLog(version);
 
   let template = fs.readFileSync("./src/main.js", "utf8");
   template = template

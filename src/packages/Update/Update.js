@@ -128,6 +128,61 @@ function fetchLatestVersion(callback) {
   trySource(0);
 }
 
+/* ==================== 版本更新日志渲染层（数据源：UpdateLog.js） ==================== */
+
+// 取指定版本的更新日志；缺失时回退到最新一条，保证面板永不空白
+function getExUpdateLogFor(version) {
+  var log = (typeof EX_UPDATE_LOG !== "undefined" && EX_UPDATE_LOG) ? EX_UPDATE_LOG : null;
+  if (!log) return null;
+  if (log[version]) return log[version];
+
+  var keys = Object.keys(log);
+  if (keys.length === 0) return null;
+  keys.sort(function (a, b) {
+    var pa = String(a).split(".").map(Number);
+    var pb = String(b).split(".").map(Number);
+    for (var i = 0; i < Math.max(pa.length, pb.length); i++) {
+      var x = pa[i] || 0;
+      var y = pb[i] || 0;
+      if (x !== y) return x - y;
+    }
+    return 0;
+  });
+  return log[keys[keys.length - 1]];
+}
+
+function getExUpdateLogSections() {
+  return (typeof EX_UPDATE_LOG_SECTIONS !== "undefined" && Array.isArray(EX_UPDATE_LOG_SECTIONS))
+    ? EX_UPDATE_LOG_SECTIONS
+    : ["新增功能", "改进与修复", "其它"];
+}
+
+function escapeUpdateLogText(str) {
+  return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+// 依据数据源渲染三大板块卡片，条目统一为 "• 【分类】说明" 格式
+function buildExUpdateCardsHtml() {
+  var entry = getExUpdateLogFor(curVersion);
+  var sections = getExUpdateLogSections();
+  if (!entry) return "";
+
+  return sections.map(function (name) {
+    var items = Array.isArray(entry[name]) ? entry[name] : [];
+    var lis = items.map(function (text) {
+      return "<li>• " + escapeUpdateLogText(text) + "</li>";
+    }).join("");
+    return (
+      '<div class="exupdate-panel__card">' +
+        '<div class="exupdate-panel__card-header">' +
+          '<span class="exupdate-panel__card-title">' + escapeUpdateLogText(name) + '·</span>' +
+        '</div>' +
+        '<ul class="exupdate-list">' + lis + '</ul>' +
+      '</div>'
+    );
+  }).join("");
+}
+
 function createExUpdatePanel() {
   var existing = document.querySelector(".exupdate-panel");
   if (existing) {
@@ -140,44 +195,7 @@ function createExUpdatePanel() {
   p.dataset.version = curVersion;
   p.innerHTML = `
     <div class="miuix-modal__body">
-      <!-- 卡片 1: 功能升级 -->
-      <div class="exupdate-panel__card">
-        <div class="exupdate-panel__card-header">
-          <span class="exupdate-panel__card-title">功能升级·</span>
-        </div>
-        <ul class="exupdate-list">
-          <li>• <b>【扩展功能】</b>送礼交互升级：彻底淘汰手动 ID 输入框，合二为一升级为可点击礼物徽章，接入 5 级大模态双流礼物池即点即选，全面恢复参数与道具本地记忆。</li>
-          <li>• <b>【一键签到】</b>签到控制台落地：380×370px 独立视窗，自由勾选 5 大日常任务并持久化记忆，集成星推 39+ 金币打满与安全取关闭环。</li>
-          <li>• <b>【直播间工具】</b>五大功能抽屉重塑：进场/禁言/谢礼/回复/投票全面升维为轻薄磨砂折叠卡片，开关统一为右对齐澎湃蓝弹簧 Switch。</li>
-          <li>• <b>【弹幕助手】</b>三大卡片规范化：预设词库、发送参数、发送策略全量换装，挂钩 WebSocket 广播实现 SSOT 发送回执与敏捷屏蔽词判定。</li>
-          <li>• <b>【弹幕小尾巴】</b>精准视口锚定：修复错位至左下角缺陷，严格贴合在聊天栏【尾】按钮正上方，增设右上角关闭按钮与失焦收起。</li>
-        </ul>
-      </div>
-
-      <!-- 卡片 2: 交互与体验 -->
-      <div class="exupdate-panel__card">
-        <div class="exupdate-panel__card-header">
-          <span class="exupdate-panel__card-title">交互与体验·</span>
-        </div>
-        <ul class="exupdate-list">
-          <li>• <b>【三级菜单悬停即开】</b>鼠标滑过 Dock 图标三级菜单立即展开，移开鼠标绝不自动关闭，支持从容交互。</li>
-          <li>• <b>【二级 Dock 联动收拢】</b>未展开三级菜单时鼠标移出 Dock 自动收拢；已展开三级菜单时 Dock 保持坚挺打开。</li>
-          <li>• <b>【全链路过渡动效】</b>接入 0.28s 弹性上浮与 0.16s 退出动画，彻底清除历史遗留的 18px 隐形热区连桥干扰。</li>
-        </ul>
-      </div>
-
-      <!-- 卡片 3: 其它 -->
-      <div class="exupdate-panel__card">
-        <div class="exupdate-panel__card-header">
-          <span class="exupdate-panel__card-title">其它·</span>
-        </div>
-        <ul class="exupdate-list">
-          <li>• <b>【核心画质拦截】</b>12s 起播保护窗口与最高原画拦截层 100% 稳定运行，开播无缝极速秒开。</li>
-          <li>• <b>【通用弹窗修复】</b>根治 PostbirdAlertBox 双层嵌套 Bug，导入黑名单/欢迎词弹框居中通透展示，无遮罩卡死。</li>
-          <li>• <b>【统一 UI 引擎】</b>所有弹层、选择器与开关样式 100% 收拢至 ExPanel.css 单一真实信源，通过 3 阶段原生 V8 语法编译与全量 E2E 自动化测试。</li>
-        </ul>
-      </div>
-
+      ${buildExUpdateCardsHtml()}
       <div class="exupdate-panel__action-wrap">
         <button type="button" class="ex-btn-primary exupdate-panel__submit-btn" id="exupdate-action-btn">我已收到</button>
       </div>
