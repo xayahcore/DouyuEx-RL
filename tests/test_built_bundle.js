@@ -123,6 +123,41 @@ async function testBuiltBundle() {
     assert.strictEqual(tipEl.title, "该条弹幕发送失败/可能被系统屏蔽，不会被其他人看到（可能会误判）");
     console.log("✓ 测试场景 2 通过: 屏蔽弹幕准确识别并渲染删除线与(可能发送失败)提示");
 
+    // === 测试 2.1: 斗鱼重渲染产生同文本双节点，两个都不得误判 ===
+    console.log("--> 测试场景 2.1: 验证重渲染同文本双节点不产生误判...");
+    const liDup1 = win.document.createElement("li");
+    liDup1.className = "Barrage-listItem";
+    liDup1.innerHTML = `<span class="Barrage-nickName is-self">测试大神</span><span class="Barrage-content">重渲染双节点弹幕</span>`;
+    list.appendChild(liDup1);
+    await new Promise(r => setTimeout(r, 60));
+    const liDup2 = win.document.createElement("li");
+    liDup2.className = "Barrage-listItem";
+    liDup2.innerHTML = `<span class="Barrage-nickName is-self">测试大神</span><span class="Barrage-content">重渲染双节点弹幕</span>`;
+    list.appendChild(liDup2);
+
+    // 服务端仅广播一次回执
+    await new Promise(r => setTimeout(r, 60));
+    win.__onDouyuExChatmsg("type@=chatmsg/rid@=9999/uid@=888888/nn@=测试大神/txt@=重渲染双节点弹幕/cid@=dup1/");
+
+    await new Promise(r => setTimeout(r, 950));
+    assert.strictEqual(liDup1.querySelector(".Barrage-content").style.textDecoration, "", "重渲染第 1 个节点不得被误判");
+    assert.strictEqual(liDup2.querySelector(".Barrage-content").style.textDecoration, "", "重渲染第 2 个节点不得被误判");
+    assert.strictEqual(liDup2.querySelector(".ex-danmaku-blocked-tip"), null, "重渲染第 2 个节点不得带失败提示");
+    console.log("✓ 测试场景 2.1 通过: 重渲染同文本双节点均不误判（旧版队列算法在此必然误报）");
+
+    // === 测试 2.2: @S / @A 转义文本必须反转义后再比对 ===
+    console.log("--> 测试场景 2.2: 验证 @S/@A 转义文本不产生误判...");
+    const liEsc = win.document.createElement("li");
+    liEsc.className = "Barrage-listItem";
+    liEsc.innerHTML = `<span class="Barrage-nickName is-self">测试大神</span><span class="Barrage-content">1/2 走起</span>`;
+    list.appendChild(liEsc);
+    await new Promise(r => setTimeout(r, 60));
+    // 协议中 "/" 被转义为 "@S"
+    win.__onDouyuExChatmsg("type@=chatmsg/rid@=9999/uid@=888888/nn@=测试大神/txt@=1@S2 走起/cid@=esc1/");
+    await new Promise(r => setTimeout(r, 950));
+    assert.strictEqual(liEsc.querySelector(".Barrage-content").style.textDecoration, "", "含 / 的弹幕经 @S 反转义后不得被误判");
+    console.log("✓ 测试场景 2.2 通过: @S/@A 转义文本反转义正确，不产生误判");
+
     // === 测试 3: PostbirdAlertBox 通用弹框渲染与交互 ===
     console.log("--> 测试场景 3: 验证 PostbirdAlertBox 通用弹窗...");
     assert.ok(win.PostbirdAlertBox, "PostbirdAlertBox 必须挂载在全局");
@@ -301,6 +336,9 @@ async function testBuiltBundle() {
     assert.strictEqual(updateBtn.dataset.state, "error", "网络完全异常时状态必须流转为 error，禁止误报已是最新");
     assert.ok(updateBtn.textContent.includes("检查失败"), "必须明确告知用户检查失败");
     console.log("✓ 测试场景 10 通过: 检查更新按钮多态流转与容灾状态判定 100% 正确");
+
+    // === 收尾断言: 全流程结束后仍必须零未捕获异常 ===
+    assert.strictEqual(errors.length, 0, "全流程结束后不应该产生未捕获异常: " + JSON.stringify(errors));
 
     console.log("=== 端到端集成测试全流程 100% 通过 ===");
     process.exit(0);

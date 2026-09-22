@@ -5,6 +5,7 @@ function initPkg_LiveTool_BarrageSpeed() {
         let barrageSpeed = Number((barrageSpeed_count / 5) * 60).toFixed(0);
         barrageSpeed_count = 0;
         const dom = document.getElementsByClassName("ChatSend-txt")[0];
+        if (!dom) return; // 聊天输入框尚未渲染时跳过，避免空引用异常
         const text = `弹幕时速：${barrageSpeed }条/分`;
         dom.placeholder = text + " 按↑↓查看历史弹幕 视频ctrl+滚轮缩放";
         dom.setAttribute("data-placeholder", text);
