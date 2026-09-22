@@ -302,7 +302,7 @@ async function testBuiltBundle() {
 
     // === 测试 9: 版本更新三级面板三大板块与条目格式 ===
     console.log("--> 测试场景 9: 验证版本更新三级控制台三大板块与条目格式...");
-    assert.strictEqual(win.curVersion, "2026.09.22.03", "全局版本号必须为 2026.09.22.03");
+    assert.strictEqual(win.curVersion, "2026.09.22.04", "全局版本号必须为 2026.09.22.04");
     win.createExUpdatePanel();
     const updateModal = win.document.querySelector(".exupdate-panel");
     assert.ok(updateModal, ".exupdate-panel 必须被创建");
@@ -328,7 +328,7 @@ async function testBuiltBundle() {
         const name = card.querySelector(".exupdate-panel__card-title").textContent.trim();
         assert.ok(n > 0, `板块【${name}】不得为空`);
     });
-    console.log(`✓ 测试场景 9 通过: 版本号 2026.09.22.03、三大板块 新增功能/改进与修复/其它 与 ${logItems.length} 条 "• 【分类】" 格式日志校验通过`);
+    console.log(`✓ 测试场景 9 通过: 版本号 2026.09.22.04、三大板块 新增功能/改进与修复/其它 与 ${logItems.length} 条 "• 【分类】" 格式日志校验通过`);
 
     // === 测试 10: 检查更新按钮状态机流转与多源容灾 ===
     console.log("--> 测试场景 10: 验证检查更新按钮状态流转 (ack -> check -> checking -> latest/upgrade/error)...");
@@ -341,10 +341,10 @@ async function testBuiltBundle() {
     assert.strictEqual(updateBtn.dataset.state, "check", "确认后状态必须流转为 check");
     assert.strictEqual(updateBtn.textContent, "检查更新");
 
-    // 2. 模拟点击“检查更新”，此时远程返回与当前相同版本 (2026.09.22.03)
+    // 2. 模拟点击“检查更新”，此时远程返回与当前相同版本 (2026.09.22.04)
     win.GM_xmlhttpRequest = (opts) => {
         setTimeout(() => {
-            opts.onload({ status: 200, responseText: JSON.stringify({ version: "2026.09.22.03" }) });
+            opts.onload({ status: 200, responseText: JSON.stringify({ version: "2026.09.22.04" }) });
         }, 10);
     };
     updateBtn.click();
@@ -385,11 +385,11 @@ async function testBuiltBundle() {
         setTimeout(() => {
             let v;
             if (opts.url.includes("update.greasyfork.org")) {
-                v = "2026.09.22.03"; // 权威源返回陈旧版本（模拟 CDN 缓存未刷新）
+                v = "2026.09.22.04"; // 权威源返回陈旧版本（模拟 CDN 缓存未刷新）
             } else if (opts.url.includes("raw.githubusercontent.com")) {
                 v = "2026.09.24.01"; // 备选源返回真实最新版本
             } else {
-                v = "2026.09.22.03"; // jsDelivr 同样陈旧
+                v = "2026.09.22.04"; // jsDelivr 同样陈旧
             }
             const body = opts.url.includes(".meta.js")
                 ? "// ==UserScript==\n// @version      " + v + "\n// ==/UserScript=="
