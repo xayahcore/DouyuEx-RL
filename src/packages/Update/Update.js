@@ -1,4 +1,4 @@
-var curVersion = (typeof GM_info !== "undefined" && GM_info.script && GM_info.script.version) ? GM_info.script.version : "2026.09.22.02";
+var curVersion = (typeof GM_info !== "undefined" && GM_info.script && GM_info.script.version) ? GM_info.script.version : "2026.09.22.03";
 var isNeedUpdate = false;
 var lastestVersion = "";
 
@@ -69,63 +69,113 @@ function initPkg_Update_Func() {
   }
 }
 
-function fetchLatestVersion(callback) {
-  const sources = [
-    "https://cdn.jsdelivr.net/gh/xayahcore/DouyuEx-RL@main/package.json",
-    "https://fastly.jsdelivr.net/gh/xayahcore/DouyuEx-RL@main/package.json",
-    "https://raw.githubusercontent.com/xayahcore/DouyuEx-RL/main/package.json",
-    "https://greasyfork.org/scripts/595575.json"
-  ];
+/* ==================== 版本探测引擎 ==================== */
+/*
+ * 设计要点（修正历史漏检缺陷）：
+ *   1. 判据源首选 GreasyFork 官方更新分发端点 meta.js —— 它是用户实际安装渠道的权威版本，
+ *      体积仅约 2.4KB、响应头 access-control-allow-origin: * 且无 CDN 缓存。
+ *   2. 并发探测全部源，取版本号「最大值」而非「第一个成功值」。
+ *      历史缺陷：jsDelivr 分支引用有 12 小时 CDN 硬缓存(s-maxage=43200)，一旦返回陈旧版本号
+ *      就被当作成功结果立即返回、不再回退，导致新版本已发布却提示“已是最新”。
+ *   3. 不再附加 _t 时间戳参数 —— 它只影响浏览器缓存，对 CDN 服务端缓存完全无效，
+ *      徒增“已防缓存”的错觉。
+ */
 
-  function trySource(index) {
-    if (index >= sources.length) {
-      return callback(null);
-    }
-    const url = sources[index] + (sources[index].includes("?") ? "&" : "?") + "_t=" + Date.now();
+const UPDATE_VERSION_SOURCES = [
+  // 权威源：GreasyFork 官方更新分发端点（Tampermonkey 自身检查更新所用）
+  "https://update.greasyfork.org/scripts/595575.meta.js",
+  // 备选源：GitHub Raw（约 5 分钟缓存）
+  "https://raw.githubusercontent.com/xayahcore/DouyuEx-RL/main/package.json",
+  // 备选源：jsDelivr 双节点（分支引用约 12 小时缓存，仅作兜底）
+  "https://fastly.jsdelivr.net/gh/xayahcore/DouyuEx-RL@main/package.json",
+  "https://cdn.jsdelivr.net/gh/xayahcore/DouyuEx-RL@main/package.json"
+];
 
-    function handleResponse(content) {
-      if (!content) return trySource(index + 1);
-      try {
-        const json = typeof content === "string" ? JSON.parse(content) : content;
-        const ver = json && json.version;
-        if (ver && /^\d{4}\.\d{2}\.\d{2}\.\d{2}$/.test(String(ver).trim())) {
-          return callback(String(ver).trim());
-        }
-      } catch (e) {}
-      trySource(index + 1);
-    }
+const UPDATE_VERSION_TIMEOUT = 4000;
+const UPDATE_VERSION_TOTAL_TIMEOUT = 6000;
 
-    if (typeof GM_xmlhttpRequest === "function") {
-      GM_xmlhttpRequest({
-        method: "GET",
-        url: url,
-        timeout: 6000,
-        onload: function (res) {
-          if (res.status === 200 && (res.response || res.responseText)) {
-            handleResponse(res.response || res.responseText);
-          } else {
-            trySource(index + 1);
-          }
-        },
-        onerror: function () {
-          trySource(index + 1);
-        },
-        ontimeout: function () {
-          trySource(index + 1);
-        }
-      });
-    } else {
-      fetch(url, { cache: "no-store" })
-        .then((res) => {
-          if (res.ok) return res.json();
-          throw new Error("HTTP " + res.status);
-        })
-        .then((json) => handleResponse(json))
-        .catch(() => trySource(index + 1));
-    }
+function isVersionLike(v) {
+  return /^\d{4}\.\d{2}\.\d{2}\.\d{2}$/.test(String(v == null ? "" : v).trim());
+}
+
+// 兼容两种载荷：package.json 的 "version" 字段 与 userscript 元数据块的 @version
+function extractVersionFromText(text) {
+  if (!text) return null;
+  const raw = String(text);
+
+  if (raw.indexOf("{") !== -1) {
+    try {
+      const json = JSON.parse(raw);
+      if (json && isVersionLike(json.version)) return String(json.version).trim();
+    } catch (e) {}
   }
 
-  trySource(0);
+  const m = raw.match(/@version\s+([0-9][0-9.]*)/);
+  if (m && isVersionLike(m[1])) return m[1].trim();
+
+  return null;
+}
+
+function requestVersionSource(url, onDone) {
+  let settled = false;
+  const done = (text) => {
+    if (settled) return;
+    settled = true;
+    onDone(text);
+  };
+
+  if (typeof GM_xmlhttpRequest === "function") {
+    GM_xmlhttpRequest({
+      method: "GET",
+      url: url,
+      timeout: UPDATE_VERSION_TIMEOUT,
+      onload: function (res) {
+        if (res && res.status === 200) {
+          done(res.responseText || res.response || "");
+        } else {
+          done(null);
+        }
+      },
+      onerror: function () { done(null); },
+      ontimeout: function () { done(null); },
+      onabort: function () { done(null); }
+    });
+  } else {
+    fetch(url, { cache: "no-store" })
+      .then(function (res) { return res && res.ok ? res.text() : null; })
+      .then(function (text) { done(text); })
+      .catch(function () { done(null); });
+  }
+}
+
+function fetchLatestVersion(callback) {
+  const versions = [];
+  let pending = UPDATE_VERSION_SOURCES.length;
+  let finished = false;
+
+  const finish = () => {
+    if (finished) return;
+    finished = true;
+    clearTimeout(totalTimer);
+    if (versions.length === 0) return callback(null);
+
+    let best = versions[0];
+    for (let i = 1; i < versions.length; i++) {
+      if (isNewerVersion(versions[i], best)) best = versions[i];
+    }
+    callback(best);
+  };
+
+  const totalTimer = setTimeout(finish, UPDATE_VERSION_TOTAL_TIMEOUT);
+
+  UPDATE_VERSION_SOURCES.forEach((url) => {
+    requestVersionSource(url, (text) => {
+      const ver = extractVersionFromText(text);
+      if (ver && versions.indexOf(ver) === -1) versions.push(ver);
+      pending--;
+      if (pending <= 0) finish();
+    });
+  });
 }
 
 /* ==================== 版本更新日志渲染层（数据源：UpdateLog.js） ==================== */
