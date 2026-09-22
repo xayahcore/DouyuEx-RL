@@ -499,6 +499,77 @@ async function testBuiltBundle() {
     assert.strictEqual(submitRules[0].style.getPropertyValue("font-size"), "14px", "提交按钮字号必须统一为 14px");
     console.log("✓ 测试场景 11 通过: 三大面板操作区与提交按钮均由统一 UI 引擎单条规则驱动，宽度一致");
 
+    // === 测试 12: 统一分段胶囊控制器（三组 radio 圆点 → MIUIX）===
+    console.log("--> 测试场景 12: 验证三组互斥选项已换装统一分段胶囊...");
+    if (typeof win.createPopupPlayerPanel === "function") win.createPopupPlayerPanel();
+
+    const radioGroups = [
+        { name: "popup_player_mode", owner: "PopupPlayer", expected: 2 },
+        { name: "autofish_mode", owner: "ExpandTool", expected: 2 },
+        { name: "DanmakuTailType", owner: "DanmakuTail", expected: 2 },
+    ];
+    radioGroups.forEach((g) => {
+        const radios = win.document.querySelectorAll(`input[name="${g.name}"]`);
+        assert.strictEqual(radios.length, g.expected, `[${g.owner}] ${g.name} 必须仍有 ${g.expected} 个原生 radio（语义不变）`);
+
+        radios.forEach((r, i) => {
+            const label = r.parentElement;
+            assert.strictEqual(
+                label && label.className,
+                "miuix-seg__item",
+                `[${g.owner}] 第 ${i + 1} 个选项必须被 .miuix-seg__item 包裹（当前: ${label && label.className}）`
+            );
+            const next = r.nextElementSibling;
+            assert.ok(next, `[${g.owner}] 第 ${i + 1} 个选项的 radio 必须有相邻兄弟元素`);
+            assert.strictEqual(
+                next.className,
+                "miuix-seg__label",
+                `[${g.owner}] radio 的相邻兄弟必须是 .miuix-seg__label（选中态依赖 input:checked + span）`
+            );
+            assert.ok(next.textContent.trim().length > 0, `[${g.owner}] 第 ${i + 1} 个选项文案不得为空`);
+            assert.strictEqual(r.style.display, "", `[${g.owner}] 原生 radio 不得用内联 display:none，应由引擎隐藏`);
+        });
+
+        const seg = radios[0].closest(".miuix-seg");
+        assert.ok(seg, `[${g.owner}] ${g.name} 必须被 .miuix-seg 容器包裹`);
+        assert.strictEqual(seg.children.length, g.expected, `[${g.owner}] 分段胶囊项数必须与选项数一致`);
+
+        const checked = Array.from(radios).filter((r) => r.checked);
+        assert.strictEqual(checked.length, 1, `[${g.owner}] ${g.name} 必须恰好有一项选中（互斥）`);
+    });
+
+    // ExpandTool 的旧内联包裹层必须已被清除
+    assert.strictEqual(
+        win.document.querySelectorAll(".autofish__modes").length,
+        0,
+        "ExpandTool 旧的 .autofish__modes 内联样式包裹层必须已移除"
+    );
+    assert.strictEqual(
+        win.document.querySelectorAll('[class*="popup-panel__seg-"]').length,
+        0,
+        "PopupPlayer 空壳类 popup-panel__seg-* 必须已替换为统一组件"
+    );
+
+    // CSSOM 侧断言：统一组件与选中态规则必须真实存在于样式表中
+    const segRules = allRules.filter(
+        (r) => r.selectorText && r.selectorText.includes(".miuix-seg__label") && r.selectorText.includes(":checked")
+    );
+    assert.ok(segRules.length >= 1, "必须存在 `input:checked + .miuix-seg__label` 选中态规则");
+    const segBase = allRules.filter(
+        (r) => r.selectorText && r.selectorText.trim() === ".miuix-seg"
+    );
+    assert.strictEqual(segBase.length, 1, "分段胶囊容器必须且只能有一条基础规则（单一归属）");
+    assert.strictEqual(segBase[0].style.getPropertyValue("display"), "flex", ".miuix-seg 必须为 flex 容器");
+    const radioHide = allRules.filter(
+        (r) => r.selectorText && r.selectorText.includes(".miuix-seg__item") && r.selectorText.includes('type="radio"')
+    );
+    assert.ok(radioHide.length >= 1, "必须存在隐藏原生 radio 圆点的规则");
+    assert.ok(
+        radioHide.some((r) => r.style.getPropertyValue("appearance") === "none"),
+        "原生 radio 必须被 appearance:none 抹除（不允许露出系统圆点）"
+    );
+    console.log("✓ 测试场景 12 通过: 三组互斥选项均为 .miuix-seg 分段胶囊，原生圆点已抹除，选中态规则就绪");
+
     // === 收尾断言: 全流程结束后仍必须零未捕获异常 ===
     assert.strictEqual(errors.length, 0, "全流程结束后不应该产生未捕获异常: " + JSON.stringify(errors));
 

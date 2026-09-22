@@ -89,9 +89,9 @@ function ExpandTool_insertModal() {
               </div>
               <input id="extool__autofish_start" class="sign-checkbox" type="checkbox">
             </div>
-            <div class="autofish__modes" style="display: flex; gap: 14px; font-size: 11.5px; padding-left: 2px;">
-              <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;"><input name="autofish_mode" type="radio" value="all" checked> 全天挂机</label>
-              <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;"><input name="autofish_mode" type="radio" value="contest"> 仅钓鱼大赛</label>
+            <div class="miuix-seg">
+              <label class="miuix-seg__item"><input name="autofish_mode" type="radio" value="all" checked><span class="miuix-seg__label">全天挂机</span></label>
+              <label class="miuix-seg__item"><input name="autofish_mode" type="radio" value="contest"><span class="miuix-seg__label">仅钓鱼大赛</span></label>
             </div>
           </div>
 

@@ -78,22 +78,6 @@
     box-shadow: 0 0 0 2px rgba(0, 102, 255, 0.18) !important;
 }
 
-.DanmakuTail-option-label {
-    display: flex !important;
-    align-items: center !important;
-    gap: 16px !important;
-    font-size: 12px !important;
-    color: #334155 !important;
-    margin-bottom: 10px !important;
-}
-
-.DanmakuTail-option-label label {
-    display: flex !important;
-    align-items: center !important;
-    gap: 4px !important;
-    cursor: pointer !important;
-}
-
 .DanmakuTail-checkbox-label {
     display: flex !important;
     align-items: center !important;

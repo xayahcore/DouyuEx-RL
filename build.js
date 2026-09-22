@@ -190,6 +190,26 @@ function extractHeader(code) {
   };
 }
 
+/**
+ * CSS 不能出现反引号或 ${ —— 因为 CSS 是注入到 main.js 的模板字面量
+ * (`document.createTextNode(\`...\`)`) 内的，这两者会提前闭合模板字面量，
+ * 让语法核验报出 "missing ) after argument list" 这类极难定位的错误。
+ */
+function verifyCssSafety() {
+  const lines = css.split("\n");
+  const offenders = [];
+  lines.forEach((line, idx) => {
+    if (line.includes("`")) offenders.push({ idx: idx + 1, line, why: "反引号" });
+    else if (line.includes("${")) offenders.push({ idx: idx + 1, line, why: "${" });
+  });
+  if (offenders.length === 0) return;
+  console.error("[Verify] CSS 含会破坏模板字面量的字符（反引号 / ${），请改为普通文字：");
+  offenders.slice(0, 10).forEach((o) => {
+    console.error(`  第 ${o.idx} 行 (${o.why}): ${o.line.trim().slice(0, 100)}`);
+  });
+  process.exit(1);
+}
+
 function build() {
   console.log("[Build] 开始构建 DouyuEx-RL ...");
   const version = generateVersion();
@@ -201,6 +221,8 @@ function build() {
 
   // 版本更新日志数据源强校验（早于语法核验，缺失即中断）
   verifyUpdateLog(version);
+  // CSS 模板字面量安全性校验
+  verifyCssSafety();
 
   let template = fs.readFileSync("./src/main.js", "utf8");
   template = template

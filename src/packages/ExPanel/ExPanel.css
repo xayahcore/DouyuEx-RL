@@ -596,6 +596,92 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
 }
 
 /* ==========================================================================
+   7.5 统一分段胶囊控制器 (.miuix-seg)
+   用于互斥单选（同屏播放模式 / 自动钓鱼模式 / 小尾巴位置等）。
+   原生 radio 圆点被彻底抹除，仅保留语义与 :checked 状态；
+   选中态依赖 input:checked + span 相邻兄弟选择器，不依赖 :has()，兼容性最稳。
+   ========================================================================== */
+.miuix-seg {
+    display: flex !important;
+    align-items: stretch !important;
+    gap: 2px !important;
+    padding: 2px !important;
+    margin-top: 2px !important;
+    background: rgba(0, 0, 0, 0.06) !important;
+    border-radius: 9px !important;
+    box-sizing: border-box !important;
+}
+
+.miuix-seg__item {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    cursor: pointer !important;
+    user-select: none !important;
+    border-radius: 7px !important;
+}
+
+/* 原生圆点彻底隐藏（不用 display:none，保留键盘可聚焦与语义） */
+.miuix-seg__item > input[type="radio"] {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    margin: -1px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    overflow: hidden !important;
+    clip: rect(0 0 0 0) !important;
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    opacity: 0 !important;
+}
+
+.miuix-seg__label {
+    display: block !important;
+    width: 100% !important;
+    padding: 5px 10px !important;
+    box-sizing: border-box !important;
+    text-align: center !important;
+    font-size: 11.5px !important;
+    font-weight: 600 !important;
+    line-height: 1.4 !important;
+    color: #64748b !important;
+    border-radius: 7px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    transition: background-color 0.2s var(--miuix-spring), color 0.18s ease, box-shadow 0.2s ease, transform 0.18s var(--miuix-spring) !important;
+}
+
+.miuix-seg__item:hover > .miuix-seg__label {
+    color: #0f172a !important;
+}
+
+.miuix-seg__item > input[type="radio"]:checked + .miuix-seg__label {
+    background: #ffffff !important;
+    color: var(--miuix-blue) !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12) !important;
+}
+
+.miuix-seg__item:active > .miuix-seg__label {
+    transform: scale(0.97) !important;
+}
+
+.miuix-seg__item > input[type="radio"]:focus-visible + .miuix-seg__label {
+    box-shadow: 0 0 0 2px var(--miuix-blue-glow) !important;
+}
+
+/* 禁用态（自动钓鱼运行中锁定模式、小尾巴启用后锁定位置选项） */
+.miuix-seg__item > input[type="radio"]:disabled + .miuix-seg__label {
+    opacity: 0.45 !important;
+    pointer-events: none !important;
+}
+
+/* ==========================================================================
    8. 通用按钮微质感 (大弹簧操作按钮、胶囊操作按钮、送出按钮)
    ========================================================================== */
 /* 操作区容器统一规范：左右留白必须与四级卡片保持一致(12px)，

@@ -64,14 +64,12 @@ function createPopupPlayerPanel() {
         <div class="popup-panel__card-header">
           <span class="popup-panel__card-title">同屏播放模式</span>
         </div>
-        <div class="popup-panel__seg-switch">
-          <label class="popup-panel__seg-item">
-            <input type="radio" name="popup_player_mode" value="noiframe" checked />
-            <span class="popup-panel__seg-thumb">无弹幕极速流 (推荐)</span>
+        <div class="miuix-seg">
+          <label class="miuix-seg__item">
+            <input type="radio" name="popup_player_mode" value="noiframe" checked /><span class="miuix-seg__label">无弹幕极速流 (推荐)</span>
           </label>
-          <label class="popup-panel__seg-item">
-            <input type="radio" name="popup_player_mode" value="iframe" />
-            <span class="popup-panel__seg-thumb">全功能有弹幕</span>
+          <label class="miuix-seg__item">
+            <input type="radio" name="popup_player_mode" value="iframe" /><span class="miuix-seg__label">全功能有弹幕</span>
           </label>
         </div>
       </div>

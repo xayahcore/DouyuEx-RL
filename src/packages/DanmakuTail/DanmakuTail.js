@@ -22,12 +22,12 @@ function initPkg_DanmakuTail_insertDom() {
             <span class="DanmakuTail-close" title="关闭">×</span>
         </div>
         <input type="text" class="DanmakuTail-input" id="DanmakuTail-input" placeholder="请输入小尾巴内容"/>
-        <div class="DanmakuTail-option-label">
-            <label for="DanmakuTail-option-label1">
-                <input type="radio" name="DanmakuTailType" value="1" id="DanmakuTail-option-label1"> 前缀
+        <div class="miuix-seg">
+            <label class="miuix-seg__item">
+                <input type="radio" name="DanmakuTailType" value="1" id="DanmakuTail-option-label1"><span class="miuix-seg__label">前缀</span>
             </label>
-            <label for="DanmakuTail-option-label2">
-                <input type="radio" name="DanmakuTailType" value="2" id="DanmakuTail-option-label2" checked> 后缀
+            <label class="miuix-seg__item">
+                <input type="radio" name="DanmakuTailType" value="2" id="DanmakuTail-option-label2" checked><span class="miuix-seg__label">后缀</span>
             </label>
         </div>
         <label class="DanmakuTail-checkbox-label">
