@@ -1,7 +1,5 @@
 let ExPanel_anchorParent = null;
 let ExPanel_anchorNextSibling = null;
-let isMouseOverExPanel = false;
-let exPanelLeaveTimer = null;
 
 function isAnyThirdLevelPanelOpen() {
   const panels = document.querySelectorAll(
@@ -20,23 +18,10 @@ function isAnyThirdLevelPanelOpen() {
 function initPkg_ExPanel() {
   initPkg_ExPanel_insertDom();
 
+  // 二级菜单生命周期完全由用户驱动：仅「点击精灵球」展开、「点击 ×」关闭，
+  // 不悬停自动打开、不因鼠标移出而自动关闭。
   let exPanelDOM = document.querySelector(`.ex-panel`);
   if (exPanelDOM) {
-    exPanelDOM.addEventListener("mouseenter", () => {
-      isMouseOverExPanel = true;
-      clearTimeout(exPanelLeaveTimer);
-    });
-    // 只要没展开三级菜单，鼠标移开二级菜单就自动关闭
-    exPanelDOM.addEventListener("mouseleave", () => {
-      isMouseOverExPanel = false;
-      clearTimeout(exPanelLeaveTimer);
-      exPanelLeaveTimer = setTimeout(() => {
-        if (!isAnyThirdLevelPanelOpen() && !isMouseOverExPanel) {
-          hideExPanel();
-        }
-      }, 200);
-    });
-
     const closeBtn = exPanelDOM.querySelector(".ex-panel__close");
     if (closeBtn) {
       closeBtn.addEventListener("click", (e) => {
@@ -321,9 +306,7 @@ function ensureMiuixPanelHeader(el, title) {
       if (typeof updateDockActiveIndicator === "function") {
         updateDockActiveIndicator();
       }
-      if (!isMouseOverExPanel && !isAnyThirdLevelPanelOpen()) {
-        hideExPanel();
-      }
+      // 三级菜单关闭后二级菜单保持展开，仅由「×」显式关闭二级菜单
     };
   }
 }
@@ -390,4 +373,3 @@ window.hideExPanel = hideExPanel;
 window.toggleExPanel = toggleExPanel;
 window.showExPanel = showExPanel;
 window.isAnyThirdLevelPanelOpen = isAnyThirdLevelPanelOpen;
-window.isMouseOverExPanel = () => isMouseOverExPanel;

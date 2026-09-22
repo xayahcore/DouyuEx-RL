@@ -214,28 +214,39 @@ async function testBuiltBundle() {
     assert.ok(tailPanel.querySelector("#DanmakuTail-checkbox"), "面板必须具备弹簧开关");
     console.log("✓ 测试场景 5 通过: 弹幕小尾巴独立微悬浮面板与关闭按钮就绪");
 
-    // === 测试 6: 二级 Dock 菜单未展开三级菜单时移出自动关闭 ===
-    console.log("--> 测试场景 6: 验证二级 Dock 未展开三级菜单时移开自动收拢...");
+    // === 测试 6: 二级 Dock 不悬停自动打开、不自动关闭，仅点击打开 ===
+    console.log("--> 测试场景 6: 验证二级 Dock 不悬停自动打开、不自动关闭...");
     const exIcon = win.document.querySelector(".ex-icon");
     const exPanel = win.document.querySelector(".ex-panel");
     assert.ok(exIcon, ".ex-icon 精灵球节点必须存在");
     assert.ok(exPanel, ".ex-panel 二级 Dock 节点必须存在");
+    assert.ok(exPanel.style.display !== "flex" && exPanel.style.display !== "block", "初始状态下二级 Dock 必须处于关闭状态");
 
-    // 模拟鼠标悬停精灵球
+    // 1. 悬停精灵球：不得自动打开
     exIcon.dispatchEvent(new win.Event("mouseenter"));
-    assert.ok(exPanel.style.display === "flex" || exPanel.style.display === "block", "悬停精灵球后二级 Dock 必须打开");
+    await new Promise(r => setTimeout(r, 120));
+    assert.ok(
+        exPanel.style.display !== "flex" && exPanel.style.display !== "block",
+        "悬停精灵球不得自动展开二级 Dock（已改为仅点击打开）"
+    );
+
+    // 2. 点击精灵球：打开
+    exIcon.click();
+    assert.ok(exPanel.style.display === "flex" || exPanel.style.display === "block", "点击精灵球后二级 Dock 必须打开");
     assert.ok(exPanel.classList.contains("miuix-dock-in"), "二级 Dock 必须挂载 miuix-dock-in 弹簧动画类");
 
-    // 未展开任何三级菜单，鼠标离开二级 Dock 经过防抖与平滑动画后自动关闭
+    // 3. 鼠标移出 Dock：不得自动关闭
     exPanel.dispatchEvent(new win.Event("mouseleave"));
     await new Promise(r => setTimeout(r, 450));
-    assert.strictEqual(exPanel.style.display, "none", "未展开三级菜单时移开鼠标，二级 Dock 必须自动收拢关闭");
-    console.log("✓ 测试场景 6 通过: 未展开三级菜单时移开鼠标自动关闭验证通过");
+    assert.ok(
+        exPanel.style.display === "flex" || exPanel.style.display === "block",
+        "鼠标移出二级 Dock 不得自动关闭，仅「点击 ×」才关闭"
+    );
+    console.log("✓ 测试场景 6 通过: 二级 Dock 不悬停自动打开、不自动关闭，仅点击打开");
 
-    // === 测试 7: 三级菜单悬停即开、移开不关、有三级菜单时 Dock 保持展开 ===
-    console.log("--> 测试场景 7: 验证三级菜单悬停即开、移开不关、Dock 保持展开...");
-    exIcon.dispatchEvent(new win.Event("mouseenter"));
-    assert.ok(exPanel.style.display === "flex" || exPanel.style.display === "block", "重新唤出二级 Dock");
+    // === 测试 7: 三级菜单悬停即开、移开不关、Dock 保持展开、× 显式关闭 ===
+    console.log("--> 测试场景 7: 验证三级菜单悬停即开、移开不关、Dock 保活...");
+    assert.ok(exPanel.style.display === "flex" || exPanel.style.display === "block", "二级 Dock 应仍处于打开状态");
 
     // 模拟悬停一键签到按钮
     const signDockBtn = exPanel.querySelector(".ex-sign");
@@ -246,20 +257,31 @@ async function testBuiltBundle() {
     assert.ok(signModal, ".sign-panel 三级面板必须被创建并渲染");
     assert.ok(signModal.style.display === "flex" || signModal.style.display === "block", "悬停 Dock 图标三级菜单必须立即展开");
 
-    // 鼠标离开二级 Dock，但因为三级菜单正展开着，Dock 必须保持展开
+    // 鼠标离开二级 Dock：三级菜单与 Dock 都必须保持展开
     exPanel.dispatchEvent(new win.Event("mouseleave"));
     await new Promise(r => setTimeout(r, 300));
-    assert.ok(exPanel.style.display === "flex" || exPanel.style.display === "block", "已展开三级菜单时鼠标移出 Dock，Dock 必须坚挺保持打开");
-    assert.ok(signModal.style.display === "flex" || signModal.style.display === "block", "三级菜单移除关闭功能，移开鼠标绝不自动关闭");
+    assert.ok(exPanel.style.display === "flex" || exPanel.style.display === "block", "鼠标移出后 Dock 必须保持打开");
+    assert.ok(signModal.style.display === "flex" || signModal.style.display === "block", "三级菜单移开鼠标绝不自动关闭");
 
-    // 点击三级菜单右上角关闭按钮
+    // 点击三级菜单右上角关闭按钮：仅关闭三级菜单，Dock 保持展开
     const signCloseBtn = signModal.querySelector(".miuix-modal__close");
     assert.ok(signCloseBtn, "三级菜单必须具备关闭按钮");
     signCloseBtn.click();
     assert.strictEqual(signModal.style.display, "none", "点击 × 后三级菜单必须关闭");
-    await new Promise(r => setTimeout(r, 220));
-    assert.strictEqual(exPanel.style.display, "none", "三级菜单关闭且鼠标不在 Dock 上时，Dock 顺滑收拢");
-    console.log("✓ 测试场景 7 通过: 三级菜单悬停打开、移除关闭功能、Dock 联动保活全流程验证通过");
+    await new Promise(r => setTimeout(r, 250));
+    assert.ok(
+        exPanel.style.display === "flex" || exPanel.style.display === "block",
+        "关闭三级菜单后二级 Dock 必须保持展开（二级菜单不自动关闭）"
+    );
+
+    // 点击二级菜单 × 才关闭 Dock
+    const dockCloseBtn = exPanel.querySelector(".ex-panel__close");
+    assert.ok(dockCloseBtn, "二级 Dock 必须具备 .ex-panel__close 关闭按钮");
+    dockCloseBtn.click();
+    assert.ok(exPanel.classList.contains("miuix-dock-out"), "点击 × 后必须触发 miuix-dock-out 退出动画");
+    await new Promise(r => setTimeout(r, 250));
+    assert.strictEqual(exPanel.style.display, "none", "点击 × 后二级 Dock 必须关闭");
+    console.log("✓ 测试场景 7 通过: 三级菜单悬停即开、移开不关，二级 Dock 仅由 × 显式关闭");
 
     // === 测试 8: ExpandTool 道具与礼物记忆持久化 ===
     console.log("--> 测试场景 8: 验证道具与礼物 localStorage 记忆持久化...");
