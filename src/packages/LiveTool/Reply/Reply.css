@@ -5,8 +5,7 @@
 }
 #reply__title {
     cursor: pointer;
-    user-select: none;
-    color: royalblue;
+    user-select: none;
 }
 #reply__select {
     /* width: 190px; */
@@ -30,13 +29,11 @@
 }
 
 #reply__export {
-    cursor: pointer;
-    color: royalblue;
+    cursor: pointer;
     margin-left: 10px;
 }
 
 #reply__import {
-    cursor: pointer;
-    color: royalblue;
+    cursor: pointer;
     margin-left: 5px;
 }

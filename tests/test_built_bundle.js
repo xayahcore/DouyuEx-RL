@@ -570,6 +570,88 @@ async function testBuiltBundle() {
     );
     console.log("✓ 测试场景 12 通过: 三组互斥选项均为 .miuix-seg 分段胶囊，原生圆点已抹除，选中态规则就绪");
 
+    // === 测试 13: 直播间工具抽屉标题统一色 + iOS 披露指示器 ===
+    console.log("--> 测试场景 13: 验证五个抽屉标题色值统一与折叠指示器联动...");
+    const drawerKeys = ["enter", "mute", "gift", "reply", "vote"];
+    const titleSpans = drawerKeys.map((k) => win.document.getElementById(k + "__title"));
+
+    titleSpans.forEach((sp, i) => {
+        assert.ok(sp, `抽屉标题 #${drawerKeys[i]}__title 必须存在`);
+        assert.ok(
+            sp.parentElement && sp.parentElement.classList.contains("livetool__cell_title"),
+            `抽屉 ${drawerKeys[i]} 的标题必须位于 .livetool__cell_title 内`
+        );
+    });
+
+    // 1) 所有标题必须由统一引擎单条规则驱动（不再有逐抽屉的独立 color 声明）
+    const titleColorRules = allRules.filter(
+        (r) => r.selectorText &&
+               r.selectorText.includes("__title") &&
+               r.selectorText.includes(".livetool__cell_title") &&
+               r.style.getPropertyValue("color") &&
+               !r.selectorText.includes(":hover") &&
+               !r.selectorText.includes("is-open")
+    );
+    assert.ok(
+        titleColorRules.length >= 1,
+        "必须存在统一引擎的抽屉标题色值规则（.livetool__cell_title > span[id$=__title]）"
+    );
+
+    // 2) 全项目 CSS 不得再出现遗留 royalblue
+    const royalblueOffenders = allRules.filter(
+        (r) => r.style && String(r.style.cssText || "").toLowerCase().includes("royalblue")
+    );
+    assert.strictEqual(
+        royalblueOffenders.length,
+        0,
+        `CSS 中不得残留 royalblue（实际 ${royalblueOffenders.length} 条）: ` +
+            royalblueOffenders.map((r) => r.selectorText).join(" | ")
+    );
+
+    // 3) iOS 披露指示器：箭头几何 + 展开态旋转
+    const chevronBase = allRules.filter(
+        (r) => r.selectorText && r.selectorText.includes("__title") &&
+               r.selectorText.includes("::after") && !r.selectorText.includes("is-open")
+    );
+    assert.ok(chevronBase.length >= 1, "抽屉标题必须带折叠指示箭头（span[id$=__title]::after）");
+    assert.ok(
+        chevronBase.some((r) => (r.style.getPropertyValue("border-right") || "").includes("solid")),
+        "折叠指示箭头必须由边框绘制（iOS 披露样式）"
+    );
+    const chevronOpen = allRules.filter(
+        (r) => r.selectorText && r.selectorText.includes("is-open") && r.selectorText.includes("::after")
+    );
+    assert.ok(chevronOpen.length >= 1, "必须存在展开态箭头规则（.is-open ... ::after）");
+    assert.ok(
+        chevronOpen.some((r) => (r.style.getPropertyValue("transform") || "").includes("rotate")),
+        "展开态箭头必须发生旋转（旋转 45° 表示已展开）"
+    );
+
+    // 4) 行为验证：点击标题应展开对应抽屉并点亮其指示器，且互斥收起其它抽屉
+    const enterTitle = win.document.getElementById("enter__title");
+    const muteTitle = win.document.getElementById("mute__title");
+    enterTitle.click();
+    await new Promise((r) => setTimeout(r, 30));
+    assert.ok(
+        enterTitle.parentElement.classList.contains("is-open"),
+        "点击「进场欢迎」后其标题必须点亮 is-open（箭头转向下）"
+    );
+    assert.strictEqual(
+        muteTitle.parentElement.classList.contains("is-open"),
+        false,
+        "「关键词禁言」未展开时不得点亮 is-open"
+    );
+
+    muteTitle.click();
+    await new Promise((r) => setTimeout(r, 30));
+    assert.ok(muteTitle.parentElement.classList.contains("is-open"), "点击「关键词禁言」后其箭头必须转向下");
+    assert.strictEqual(
+        enterTitle.parentElement.classList.contains("is-open"),
+        false,
+        "抽屉展开互斥：打开「关键词禁言」后「进场欢迎」的箭头必须复位"
+    );
+    console.log("✓ 测试场景 13 通过: 五个抽屉标题色值统一、无 royalblue 残留、iOS 披露箭头互斥联动正确");
+
     // === 收尾断言: 全流程结束后仍必须零未捕获异常 ===
     assert.strictEqual(errors.length, 0, "全流程结束后不应该产生未捕获异常: " + JSON.stringify(errors));
 

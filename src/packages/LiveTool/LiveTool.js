@@ -2,7 +2,44 @@ function initPkg_LiveTool() {
 	initPkg_LiveTool_Dom();
 	initPkg_LiveTool_Module();
 	initPkg_LiveTool_Func();
+	initPkg_LiveTool_DrawerChevron();
 	initPkg_LiveTool_HandleFunc();
+}
+
+/**
+ * 抽屉折叠指示器同步。
+ * 五个抽屉的展开互斥（打开一个会自动收起其它四个），若各自维护箭头状态必然不同步，
+ * 因此统一由各抽屉面板的真实 display 状态驱动，用一条委托监听覆盖全部抽屉。
+ */
+const LiveTool_DRAWER_PAIRS = [
+	["enter", "enter__panel"],
+	["mute", "mute__panel"],
+	["gift", "gift__panel"],
+	["reply", "reply__panel"],
+	["vote", "vote__panel"]
+];
+
+function LiveTool_syncDrawerChevrons() {
+	LiveTool_DRAWER_PAIRS.forEach(function (pair) {
+		let title = document.getElementById(pair[0] + "__title");
+		if (!title || !title.parentElement) return;
+		let panel = document.getElementsByClassName(pair[1])[0];
+		let isOpen = !!(panel && panel.style.display === "block");
+		title.parentElement.classList.toggle("is-open", isOpen);
+	});
+}
+
+function initPkg_LiveTool_DrawerChevron() {
+	let root = document.querySelector(".livetool");
+	if (!root || root.dataset.chevronBound) return;
+	root.dataset.chevronBound = "1";
+	root.addEventListener("click", function (e) {
+		let t = e.target;
+		if (!(t instanceof Element)) return;
+		if (!t.closest(".livetool__cell_title")) return;
+		// 等各抽屉自身的显隐逻辑执行完再读取面板真实状态
+		setTimeout(LiveTool_syncDrawerChevrons, 0);
+	});
 }
 
 function initPkg_LiveTool_Dom() {

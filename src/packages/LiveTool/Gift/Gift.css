@@ -5,8 +5,7 @@
 }
 #gift__title {
     cursor: pointer;
-    user-select: none;
-    color: royalblue;
+    user-select: none;
 }
 #gift__select {
     width: 113px;
@@ -25,13 +24,11 @@
 }
 
 #gift__export {
-    cursor: pointer;
-    color: royalblue;
+    cursor: pointer;
     margin-left: 10px;
 }
 
 #gift__import {
-    cursor: pointer;
-    color: royalblue;
+    cursor: pointer;
     margin-left: 5px;
 }

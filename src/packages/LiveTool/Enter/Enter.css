@@ -5,8 +5,7 @@
 }
 #enter__title {
     cursor: pointer;
-    user-select: none;
-    color: royalblue;
+    user-select: none;
 }
 #enter__select {
     width: 190px;
@@ -34,13 +33,11 @@
 }
 
 #enter__export {
-    cursor: pointer;
-    color: royalblue;
+    cursor: pointer;
     margin-left: 10px;
 }
 
 #enter__import {
-    cursor: pointer;
-    color: royalblue;
+    cursor: pointer;
     margin-left: 5px;
 }

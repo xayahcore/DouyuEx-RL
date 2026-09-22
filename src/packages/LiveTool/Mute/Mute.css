@@ -5,17 +5,14 @@
 }
 #mute__title {
     cursor: pointer;
-    user-select: none;
-    color: royalblue;
+    user-select: none;
 }
 #mute__idlist {
-    cursor: pointer;
-    color: royalblue;
+    cursor: pointer;
     margin-left: 10px;
 }
 #mute__export, #mute__import {
-    cursor: pointer;
-    color: royalblue;
+    cursor: pointer;
     margin-left: 5px;
 }
 #mute__select {

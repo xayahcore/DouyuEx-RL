@@ -451,6 +451,147 @@
     color: #0f172a !important;
 }
 
+/* ==========================================================================
+   5.5 直播间工具抽屉内部结构（单元格 / 标题 / 药丸操作 / 右侧开关）
+   原 LiveTool.css 独有声明全部上收至此，配合 iOS 折叠披露指示器。
+   ========================================================================== */
+.livetool__cell {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    flex-wrap: wrap !important;
+    gap: 8px 10px !important;
+}
+
+.livetool__cell_title {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    cursor: pointer !important;
+    user-select: none !important;
+}
+
+/* 抽屉标题文字：全项目统一色值，五个抽屉严格一致（不再有宝蓝色遗留） */
+.livetool__cell_title > span[id$="__title"] {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    line-height: 1.3 !important;
+    color: #0f172a !important;
+    transition: color 0.18s ease !important;
+}
+
+/* iOS 披露指示器：折叠时 ▸ 指向右，展开时 ▾ 指向下 */
+.livetool__cell_title > span[id$="__title"]::after {
+    content: "" !important;
+    width: 5.5px !important;
+    height: 5.5px !important;
+    border-right: 1.6px solid #94a3b8 !important;
+    border-bottom: 1.6px solid #94a3b8 !important;
+    transform: rotate(-45deg) !important;
+    transition: transform 0.26s var(--miuix-spring), border-color 0.18s ease !important;
+    flex-shrink: 0 !important;
+    box-sizing: border-box !important;
+}
+
+.livetool__cell_title:hover > span[id$="__title"]::after {
+    border-color: #64748b !important;
+}
+
+.livetool__cell_title.is-open > span[id$="__title"] {
+    color: var(--miuix-blue) !important;
+}
+
+.livetool__cell_title.is-open > span[id$="__title"]::after {
+    transform: rotate(45deg) !important;
+    border-color: var(--miuix-blue) !important;
+}
+
+/* 标题旁的小胶囊操作按钮 (导出 / 导入 / 名单 / 面板) */
+.livetool__cell_title span:not([id$="__title"]) {
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    color: var(--miuix-blue) !important;
+    background: rgba(0, 102, 255, 0.12) !important;
+    border: 1px solid rgba(0, 102, 255, 0.25) !important;
+    padding: 2px 7px !important;
+    border-radius: 6px !important;
+    cursor: pointer !important;
+    box-shadow: 0 1px 3px rgba(0, 102, 255, 0.08) !important;
+    transition: all 0.18s var(--miuix-spring) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.livetool__cell_title span:not([id$="__title"]):hover {
+    background: var(--miuix-blue) !important;
+    color: #ffffff !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 3px 8px rgba(0, 102, 255, 0.35) !important;
+}
+
+/* 右侧开关容器 */
+.livetool__cell_option {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-end !important;
+    flex: 0 0 auto !important;
+    margin-left: auto !important;
+    padding: 0 !important;
+}
+
+/* 抽屉内的下拉框补充规范（与统一输入框同族） */
+.livetool select {
+    background: rgba(255, 255, 255, 0.85) !important;
+    border: 1px solid rgba(0, 0, 0, 0.12) !important;
+    border-radius: 6px !important;
+    padding: 2px 6px !important;
+    font-size: 12px !important;
+    outline: none !important;
+    color: #0f172a !important;
+}
+
+/* 抽屉内的按钮微质感（含删除操作的危险红态） */
+.livetool input[type="button"] {
+    border: none !important;
+    border-radius: 6px !important;
+    padding: 3px 10px !important;
+    font-size: 11.5px !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    color: #ffffff !important;
+    background: linear-gradient(135deg, #2b7fff, #0055ff) !important;
+    box-shadow: 0 2px 6px rgba(0, 102, 255, 0.28) !important;
+    transition: all 0.18s var(--miuix-spring) !important;
+    outline: none !important;
+}
+
+.livetool input[type="button"]:hover {
+    background: linear-gradient(135deg, #3d8bff, #004de6) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 10px rgba(0, 102, 255, 0.4) !important;
+}
+
+.livetool input[id$="__del"] {
+    background: rgba(239, 68, 68, 0.14) !important;
+    border: 1px solid rgba(239, 68, 68, 0.28) !important;
+    color: #ef4444 !important;
+    box-shadow: none !important;
+}
+
+.livetool input[id$="__del"]:hover {
+    background: #ef4444 !important;
+    color: #ffffff !important;
+    border-color: #ef4444 !important;
+}
+
 /* 版本更新日志列表（原 Update.css 内联规则上收至统一引擎） */
 .exupdate-list {
     margin: 0 !important;
