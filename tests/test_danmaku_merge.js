@@ -187,6 +187,23 @@ async function run() {
   // 没有弹幕在飘时自举必须安全返回 false（不抛错）
   const winEmpty = load(makeDom());
   assert.strictEqual(winEmpty.MergeDanmaku_bootstrap(), false, "没有弹幕节点时自举必须返回 false 而不是抛错");
+  // ---------- 1.1 脚本钩子：捕获播放器自己的构造入口与聊天总线 ----------
+  console.log("--> 1.1 原生管线脚本钩子（需 document-start，这里验补丁本身）");
+  const vm = require("vm");
+  // 形状照真实分块写：convertComment 在原型上；subscribe 处在语句位置（右括号只闭合它自己）
+  const fqSrc = "t.prototype.convertComment=function(e){var y=this.dataHandle(e);return y},t.prototype.other=function(){}";
+  const fqOut = win0.MergeDanmaku_patchFirstqueue(fqSrc);
+  assert.ok(fqOut.indexOf("window.__ExDanmuHost=this;") !== -1, "必须捕获弹幕组件实例");
+  assert.ok(fqOut.indexOf("__ExDanmuHost") > fqOut.indexOf("convertComment"), "捕获必须发生在 convertComment 里");
+  assert.doesNotThrow(() => new vm.Script(fqOut), "补丁后必须仍是合法 JS");
+  assert.strictEqual(win0.MergeDanmaku_patchFirstqueue(fqOut), fqOut, "重复打补丁必须幂等");
+  assert.strictEqual(win0.MergeDanmaku_patchFirstqueue("var a=1;"), "var a=1;", "锚点缺失必须原样返回");
+  const bgSrc = 't.prototype.init=function(e){var t=this;E.subscribe("chatmsg",function(r){r.kid&&t.f(r,e)})},t.prototype.f=function(){}';
+  const bgOut = win0.MergeDanmaku_patchBarrageGroup(bgSrc);
+  const wantFrag = 'window.__ExChatBus=E;E.subscribe("chatmsg"';
+  assert.ok(bgOut.indexOf(wantFrag) !== -1, "必须捕获总线且不破坏持有者引用，实际 " + bgOut.slice(0, 80));
+  assert.doesNotThrow(() => new vm.Script(bgOut), "补丁后必须仍是合法 JS（不能靠加括号：原上下文没有多余右括号）");
+  assert.strictEqual(win0.MergeDanmaku_patchBarrageGroup(bgOut), bgOut, "重复打补丁必须幂等");
   // ---------- 2. 引擎实例捕获与上屏 ----------
   console.log("--> 2. 捕获引擎并喂弹幕");
   const dom = makeDom();

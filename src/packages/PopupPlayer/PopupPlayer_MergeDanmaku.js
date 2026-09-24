@@ -64,7 +64,58 @@ let msMergePending = [];             // 引擎未就绪时的暂存（极短，�
 
 /* ---------- ① 脚本钩子 ---------- */
 
-/* ---------- ① 运行时自举：拿到原生引擎的 space 与渲染器 ---------- */
+/* ---------- ① 脚本钩子：捕获播放器自己的构造入口与聊天总线 ---------- */
+/*
+ * 这一层是为"真正原生"准备的：贵族弹幕的渐变底、粉丝牌、等级图标这些**资产引用**
+ * （extraData.leftPic / rightDynamicPic / jhsPic / dcallPic、nobleIcon、nobleColor…）
+ * 都是由播放器组件读它自己的 props/state 与房间配置拼出来的，外部复刻不出来。
+ *
+ * 实测源码（firstqueue）里的原生发送序列就是：
+ *     if (this.cm && this.props.isshow) { var r = this.convertComment(e); if (r) return !this.cm.send(r); }
+ * 也就是说：**报文 → convertComment() → cm.send()** 就是全管线。
+ * 于是只要捕获到那个组件实例（this），外房报文就能原样走同一条管线，
+ * 类型选择、资产、颜色、贵族样式全部原生 —— 我们只额外塞两个来源标记进 extraData。
+ *
+ * 聊天区同理：aside 分块里 eb.subscribe("chatmsg", …) 的那个 eb 就是事件总线，
+ * 把外房报文 publish 上去，聊天条目就由斗鱼自己的管线渲染（含勋章/等级/可点）。
+ *
+ * 两者都必须在 document-start 装（脚本钩子的机制决定了），所以在 TM 里正常生效；
+ * 在"产物后注入"的取证环境里装不上，此时会自动退回运行时自举那条路。
+ */
+function initPkg_PopupPlayer_MergeDanmaku_ScriptHook() {
+  scriptHook({
+    url: "/firstqueue",
+    callback: MergeDanmaku_patchFirstqueue
+  });
+  scriptHook({
+    url: "/BarrageGroup",
+    callback: MergeDanmaku_patchBarrageGroup
+  });
+}
+
+// 捕获弹幕组件实例：convertComment 是报文进管线的必经之处，this 就是那个组件
+function MergeDanmaku_patchFirstqueue(content) {
+  const anchor = /\.prototype\.convertComment\s*=\s*function\s*\(\s*(\w+)\s*\)\s*\{/;
+  if (!anchor.test(content)) return content;
+  if (content.indexOf("__ExDanmuHost") !== -1) return content;   // 幂等
+  return content.replace(anchor, function (m, arg) {
+    return m + "window.__ExDanmuHost=this;";
+  });
+}
+
+// 捕获聊天事件总线：把 subscribe("chatmsg") 的持有者暴露出来
+function MergeDanmaku_patchBarrageGroup(content) {
+  const anchor = /(\w+)\.subscribe\(\s*"chatmsg"/;
+  if (!anchor.test(content)) return content;
+  if (content.indexOf("__ExChatBus") !== -1) return content;     // 幂等
+  return content.replace(anchor, function (m, holder) {
+    // 用**独立语句**插入，不要包括号：原始上下文里 E.subscribe(...) 的右括号只闭合 subscribe 自己，
+    // 包一层左括号就会缺一个右括号（离线校验直接报 Unexpected token）。
+    return "window.__ExChatBus=" + holder + ";" + m;
+  });
+}
+
+/* ---------- ② 运行时自举：拿到原生引擎的 space 与渲染器 ---------- */
 /*
  * 早先的做法是脚本钩子改 firstqueue 源码（替换 .display=new X.renderer(X); 那个锚点）。
  * 实测发现有一条**运行时**路径，完全不依赖压缩后的源码锚点，也不需要 document-start：
@@ -360,6 +411,11 @@ function MergeDanmaku_feed(item) {
     if (msMergePending.length < 60) msMergePending.push(item);
     return false;
   }
+  // 首选：播放器自己的管线（convertComment → cm.send）。类型选择与全部资产都由它自己算，
+  // 贵族渐变底、粉丝牌、等级图标这些外部复刻不出来的东西全靠这条。
+  const native = MergeDanmaku_feedViaHost(item);
+  if (native !== null) return native;
+  // 退回：我们自己按原生字段名构造后喂引擎（资产会少一些，但颜色与来源标记是对的）
   try {
     const cm = new Ctor(MergeDanmaku_buildCommentData(item));
     // 返回 false = 原生没有空轨，静默丢弃（原生语义，不算错误）
@@ -414,6 +470,26 @@ function MergeDanmaku_buildCommentData(item) {
   return data;
 }
 
+/* 走播放器自己的管线。返回 true/false 表示"已由原生管线处理"，
+   返回 null 表示原生组件还没捕获到（此时退回自建数据那条路）。 */
+function MergeDanmaku_feedViaHost(item) {
+  const host = (typeof unsafeWindow !== "undefined" ? unsafeWindow : window).__ExDanmuHost;
+  if (!host || typeof host.convertComment !== "function" || !host.cm || typeof host.cm.send !== "function") return null;
+  const raw = item.raw;
+  if (!raw) return null;
+  try {
+    const data = host.convertComment(raw);
+    if (!data) return false;                       // 原生自己也判定这条不该显示
+    if (!data.extraData) data.extraData = {};
+    // 只加来源标记：渲染钩子靠它贴来源横条；主房弹幕没有这两个字段，所以不会被贴
+    data.extraData.exMsSrcRid = String(item.srcRid);
+    data.extraData.exMsSrcName = item.srcName;
+    return !host.cm.send(data);
+  } catch (e) {
+    return null;                                    // 原生管线出错就退回自建那条，别把弹幕弄丢
+  }
+}
+
 function MergeDanmaku_flushPending() {
   if (!msMergeSpace || !msMergeCtors.scroll || !msMergePending.length) return;
   const pending = msMergePending;
@@ -433,6 +509,36 @@ function MergeDanmaku_flushPending() {
      2. 插入后若本来就在底部，必须同步滚底 —— 否则 scrollHeight 变大触发原生
         "离底 > 30px" 判定，进锁屏态并开始显示"有 N 条新消息"
      3. 不生成图片弹幕占位文本（会被 ImageDanmaku 变成 img） */
+/* 走聊天总线：aside 的聊天管理器订阅的是 chatmsg，把外房报文原样 publish 上去，
+   条目就由斗鱼自己渲染 —— 粉丝牌、等级、昵称配色、点击全部原生，我们一行 DOM 都不用拼。
+   总线实例由脚本钩子在 document-start 捕获（__ExChatBus）；发布方法名各版本可能不同，
+   这里按常见命名依次尝试，都不存在就返回 false 退回克隆那条路。 */
+const MS_BUS_PUBLISH_METHODS = ["publish", "trigger", "emit", "dispatch", "next", "fire"];
+
+function MergeDanmaku_chatViaBus(item) {
+  const W = typeof unsafeWindow !== "undefined" ? unsafeWindow : window;
+  const bus = W.__ExChatBus;
+  if (!bus || !item.raw) return false;
+  let fn = null;
+  for (let i = 0; i < MS_BUS_PUBLISH_METHODS.length; i++) {
+    const m = MS_BUS_PUBLISH_METHODS[i];
+    if (typeof bus[m] === "function") { fn = bus[m]; break; }
+  }
+  if (!fn) return false;
+  try {
+    const payload = item.raw;
+    if (!payload.type) payload.type = "chatmsg";
+    // 来源标记塞进报文本身，克隆兜底那条路读的就是它
+    payload.__exMsSrcRid = String(item.srcRid);
+    payload.__exMsSrcName = item.srcName;
+    fn.call(bus, "chatmsg", payload);
+    msMergeStats.viaBus = (msMergeStats.viaBus || 0) + 1;
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
 /* 拿一个原生条目当模板。我们自己插的条目带 ex-ms-item，必须排除，
    否则会越克隆越"自己的样子"。 */
 let msChatTemplate = null;
@@ -457,6 +563,8 @@ function MergeDanmaku_getChatTemplate() {
 function MergeDanmaku_chatAppend(item) {
   const list = document.getElementById("js-barrage-list");
   if (!list) return;
+  // 首选：把报文 publish 到斗鱼自己的事件总线，由它自己的管线渲染条目（含勋章/等级/可点）
+  if (MergeDanmaku_chatViaBus(item)) return;
   // 距底 30px 内视为"用户在底部"，与原生判定阈值一致
   const atBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 30;
   const li = MergeDanmaku_buildChatItem(item);
@@ -633,3 +741,6 @@ window.MergeDanmaku_attachBadge = MergeDanmaku_attachBadge;
 window.MergeDanmaku_bootstrap = MergeDanmaku_bootstrap;
 window.MergeDanmaku_buildChatItem = MergeDanmaku_buildChatItem;
 window.MergeDanmaku_buildCommentData = MergeDanmaku_buildCommentData;
+window.MergeDanmaku_patchFirstqueue = MergeDanmaku_patchFirstqueue;
+window.MergeDanmaku_patchBarrageGroup = MergeDanmaku_patchBarrageGroup;
+window.MergeDanmaku_feedViaHost = MergeDanmaku_feedViaHost;

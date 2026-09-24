@@ -232,3 +232,41 @@
 | 切换画质实际不切换 | 斗鱼对同一房间在不同档位可能返回**同一个流地址**（该房间只提供一档，或该档位不可用），而界面上原本毫无反馈。现在换档后对比新拉到的地址并明确提示：全未变→"该直播间只提供同一档画质"；部分未变→提示数量；真变了→"画质已切换" |
 | 聊天区还是没有原生实现 | 已大幅推进：条目现在带**外房用户自己的**等级徽章（原生 `UserLevel` + `newm3_lvN.png`）与**自己的**粉丝牌（斗鱼自己的 `dy-fan-medal` 自定义元素，`medal-name/level/id` 来自该用户的 `bnn/bl/brid`），没有该项就删掉、绝不张冠李戴。**剩下的差距**：条目的 DOM 仍是我按原生结构拼的，而不是斗鱼自己的"报文→条目"管线产出。要走到那一步需要拿到聊天管理器实例或事件总线（运行时用 React fiber 找过，不稳定；脚本钩子捕获总线则需要 document-start，在注入取证环境里跑不到）—— 这是唯一还没做到位的地方 |
 | 飘屏颜色 | 你确认已正确。普通弹幕走的是原生 7 色表；贵族/活动弹幕的特殊样式目前仍降级为普通滚动弹幕（需要各自类型渲染器的字段，未做） |
+
+---
+
+## 十一、第 3/4 点：把外房报文接进斗鱼自己的管线
+
+目标：贵族/活动弹幕的原生样式（渐变底、图标）+ 聊天条目由斗鱼自己渲染。两者的突破口是同一个 ——
+**别再自己拼，改用播放器自己的构造**。
+
+**第 3 点（飘屏原生样式）**：从 firstqueue 源码里挖到了原生发送序列：
+
+```
+if (this.cm && this.props.isshow) { var r = this.convertComment(e); if (r) return !this.cm.send(r); }
+```
+
+`convertComment(报文)` 内部调用 `dataHandle` 并读组件自身的 props/state 与房间配置，**把粉丝牌、
+等级图标、贵族渐变底这些外部复刻不出来的资产引用（extraData.leftPic / rightDynamicPic / jhsPic /
+dcallPic、nobleIcon、nobleColor…）全部拼好**。所以脚本钩子只需在 `convertComment` 函数体开头插一句
+`window.__ExDanmuHost=this;` 捕获组件实例，之后外房报文就能原样走同一条管线：
+
+```
+const data = host.convertComment(parsedMsg); data.extraData.exMsSrcName = 来源; host.cm.send(data);
+```
+
+**第 4 点（聊天区原生渲染）**：aside 分块里 `eb.subscribe("chatmsg", …)` 的那个 `eb` 就是事件总线。
+脚本钩子插一句 `window.__ExChatBus=eb;` 捕获它，之后把外房报文 publish 上去，条目就由斗鱼自己的
+管线渲染 —— 勋章、等级、昵称配色、点击全部原生，我们一行 DOM 都不用拼。
+
+两条钩子都写好了，并且**用真实分块源码离线验证通过**：锚点唯一、补丁后仍是合法 JS、幂等、
+与既有同文件补丁（RemoveRepeatedDanmaku 的 `raw.comment`）顺序无关。总线那条一度因为"包一层左括号
+而原上下文没有多余右括号"导致语法错误，改成插入独立语句后通过。
+
+**为什么还需要你在 TM 里验**：这两条都是脚本钩子，按机制必须在 **document-start** 装；在"产物后注入"
+的取证环境里装不上（那时 firstqueue / BarrageGroup 已经加载完了）。装不上时自动退回运行时那条路
+（自建数据喂引擎 + 克隆条目），所以不会更差。你正常安装 TM 后，两条钩子会生效，届时：
+- 飘屏上外房的贵族/粉丝牌弹幕应带原生渐变底与勋章图标
+- 聊天区的合并条目应由斗鱼自己渲染（不再是我拼的 DOM）
+
+验证入口：控制台执行 `MergeDanmaku_getStats()`，看 `viaBus`（走总线渲染的条数）与 `ready`。
