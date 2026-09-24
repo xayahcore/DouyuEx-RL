@@ -369,10 +369,10 @@ async function testBuiltBundle() {
     assert.strictEqual(updateBtn.dataset.state, "latest", "版本相同时状态必须流转为 latest");
     assert.ok(updateBtn.textContent.includes("已是最新"), "按钮文本必须提示已是最新");
 
-    // 3. 模拟检测到更高的新版本 (2026.09.23.01)
+    // 3. 模拟检测到更高的新版本（由当前版本推导，避免写死字面量在下次发版后失效）
     win.GM_xmlhttpRequest = (opts) => {
         setTimeout(() => {
-            opts.onload({ status: 200, responseText: JSON.stringify({ version: "2026.09.23.01" }) });
+            opts.onload({ status: 200, responseText: JSON.stringify({ version: bumpVersion(SRC_VERSION) }) });
         }, 10);
     };
     updateBtn.click();

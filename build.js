@@ -40,12 +40,15 @@ function generateVersion() {
   if (!fs.existsSync("./dist")) {
     fs.mkdirSync("./dist", { recursive: true });
   }
-  let version = "2026.09.22.04";
-  if (fs.existsSync("./src/main.js")) {
-    const mainContent = fs.readFileSync("./src/main.js", "utf8");
-    const m = mainContent.match(/\/\/\s*@version\s+([^\r\n]+)/);
-    if (m && m[1]) version = m[1].trim();
+  // 解析失败必须中断：此前这里是写死的旧版本号兜底，一旦 main.js 的 @version
+  // 读不到就会静默产出错误版本，版本日志校验也会按错版本号去查表。
+  const mainContent = fs.readFileSync("./src/main.js", "utf8");
+  const m = mainContent.match(/\/\/\s*@version\s+([^\r\n]+)/);
+  if (!m || !m[1]) {
+    console.error("[Build] 无法从 src/main.js 解析 @version，终止构建（避免静默产出错误版本号）");
+    process.exit(1);
   }
+  const version = m[1].trim();
   fs.writeFileSync("./dist/DouyuEx_RL_version.txt", version);
   fs.writeFileSync("./dist/douyuex_version.txt", version);
   return version;
