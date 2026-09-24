@@ -139,39 +139,54 @@ function makeSpace(noTrack) {
 async function run() {
   console.log("=== 多屏弹幕合并测试 ===");
 
-  // ---------- 1. 脚本补丁：顺序无关性 ----------
-  console.log("--> 1. firstqueue 补丁与既有补丁的顺序无关性");
+  // ---------- 1. 运行时自举：靠一次悬停事件拿到原生引擎 ----------
+  console.log("--> 1. 运行时自举（不改源码、不需要 document-start）");
   const win0 = load(makeDom());
-  const anchorSrc =
-    't.prototype.render=function(e){e.rightAddonRenderer=this.rightAddonRenderer,e.display=new e.renderer(e);var t=e.display.raw.className;e.display.raw.className=_.danmuItem+(t?" "+t:"")}';
-
-  const mine = (s) => win0.MergeDanmaku_patchFirstqueue(s);
-  // 顺序 A：我先，RemoveRepeatedDanmaku 后
-  const orderA = patchRemoveRepeated(mine(anchorSrc));
-  // 顺序 B：RemoveRepeatedDanmaku 先，我后
-  const orderB = mine(patchRemoveRepeated(anchorSrc));
-
-  [["A(我先)", orderA], ["B(它先)", orderB]].forEach(([label, out]) => {
-    assert.ok(out.includes("__onDouyuExDanmakuRendered"), `[${label}] 必须注入渲染钩子`);
-    assert.ok(out.includes("e.display.raw.comment=e"), `[${label}] 必须保留 raw.comment 赋值（去重依赖它）`);
-    // 关键不变量：raw.comment 的赋值必须出现在钩子调用之前
-    const iComment = out.indexOf("e.display.raw.comment=e");
-    const iHook = out.indexOf("__onDouyuExDanmakuRendered");
-    assert.ok(iComment < iHook, `[${label}] raw.comment 必须先于钩子就位（实际 comment@${iComment} hook@${iHook}）`);
-    // 补丁后仍必须是合法 JS
-    assert.doesNotThrow(() => new vm.Script("(function(){" + out + "})"), `[${label}] 补丁后必须仍是合法 JS`);
-    // 钩子调用必须传入弹幕对象本身（钩子名与调用之间隔着 ||function(){}，故不能用 [^)]*）
-    assert.ok(/__onDouyuExDanmakuRendered[\s\S]{0,40}?\(\s*e\s*\)/.test(out), `[${label}] 钩子必须收到弹幕对象`);
-    // 锚点被替换的次数必须是 1（不能重复注入）
-    assert.strictEqual(out.split("__onDouyuExDanmakuRendered").length - 1, 1, `[${label}] 钩子只能注入一次`);
-  });
-  // 锚点缺失时必须原样返回，绝不能改坏脚本
-  const noAnchor = "var a=1;";
-  assert.strictEqual(win0.MergeDanmaku_patchFirstqueue(noAnchor), noAnchor, "锚点缺失时必须原样返回");
-  // 幂等：对已打过补丁的内容再打一次，不应叠加
-  const twice = mine(orderA);
-  assert.strictEqual(twice.split("__onDouyuExDanmakuRendered").length - 1, 1, "重复打补丁必须幂等");
-
+  // 造一个正在飘的原生弹幕节点 + 一个假引擎：引擎在悬停时会把实例挂到节点上
+  const liveNode = win0.document.createElement("div");
+  liveNode.className = "danmuItem-abc";
+  liveNode.getBoundingClientRect = () => ({ left: 0, top: 0, width: 120, height: 24, right: 120, bottom: 24 });
+  win0.document.body.appendChild(liveNode);
+  const fakeSpace = makeSpace();
+  const RendererBase = function () {};
+  RendererBase.prototype.render = function (cm) {
+    // 真实引擎在这里做 cm.display = new cm.renderer(cm)，并把展示节点建出来
+    const raw = win0.document.createElement("div");
+    raw.className = "danmuItem";
+    const wrap = win0.document.createElement("div");
+    wrap.className = "textWrap-x";
+    wrap.appendChild(win0.document.createTextNode(cm.data.text || ""));
+    raw.appendChild(wrap);
+    cm.display = { raw: raw };
+    return undefined;
+  };
+  const renderer = new RendererBase();
+  fakeSpace._renderer = renderer;
+  const ScrollComment = function (data) { this.data = data; };
+  const bootComment = { data: { type: "scroll", text: "原生弹幕" }, space: fakeSpace, constructor: ScrollComment };
+  // 引擎的悬停处理器会执行 event.target.comment = comment，这里如实复刻
+  liveNode.addEventListener("mouseover", function (e) { e.target.comment = bootComment; });
+  const booted = win0.MergeDanmaku_bootstrap();
+  assert.strictEqual(booted, true, "派发悬停后必须能自举成功");
+  assert.strictEqual(win0.MergeDanmaku_getStats().ready, true, "自举后引擎必须就绪");
+  // 自举必须把渲染分派器的 render 包起来（这是贴横条的唯一插入点）
+  const foreign2 = new ScrollComment({ type: "scroll", text: "外房弹幕", extraData: { exMsSrcName: "老王", exMsSrcRid: "1234" } });
+  renderer.render(foreign2);
+  const wrappedBadge = foreign2.display.raw.querySelector(".ex-ms-badge");
+  assert.ok(wrappedBadge, "包装后的 render 必须给带来源标记的弹幕贴横条");
+  assert.strictEqual(wrappedBadge.textContent, "老王", "横条文字必须是来源主播名");
+  // 主房弹幕（无来源标记）不得贴
+  const mainCm = new ScrollComment({ type: "scroll", text: "主房弹幕", extraData: {} });
+  renderer.render(mainCm);
+  assert.strictEqual(mainCm.display.raw.querySelector(".ex-ms-badge"), null, "主房弹幕绝不能贴横条");
+  // 包装必须幂等：重复自举不得把 render 套娃
+  win0.MergeDanmaku_bootstrap();
+  const cm3 = new ScrollComment({ type: "scroll", text: "再来一条", extraData: { exMsSrcName: "老王" } });
+  renderer.render(cm3);
+  assert.strictEqual(cm3.display.raw.querySelectorAll(".ex-ms-badge").length, 1, "重复自举不得套娃出多个横条");
+  // 没有弹幕在飘时自举必须安全返回 false（不抛错）
+  const winEmpty = load(makeDom());
+  assert.strictEqual(winEmpty.MergeDanmaku_bootstrap(), false, "没有弹幕节点时自举必须返回 false 而不是抛错");
   // ---------- 2. 引擎实例捕获与上屏 ----------
   console.log("--> 2. 捕获引擎并喂弹幕");
   const dom = makeDom();
@@ -375,7 +390,10 @@ async function run() {
   win5.close();
   win6.close();
   win0.close();
+  winEmpty.close();
   console.log("=== 多屏弹幕合并测试 100% 通过 ===");
+  // 自举轮询是 setInterval，收尾显式退出，避免定时器把进程吊住
+  process.exit(0);
 }
 
 run().catch((e) => {

@@ -64,27 +64,94 @@ let msMergePending = [];             // 引擎未就绪时的暂存（极短，�
 
 /* ---------- ① 脚本钩子 ---------- */
 
-function initPkg_PopupPlayer_MergeDanmaku_ScriptHook() {
-  scriptHook({
-    url: "/firstqueue",
-    callback: MergeDanmaku_patchFirstqueue
+/* ---------- ① 运行时自举：拿到原生引擎的 space 与渲染器 ---------- */
+/*
+ * 早先的做法是脚本钩子改 firstqueue 源码（替换 .display=new X.renderer(X); 那个锚点）。
+ * 实测发现有一条**运行时**路径，完全不依赖压缩后的源码锚点，也不需要 document-start：
+ *
+ *   引擎给弹幕节点挂的悬停处理器里有 `event.target.comment = comment`，
+ *   所以对任意一个正在飘的弹幕节点派发一次 mouseover，就能从 node.comment 拿到弹幕实例，
+ *   进而拿到：
+ *     · comment.space.addComment  —— 喂弹幕的公开入口
+ *     · comment.space._renderer   —— 渲染分派器（render 在原型上，可包装）
+ *     · comment.constructor       —— 该类型的弹幕类
+ *   这些都是实测的（2288 房间：mouseover 一次即命中，拿到 type/color/space/renderer 全部字段）。
+ *
+ * 因此启动流程改成"等第一个弹幕飘过 → 派发 mouseover → 取实例 → 包装原型 render"。
+ * 更稳、更小、并且在我这种"产物后注入"的取证环境里也能跑起来（脚本钩子做不到这一点）。
+ */
+const MS_BOOTSTRAP_POLL_MS = 1500;
+const MS_BOOTSTRAP_MAX_TRIES = 40;   // 最多等 60 秒；弹幕层关着时本来也没有合并的必要
+
+let msBootTimer = 0;
+let msBootTries = 0;
+let msRendererProto = null;
+
+function MergeDanmaku_bootstrap() {
+  // 必须同时拿到 space 与 **scroll 类型**的弹幕类才算就绪：我们喂进去的都是普通滚动弹幕。
+  // 若只按 space 判就绪，第一条恰好是 fans/noble 之类的弹幕就会提前收工，
+  // 之后永远补不到 scroll 的构造器（实测踩过）。
+  if (msMergeSpace && msMergeCtors.scroll) return true;
+  const node = MergeDanmaku_findDanmakuNode();
+  if (!node) return false;
+  // 派发真实悬停事件，让引擎把弹幕实例挂到节点上
+  ["mouseover", "mouseout"].forEach(function (t) {
+    if (node.comment) return;
+    try {
+      node.dispatchEvent(new MouseEvent(t, { bubbles: true, cancelable: true, view: window }));
+    } catch (e) {
+      node.dispatchEvent(new Event(t, { bubbles: true }));
+    }
   });
+  const cm = node.comment;
+  if (!cm || !cm.space || typeof cm.space.addComment !== "function") return false;
+  msMergeSpace = cm.space;
+  // 按类型记录构造器：采样到的每一条都记，直到凑齐 scroll
+  if (cm.data && cm.data.type && typeof cm.constructor === "function") msMergeCtors[cm.data.type] = cm.constructor;
+  MergeDanmaku_wrapRenderer();
+  if (!msMergeCtors.scroll) return false;   // 继续等一条普通滚动弹幕
+  MergeDanmaku_flushPending();
+  console.log("[DouyuEx] 多屏弹幕合并已接入原生引擎");
+  return true;
 }
 
-/* 补丁必须与 RemoveRepeatedDanmaku 的同锚点补丁**顺序无关**：
-   那个补丁会把锚点改成 `...renderer(e);e.display.raw.comment=e;`（raw.comment 是它去重的依据）。
-   这里在锚点后补上同样的 raw.comment 赋值，于是无论谁先跑，钩子执行时 raw.comment 都已就位。
-   注意锚点里弹幕对象与渲染器工厂是同一个标识符（(\w+) 与 \1 相同），改名也不影响匹配。 */
-function MergeDanmaku_patchFirstqueue(content) {
-  const anchor = /(\w+)\.display=new (\w+)\.renderer\(\1\);/;
-  if (!anchor.test(content)) return content;
-  // 已经打过补丁就直接返回（幂等）：脚本钩子按脚本各跑一次，这里再兜一层，
-  // 避免将来有人重复注册钩子时把调用叠成多次
-  if (content.indexOf("__onDouyuExDanmakuRendered") !== -1) return content;
-  return content.replace(anchor, function (m, cm) {
-    return m + cm + ".display.raw.comment=" + cm +
-      ";(window.__onDouyuExDanmakuRendered||function(){})( " + cm + " );";
-  });
+function MergeDanmaku_findDanmakuNode() {
+  const nodes = document.querySelectorAll('[class*="danmuItem"]');
+  for (let i = nodes.length - 1; i >= 0; i--) {
+    const n = nodes[i];
+    if (n.getBoundingClientRect().width > 0) return n;   // 只认真在飘的（宽 0 的是刚要销毁的）
+  }
+  return null;
+}
+
+function MergeDanmaku_wrapRenderer() {
+  const rd = msMergeSpace && msMergeSpace._renderer;
+  if (!rd || msRendererProto) return;
+  const proto = Object.getPrototypeOf(rd);
+  if (!proto || typeof proto.render !== "function") return;
+  msRendererProto = proto;
+  const orig = proto.render;
+  proto.render = function (cm) {
+    const r = orig.apply(this, arguments);
+    try {
+      MergeDanmaku_onRendered(cm);
+    } catch (e) {
+      // 包装在原生渲染主路径上，异常必须吞掉，绝不能影响原生弹幕
+    }
+    return r;
+  };
+}
+
+function MergeDanmaku_startBootstrap() {
+  if (msBootTimer) return;
+  MergeDanmaku_bootstrap();
+  msBootTimer = setInterval(function () {
+    msBootTries++;
+    if (MergeDanmaku_bootstrap() || msBootTries >= MS_BOOTSTRAP_MAX_TRIES) {
+      clearInterval(msBootTimer);
+      msBootTimer = 0;
+    }
+  }, MS_BOOTSTRAP_POLL_MS);
 }
 
 /* ---------- ② 页面侧钩子（在页面上下文被调用） ---------- */
@@ -105,7 +172,8 @@ function initPkg_PopupPlayer_MergeDanmaku() {
     MergeDanmaku_syncConnections();
   });
   MergeDanmaku_syncConnections();
-  console.log("[DouyuEx] 多屏弹幕合并已就绪（等待原生引擎实例）");
+  // 起运行时自举：等第一条弹幕飘过，派发悬停事件拿到原生引擎的 space 与渲染器
+  MergeDanmaku_startBootstrap();
 }
 
 function MergeDanmaku_onRendered(cm) {
@@ -318,42 +386,36 @@ function MergeDanmaku_flushPending() {
      2. 插入后若本来就在底部，必须同步滚底 —— 否则 scrollHeight 变大触发原生
         "离底 > 30px" 判定，进锁屏态并开始显示"有 N 条新消息"
      3. 不生成图片弹幕占位文本（会被 ImageDanmaku 变成 img） */
+/* 拿一个原生条目当模板。我们自己插的条目带 ex-ms-item，必须排除，
+   否则会越克隆越"自己的样子"。 */
+let msChatTemplate = null;
+
+function MergeDanmaku_getChatTemplate() {
+  if (msChatTemplate && msChatTemplate.isConnected) return msChatTemplate;
+  const list = document.getElementById("js-barrage-list");
+  if (!list) return null;
+  const nodes = list.children;
+  for (let i = nodes.length - 1; i >= 0; i--) {
+    const li = nodes[i];
+    if (!li.classList || li.classList.contains("ex-ms-item")) continue;
+    if (!li.classList.contains("Barrage-listItem")) continue;
+    if (!li.querySelector(".Barrage-nickName") || !li.querySelector(".Barrage-content")) continue;
+    msChatTemplate = li;
+    return li;
+  }
+  return null;
+}
+
 function MergeDanmaku_chatAppend(item) {
   const list = document.getElementById("js-barrage-list");
   if (!list) return;
   // 距底 30px 内视为"用户在底部"，与原生判定阈值一致
   const atBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 30;
-
-  const li = document.createElement("li");
-  li.className = "Barrage-listItem ex-ms-item";
-  const notice = document.createElement("div");
-  notice.className = "Barrage-notice Barrage-notice--normalBarrage";
-  const elems = document.createElement("div");
-  elems.className = "Barrage-elements";
-
-  const badge = document.createElement("span");
-  badge.className = "ex-ms-badge ex-ms-badge--chat";
-  badge.textContent = MergeDanmaku_badgeText(item.srcName);
-  badge.title = String(item.srcName);
-
-  const nick = document.createElement("span");
-  nick.className = "Barrage-nickName Barrage-nickName--blue";
-  nick.textContent = String(item.nn || "观众") + "：";
-
-  const content = document.createElement("span");
-  content.className = "Barrage-content";
-  content.textContent = String(item.text);
-  if (item.color && item.color !== MS_MERGE_COLORS[0]) content.style.color = item.color;
-
-  elems.appendChild(badge);
-  elems.appendChild(nick);
-  elems.appendChild(content);
-  notice.appendChild(elems);
-  li.appendChild(notice);
+  const li = MergeDanmaku_buildChatItem(item);
+  if (!li) return;
   list.appendChild(li);
 
-  // 自己维护上限与滚底（原生清屏按它自己的 UUID 精确删除，不会动我们的节点，
-  // 所以这里必须自己收口，否则长时间多屏会越堆越多）
+  // 自己维护上限与滚底（原生清屏按它自己的 UUID 精确删除，不会动我们的节点）
   msMergeChatCount++;
   while (msMergeChatCount > MS_MERGE_CHAT_MAX && list.firstChild) {
     const first = list.firstChild;
@@ -365,6 +427,86 @@ function MergeDanmaku_chatAppend(item) {
     }
   }
   if (atBottom) list.scrollTop = list.scrollHeight;
+}
+
+/* 克隆原生条目再填内容：样式、结构、字号、间距、点击命中全部跟着原生走，
+   而不是自己拼一套看起来像的。装饰（等级徽章、粉丝勋章）属于模板原主人，
+   照抄会张冠李戴，所以一并摘掉——宁可空着，也不假装是别人的身份。
+   点击交互是原生在 #js-barrage-list 上做的**事件委托**，所以克隆件也照样能点开用户卡片。 */
+function MergeDanmaku_buildChatItem(item) {
+  const tpl = MergeDanmaku_getChatTemplate();
+  if (!tpl) return MergeDanmaku_buildChatItemFallback(item);
+
+  const li = tpl.cloneNode(true);
+  li.className = String(li.className).indexOf("ex-ms-item") === -1 ? li.className + " ex-ms-item" : li.className;
+  // 绝不带 is-self：BarrageSendCheck 以它为门槛比对回执，命中外房弹幕会被标删除线并污染熔断计数
+  li.classList.remove("is-self");
+  ["id", "data-guid", "data-uid"].forEach(function (a) {
+    li.removeAttribute(a);
+  });
+  // 摘掉模板原主人的身份与装饰
+  Array.prototype.forEach.call(
+    li.querySelectorAll('[class*="is-self"],[class*="FansMedal"],[class*="Medal"],[class*="UserLevel"],[class*="RoomLevel"],[class*="Noble"]'),
+    function (n) {
+      n.remove();
+    }
+  );
+
+  const nicks = li.querySelectorAll(".Barrage-nickName");
+  const nick = nicks[0];
+  if (nick) {
+    nick.textContent = String(item.nn || "观众");
+    nick.setAttribute("data-uid", String(item.uid || ""));
+    nick.setAttribute("title", String(item.nn || ""));
+  }
+  if (nicks[1]) nicks[1].textContent = "：";   // 原生把冒号单独放在一个同名 span 里
+
+  const content = li.querySelector(".Barrage-content");
+  if (content) {
+    content.textContent = String(item.text || "");
+    content.style.color = item.color && item.color !== MS_MERGE_COLORS[0] ? item.color : "";
+  }
+
+  // 来源横条插在昵称之前，位置与飘屏一致
+  const badge = document.createElement("span");
+  badge.className = "ex-ms-badge ex-ms-badge--chat";
+  badge.textContent = MergeDanmaku_badgeText(item.srcName);
+  badge.title = String(item.srcName || "");
+  const host = nick && nick.parentNode ? nick.parentNode : li.firstChild;
+  if (host) host.insertBefore(badge, nick || host.firstChild);
+
+  return li;
+}
+
+// 没有原生条目可克隆时的兜底（原生的清单还没渲染出来，通常是刚进直播间）
+function MergeDanmaku_buildChatItemFallback(item) {
+  const li = document.createElement("li");
+  li.className = "Barrage-listItem ex-ms-item";
+  const notice = document.createElement("div");
+  notice.className = "Barrage-notice Barrage-notice--normalBarrage";
+  const elems = document.createElement("div");
+  elems.className = "Barrage-elements";
+
+  const badge = document.createElement("span");
+  badge.className = "ex-ms-badge ex-ms-badge--chat";
+  badge.textContent = MergeDanmaku_badgeText(item.srcName);
+  badge.title = String(item.srcName || "");
+
+  const nick = document.createElement("span");
+  nick.className = "Barrage-nickName Barrage-nickName--blue";
+  nick.textContent = String(item.nn || "观众") + "：";
+
+  const content = document.createElement("span");
+  content.className = "Barrage-content";
+  content.textContent = String(item.text || "");
+  if (item.color && item.color !== MS_MERGE_COLORS[0]) content.style.color = item.color;
+
+  elems.appendChild(badge);
+  elems.appendChild(nick);
+  elems.appendChild(content);
+  notice.appendChild(elems);
+  li.appendChild(notice);
+  return li;
 }
 
 /* ---------- 调试与统计 ---------- */
@@ -384,4 +526,5 @@ window.MergeDanmaku_push = MergeDanmaku_push;
 window.MergeDanmaku_parseChatmsg = MergeDanmaku_parseChatmsg;
 window.MergeDanmaku_badgeText = MergeDanmaku_badgeText;
 window.MergeDanmaku_attachBadge = MergeDanmaku_attachBadge;
-window.MergeDanmaku_patchFirstqueue = MergeDanmaku_patchFirstqueue;
+window.MergeDanmaku_bootstrap = MergeDanmaku_bootstrap;
+window.MergeDanmaku_buildChatItem = MergeDanmaku_buildChatItem;

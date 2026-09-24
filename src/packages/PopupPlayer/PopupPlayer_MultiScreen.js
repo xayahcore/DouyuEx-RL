@@ -57,7 +57,13 @@ let msContainer = null;
 let msActiveList = [];          // [{rid,nn,avatar}]，[0] 恒为主房间
 let msHistoryList = [];         // 关闭时快照，用于重开还原（原生一次性消费）
 let msMultiType = 0;            // 当前分屏数 = msActiveList.length
-let msSlotPlayers = new Map();  // slotIndex -> { rid, epoch, flv, video, reloadTimer, startTimer }
+let msSlotPlayers = new Map();  // 位置 -> { rid, epoch, flv, video, reloadTimer, startTimer }
+/* 位置 → 格子身份。格子身份 = 类名编号（0 = 主画面格 .layout-Player-videoEntity，
+   1~4 = is-multi2~is-multi5），**永不变**；位置 0~4 才是格子摆在哪儿。
+   换位只改这个映射 + 数据/播放器记录，**绝不改任何 className** —— 容器里的节点是斗鱼
+   React 管理的，改它的类名会让它重渲染（主房间播放器会在换位后加载出错）。
+   位置与几何解耦之后，谁在哪儿只由内联样式表达，React 那一侧完全无感。 */
+let msPosOwner = [0, 1, 2, 3, 4];
 let msQn = MS_QUALITY_LIST[0].v;
 let msEpoch = 0;                // 每次重渲染 +1，用于丢弃过期异步回调
 let msDrag = null;
@@ -92,7 +98,8 @@ function MultiScreen_getContainer() {
    用的"格子号 1~5"完全一致（格子号 N 的类就是 is-multiN，格子号 1 即主画面格）。
    这里按类名定位而不是按子节点顺序：拖拽中会把起手格 append 到容器末尾，顺序会变，
    但类名不变；占位块刻意不带 is-multiN，故用 :not 排除。 */
-function MultiScreen_slots() {
+// 按"格子身份"取节点：索引即类名编号（0 = 主画面格，1~4 = is-multi2~is-multi5），顺序固定
+function MultiScreen_cells() {
   const c = MultiScreen_getContainer();
   const out = [];
   if (!c) return out;
@@ -101,6 +108,19 @@ function MultiScreen_slots() {
     out[i] = c.querySelector(".layout-Player-multiPlayer.is-multi" + (i + 1) + ":not(.ms-slot--placeholder)");
   }
   return out;
+}
+
+// 按"位置"取节点：slots[位置] = 当前摆在这个位置上的格子。其余代码一律只用位置，
+// 于是换位只需要改 msPosOwner，不必动任何 DOM 结构。
+function MultiScreen_slots() {
+  const cells = MultiScreen_cells();
+  const out = [];
+  for (let pos = 0; pos < MS_SLOT_COUNT; pos++) out[pos] = cells[msPosOwner[pos]] || null;
+  return out;
+}
+
+function MultiScreen_resetPosOwner() {
+  msPosOwner = [0, 1, 2, 3, 4];
 }
 
 function MultiScreen_slotDom(idx) {
@@ -155,15 +175,34 @@ function MultiScreen_applyLayout() {
     c.className = "layout-Player-multiContainer";
   }
   const table = MS_LAYOUT[msMultiType];
+  /* 单屏状态（没开多屏或只剩一个房间）：**完全交回原生**，一格的内联尺寸都不要碰。
+     实测线上教训：以前这里走的是"失活位置一律清零隐藏"的分支，于是单屏时把全部 5 个槽位
+     都写成了 width:0;height:0;visibility:hidden —— 连主画面格一起，整块播放器区域变成零尺寸，
+     后果是原生弹幕飘屏直接不再出现（引擎的轨道数按容器尺寸算，0 高就是 0 轨），
+     而画面上看起来"什么都没发生"。 */
+  if (msMultiType <= 1) {
+    MultiScreen_slots().forEach(function (slot) {
+      if (!slot) return;
+      ["top", "left", "width", "height", "z-index", "transform", "visibility"].forEach(function (prop) {
+        slot.style.removeProperty(prop);
+      });
+    });
+    return;
+  }
   const slots = MultiScreen_slots();
   slots.forEach(function (slot, i) {
     if (!slot) return;
     if (!table || i >= table.length) {
-      // 不在本次分屏内的槽位：交回原生规则（含 transform:scale(0) + visibility:hidden）
-      slot.style.removeProperty("top"); slot.style.removeProperty("left");
-      slot.style.removeProperty("width"); slot.style.removeProperty("height");
-      slot.style.removeProperty("z-index"); slot.style.removeProperty("transform");
-      slot.style.removeProperty("visibility");
+      // 不在本次分屏内的位置：显式清零并隐藏。
+      // 这里**不能**只清内联样式"交回原生规则"——主画面格没有 is-multiN，原生规则不会隐藏它，
+      // 于是被换到多余位置上的格子会一直摆在画面上。
+      slot.style.top = "0px";
+      slot.style.left = "0px";
+      slot.style.width = "0px";
+      slot.style.height = "0px";
+      slot.style.zIndex = "0";
+      slot.style.transform = "scale(0)";
+      slot.style.visibility = "hidden";
       return;
     }
     const g = table[i];
@@ -190,15 +229,20 @@ function MultiScreen_clearSlot(idx) {
   }
   const slot = MultiScreen_slotDom(idx);
   if (!slot) return;
-  if (idx !== 0) slot.innerHTML = "";   // 槽 0 是斗鱼原生播放器，绝不能动它的内容
+  // 判定依据是**格子身份**而不是位置：主画面格（身份 0）里是斗鱼自己的播放器，
+  // 换位可能把它挪到任意位置，一旦按位置去"清空"就会把播放器 DOM 连根拔掉
+  // （实测：换位后 #__video2 消失、主房间加载出错）。只清我们自己的状态类，内容从不动它。
+  if (msPosOwner[idx] !== 0) slot.innerHTML = "";
   slot.classList.remove("ms-slot--loading", "ms-slot--notice", "is-cur", "cur", "dragging-player", "ms-slot--dragging");
 }
 
 function MultiScreen_renderSlot(idx, room) {
   const slot = MultiScreen_slotDom(idx);
   if (!slot || !room) return;
+  // 主画面格（身份 0）里是斗鱼原生播放器，永远不往里写东西 —— 注意判的是身份不是位置：
+  // 换位后它可能在任意位置上，而任意位置上也可能坐着外房格（那种情况要正常渲染）。
+  if (msPosOwner[idx] === 0) return;
   MultiScreen_clearSlot(idx);
-  if (idx === 0) return;   // 主画面交给斗鱼原生播放器
 
   const epoch = ++msEpoch;
   // 房名胶囊的类名与取值全部对齐原生 .nameAndIcon / .nameTxt / .nameIcon
@@ -225,6 +269,12 @@ function MultiScreen_renderSlot(idx, room) {
     reloadTimer: 0,
     startTimer: 0,
   };
+  // 外房一律静音：只有当前直播间的原生播放器出声，避免几路声音叠在一起
+  if (rec.video) {
+    rec.video.muted = true;
+    rec.video.volume = 0;
+    rec.video.setAttribute("muted", "");
+  }
   msSlotPlayers.set(idx, rec);
 
   MultiScreen_fillName(slot, room);
@@ -350,7 +400,9 @@ function MultiScreen_startFlv(idx, url, epoch) {
    （原生 delete 靠"清空格子再搬 DOM"来避免重启，这里用差量达到同一目的且更稳）
    这是"拖拽/编辑过程始终流畅"的根本原因，必须保持。 */
 function MultiScreen_renderAll() {
-  for (let i = 1; i < MS_SLOT_COUNT; i++) {
+  // 必须从位置 0 开始：主画面格被换走后，位置 0 上坐的就是外房格，需要正常渲染。
+  // 主画面格自身由 renderSlot 内部的身份判定挡掉，不会误碰斗鱼播放器。
+  for (let i = 0; i < MS_SLOT_COUNT; i++) {
     const want = msActiveList[i] || null;
     const rec = msSlotPlayers.get(i);
     const have = rec ? rec.rid : null;
@@ -434,6 +486,7 @@ function MultiScreen_enter(list) {
   if (!target || !target.length) target = MultiScreen_load() || [];
   // 开启/重开按原生口径把主房间放回槽 0；之后的勾选增删不再强行归位，以免打乱用户拖出来的版面
   msActiveList = MultiScreen_normalizeMainFirst(target);
+  MultiScreen_resetPosOwner();   // 开启/重开时回到初始排列
   MultiScreen_renderAll();
   return MultiScreen_after();
 }
@@ -614,17 +667,11 @@ function MultiScreen_swapSlots(a, b, drag) {
   const slotB = MultiScreen_slotDom(b);      // 落点格
   if (!c || !slotA || !slotB || slotA === slotB) { MultiScreen_cancelDrag(drag); return; }
   MultiScreen_setCur(b, false);
-  // 拖拽态是临时的，不参与类名交换
+  // 拖拽态是临时的，不参与换位
   slotA.classList.remove("dragging-player", "ms-slot--dragging");
   slotB.classList.remove("dragging-player", "ms-slot--dragging");
   slotA.style.removeProperty("left");
   slotA.style.removeProperty("top");
-
-  // 交换类名（含 is-multiN / layout-Player-videoEntity / 各 ms-slot-- 状态类，
-  // 状态跟着自己的播放器走，所以 loading 提示不会串到别的格子上）
-  const clsA = slotA.className;
-  slotA.className = slotB.className;
-  slotB.className = clsA;
 
   // 拖动时把它挪到了容器末尾，放回原位（DOM 顺序不影响定位，只为保持结构稳定）
   if (drag.placeholder && drag.placeholder.parentNode) {
@@ -633,7 +680,8 @@ function MultiScreen_swapSlots(a, b, drag) {
   }
   c.classList.remove("is-dragging");
 
-  // 数据、播放器记录、DOM 位置三者必须同步交换，否则差量同步会把两格当成"换房"而重启流
+  // 三者必须同步交换：位置归属、数据、播放器记录。格子节点本身不动、类名不变，
+  // 所以 flv 实例与流都不中断，斗鱼 React 那一侧也毫无感知。
   MultiScreen_swapSlotState(a, b);
   // 位置是内联样式驱动的，必须立刻重算，否则旧的内联值会把元素钉在原处。
   // 容器的 is-dragging 已摘掉，0.2s 的 --Multi-player-transition 会把两格滑到新位置。
@@ -646,10 +694,16 @@ function MultiScreen_swapSlots(a, b, drag) {
 }
 
 function MultiScreen_swapSlotState(a, b) {
+  // 位置归属
+  const tmpOwner = msPosOwner[a];
+  msPosOwner[a] = msPosOwner[b];
+  msPosOwner[b] = tmpOwner;
+  // 播放器记录（跟随格子身份走，所以是"位置上的记录对调"）
   const ra = msSlotPlayers.get(a);
   const rb = msSlotPlayers.get(b);
   if (rb) msSlotPlayers.set(a, rb); else msSlotPlayers.delete(a);
   if (ra) msSlotPlayers.set(b, ra); else msSlotPlayers.delete(b);
+  // 数据
   const arr = msActiveList.slice();
   const tmp = arr[a];
   arr[a] = arr[b];
@@ -758,8 +812,10 @@ function MultiScreen_heal() {
   const slots = MultiScreen_slots();
   // 只看 .ms-slot__video 是否存在，避免误伤正在播放的格子（重建会连它一起带走）
   const needRender = [];
-  for (let i = 1; i < msActiveList.length && i < MS_SLOT_COUNT; i++) {
-    if (slots[i] && !slots[i].querySelector(".ms-slot__video")) needRender.push(i);
+  for (let i = 0; i < msActiveList.length && i < MS_SLOT_COUNT; i++) {
+    if (msPosOwner[i] === 0) continue;   // 主画面格的内容归斗鱼，永远不重渲染
+    // 槽位还没建出来也算需要渲染：renderSlot 内部取不到节点会直接返回，下一次变化再试
+    if (!slots[i] || !slots[i].querySelector(".ms-slot__video")) needRender.push(i);
   }
   MultiScreen_applyLayout();
   needRender.forEach(function (i) {
@@ -769,18 +825,8 @@ function MultiScreen_heal() {
 
 /* ---------- 入口 ---------- */
 
-function initPkg_PopupPlayer_MultiScreen() {
-  MultiScreen_load();
-  // 测试 DOM 与无播放器页面静默跳过（绝不能抛错，否则零异常断言会挂）
-  if (!MultiScreen_isSupported()) return;
-  /* 四个监听全部挂在 document 上，命中由坐标判定（MultiScreen_hitTest）。
-     实测（2288 房间）有两个坑决定了不能挂元素：
-       ① 播放器区域最上层是全屏透明但 pointer-events:auto 的 #__h5player（旧播放器树），
-          它既不在多屏容器内、也不是容器的祖先 —— 挂容器或挂容器祖先都收不到事件；
-       ② #__h5player 与容器分属两棵树，容器祖先会随页面版本变化。
-     挂在 document 上对上面两点都免疫；处理函数在没有 msDrag 时立刻返回，常驻无额外开销。
-     同样必须常驻绑定：若只在拖拽期间挂 mousemove/mouseup，"按一下立刻松开"（未进入拖拽）
-     就没有任何东西能取消长按定时器，手已松开 300ms 后仍会凭空进入拖拽态并卡住。 */
+/* 绑监听 + 挂观察 + 落到当前状态。与"是否受支持"分开，便于轮询里重复调用。 */
+function MultiScreen_bindOnce() {
   // 幂等：重复初始化会把同一批监听注册多遍，于是"点一下格子开出两个标签页"
   if (!msListenersBound) {
     msListenersBound = true;
@@ -791,6 +837,34 @@ function initPkg_PopupPlayer_MultiScreen() {
   }
   MultiScreen_watchContainer();
   MultiScreen_applyLayout();
+  // 清掉可能残留在主画面格上的状态类（早期版本按位置清理时会误加）
+  const mainCell = MultiScreen_slots()[msPosOwner.indexOf(0)];
+  if (mainCell) mainCell.classList.remove("ms-slot--loading", "ms-slot--notice");
+  // 已经从持久化恢复了多屏列表的话，把格子一并渲染出来
+  if (msActiveList.length > 1) MultiScreen_renderAll();
+}
+
+function initPkg_PopupPlayer_MultiScreen() {
+  MultiScreen_load();
+  /* 播放器 DOM 不一定在脚本初始化时就已经就绪。实测（2288 房间，重载后立即注入）：
+     容器存在、主画面格也在，但 is-multi2~is-multi5 还没建出来，于是"受支持"判定为假、
+     整个多屏静默失效（监听没绑、格子没渲染，看起来就像功能根本没生效）。
+     按项目既有做法（initPkg_FollowList 那种）轮询等待，等到就接上，等不到再放弃。
+     测试 DOM 里 5 个槽位齐备，这里第一次调用就会成功。 */
+  if (MultiScreen_isSupported()) {
+    MultiScreen_bindOnce();
+    return;
+  }
+  let tries = 0;
+  const timer = setInterval(function () {
+    tries++;
+    if (MultiScreen_isSupported()) {
+      clearInterval(timer);
+      MultiScreen_bindOnce();
+      return;
+    }
+    if (tries >= 40) clearInterval(timer);
+  }, 1000);
 }
 
 window.MultiScreen_enter = MultiScreen_enter;
@@ -808,6 +882,7 @@ window.MultiScreen_onChange = function (fn) {
 window.MultiScreen_onSlotClick = function (fn) { msOnSlotClick = fn; };
 window.MultiScreen_hitTest = MultiScreen_hitTest;
 window.MultiScreen_getHost = MultiScreen_getHost;
+window.MultiScreen_slots = MultiScreen_slots;
 window.MultiScreen_getRecent = MultiScreen_getRecent;
 window.MultiScreen_pushRecent = MultiScreen_pushRecent;
 window.MultiScreen_QUALITY_LIST = MS_QUALITY_LIST;

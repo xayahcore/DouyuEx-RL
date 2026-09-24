@@ -138,6 +138,11 @@ function stubRect(el, rect) {
   el.getBoundingClientRect = () => Object.assign({ x: rect.left, y: rect.top }, rect);
 }
 
+// 按位置取格子（位置与类名身份解耦：换位只改位置归属，类名永不变）
+function cellPos(win, p) {
+  return win.MultiScreen_slots()[p] || null;
+}
+
 function slotOf(win, n) {
   const c = win.document.getElementById("js-player-multiContainer");
   return n === 0
@@ -201,8 +206,12 @@ async function run() {
   });
   // 不在本次分屏内的槽位必须交回原生规则（清空内联，回到 scale(0)+hidden）
   const idle = slotOf(win, 3);
-  assert.strictEqual(idle.style.width, "", "未参与分屏的槽位不得残留内联尺寸");
-  assert.strictEqual(idle.style.transform, "", "未参与分屏的槽位不得残留 transform");
+  // 失活位置必须**显式**清零隐藏：主画面格没有 is-multiN，原生规则不会隐藏它，
+  // 只清内联样式会让被换到多余位置上的格子一直摆在画面上
+  assert.strictEqual(idle.style.width, "0px", "失活位置必须清零宽度");
+  assert.strictEqual(idle.style.height, "0px", "失活位置必须清零高度");
+  assert.strictEqual(idle.style.visibility, "hidden", "失活位置必须隐藏");
+  assert.strictEqual(idle.style.transform, "scale(0)", "失活位置必须缩到不可见");
 
   enterGrid(win, 2);
   assert.strictEqual(container.className, "layout-Player-multiContainer is-multi is-multi2", "2 分屏容器类名错误");
@@ -219,6 +228,15 @@ async function run() {
   assert.strictEqual(slotOf(win, 4).style.top, "66.2%", "5 分屏槽 4 top 错误");
   assert.strictEqual(slotOf(win, 4).style.left, "58.1%", "5 分屏槽 4 left 错误");
 
+  // 外房必须一律静音：只有当前直播间的原生播放器出声
+  enterGrid(win, 3);
+  for (let i = 1; i < 3; i++) {
+    const v = slotOf(win, i).querySelector(".ms-slot__video");
+    assert.ok(v, "外房格必须有 video 节点");
+    assert.strictEqual(v.muted, true, "外房格 " + i + " 必须静音");
+    assert.strictEqual(v.volume, 0, "外房格 " + i + " 音量必须为 0");
+    assert.strictEqual(v.hasAttribute("muted"), true, "外房格 " + i + " 必须带 muted 属性（部分浏览器只认属性）");
+  }
   // 单屏时必须退回普通容器（去掉 is-multi 与 is-multiN）
   win.MultiScreen_exit();
   assert.strictEqual(container.className, "layout-Player-multiContainer", "退出多屏后容器必须回到单屏类名");
@@ -370,10 +388,12 @@ async function run() {
   assert.strictEqual(after[1], before[0], "换位后槽 1 应持有原来槽 0 的房间");
   // 播放器节点绝不能搬家：标记节点必须还在原来那个 DOM 元素里
   assert.ok(cellA.contains(markerA), "起手格的子节点不得被 reparent（搬 DOM 会重置 <video> 播放）");
-  assert.strictEqual(cellA.className.indexOf("layout-Player-videoEntity"), -1, "起手格必须交出主画面格身份");
-  assert.notStrictEqual(cellA.className.indexOf("is-multi2"), -1, "起手格必须接上落点格的类名");
-  assert.strictEqual(cellB.className.indexOf("is-multi2"), -1, "落点格必须交出 is-multi2");
-  assert.notStrictEqual(cellB.className.indexOf("layout-Player-videoEntity"), -1, "落点格必须接上主画面格身份");
+  // 换位**绝不能改类名**：容器里的节点是斗鱼 React 管理的，动它的类名会让 React 重渲染，
+  // 主房间播放器会在换位后加载出错（实机复现过）。位置由内联几何表达，类名保持原样。
+  assert.notStrictEqual(cellA.className.indexOf("layout-Player-videoEntity"), -1, "起手格必须保留自己的类名（不得改类名换位）");
+  assert.strictEqual(cellA.className.indexOf("is-multi2"), -1, "起手格不得被改成落点格的类名");
+  assert.notStrictEqual(cellB.className.indexOf("is-multi2"), -1, "落点格必须保留自己的类名");
+  assert.strictEqual(cellB.className.indexOf("layout-Player-videoEntity"), -1, "落点格不得被改成主画面格身份");
   // 类名换了，位置也必须跟着换（内联样式要立刻重算，否则旧内联值会把元素钉在原处）
   assert.strictEqual(cellA.style.left, "50%", "换位后起手格必须落在新格子的左坐标");
   assert.strictEqual(cellB.style.left, "0%", "换位后落点格必须落在新格子的左坐标");
@@ -398,8 +418,8 @@ async function run() {
   assert.strictEqual(container.querySelector(".ms-slot--placeholder"), null, "取消后占位块必须清掉");
   assert.strictEqual(container.classList.contains("is-dragging"), false, "取消后必须摘掉 is-dragging");
   assert.strictEqual(win.document.querySelectorAll(".dragging-player").length, 0, "取消后不得残留 dragging-player");
-  assert.strictEqual(slotOf(win, 0).style.left, "0%", "取消后起手格必须回到原位");
-  assert.strictEqual(slotOf(win, 1).style.left, "50%", "取消后落点格必须保持原位");
+  assert.strictEqual(cellPos(win, 0).style.left, "0%", "取消后位置 0 必须回到原位");
+  assert.strictEqual(cellPos(win, 1).style.left, "50%", "取消后位置 1 必须保持原位");
 
   // ---------- 13. 短按不得触发拖拽 ----------
   console.log("--> 13. 短按不触发拖拽");
@@ -650,6 +670,55 @@ async function run() {
   container.dispatchEvent(mu20);
   await sleep(420);
   assert.strictEqual(win.document.querySelectorAll(".dragging-player").length, 0, "原地松手后必须收尾干净");
+  // ---------- 21. 主画面格换位后其内容绝不能被清掉 ----------
+  console.log("--> 21. 主画面格换位后内容不被清空");
+  // 实机线上：换位后主画面格跑到位置 1，按位置渲染/清理就把斗鱼播放器的 DOM 连根拔掉了
+  // （#__video2 消失、主房间加载出错）。判据必须是格子身份而不是位置。
+  enterGrid(win, 2);
+  const mainCell21 = slotOf(win, 0);   // 主画面格（身份 0）
+  assert.strictEqual(cellPos(win, 0), mainCell21, "前置条件：主画面格在位置 0");
+  // 模拟斗鱼自己的播放器内容
+  mainCell21.innerHTML = "";
+  const playerNode = win.document.createElement("div");
+  playerNode.id = "fakeRealPlayer";
+  playerNode.innerHTML = "<video id='fakeRealVideo'></video>";
+  mainCell21.appendChild(playerNode);
+  // 长按从位置 0 拖到位置 1（主画面格被换到位置 1）
+  const md21 = new win.MouseEvent("mousedown", { button: 0, clientX: 0.25 * RECT.width, clientY: 0.5 * RECT.height, bubbles: true });
+  container.dispatchEvent(md21);
+  await sleep(350);
+  const mm21 = new win.MouseEvent("mousemove", { button: 0, clientX: 0.75 * RECT.width, clientY: 0.5 * RECT.height, bubbles: true });
+  container.dispatchEvent(mm21);
+  const mu21 = new win.MouseEvent("mouseup", { button: 0, clientX: 0.75 * RECT.width, clientY: 0.5 * RECT.height, bubbles: true });
+  container.dispatchEvent(mu21);
+  await sleep(700);   // 越过换位后的 500ms 落定
+  // 数据换了、几何换了，但主画面格的内容必须原封不动
+  assert.strictEqual(cellPos(win, 1), mainCell21, "主画面格必须已换到位置 1");
+  assert.ok(mainCell21.querySelector("#fakeRealPlayer"), "主画面格里的播放器节点绝不能被清掉");
+  assert.ok(mainCell21.querySelector("#fakeRealVideo"), "主画面格里的 <video> 绝不能被清掉");
+  assert.strictEqual(mainCell21.classList.contains("ms-slot--notice"), false, "主画面格不得残留通知态类");
+  assert.strictEqual(mainCell21.classList.contains("ms-slot--loading"), false, "主画面格不得残留加载态类");
+  assert.strictEqual(mainCell21.querySelectorAll(".ms-slot__video").length, 0, "不得往主画面格里写我们的播放器");
+  // 位置 0 现在坐的是外房格，必须被正常渲染
+  const idx0Cell = cellPos(win, 0);
+  assert.notStrictEqual(idx0Cell, mainCell21, "位置 0 必须已换成外房格");
+  assert.ok(idx0Cell.querySelector(".ms-slot__video"), "位置 0 的外房格必须被渲染出播放器");
+  assert.ok(idx0Cell.querySelector(".ms-slot__name-text"), "位置 0 的外房格必须有房名胶囊");
+  // ---------- 22. 单屏状态绝不碰槽位尺寸（否则飘屏会整体消失） ----------
+  console.log("--> 22. 单屏状态不动槽位尺寸");
+  // 实机线上：单屏时走了"失活位置清零隐藏"的分支，把全部 5 个槽位写成 0x0，
+  // 连主画面格一起 —— 播放器区域零尺寸后原生弹幕飘屏直接不再出现（引擎轨道数按容器尺寸算）。
+  win.MultiScreen_exit();
+  assert.strictEqual(win.MultiScreen_getList().length, 1, "退出后只剩主房间");
+  for (let i = 0; i < 5; i++) {
+    const el = slotOf(win, i);
+    if (!el) continue;
+    assert.strictEqual(el.style.width, "", "单屏下槽 " + i + " 不得残留内联宽度");
+    assert.strictEqual(el.style.height, "", "单屏下槽 " + i + " 不得残留内联高度");
+    assert.strictEqual(el.style.visibility, "", "单屏下槽 " + i + " 不得被隐藏");
+    assert.strictEqual(el.style.transform, "", "单屏下槽 " + i + " 不得残留 transform");
+  }
+  assert.strictEqual(container.className, "layout-Player-multiContainer", "单屏下容器类名必须回到原生")
   dom.window.close();
   console.log("=== 多屏复刻单元测试 100% 通过 ===");
 }
