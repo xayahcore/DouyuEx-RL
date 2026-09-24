@@ -612,22 +612,54 @@ async function run() {
   assert.strictEqual(after19[0], before19[1], "覆盖层上的拖拽也必须真的完成换位，实际 " + JSON.stringify(after19));
   assert.strictEqual(after19[1], before19[0], "覆盖层上的拖拽换位必须成对交换");
 
-  // 点击：点在覆盖层上、落在外房格内，必须走"开该房间"的路径（主画面格与死区都不接管）
+  // 点击：**绝不能跳转**（原生多屏点格子不离开当前页），且自有界面必须被排除
   const opened = [];
   const origOpen = win.open;
   win.open = function (u) { opened.push(u); return null; };
+  const origHref = win.location.href;
   try {
-    const clickOuter = new win.MouseEvent("click", { button: 0, clientX: 0.75 * RECT.width, clientY: 0.5 * RECT.height, bubbles: true });
-    overlay.dispatchEvent(clickOuter);
-    assert.strictEqual(opened.length, 1, "点外房格必须开该房间，实际 " + JSON.stringify(opened));
-    // 2 分屏下 x=0.75 落在右侧那格，也就是列表第 1 项（换位后可能是主房间，那也照开）
-    const expectRid = String(win.MultiScreen_getList()[1].rid);
-    assert.strictEqual(opened[0], "/" + expectRid, "必须开的是那一格对应的房间，实际 " + opened[0]);
-    opened.length = 0;
-    // 主画面格不接管点击
-    const clickMain = new win.MouseEvent("click", { button: 0, clientX: 0.25 * RECT.width, clientY: 0.5 * RECT.height, bubbles: true });
-    overlay.dispatchEvent(clickMain);
-    assert.strictEqual(opened.length, 0, "主画面格与死区不得触发开新标签");
+    // 点外房格：不得开新标签、不得改地址
+    overlay.dispatchEvent(new win.MouseEvent("click", { button: 0, clientX: 0.75 * RECT.width, clientY: 0.5 * RECT.height, bubbles: true }));
+    assert.strictEqual(opened.length, 0, "点外房格不得跳转，实际 " + JSON.stringify(opened));
+    assert.strictEqual(String(win.location.href), String(origHref), "点外房格不得改地址");
+    // 点主画面格：同样不接管
+    overlay.dispatchEvent(new win.MouseEvent("click", { button: 0, clientX: 0.25 * RECT.width, clientY: 0.5 * RECT.height, bubbles: true }));
+    assert.strictEqual(opened.length, 0, "点主画面格不得跳转");
+    // 死区：不接管
+    overlay.dispatchEvent(new win.MouseEvent("click", { button: 0, clientX: 0.25 * RECT.width, clientY: 0.02 * RECT.height, bubbles: true }));
+    assert.strictEqual(opened.length, 0, "死区不得触发任何跳转");
+
+    // 自有界面必须被整片排除：编辑条（含画质档位）上的点击不得被当成点格子
+    const editBar = win.document.createElement("div");
+    editBar.className = "ms-editbar";
+    const quality = win.document.createElement("input");
+    quality.type = "radio";
+    quality.name = "ms_quality";
+    editBar.appendChild(quality);
+    editBar.style.position = "fixed";
+    editBar.style.left = "0px";
+    editBar.style.top = "0px";
+    editBar.style.width = RECT.width + "px";
+    editBar.style.height = RECT.height + "px";
+    win.document.body.appendChild(editBar);
+    // 落点在外房格正中央，但目标在编辑条里 —— 必须被排除
+    quality.dispatchEvent(new win.MouseEvent("click", { button: 0, clientX: 0.75 * RECT.width, clientY: 0.5 * RECT.height, bubbles: true }));
+    assert.strictEqual(opened.length, 0, "编辑条里的点击（画质档位）绝不能被当成点格子");
+
+    // 重载按钮热区必须被代理：命中就触发按钮自己的点击，而不是跳转
+    const slot1 = cellPos(win, 1);
+    const fakeBtn = win.document.createElement("button");
+    fakeBtn.className = "ms-slot__reload is-visible";
+    let reloaded = 0;
+    fakeBtn.addEventListener("click", function () { reloaded++; });
+    slot1.appendChild(fakeBtn);
+    fakeBtn.getBoundingClientRect = () => ({ left: RECT.width * 0.7, top: RECT.height * 0.4, width: 86, height: 34, right: RECT.width * 0.7 + 86, bottom: RECT.height * 0.4 + 34 });
+    const bx = RECT.width * 0.7 + 40, by = RECT.height * 0.4 + 16;
+    overlay.dispatchEvent(new win.MouseEvent("click", { button: 0, clientX: bx, clientY: by, bubbles: true }));
+    assert.strictEqual(reloaded, 1, "命中重载按钮热区必须触发重载（实机点它被覆盖层挡住）");
+    assert.strictEqual(opened.length, 0, "重载按钮点击不得跳转");
+    fakeBtn.remove();
+    editBar.remove();
   } finally {
     win.open = origOpen;
     overlay.remove();

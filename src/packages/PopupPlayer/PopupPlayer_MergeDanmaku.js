@@ -278,6 +278,7 @@ function MergeDanmaku_syncConnections() {
 function MergeDanmaku_parseChatmsg(room, raw) {
   if (typeof raw !== "string") return null;
   let ret = raw;
+  const rawText = raw;
   // 收包头可能带二进制残字符（WS 帧头被当文本解出来），会让锚定匹配落空；
   // 此时切到第一个 type@= 再试。仍然不是 startsWith：真正的类型判定依旧靠锚定取值。
   if (!getFieldValue(ret, "type")) {
@@ -291,11 +292,20 @@ function MergeDanmaku_parseChatmsg(room, raw) {
   const nn = stt_unescape(getFieldValue(ret, "nn")) || "观众";
   const uid = getFieldValue(ret, "uid");
   const col = parseInt(getFieldValue(ret, "col"), 10) || 0;
+  // 整条报文一并带上：原生构造弹幕数据时要用 ic(头像)/cid(粉丝牌)/pg/pid/mgt/nl 等字段，
+  // 只挑几个字段转发的话，头像、粉丝牌、等级这些"资产"在飘屏上就都不会出现。
+  let full = null;
+  try {
+    full = typeof stt_deserialize === "function" ? stt_deserialize(ret) : null;
+  } catch (e) {
+    full = null;
+  }
   return {
     text: txt,
     color: MS_MERGE_COLORS[col] || MS_MERGE_COLORS[0],
     nn: nn,
     uid: uid,
+    raw: full || { nn: nn, txt: txt, uid: uid, col: String(col), __raw: rawText },
     srcRid: room.rid,
     srcName: room.nn || ("房间 " + room.rid)
   };
@@ -339,24 +349,7 @@ function MergeDanmaku_feed(item) {
     return false;
   }
   try {
-    const cm = new Ctor({
-      type: "scroll",
-      stime: Date.now(),
-      text: item.text,
-      size: 24,
-      space: "scroll",
-      color: item.color,
-      bold: true,
-      border: false,
-      alpha: 1,
-      cursor: "auto",
-      extraData: {
-        uid: String(item.uid || ""),
-        sendName: item.nn,
-        exMsSrcRid: String(item.srcRid),
-        exMsSrcName: item.srcName
-      }
-    });
+    const cm = new Ctor(MergeDanmaku_buildCommentData(item));
     // 返回 false = 原生没有空轨，静默丢弃（原生语义，不算错误）
     const ok = msMergeSpace.addComment(cm);
     if (!ok) msMergeStats.noTrack++;
@@ -365,6 +358,48 @@ function MergeDanmaku_feed(item) {
     msMergeStats.dropped++;
     return false;
   }
+}
+
+/* 按**原生字段名**构造弹幕数据 —— 这是让引擎自己去解析头像、粉丝牌、等级、贵族色的关键。
+   字段名全部来自实测的 firstqueue 源码（dataHandle / 各弹幕构造器）：
+     userIcon      = 头像地址，由报文的 ic 拼出（$SYS.avatar_url + "upload/" + ic + "_small.jpg"）
+     extraData.dbid= 粉丝牌 id（原生就是 e.cid），引擎据此渲染粉丝牌
+     extraData.pg / pid / mgt / nl = 房间等级 / 角色 / 房管 / 贵族等级
+   只挑 text/color/uid 转发的话，飘屏上就只有一条"光秃秃"的弹幕，资产全丢。 */
+function MergeDanmaku_buildCommentData(item) {
+  const raw = item.raw || {};
+  const ic = raw.ic || raw.icon || "";
+  const avatar = ic ? "https://apic.douyucdn.cn/upload/" + ic + "_small.jpg" : "";
+  const data = {
+    type: "scroll",
+    stime: Date.now(),
+    text: item.text,
+    size: 24,
+    space: "scroll",
+    color: item.color,
+    bold: true,
+    border: false,
+    alpha: 1,
+    cursor: raw.uid || item.uid ? "pointer" : "auto",
+    extraData: {
+      uid: String(item.uid || raw.uid || ""),
+      sendName: item.nn,
+      dbid: String(raw.cid || raw.bid || ""),
+      pg: String(raw.pg || ""),
+      pid: String(raw.pid || ""),
+      mgt: String(raw.mgt || ""),
+      nl: String(raw.nl || ""),
+      level: String(raw.level || ""),
+      brid: String(raw.brid || ""),
+      bnn: String(raw.bnn || ""),
+      bl: String(raw.bl || ""),
+      // 我们自己加的来源标记：只有它能触发"来源横条"，主房弹幕没有它
+      exMsSrcRid: String(item.srcRid),
+      exMsSrcName: item.srcName
+    }
+  };
+  if (avatar) data.userIcon = avatar;
+  return data;
 }
 
 function MergeDanmaku_flushPending() {
@@ -528,3 +563,4 @@ window.MergeDanmaku_badgeText = MergeDanmaku_badgeText;
 window.MergeDanmaku_attachBadge = MergeDanmaku_attachBadge;
 window.MergeDanmaku_bootstrap = MergeDanmaku_bootstrap;
 window.MergeDanmaku_buildChatItem = MergeDanmaku_buildChatItem;
+window.MergeDanmaku_buildCommentData = MergeDanmaku_buildCommentData;

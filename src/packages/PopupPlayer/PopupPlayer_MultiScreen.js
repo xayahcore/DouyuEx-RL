@@ -29,10 +29,9 @@ const MS_RELOAD_BTN_MS = 3000;    // 进 loading 后「重新加载」按钮出�
 const MS_START_TIMEOUT_MS = 8000; // 起播超时兜底提示
 const MS_BOTTOM_GUARD_PX = 42;    // 拖拽起手的底部控制条保护带
 
-/* 点小格的行为。斗鱼原生是 window.open("/"+rid) 开新标签（多屏是辅助，点格去该房间主页）。
- * 复刻口径默认 true；改成 false 就变成「点小格切主画面」——这是"复刻"与"更好用"的分歧点，
- * 一行可切。 */
-const MS_CLICK_OPENS_NEW_TAB = true;
+/* 点小格的行为：**默认什么都不做**，与原生一致（原生多屏点格子不会离开当前页）。
+   想改成点小格把它换到主画面，把下面这个开关打开即可（走位置互换，不跳转）。 */
+const MS_CLICK_SWAP_TO_MAIN = false;
 
 /* 清晰度档位。getRealLive_Douyu 的约定：0=蓝光4M 1=流畅 2=高清 3=超清 */
 const MS_QUALITY_LIST = [
@@ -123,6 +122,29 @@ function MultiScreen_resetPosOwner() {
   msPosOwner = [0, 1, 2, 3, 4];
 }
 
+/* 播放器区域最上层压着 #__h5player —— 一个全屏透明但 pointer-events:auto 的旧播放器树。
+   它会把鼠标事件全部吃掉，后果是**连原生弹幕的悬停菜单、用户卡片、弹幕点击都点不出来**
+   （用户反馈"没办法点击用户或弹幕出现本来该有的功能"就是这个）。多屏开启期间把它放行，
+   关掉多屏时恢复原样。控制条是它上面的独立层，不受影响。 */
+const MS_LEGACY_OVERLAY_ID = "__h5player";
+let msOverlayPatched = null;
+
+function MultiScreen_setOverlayPassthrough(on) {
+  const ov = document.getElementById(MS_LEGACY_OVERLAY_ID);
+  if (!ov) return;
+  if (on) {
+    if (msOverlayPatched === ov) return;
+    ov.style.pointerEvents = "none";
+    ov.setAttribute("data-ex-ms-passthrough", "1");
+    msOverlayPatched = ov;
+  } else {
+    if (msOverlayPatched !== ov) return;
+    ov.style.removeProperty("pointer-events");
+    ov.removeAttribute("data-ex-ms-passthrough");
+    msOverlayPatched = null;
+  }
+}
+
 function MultiScreen_slotDom(idx) {
   return MultiScreen_slots()[idx] || null;
 }
@@ -180,6 +202,7 @@ function MultiScreen_applyLayout() {
      都写成了 width:0;height:0;visibility:hidden —— 连主画面格一起，整块播放器区域变成零尺寸，
      后果是原生弹幕飘屏直接不再出现（引擎的轨道数按容器尺寸算，0 高就是 0 轨），
      而画面上看起来"什么都没发生"。 */
+  MultiScreen_setOverlayPassthrough(msMultiType > 1);
   if (msMultiType <= 1) {
     MultiScreen_slots().forEach(function (slot) {
       if (!slot) return;
@@ -713,18 +736,63 @@ function MultiScreen_swapSlotState(a, b) {
 
 /* ---------- 点击格子 ---------- */
 
+/* 自有界面的一律不参与"点格子"判定。
+   实测踩过的坑：点击处理挂在 document 上、只按坐标判格子，于是点编辑条里的画质档位、
+   点格子里的"重新加载"按钮，都会冒泡上来被当成"点了格子"→ 开出对应直播间的新标签页。
+   这里先把自有界面整片排除掉，再按坐标判定。 */
+const MS_OWN_UI_SELECTOR = [
+  ".ms-editbar",
+  ".ms-slot__reload",
+  ".popup-player-panel",
+  ".popup-player",
+  ".ex-panel__wrap",
+  ".miuix-modal",
+  ".danmaku-history-panel"
+].join(",");
+
+function MultiScreen_isOwnUi(target) {
+  if (!target) return false;
+  if (target.closest) return !!target.closest(MS_OWN_UI_SELECTOR);
+  // document 之类的节点没有 closest，按 contains 兜底
+  return !!(target.querySelector && target.querySelector(MS_OWN_UI_SELECTOR));
+}
+
 function MultiScreen_onClick(e) {
   if (e.button !== undefined && e.button !== 0) return;
   if (!MultiScreen_isSupported()) return;
-  if (e.target && e.target.closest && e.target.closest(".ms-slot__reload")) return;   // 重载按钮自己处理
-  // 同样按坐标判定落在哪一格（原因见 onMouseDown）。0 是主画面格，不接管。
+  if (MultiScreen_isOwnUi(e.target)) return;
   const idx = MultiScreen_hitTest(e.clientX, e.clientY, false);
-  if (idx <= 0) return;
+  if (idx < 0) return;                                   // 死区或容器外
+  // 格子的 UI 在容器里，而容器上方压着全屏透明的 #__h5player（见 getHost 注释），
+  // 所以"重新加载"按钮其实点不到 —— 这里按坐标代理它。
+  if (MultiScreen_handleReloadHit(idx, e.clientX, e.clientY)) return;
+  if (idx === 0) return;                                 // 主画面格不接管
   const room = msActiveList[idx];
   if (!room) return;
   if (typeof msOnSlotClick === "function") msOnSlotClick(idx, room);
-  if (MS_CLICK_OPENS_NEW_TAB) window.open("/" + room.rid);
-  else window.location.href = "/" + room.rid;
+  if (MS_CLICK_SWAP_TO_MAIN) {
+    // 点小格把它与位置 0 互换（不跳转、不重启流：只换位置归属与几何）
+    MultiScreen_swapSlotState(0, idx);
+    MultiScreen_applyLayout();
+    MultiScreen_save();
+    MultiScreen_notifyChange(msActiveList.slice());
+  }
+  // 刻意**不跳转**：原生多屏点格子不会离开当前页（早先这里 window.open 开新标签，
+  // 与原生行为不符，也让人误以为"点哪儿都跳转"）。想改成"点格子把它换到主画面"见
+  // MS_CLICK_SWAP_TO_MAIN 开关（见文件头常量）。
+}
+
+// 命中"重新加载"按钮的热区就代为触发；返回 true 表示这次点击已被消费
+function MultiScreen_handleReloadHit(idx, x, y) {
+  const slot = MultiScreen_slotDom(idx);
+  if (!slot) return false;
+  const btn = slot.querySelector(".ms-slot__reload.is-visible");
+  if (!btn) return false;
+  const r = btn.getBoundingClientRect();
+  if (!r.width || !r.height) return false;
+  if (x < r.left || x > r.right || y < r.top || y > r.bottom) return false;
+  btn.click();
+  return true;
 }
 
 /* ---------- 持久化 ---------- */
