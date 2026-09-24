@@ -8,10 +8,10 @@
 
 ---
 
-### 🚀 一键安装与本地测试
+### 🚀 一键安装
 
 - **Greasy Fork 官方安装**：👉 [点击前往安装（支持自动更新）](https://greasyfork.org/zh-CN/scripts/595575-douyuex-rl-%E6%96%97%E9%B1%BC%E7%9B%B4%E6%92%AD%E9%97%B4%E5%A2%9E%E5%BC%BA%E6%8F%92%E4%BB%B6-reborn-lite)
-- **本地构建安装测试文件**：👉 仓库根目录下的 `DouyuEx_RL.user.js`（或 `dist/douyuex.user.js`）
+- **GitHub 仓库**：👉 [点击前往 GitHub 仓库](https://github.com/xayahcore/DouyuEx-RL)
 
 ---
 
