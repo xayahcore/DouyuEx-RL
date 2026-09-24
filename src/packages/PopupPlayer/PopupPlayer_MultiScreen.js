@@ -530,7 +530,9 @@ function MultiScreen_beginQnCompare(idxList) {
     const rec = msSlotPlayers.get(i);
     prev[i] = rec ? rec.url || "" : "";
   });
-  msQnCompare = { prev: prev, same: {}, done: {} };
+  msQnCompare = { prev: prev, same: {}, done: {}, timer: 0 };
+  // 兜底：某格取流失败时 done 永远凑不齐，到点就按已知情况给结论，不能一直不吭声
+  msQnCompare.timer = setTimeout(function () { MultiScreen_finishQnCompare(); }, 15000);
 }
 function MultiScreen_noteStreamUrl(idx, url) {
   const rec = msSlotPlayers.get(idx);
@@ -540,16 +542,26 @@ function MultiScreen_noteStreamUrl(idx, url) {
   msQnCompare.done[idx] = 1;
   if ((url || "") === msQnCompare.prev[idx]) msQnCompare.same[idx] = 1;
   const total = Object.keys(msQnCompare.prev).length;
-  if (Object.keys(msQnCompare.done).length >= total) {
-    const sameCount = Object.keys(msQnCompare.same).length;
-    msQnCompare = null;
-    if (sameCount >= total && total > 0) {
-      showMessage("该直播间只提供同一档画质，流地址未变化", "info");
-    } else if (sameCount > 0) {
-      showMessage("部分直播间只提供同一档画质（" + sameCount + "/" + total + " 未变化）", "info");
-    } else {
-      showMessage("画质已切换", "success");
-    }
+  if (Object.keys(msQnCompare.done).length >= total) MultiScreen_finishQnCompare();
+}
+
+function MultiScreen_finishQnCompare() {
+  if (!msQnCompare) return;
+  const total = Object.keys(msQnCompare.prev).length;
+  const doneCount = Object.keys(msQnCompare.done).length;
+  const sameCount = Object.keys(msQnCompare.same).length;
+  clearTimeout(msQnCompare.timer);
+  msQnCompare = null;
+  if (!total) return;
+  if (doneCount < total) {
+    // 有格子没取到流（失败或还在路上）：如实说，不假装成功
+    showMessage("画质切换：" + doneCount + "/" + total + " 个格子已确认" + (sameCount ? "，其中 " + sameCount + " 个地址未变化" : ""), "info");
+  } else if (sameCount >= total) {
+    showMessage("该直播间只提供同一档画质，流地址未变化", "info");
+  } else if (sameCount > 0) {
+    showMessage("部分直播间只提供同一档画质（" + sameCount + "/" + total + " 未变化）", "info");
+  } else {
+    showMessage("画质已切换", "success");
   }
 }
 function MultiScreen_setQuality(qn) {

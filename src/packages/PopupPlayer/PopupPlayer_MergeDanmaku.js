@@ -92,36 +92,48 @@ function MergeDanmaku_bootstrap() {
   // 若只按 space 判就绪，第一条恰好是 fans/noble 之类的弹幕就会提前收工，
   // 之后永远补不到 scroll 的构造器（实测踩过）。
   if (msMergeSpace && msMergeCtors.scroll) return true;
-  const node = MergeDanmaku_findDanmakuNode();
-  if (!node) return false;
-  // 派发真实悬停事件，让引擎把弹幕实例挂到节点上
-  ["mouseover", "mouseout"].forEach(function (t) {
-    if (node.comment) return;
-    try {
-      node.dispatchEvent(new MouseEvent(t, { bubbles: true, cancelable: true, view: window }));
-    } catch (e) {
-      node.dispatchEvent(new Event(t, { bubbles: true }));
+  // 一次采样**尽量把屏幕上所有飘屏节点都悬停一遍**：只挑最后一个的话，
+  // 若那一条恰好不是普通滚动弹幕（fans/贵族等），就永远补不齐 scroll 类型
+  // 的构造器 —— 实测在弹幕稀疏时会一直 ready 不了。
+  const nodes = MergeDanmaku_findDanmakuNodes();
+  if (!nodes.length) return false;
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i];
+    if (!node.comment) {
+      // 引擎的悬停处理器里有 event.target.comment = comment，派发一次就能拿到实例
+      ["mouseover", "mouseout"].forEach(function (t) {
+        if (node.comment) return;
+        try {
+          node.dispatchEvent(new MouseEvent(t, { bubbles: true, cancelable: true, view: window }));
+        } catch (e) {
+          try { node.dispatchEvent(new Event(t, { bubbles: true })); } catch (e2) {}
+        }
+      });
     }
-  });
-  const cm = node.comment;
-  if (!cm || !cm.space || typeof cm.space.addComment !== "function") return false;
-  msMergeSpace = cm.space;
-  // 按类型记录构造器：采样到的每一条都记，直到凑齐 scroll
-  if (cm.data && cm.data.type && typeof cm.constructor === "function") msMergeCtors[cm.data.type] = cm.constructor;
-  MergeDanmaku_wrapRenderer();
-  if (!msMergeCtors.scroll) return false;   // 继续等一条普通滚动弹幕
+    const cm = node.comment;
+    if (!cm || !cm.space || typeof cm.space.addComment !== "function") continue;
+    msMergeSpace = cm.space;
+    if (cm.data && cm.data.type && typeof cm.constructor === "function") msMergeCtors[cm.data.type] = cm.constructor;
+    MergeDanmaku_wrapRenderer();
+    if (msMergeCtors.scroll) break;
+  }
+  if (!msMergeSpace) return false;
+  if (!msMergeCtors.scroll) return false;   // 还差一条普通滚动弹幕，下一轮继续
   MergeDanmaku_flushPending();
   console.log("[DouyuEx] 多屏弹幕合并已接入原生引擎");
   return true;
 }
 
-function MergeDanmaku_findDanmakuNode() {
+function MergeDanmaku_findDanmakuNodes() {
+  const out = [];
   const nodes = document.querySelectorAll('[class*="danmuItem"]');
-  for (let i = nodes.length - 1; i >= 0; i--) {
-    const n = nodes[i];
-    if (n.getBoundingClientRect().width > 0) return n;   // 只认真在飘的（宽 0 的是刚要销毁的）
+  for (let i = 0; i < nodes.length; i++) {
+    // 只认真在飘的（宽 0 的是刚要销毁的）
+    try {
+      if (nodes[i].getBoundingClientRect().width > 0) out.push(nodes[i]);
+    } catch (e) {}
   }
-  return null;
+  return out;
 }
 
 function MergeDanmaku_wrapRenderer() {
