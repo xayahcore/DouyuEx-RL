@@ -87,10 +87,12 @@ function initPkg_PopupPlayer_MergeDanmaku_ScriptHook() {
     url: "/firstqueue",
     callback: MergeDanmaku_patchFirstqueue
   });
-  scriptHook({
-    url: "/BarrageGroup",
-    callback: MergeDanmaku_patchBarrageGroup
-  });
+  /* ⚠ 实测结论：**不要**拦截 /BarrageGroup。
+     脚本钩子的机制是【拦下原 script 元素 → 异步取回内容 → 插入 inline 脚本代替】，
+     而原始 script 元素的 onload 永远不会触发；aside 微前端的加载器在等它，于是
+     **整个聊天区不初始化**（实测：聊天列表节点都不存在、聊天 0 条）。
+     相比之下 /firstqueue 那条是项目长期在用的、播放器能容忍，所以只保留它。
+     聊天区因此走【克隆原生条目 + 填真实资产】那条安全路径。 */
 }
 
 // 捕获弹幕组件实例：convertComment 是报文进管线的必经之处，this 就是那个组件
@@ -103,7 +105,9 @@ function MergeDanmaku_patchFirstqueue(content) {
   });
 }
 
-// 捕获聊天事件总线：把 subscribe("chatmsg") 的持有者暴露出来
+// 捕获聊天事件总线：把 subscribe("chatmsg") 的持有者暴露出来。
+// ⚠ 仅留档：实测拦截 /BarrageGroup 会让聊天区整个不初始化，因此**不注册**这条钩子。
+// 运行时那条 chatViaBus 路径保留着：万一将来有安全的捕获方式，它就能直接生效。
 function MergeDanmaku_patchBarrageGroup(content) {
   const anchor = /(\w+)\.subscribe\(\s*"chatmsg"/;
   if (!anchor.test(content)) return content;
