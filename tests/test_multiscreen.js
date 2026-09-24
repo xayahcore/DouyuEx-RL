@@ -27,23 +27,27 @@ function bundlePath() {
   return path.join(__dirname, "../DouyuEx_RL.user.js");
 }
 
-// 复刻真实页面结构：#__h5player 是定位祖辈，#js-player-multiContainer 里有 5 个槽位，
-// 槽 0 是斗鱼自己的 .layout-Player-videoEntity，槽 1~4 各带 is-multi2~is-multi5。
-// head 里的注释是必须的：common.js 从 documentElement.innerHTML 里找 `$ROOM.room_id =`
-// 来取全局 rid，缺少它时（测试把整份产物当 script 注入）会匹配到产物源码里的那串字面量，
-// 把 rid 解析成一段源码。真实页面本来就带这个标记，这里如实复刻。
+// 复刻真实页面结构（实机核对过 2288 房间）：
+//   容器 → .player__6-Nuo(已定位) → #js-player-video → #js-player-video-case
+//   而 #__h5player 与容器**同尺寸同位置却是另一棵树、并不包含容器**（旧播放器）
+// 这个结构差异曾经让我把事件错挂到 #__h5player 上导致拖拽整体失效，所以宿主 DOM 必须如实复刻。
 function makeDom() {
   return new JSDOM(
     `<!DOCTYPE html><html><head><!-- $ROOM.room_id = ${RID}; --></head><body>
-      <div id="__h5player">
-        <div id="js-player-multiContainer" class="layout-Player-multiContainer">
-          <div class="layout-Player-videoEntity"><video id="realVideo"></video></div>
-          <div class="layout-Player-multiPlayer is-multi2"></div>
-          <div class="layout-Player-multiPlayer is-multi3"></div>
-          <div class="layout-Player-multiPlayer is-multi4"></div>
-          <div class="layout-Player-multiPlayer is-multi5"></div>
+      <div id="js-player-video-case">
+        <div id="js-player-video">
+          <div class="player__6-Nuo" style="position:relative">
+            <div id="js-player-multiContainer" class="layout-Player-multiContainer">
+              <div class="layout-Player-videoEntity"><video id="realVideo"></video></div>
+              <div class="layout-Player-multiPlayer is-multi2"></div>
+              <div class="layout-Player-multiPlayer is-multi3"></div>
+              <div class="layout-Player-multiPlayer is-multi4"></div>
+              <div class="layout-Player-multiPlayer is-multi5"></div>
+            </div>
+          </div>
         </div>
       </div>
+      <div id="__h5player"></div>
       <ul id="js-barrage-list" class="Barrage-list"></ul>
     </body></html>`,
     { url: "https://www.douyu.com/" + RID, runScripts: "dangerously" }
@@ -171,6 +175,12 @@ async function run() {
   // ---------- 1. 宿主识别 ----------
   console.log("--> 1. 宿主与槽位识别");
   assert.strictEqual(win.MultiScreen_isSupported(), true, "五个槽位齐备时必须识别为受支持");
+  // 宿主必须是容器的已定位祖先；#__h5player 与容器同尺寸同位置却**不包含**容器，
+  // 一旦误挂到它上面，拖拽与点击会整体收不到事件（实机踩过）
+  const host = win.MultiScreen_getHost();
+  assert.ok(host && host.contains(container), "宿主必须包含多屏容器");
+  assert.notStrictEqual(host.id, "__h5player", "宿主绝不能是 #__h5player（它不包含容器）");
+  assert.strictEqual(host.className, "player__6-Nuo", "宿主必须是容器的第一个已定位祖先");
 
   // ---------- 2. 布局与类名 ----------
   console.log("--> 2. is-multiN 布局与 z 序");
@@ -338,8 +348,8 @@ async function run() {
   const md = new win.MouseEvent("mousedown", { button: 0, clientX: 0.25 * RECT.width, clientY: 0.5 * RECT.height, bubbles: true });
   console.log("   [diag] container=" + container.className + " list=" + win.MultiScreen_getList().length +
     " hit=" + win.MultiScreen_hitTest(0.25 * RECT.width, 0.5 * RECT.height, true) +
-    " hostFound=" + !!win.document.getElementById("__h5player"));
-  win.document.getElementById("__h5player").dispatchEvent(md);
+    " hostOk=" + !!win.MultiScreen_getHost());
+  container.dispatchEvent(md);
   await sleep(350); // 越过 300ms 长按阈值
   console.log("   [diag] after sleep dragging=" + win.document.querySelectorAll(".dragging-player").length +
     " placeholders=" + win.document.querySelectorAll(".ms-slot--placeholder").length +
@@ -377,7 +387,7 @@ async function run() {
   console.log("--> 12. 落死区松手取消");
   const snapshot = win.MultiScreen_getList().map((r) => String(r.rid));
   const md2 = new win.MouseEvent("mousedown", { button: 0, clientX: 0.25 * RECT.width, clientY: 0.5 * RECT.height, bubbles: true });
-  win.document.getElementById("__h5player").dispatchEvent(md2);
+  container.dispatchEvent(md2);
   await sleep(350);
   const deadY = 0.02 * RECT.height; // 2 分屏下这是死区
   const mm2 = new win.MouseEvent("mousemove", { button: 0, clientX: 0.25 * RECT.width, clientY: deadY, bubbles: true });
@@ -394,7 +404,7 @@ async function run() {
   // ---------- 13. 短按不得触发拖拽 ----------
   console.log("--> 13. 短按不触发拖拽");
   const md3 = new win.MouseEvent("mousedown", { button: 0, clientX: 0.25 * RECT.width, clientY: 0.5 * RECT.height, bubbles: true });
-  win.document.getElementById("__h5player").dispatchEvent(md3);
+  container.dispatchEvent(md3);
   await sleep(100); // 不足 300ms
   const mu3 = new win.MouseEvent("mouseup", { button: 0, clientX: 0.25 * RECT.width, clientY: 0.5 * RECT.height, bubbles: true });
   win.document.dispatchEvent(mu3);
@@ -408,8 +418,8 @@ async function run() {
   win.MS_EditBar_show();
   assert.ok(win.MS_EditBar_isVisible(), "show() 之后必须处于可见态");
   const bar = win.document.querySelector(".ms-editbar");
-  assert.ok(bar, "编辑条必须已挂载到 #__h5player");
-  assert.strictEqual(bar.parentElement.id, "__h5player", "编辑条必须挂在播放器根节点上（原生同位置）");
+  assert.ok(bar, "编辑条必须已挂载");
+  assert.strictEqual(bar.parentElement.className, "player__6-Nuo", "编辑条必须与事件宿主同处（容器的已定位祖先）");
   bar.getBoundingClientRect = () => ({ left: 0, top: 0, width: 900, height: 226, right: 900, bottom: 226 });
   assert.strictEqual(win.MS_EditBar_step(), 858, "条宽 900 时步进必须是 286 x 3 = 858");
   bar.getBoundingClientRect = () => ({ left: 0, top: 0, width: 300, height: 226, right: 300, bottom: 226 });
@@ -551,6 +561,95 @@ async function run() {
     );
   });
 
+  // ---------- 19. 全屏覆盖层下的拖拽与点击（实机踩过的坑） ----------
+  console.log("--> 19. 全屏覆盖层下仍能拖拽与点击");
+  // 实机上线：播放器区域最上层是 #__h5player —— 全屏透明但 pointer-events:auto，
+  // 既不在多屏容器内也不是容器祖先。事件若挂在容器或容器祖先上，玩家在播放器区域的
+  // 所有按下都收不到，拖拽与点击整体失效。这里用一个等价的覆盖层守住这件事。
+  enterGrid(win, 2);
+  const overlay = win.document.createElement("div");
+  overlay.id = "fakeOverlay";
+  overlay.style.position = "fixed";
+  overlay.style.left = "0px";
+  overlay.style.top = "0px";
+  overlay.style.width = RECT.width + "px";
+  overlay.style.height = RECT.height + "px";
+  overlay.style.zIndex = "99999";
+  win.document.body.appendChild(overlay);
+  assert.ok(win.MultiScreen_getContainer().contains(overlay) === false, "覆盖层必须在容器之外（复刻实机的两棵树结构）");
+
+  // 拖拽：按下发生在覆盖层上，仍必须能起手并换位
+  const before19 = win.MultiScreen_getList().map((r) => String(r.rid));
+  const mdO = new win.MouseEvent("mousedown", { button: 0, clientX: 0.25 * RECT.width, clientY: 0.5 * RECT.height, bubbles: true });
+  overlay.dispatchEvent(mdO);
+  await sleep(350);
+  assert.strictEqual(win.document.querySelectorAll(".dragging-player").length, 1, "覆盖层上的长按必须仍能进入拖拽");
+  const mmO = new win.MouseEvent("mousemove", { button: 0, clientX: 0.75 * RECT.width, clientY: 0.5 * RECT.height, bubbles: true });
+  overlay.dispatchEvent(mmO);
+  const muO = new win.MouseEvent("mouseup", { button: 0, clientX: 0.75 * RECT.width, clientY: 0.5 * RECT.height, bubbles: true });
+  overlay.dispatchEvent(muO);
+  const after19 = win.MultiScreen_getList().map((r) => String(r.rid));
+  assert.strictEqual(after19[0], before19[1], "覆盖层上的拖拽也必须真的完成换位，实际 " + JSON.stringify(after19));
+  assert.strictEqual(after19[1], before19[0], "覆盖层上的拖拽换位必须成对交换");
+
+  // 点击：点在覆盖层上、落在外房格内，必须走"开该房间"的路径（主画面格与死区都不接管）
+  const opened = [];
+  const origOpen = win.open;
+  win.open = function (u) { opened.push(u); return null; };
+  try {
+    const clickOuter = new win.MouseEvent("click", { button: 0, clientX: 0.75 * RECT.width, clientY: 0.5 * RECT.height, bubbles: true });
+    overlay.dispatchEvent(clickOuter);
+    assert.strictEqual(opened.length, 1, "点外房格必须开该房间，实际 " + JSON.stringify(opened));
+    // 2 分屏下 x=0.75 落在右侧那格，也就是列表第 1 项（换位后可能是主房间，那也照开）
+    const expectRid = String(win.MultiScreen_getList()[1].rid);
+    assert.strictEqual(opened[0], "/" + expectRid, "必须开的是那一格对应的房间，实际 " + opened[0]);
+    opened.length = 0;
+    // 主画面格不接管点击
+    const clickMain = new win.MouseEvent("click", { button: 0, clientX: 0.25 * RECT.width, clientY: 0.5 * RECT.height, bubbles: true });
+    overlay.dispatchEvent(clickMain);
+    assert.strictEqual(opened.length, 0, "主画面格与死区不得触发开新标签");
+  } finally {
+    win.open = origOpen;
+    overlay.remove();
+  }
+  // ---------- 20. 槽位被页面重建后的自愈 ----------
+  console.log("--> 20. 槽位被重建后自愈");
+  // 实机上线：斗鱼在播放器初始化/切房时会重建容器里的槽位节点，内联尺寸与格子内容
+  // 一起丢掉、容器类名却还留着 is-multiN，格子会静默塌回一格。这里如实复刻该场景。
+  enterGrid(win, 3);
+  const c20 = win.document.getElementById("js-player-multiContainer");
+  assert.strictEqual(slotOf(win, 0).style.left, "0.8%", "前置条件：3 分屏布局已生效");
+  // 模拟页面重建：把槽位节点整体换成全新的空节点（类名保留）
+  const rebuilt = [];
+  Array.prototype.slice.call(c20.children).forEach(function (old) {
+    const neu = win.document.createElement("div");
+    neu.className = old.className;
+    c20.replaceChild(neu, old);
+    rebuilt.push(neu);
+  });
+  assert.strictEqual(c20.classList.contains("is-multi3"), true, "容器类名会残留（这正是问题所在）");
+  assert.strictEqual(c20.children[0].style.left, "", "重建后的槽位没有内联尺寸");
+  // 自愈是 250ms 防抖的，等它跑完
+  await sleep(420);
+  assert.strictEqual(c20.children[0].style.left, "0.8%", "自愈后槽 0 的布局必须补回来");
+  assert.strictEqual(c20.children[1].style.left, "66.4%", "自愈后槽 1 的布局必须补回来");
+  assert.strictEqual(c20.children[1].style.zIndex, "4", "自愈后 z 序必须补回来");
+  // 播放器节点被一起带走的那几格要重新渲染
+  assert.ok(c20.children[1].querySelector(".ms-slot__video"), "自愈后外房格必须重新长出播放器节点");
+  assert.ok(c20.children[1].querySelector(".ms-slot__name-text"), "自愈后房名胶囊必须重新长出");
+  // 拖拽期间绝不能自愈（否则会跟拖拽抢 DOM）
+  enterGrid(win, 2);
+  const md20 = new win.MouseEvent("mousedown", { button: 0, clientX: 0.25 * RECT.width, clientY: 0.5 * RECT.height, bubbles: true });
+  container.dispatchEvent(md20);
+  await sleep(350);
+  assert.strictEqual(win.document.querySelectorAll(".dragging-player").length, 1, "前置条件：已进入拖拽");
+  await sleep(500);
+  assert.strictEqual(win.document.querySelectorAll(".dragging-player").length, 1, "拖拽期间不得被自愈打断");
+  assert.ok(container.querySelector(".ms-slot--placeholder"), "拖拽期间占位块不得被自愈清掉");
+  const mu20 = new win.MouseEvent("mouseup", { button: 0, clientX: 0.25 * RECT.width, clientY: 0.5 * RECT.height, bubbles: true });
+  container.dispatchEvent(mu20);
+  await sleep(420);
+  assert.strictEqual(win.document.querySelectorAll(".dragging-player").length, 0, "原地松手后必须收尾干净");
   dom.window.close();
   console.log("=== 多屏复刻单元测试 100% 通过 ===");
 }

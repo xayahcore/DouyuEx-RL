@@ -30,16 +30,24 @@ function patchRemoveRepeated(content) {
   return content.replace("e.display=new e.renderer(e);", "e.display=new e.renderer(e);e.display.raw.comment=e;");
 }
 
+// 容器结构如实复刻实机（2288 房间）：#__h5player 并不包含多屏容器，两者是平行的两棵树
 function makeDom() {
   return new JSDOM(
     `<!DOCTYPE html><html><head><!-- $ROOM.room_id = ${RID}; --></head><body>
-      <div id="__h5player"><div id="js-player-multiContainer" class="layout-Player-multiContainer">
-        <div class="layout-Player-videoEntity"></div>
-        <div class="layout-Player-multiPlayer is-multi2"></div>
-        <div class="layout-Player-multiPlayer is-multi3"></div>
-        <div class="layout-Player-multiPlayer is-multi4"></div>
-        <div class="layout-Player-multiPlayer is-multi5"></div>
-      </div></div>
+      <div id="js-player-video-case">
+        <div id="js-player-video">
+          <div class="player__6-Nuo" style="position:relative">
+            <div id="js-player-multiContainer" class="layout-Player-multiContainer">
+              <div class="layout-Player-videoEntity"></div>
+              <div class="layout-Player-multiPlayer is-multi2"></div>
+              <div class="layout-Player-multiPlayer is-multi3"></div>
+              <div class="layout-Player-multiPlayer is-multi4"></div>
+              <div class="layout-Player-multiPlayer is-multi5"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div id="__h5player"></div>
       <ul id="js-barrage-list" class="Barrage-list"></ul>
     </body></html>`,
     { url: "https://www.douyu.com/" + RID, runScripts: "dangerously" }

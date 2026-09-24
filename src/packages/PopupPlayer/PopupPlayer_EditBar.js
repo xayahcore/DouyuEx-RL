@@ -60,8 +60,10 @@ function MS_EditBar_addToPool(room) {
 /* ---------- 宿主 ---------- */
 
 function MS_EditBar_host() {
-  // 原生把编辑条挂在播放器根节点上（#__h5player 是定位祖辈），bottom:0 与原生同位
-  return document.getElementById("__h5player") || MultiScreen_getContainer();
+  // 必须与多屏的事件宿主一致：它是容器的已定位祖先（实测是 .player__6-Nuo，正好是播放器区域）。
+  // 原生那条编辑面板挂在播放器根节点上，但 #__h5player 在现版本页面里并不包含多屏容器，
+  // 挂过去会落到另一个子树里，因此这里复用一个确定的宿主。
+  return MultiScreen_getHost();
 }
 
 function MS_EditBar_mount() {
@@ -317,8 +319,10 @@ function MS_EditBar_exitFullScreen() {
 
 /* ---------- 入口 ---------- */
 
+let msEditBarInited = false;
 function initPkg_PopupPlayer_EditBar() {
-  if (!MultiScreen_isSupported()) return;
+  if (msEditBarInited || !MultiScreen_isSupported()) return;
+  msEditBarInited = true;
   // 多屏列表变化（含拖拽换位落定）后，编辑条的勾选态要跟着走
   MultiScreen_onChange(function (list) {
     if (msEditBarVisible) MS_EditBar_render();

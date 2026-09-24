@@ -62,9 +62,22 @@ let msQn = MS_QUALITY_LIST[0].v;
 let msEpoch = 0;                // 每次重渲染 +1，用于丢弃过期异步回调
 let msDrag = null;
 let msDragTimer = null;
-let msOnChange = null;
+// 列表变化订阅者。**必须是多播**：编辑条与弹幕合并都要跟列表变化走，
+// 早先是单槽（msOnChange = fn），后注册的会静默顶掉先注册的 ——
+// 结果编辑条打开着拖拽换位后不再刷新。这里改成数组，逐个调用且互不影响。
+let msOnChangeList = [];
 let msOnSlotClick = null;
 let msMetaCache = new Map();    // rid -> { nn, avatar, showStatus }
+
+function MultiScreen_notifyChange(list) {
+  msOnChangeList.forEach(function (fn) {
+    try {
+      fn(list);
+    } catch (e) {
+      // 订阅者的问题不能影响多屏本体
+    }
+  });
+}
 
 /* ---------- 宿主与槽位 ---------- */
 
@@ -105,11 +118,35 @@ function MultiScreen_getMainRid() {
   return String((typeof rid !== "undefined" && rid) || "");
 }
 
+/* 事件与编辑条的宿主 = 容器的第一个"已定位"祖先。
+   ⚠ 实测结论（2288 房间）：容器祖先链是
+     #js-player-multiContainer > .player__6-Nuo(relative) > .container__3RvjJ
+       > #js-player-video > #js-player-video-case > .video__VfhVg > …
+   而 #__h5player **虽然与容器同尺寸同位置（都是 813x457 @32,196），却并不包含容器**
+   —— 它是这套页面版本里的旧播放器树，真正的播放器与容器在 #js-player-video 那一支。
+   所以绝不能像原生那样把事件挂在 #__h5player 上：事件永远收不到，拖拽与点击会整体失效。
+   也不能挂在 body 上：那会与页面其它区域的点击相互干扰。 */
+function MultiScreen_getHost() {
+  const c = MultiScreen_getContainer();
+  if (!c) return null;
+  let p = c.parentElement;
+  for (let i = 0; i < 6 && p && p !== document.body; i++) {
+    try {
+      if (getComputedStyle(p).position !== "static") return p;
+    } catch (e) {
+      break;
+    }
+    p = p.parentElement;
+  }
+  return c;   // 兜底：容器自己是 absolute，挂它也能收到槽位冒泡上来的事件
+}
+
 /* ---------- 布局 ---------- */
 
 function MultiScreen_applyLayout() {
   const c = MultiScreen_getContainer();
   if (!c || msDrag) return;   // 拖拽中不抢内联样式，否则被拖格会跳回原位
+  MultiScreen_watchContainer();   // 容器被整棵替换时重新挂上观察（同元素时是空操作）
   msMultiType = msActiveList.length;
   // 与原生一致：>1 才加 is-multi；否则回到普通单屏
   if (msMultiType > 1) {
@@ -383,7 +420,7 @@ function MultiScreen_after() {
   MultiScreen_save();
   // 进了多屏的房间都记一笔"最近看过"
   for (let i = 1; i < msActiveList.length; i++) MultiScreen_pushRecent(msActiveList[i]);
-  if (typeof msOnChange === "function") msOnChange(msActiveList.slice());
+  MultiScreen_notifyChange(msActiveList.slice());
   return msActiveList;
 }
 
@@ -461,13 +498,18 @@ function MultiScreen_hitTest(clientX, clientY, forLongPress) {
 function MultiScreen_onMouseDown(e) {
   if (e.button !== 0) return;
   if (!MultiScreen_isSupported() || msActiveList.length < MS_MIN_ROOMS) return;
+  // 起手位置必须落在多屏容器的有效格子里：容器外的点击一概不管。
+  // 用坐标而非 e.target 判定 —— 播放器区域最上层是 #__h5player 这个
+  // 全屏透明但 pointer-events:auto 的覆盖层（见 MultiScreen_getHost 注释），
+  // 它既不在容器内也不是容器的祖先，用 target 判定会永远落空。
+  if (MultiScreen_hitTest(e.clientX, e.clientY, true) < 0) return;
   if (e.target && e.target.closest && e.target.closest(".ms-slot__reload")) return;
   clearTimeout(msDragTimer);
   const x = e.clientX, y = e.clientY;
   msDragTimer = setTimeout(function () {
     if (msDrag) return;
     const slot = MultiScreen_hitTest(x, y, true);
-    if (slot < 0) return;   // 起手落在死区 → 不进入拖拽
+    if (slot < 0) return;   // 这 300ms 里容器尺寸可能变了，再确认一次
     MultiScreen_beginDrag(x, y, slot);
   }, MS_LONGPRESS_MS);
 }
@@ -599,7 +641,7 @@ function MultiScreen_swapSlots(a, b, drag) {
 
   setTimeout(function () {
     MultiScreen_save();
-    if (typeof msOnChange === "function") msOnChange(msActiveList.slice());
+    MultiScreen_notifyChange(msActiveList.slice());
   }, MS_SWAP_DELAY_MS);
 }
 
@@ -620,28 +662,15 @@ function MultiScreen_swapSlotState(a, b) {
 function MultiScreen_onClick(e) {
   if (e.button !== undefined && e.button !== 0) return;
   if (!MultiScreen_isSupported()) return;
-  const c = MultiScreen_getContainer();
-  if (!c || !c.contains(e.target)) return;
-  if (e.target.closest && e.target.closest(".ms-slot__reload")) return;   // 重载按钮自己处理
-  const slot = e.target.closest && e.target.closest(".layout-Player-multiPlayer");
-  if (!slot || slot.classList.contains("ms-slot--placeholder")) return;
-  if (slot.classList.contains("ms-slot--loading")) return;                // 加载中不响应
-  const idx = MultiScreen_findSlotIndex(slot);
-  if (idx <= 0) return;                                                   // 槽 0 归斗鱼原生
+  if (e.target && e.target.closest && e.target.closest(".ms-slot__reload")) return;   // 重载按钮自己处理
+  // 同样按坐标判定落在哪一格（原因见 onMouseDown）。0 是主画面格，不接管。
+  const idx = MultiScreen_hitTest(e.clientX, e.clientY, false);
+  if (idx <= 0) return;
   const room = msActiveList[idx];
   if (!room) return;
   if (typeof msOnSlotClick === "function") msOnSlotClick(idx, room);
   if (MS_CLICK_OPENS_NEW_TAB) window.open("/" + room.rid);
   else window.location.href = "/" + room.rid;
-}
-
-function MultiScreen_findSlotIndex(slot) {
-  const c = MultiScreen_getContainer();
-  if (!c) return -1;
-  for (let i = 1; i < MS_SLOT_COUNT; i++) {
-    if (c.querySelector(".layout-Player-multiPlayer.is-multi" + (i + 1) + ":not(.ms-slot--placeholder)") === slot) return i;
-  }
-  return -1;
 }
 
 /* ---------- 持久化 ---------- */
@@ -696,23 +725,71 @@ function MultiScreen_load() {
   } catch (e) { return null; }
 }
 
+/* ---------- 自愈：槽位被页面重建时把格子补回来 ---------- */
+
+/* 实测（2288 房间，重载后立即注入）真实发生过：斗鱼在播放器初始化/切房的时机会**重建容器里的
+   槽位节点**，于是内联尺寸与格子内容一起丢掉，而容器类名还留着 is-multiN —— 表现为格子
+   静默塌回一格，用户看不出原因。这里监听容器的子节点变化，把布局重算一遍；若某格连播放器
+   节点都没了（说明确实被重建），再把那一格重新渲染。拖拽期间我们自己在改子节点，必须跳过。 */
+let msHealTimer = 0;
+let msWatched = null;
+let msObserver = null;
+let msListenersBound = false;
+
+function MultiScreen_watchContainer() {
+  const c = MultiScreen_getContainer();
+  if (!c || typeof MutationObserver === "undefined" || msWatched === c) return;
+  if (msObserver) msObserver.disconnect();
+  msWatched = c;
+  msObserver = new MutationObserver(function () {
+    if (msDrag) return;            // 拖拽期间改子节点是预期行为，不能自愈
+    if (msHealTimer) return;       // 合并短时间内的连续变化
+    msHealTimer = setTimeout(function () {
+      msHealTimer = 0;
+      MultiScreen_heal();
+    }, 250);
+  });
+  msObserver.observe(c, { childList: true });
+}
+
+function MultiScreen_heal() {
+  if (msDrag) return;
+  if (!MultiScreen_getContainer() || msActiveList.length < MS_MIN_ROOMS) return;
+  const slots = MultiScreen_slots();
+  // 只看 .ms-slot__video 是否存在，避免误伤正在播放的格子（重建会连它一起带走）
+  const needRender = [];
+  for (let i = 1; i < msActiveList.length && i < MS_SLOT_COUNT; i++) {
+    if (slots[i] && !slots[i].querySelector(".ms-slot__video")) needRender.push(i);
+  }
+  MultiScreen_applyLayout();
+  needRender.forEach(function (i) {
+    MultiScreen_renderSlot(i, msActiveList[i]);
+  });
+}
+
 /* ---------- 入口 ---------- */
 
 function initPkg_PopupPlayer_MultiScreen() {
   MultiScreen_load();
   // 测试 DOM 与无播放器页面静默跳过（绝不能抛错，否则零异常断言会挂）
   if (!MultiScreen_isSupported()) return;
-  // 原生把 mousedown 挂 $eventBox = #__h5player，mouseup 挂 document。
-  // 这里三个监听全部**常驻**绑定：mousemove/mouseup 若只在拖拽期间挂载，
-  // 快速点一下（未进入拖拽）就没有任何东西取消长按定时器（见 onMouseUp 注释）。
-  // 两个处理函数在没有 msDrag 时都会立刻返回，常驻没有额外开销。
-  const eventBox = document.getElementById("__h5player") || MultiScreen_getContainer();
-  if (eventBox) {
-    eventBox.addEventListener("mousedown", MultiScreen_onMouseDown);
-    eventBox.addEventListener("click", MultiScreen_onClick);
-    eventBox.addEventListener("mousemove", MultiScreen_onMouseMove);
+  /* 四个监听全部挂在 document 上，命中由坐标判定（MultiScreen_hitTest）。
+     实测（2288 房间）有两个坑决定了不能挂元素：
+       ① 播放器区域最上层是全屏透明但 pointer-events:auto 的 #__h5player（旧播放器树），
+          它既不在多屏容器内、也不是容器的祖先 —— 挂容器或挂容器祖先都收不到事件；
+       ② #__h5player 与容器分属两棵树，容器祖先会随页面版本变化。
+     挂在 document 上对上面两点都免疫；处理函数在没有 msDrag 时立刻返回，常驻无额外开销。
+     同样必须常驻绑定：若只在拖拽期间挂 mousemove/mouseup，"按一下立刻松开"（未进入拖拽）
+     就没有任何东西能取消长按定时器，手已松开 300ms 后仍会凭空进入拖拽态并卡住。 */
+  // 幂等：重复初始化会把同一批监听注册多遍，于是"点一下格子开出两个标签页"
+  if (!msListenersBound) {
+    msListenersBound = true;
+    document.addEventListener("mousedown", MultiScreen_onMouseDown);
+    document.addEventListener("click", MultiScreen_onClick);
+    document.addEventListener("mousemove", MultiScreen_onMouseMove);
+    document.addEventListener("mouseup", MultiScreen_onMouseUp);
   }
-  document.addEventListener("mouseup", MultiScreen_onMouseUp);
+  MultiScreen_watchContainer();
   MultiScreen_applyLayout();
 }
 
@@ -724,9 +801,13 @@ window.MultiScreen_setQuality = MultiScreen_setQuality;
 window.MultiScreen_isSupported = MultiScreen_isSupported;
 window.MultiScreen_getList = function () { return msActiveList.slice(); };
 window.MultiScreen_getQuality = function () { return msQn; };
-window.MultiScreen_onChange = function (fn) { msOnChange = fn; };
+window.MultiScreen_onChange = function (fn) {
+  // 多播订阅：重复注册同一个函数只记一次
+  if (typeof fn === "function" && msOnChangeList.indexOf(fn) < 0) msOnChangeList.push(fn);
+};
 window.MultiScreen_onSlotClick = function (fn) { msOnSlotClick = fn; };
 window.MultiScreen_hitTest = MultiScreen_hitTest;
+window.MultiScreen_getHost = MultiScreen_getHost;
 window.MultiScreen_getRecent = MultiScreen_getRecent;
 window.MultiScreen_pushRecent = MultiScreen_pushRecent;
 window.MultiScreen_QUALITY_LIST = MS_QUALITY_LIST;
