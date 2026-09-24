@@ -50,34 +50,74 @@ function createPopupPlayerPanel() {
   p.className = "popup-player-panel miuix-modal";
   p.innerHTML = `
     <div class="miuix-modal__body">
-      <div class="popup-panel__card">
-        <div class="popup-panel__card-header">
-          <span class="popup-panel__card-title">直播流或房间地址</span>
-          <button type="button" class="popup-panel__paste-btn" id="popup-panel-paste">粘贴</button>
+      <div class="miuix-seg popup-panel__tabs">
+        <label class="miuix-seg__item">
+          <input type="radio" name="popup_player_tab" value="single" checked /><span class="miuix-seg__label">单窗播放</span>
+        </label>
+        <label class="miuix-seg__item">
+          <input type="radio" name="popup_player_tab" value="multi" /><span class="miuix-seg__label">多屏观看</span>
+        </label>
+      </div>
+
+      <div class="popup-panel__page" data-page="single">
+        <div class="popup-panel__card">
+          <div class="popup-panel__card-header">
+            <span class="popup-panel__card-title">直播流或房间地址</span>
+            <button type="button" class="popup-panel__paste-btn" id="popup-panel-paste">粘贴</button>
+          </div>
+          <div class="popup-panel__input-box">
+            <input type="text" id="popup-panel-url" value="https://www.douyu.com/4042402" placeholder="支持斗鱼/虎牙/B站房间号或直播流" />
+          </div>
         </div>
-        <div class="popup-panel__input-box">
-          <input type="text" id="popup-panel-url" value="https://www.douyu.com/4042402" placeholder="支持斗鱼/虎牙/B站房间号或直播流" />
+
+        <div class="popup-panel__card">
+          <div class="popup-panel__card-header">
+            <span class="popup-panel__card-title">同屏播放模式</span>
+          </div>
+          <div class="miuix-seg">
+            <label class="miuix-seg__item">
+              <input type="radio" name="popup_player_mode" value="noiframe" checked /><span class="miuix-seg__label">无弹幕极速流 (推荐)</span>
+            </label>
+            <label class="miuix-seg__item">
+              <input type="radio" name="popup_player_mode" value="iframe" /><span class="miuix-seg__label">全功能有弹幕</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="popup-panel__action-wrap">
+          <button type="button" class="ex-btn-primary popup-panel__submit-btn" id="popup-panel-start-btn">
+            载入同屏流
+          </button>
         </div>
       </div>
 
-      <div class="popup-panel__card">
-        <div class="popup-panel__card-header">
-          <span class="popup-panel__card-title">同屏播放模式</span>
+      <div class="popup-panel__page" data-page="multi" hidden>
+        <div class="popup-panel__card">
+          <div class="popup-panel__card-header">
+            <span class="popup-panel__card-title">已加入多屏 <em class="popup-ms__count" id="popup-ms-count">1 / 5</em></span>
+            <button type="button" class="popup-panel__paste-btn" id="popup-ms-edit">编辑位置顺序</button>
+          </div>
+          <div class="popup-ms__rooms" id="popup-ms-rooms"></div>
         </div>
-        <div class="miuix-seg">
-          <label class="miuix-seg__item">
-            <input type="radio" name="popup_player_mode" value="noiframe" checked /><span class="miuix-seg__label">无弹幕极速流 (推荐)</span>
-          </label>
-          <label class="miuix-seg__item">
-            <input type="radio" name="popup_player_mode" value="iframe" /><span class="miuix-seg__label">全功能有弹幕</span>
-          </label>
-        </div>
-      </div>
 
-      <div class="popup-panel__action-wrap">
-        <button type="button" class="ex-btn-primary popup-panel__submit-btn" id="popup-panel-start-btn">
-          载入同屏流
-        </button>
+        <div class="popup-panel__card">
+          <div class="popup-panel__card-header">
+            <span class="popup-panel__card-title">添加房间</span>
+            <button type="button" class="popup-panel__paste-btn" id="popup-ms-search-btn">搜索</button>
+          </div>
+          <div class="popup-panel__input-box">
+            <input type="text" id="popup-ms-search" placeholder="房间号 / 直播间链接 / 主播名" />
+          </div>
+          <div class="popup-ms__src">
+            <button type="button" class="popup-panel__paste-btn popup-ms__src-btn" data-src="follow">关注在播</button>
+            <button type="button" class="popup-panel__paste-btn popup-ms__src-btn" data-src="recent">最近看过</button>
+          </div>
+          <div class="popup-ms__results" id="popup-ms-results"></div>
+        </div>
+
+        <div class="popup-panel__action-wrap">
+          <button type="button" class="ex-btn-primary popup-panel__submit-btn" id="popup-ms-toggle-btn">开启多屏</button>
+        </div>
       </div>
     </div>
   `;
@@ -114,6 +154,232 @@ function createPopupPlayerPanel() {
       p.style.setProperty("display", "none", "important");
     });
   }
+
+  PopupPlayer_initTabs(p);
+  PopupPlayer_initMultiPage(p);
+}
+
+/* ---------- 面板页签：单窗播放 / 多屏观看 ---------- */
+
+function PopupPlayer_initTabs(p) {
+  Array.prototype.forEach.call(p.querySelectorAll('input[name="popup_player_tab"]'), function (radio) {
+    radio.addEventListener("change", function () {
+      if (!radio.checked) return;
+      PopupPlayer_switchPage(radio.value);
+    });
+  });
+}
+
+function PopupPlayer_switchPage(name) {
+  let panel = document.querySelector(".popup-player-panel");
+  if (!panel) return;
+  Array.prototype.forEach.call(panel.querySelectorAll(".popup-panel__page"), function (page) {
+    page.hidden = page.getAttribute("data-page") !== name;
+  });
+  if (name === "multi") PopupPlayer_renderMultiPage();
+}
+
+/* ---------- 多屏页 ---------- */
+
+function PopupPlayer_initMultiPage(p) {
+  let editBtn = p.querySelector("#popup-ms-edit");
+  if (editBtn) {
+    editBtn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (MultiScreen_getList().length < MS_MIN_ROOMS) {
+        showMessage("多屏模式下，最少需要" + MS_MIN_ROOMS + "个直播间", "warning");
+        return;
+      }
+      // 编辑条是 1:1 复刻的原生编辑面板，开它就收起本面板，避免两层盖住播放器
+      p.style.setProperty("display", "none", "important");
+      MS_EditBar_show();
+    });
+  }
+
+  let toggleBtn = p.querySelector("#popup-ms-toggle-btn");
+  if (toggleBtn) {
+    toggleBtn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (MultiScreen_getList().length > 1) {
+        MultiScreen_exit();
+        showMessage("已退出多屏", "info");
+      } else {
+        showMessage("先添加至少 1 个直播间再开启", "warning");
+        return;
+      }
+      PopupPlayer_renderMultiPage();
+    });
+  }
+
+  let searchBtn = p.querySelector("#popup-ms-search-btn");
+  let searchInp = p.querySelector("#popup-ms-search");
+  if (searchBtn && searchInp) {
+    searchBtn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      PopupPlayer_msSearch(searchInp.value.trim());
+    });
+    searchInp.addEventListener("keydown", function (e) {
+      e.stopPropagation();
+      if (e.key === "Enter") PopupPlayer_msSearch(searchInp.value.trim());
+    });
+  }
+
+  Array.prototype.forEach.call(p.querySelectorAll(".popup-ms__src-btn"), function (btn) {
+    btn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (btn.getAttribute("data-src") === "follow") PopupPlayer_msLoadFollow();
+      else PopupPlayer_msLoadRecent();
+    });
+  });
+}
+
+function PopupPlayer_msEsc(s) {
+  return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function PopupPlayer_renderMultiPage() {
+  let countEl = document.getElementById("popup-ms-count");
+  let roomsEl = document.getElementById("popup-ms-rooms");
+  let toggleBtn = document.getElementById("popup-ms-toggle-btn");
+  if (!countEl || !roomsEl) return;
+
+  let list = MultiScreen_getList();
+  countEl.textContent = list.length + " / " + MS_MAX_ROOMS;
+
+  let mainRid = MultiScreen_getMainRid();
+  roomsEl.innerHTML = list.map(function (r) {
+    let isMain = String(r.rid) === String(mainRid);
+    return (
+      '<div class="popup-ms__room" data-rid="' + PopupPlayer_msEsc(r.rid) + '">' +
+        '<span class="popup-ms__room-name">' + PopupPlayer_msEsc(r.nn || ("房间 " + r.rid)) + "</span>" +
+        '<span class="popup-ms__room-rid">' + (isMain ? "主画面" : PopupPlayer_msEsc(r.rid)) + "</span>" +
+        (isMain ? "" : '<button type="button" class="popup-ms__room-del" title="移除">×</button>') +
+      "</div>"
+    );
+  }).join("");
+
+  Array.prototype.forEach.call(roomsEl.querySelectorAll(".popup-ms__room-del"), function (btn) {
+    btn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      let row = btn.parentElement;
+      MultiScreen_removeRoom(row.getAttribute("data-rid"));
+      PopupPlayer_renderMultiPage();
+    });
+  });
+
+  if (toggleBtn) toggleBtn.textContent = list.length > 1 ? "退出多屏" : "开启多屏";
+}
+
+// 统一的结果列表渲染：rows = [{ rid, nn, avatar, showStatus, hot }]
+function PopupPlayer_msRenderResults(rows, emptyTip) {
+  let box = document.getElementById("popup-ms-results");
+  if (!box) return;
+  if (!rows.length) {
+    box.innerHTML = '<div class="popup-ms__empty">' + PopupPlayer_msEsc(emptyTip || "没有找到房间") + "</div>";
+    return;
+  }
+  let selected = {};
+  MultiScreen_getList().forEach(function (r) { selected[String(r.rid)] = 1; });
+  box.innerHTML = rows.map(function (r) {
+    let rid = String(r.rid);
+    let on = selected[rid];
+    // 已加入的、以及未开播的，都标记出来（未开播的点了会被编辑条四项校验拦下并提示）
+    let flag = on ? '<span class="popup-ms__flag is-on">已加入</span>'
+      : (+r.showStatus === 2 ? '<span class="popup-ms__flag">未开播</span>' : "");
+    return (
+      '<div class="popup-ms__result' + (on ? " is-on" : "") + '" data-rid="' + PopupPlayer_msEsc(rid) + '">' +
+        '<span class="popup-ms__result-name">' + PopupPlayer_msEsc(r.nn || ("房间 " + rid)) + "</span>" +
+        '<span class="popup-ms__result-meta">' + PopupPlayer_msEsc(rid) + (r.sub ? " · " + PopupPlayer_msEsc(r.sub) : "") + "</span>" +
+        flag +
+      "</div>"
+    );
+  }).join("");
+
+  Array.prototype.forEach.call(box.querySelectorAll(".popup-ms__result"), function (row) {
+    row.addEventListener("click", function () {
+      let rid = row.getAttribute("data-rid");
+      let room = rows.filter(function (x) { return String(x.rid) === rid; })[0];
+      if (!room) return;
+      // 借道编辑条的勾选逻辑，四项校验与文案一处实现、两处复用
+      MS_EditBar_addToPool(room);
+      if (MS_EditBar_toggleRoom(rid)) {
+        PopupPlayer_renderMultiPage();
+        PopupPlayer_msRenderResults(rows, "");
+      }
+    });
+  });
+}
+
+/* 搜索走斗鱼自己的搜索接口，与站内搜索同源，不用额外 @connect */
+function PopupPlayer_msSearch(kw) {
+  if (!kw) {
+    showMessage("请输入房间号、链接或主播名", "info");
+    return;
+  }
+  // 纯数字 / 直播间链接直接当房间号处理，省一次搜索
+  let bare = String(kw).replace(/^https?:\/\/[^/]*douyu\.com\//i, "").replace(/[^\d]/g, "");
+  if (/^\d+$/.test(bare) && String(kw).indexOf("douyu.com") !== -1) {
+    MS_EditBar_addToPool({ rid: bare, nn: "", avatar: "", showStatus: undefined });
+    if (MS_EditBar_toggleRoom(bare)) {
+      PopupPlayer_renderMultiPage();
+      PopupPlayer_msRenderResults([], "");
+    }
+    return;
+  }
+
+  fetch("https://www.douyu.com/japi/search/api/getSearchRec?kw=" + encodeURIComponent(kw) + "&type=all", {
+    method: "GET",
+    mode: "no-cors",
+    credentials: "include"
+  }).then(function (r) { return r.json(); }).then(function (ret) {
+    let d = (ret && ret.data) || ret || {};
+    let arr = d.roomResult || (d.room && d.room.list) || [];
+    let rows = arr.map(function (it) {
+      return {
+        rid: String(it.rid || it.room_id || ""),
+        nn: it.nickName || it.nickname || it.room_name || "",
+        avatar: it.avatar || it.avatar_small || "",
+        // isLive 为真即在播；接口若没给，留 undefined 不做判定
+        showStatus: it.isLive === undefined ? undefined : (it.isLive ? 1 : 2),
+        sub: it.cateName || "",
+        hot: it.hot || ""
+      };
+    }).filter(function (r) { return r.rid; });
+    PopupPlayer_msRenderResults(rows, "没有搜到相关直播间");
+  }).catch(function () {
+    showMessage("搜索失败，请稍后重试", "error");
+  });
+}
+
+/* 关注在播：复用关注列表接口，取「正在直播且非录播」的前若干 */
+function PopupPlayer_msLoadFollow() {
+  if (typeof getFollowList !== "function") return;
+  getFollowList().then(function (ret) {
+    if (!ret || String(ret.error) !== "0") {
+      showMessage("关注列表获取失败，可能未登录", "error");
+      return;
+    }
+    let arr = (ret.data && ret.data.list) || [];
+    let rows = arr.filter(function (it) {
+      return it.show_status == "1" && it.videoLoop == "0";
+    }).map(function (it) {
+      return {
+        rid: String(it.room_id),
+        nn: it.nickname || it.room_name || "",
+        avatar: String(it.avatar_small || "").replace("_big", "_small"),
+        showStatus: 1,
+        hot: it.online || ""
+      };
+    }).slice(0, 50);
+    PopupPlayer_msRenderResults(rows, "关注的直播间当前都没有开播");
+  });
+}
+
+/* 最近看过：斗鱼没有可用的公开"最近观看"接口，这份列表是本插件自己维护的本地记录
+   （凡进过多屏的房间都会记一笔），存 ExSave_MultiScreenRecent */
+function PopupPlayer_msLoadRecent() {
+  let rows = MultiScreen_getRecent();
+  PopupPlayer_msRenderResults(rows, "还没有多屏观看记录");
 }
 
 function executePopupPlayer(url, isNoIframe) {

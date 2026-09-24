@@ -2175,3 +2175,614 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
 .danmaku-history-panel__more.is-visible {
     display: inline-block !important;
 }
+
+/* ==========================================================================
+   20. 多屏（1:1 复刻斗鱼原生「多屏」）
+   格子区不是模态：它直接改造页面自带的 #js-player-multiContainer 与 5 个槽位
+   （槽 0 就是斗鱼原生播放器本体），所以本节样式全部以 .layout-Player-multiPlayer /
+   .layout-Player-videoEntity 为落点，用 ms- 前缀区分自有节点。
+
+   几何（top/left/width/height 百分比与 z 序）由引擎写内联样式，因为原生靠
+   .is-multiN 后代规则驱动，宿主样式表缺失时会整块失灵；内联更稳且取值与原生完全一致。
+   本节只负责"格子里面长什么样"：房名胶囊、加载层、四态文案、拖拽落点与占位块。
+
+   注意：本节禁止出现 380px / 370px（产物级断言认定模态尺寸只能声明一次），
+   也禁止出现反引号与美元花括号插值（CSS 会被塞进模板字符串，插值起始符会直接截断它）。
+   ========================================================================== */
+
+/* 槽位内视频：撑满并保持比例（原生只给 canvas/video 打了 100% 尺寸） */
+.layout-Player-multiContainer .layout-Player-multiPlayer > video.ms-slot__video {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain !important;
+    display: block !important;
+    background: #000 !important;
+}
+
+/* 房名胶囊：类名与取值 1:1 对齐原生 .nameAndIcon / .nameIcon / .nameTxt */
+.layout-Player-multiContainer .ms-slot__name {
+    position: absolute !important;
+    left: 10px !important;
+    bottom: 20px !important;
+    z-index: 2 !important;
+    display: flex !important;
+    align-items: center !important;
+    max-width: calc(100% - 20px) !important;
+    padding: 2px !important;
+    background: rgba(0, 0, 0, 0.6) !important;
+    border-radius: 14px !important;
+    font-size: 14px !important;
+    color: #fff !important;
+    cursor: pointer !important;
+}
+
+.layout-Player-multiContainer .ms-slot__name-icon {
+    flex: 0 0 auto !important;
+    width: 20px !important;
+    height: 20px !important;
+    border-radius: 20px !important;
+    background-repeat: no-repeat !important;
+    background-size: cover !important;
+    background-position: center !important;
+    background-color: #444 !important;
+}
+
+.layout-Player-multiContainer .ms-slot__name-text {
+    margin: 0 4px !important;
+    max-width: 120px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+}
+
+/* 加载层：原生 .loadingView 是 #333 满铺 + 居中 flex */
+.layout-Player-multiContainer .ms-slot__loading {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    z-index: 3 !important;
+    display: none !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: #333 !important;
+}
+
+.layout-Player-multiContainer .ms-slot--loading > .ms-slot__loading,
+.layout-Player-multiContainer .ms-slot--notice > .ms-slot__loading {
+    display: flex !important;
+}
+
+/* 文案态：不整块盖住画面，只压一层暗底，让已经出画/黑屏的格子都还能看清 */
+.layout-Player-multiContainer .ms-slot--notice > .ms-slot__loading {
+    background: rgba(0, 0, 0, 0.55) !important;
+}
+
+.layout-Player-multiContainer .ms-slot__loading-inner {
+    width: 100% !important;
+    text-align: center !important;
+}
+
+/* 转圈：原生用 220x128 雪碧图 steps(19)；该图是构建期哈希资源无法稳定引用，
+   这里用同占位的纯 CSS 环代替，时长同为 1.5s，文案与层级完全一致 */
+.layout-Player-multiContainer .ms-slot__spin {
+    width: 34px !important;
+    height: 34px !important;
+    margin: 0 auto 18px !important;
+    border: 3px solid rgba(255, 255, 255, 0.16) !important;
+    border-top-color: #fff !important;
+    border-radius: 50% !important;
+    animation: ms-slot-spin 1.5s linear infinite !important;
+}
+
+.layout-Player-multiContainer .ms-slot--notice .ms-slot__spin {
+    display: none !important;
+}
+
+@keyframes ms-slot-spin {
+    to { transform: rotate(360deg); }
+}
+
+.layout-Player-multiContainer .ms-slot__tip {
+    margin: auto !important;
+    color: #ccc !important;
+    font-size: 14px !important;
+    text-align: center !important;
+}
+
+/* 「重新加载」：原生 .reload 的 86x34 / 2px 橙边 / hover 反色，3 秒后才出现 */
+.layout-Player-multiContainer .ms-slot__reload {
+    display: none !important;
+    width: 86px !important;
+    height: 34px !important;
+    margin: 20px auto 0 !important;
+    line-height: 34px !important;
+    font-size: 14px !important;
+    color: #ff5d23 !important;
+    background: transparent !important;
+    border: 2px solid #ff5d23 !important;
+    border-radius: 8px !important;
+    cursor: pointer !important;
+    user-select: none !important;
+    transition: none !important;
+}
+
+.layout-Player-multiContainer .ms-slot__reload.is-visible {
+    display: block !important;
+}
+
+.layout-Player-multiContainer .ms-slot__reload:hover {
+    background: #ff5d23 !important;
+    color: #fff !important;
+}
+
+/* 拖拽落点高亮：原生只挂 is-cur 而样式表只定义了 .cur（全站 372 份样式表 0 命中），
+   即原生高亮是失效的。这里两个类都接，并加内发光，小格子上也能一眼看清落点。 */
+.layout-Player-multiContainer .layout-Player-multiPlayer.cur,
+.layout-Player-multiContainer .layout-Player-multiPlayer.is-cur {
+    border: 2px solid #ff5d23 !important;
+    box-shadow: inset 0 0 0 1px rgba(255, 93, 35, 0.45), 0 0 12px rgba(255, 93, 35, 0.35) !important;
+}
+
+/* 占位块：被拖起后留在原位的空框（原生 #333 + 2px 白边 + pointer-events:none）。
+   它刻意不带 is-multiN 类，所以必须自己把基础态的 scale(0) 与 hidden 放开。 */
+.layout-Player-multiContainer .layout-Player-multiPlayer.ms-slot--placeholder {
+    background: #333 !important;
+    border: 2px solid #fff !important;
+    box-sizing: border-box !important;
+    pointer-events: none !important;
+    transform: scale(1) !important;
+    visibility: visible !important;
+}
+
+/* 被拖起的那一格：原生 .dragging-player 已给到 416x234 + translate(-50%,-50%)，
+   这里只补层级与光标，避免拖到控制条附近时被压住 */
+.layout-Player-multiContainer .dragging-player.ms-slot--dragging {
+    z-index: 99 !important;
+    cursor: grabbing !important;
+}
+
+/* ==========================================================================
+   21. 多屏编辑条（1:1 复刻斗鱼 .mutiPlayerEditPanel）
+   几何为实测原值：条体高 226 / bottom:0 / padding-bottom:16px；顶栏 padding 16px；
+   卡片 270x152 + margin-left 16（末位 margin 0 16）；箭头 28x42 垂直居中。
+   原生底色是 rgba(0,0,0,.8)，按"编辑条走 MIUIX"的既定决策改深色磨砂玻璃。
+   层级 10：必须压在 .is-multi .layout-Player-videoEntity 的 z-index 5 之上。
+   ========================================================================== */
+.ms-editbar {
+    position: absolute !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    width: 100% !important;
+    height: 0 !important;
+    display: none !important;
+    overflow: hidden !important;
+    z-index: 10 !important;
+    box-sizing: border-box !important;
+    padding: 0 0 16px !important;
+    background: rgba(28, 30, 38, 0.82) !important;
+    backdrop-filter: blur(36px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(36px) saturate(180%) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+
+/* 顶栏：padding 16px + 两端对齐；标题 500/18px；关闭 24x24 */
+.ms-editbar__top {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 16px !important;
+    box-sizing: border-box !important;
+    z-index: 1 !important;
+}
+
+.ms-editbar__title {
+    margin: 0 !important;
+    font-weight: 500 !important;
+    font-size: 18px !important;
+    letter-spacing: 0 !important;
+    text-align: center !important;
+    color: #fff !important;
+}
+
+.ms-editbar__close {
+    width: 24px !important;
+    height: 24px !important;
+    flex: 0 0 auto !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: 20px !important;
+    line-height: 1 !important;
+    color: rgba(255, 255, 255, 0.85) !important;
+    cursor: pointer !important;
+    user-select: none !important;
+    transition: color 0.18s ease !important;
+}
+
+.ms-editbar__close:hover {
+    color: #ff5d23 !important;
+}
+
+/* 列表区：自身不滚动，靠 transform 横移（原生同款） */
+.ms-editbar__panel {
+    position: relative !important;
+    width: 100% !important;
+    overflow: hidden !important;
+}
+
+.ms-editbar__list {
+    display: flex !important;
+    align-items: center !important;
+    will-change: transform !important;
+}
+
+/* 卡片：270x152 / 1px #999 / bg #333 / 底图 cover */
+.ms-editbar__card {
+    position: relative !important;
+    width: 270px !important;
+    height: 152px !important;
+    min-width: 270px !important;
+    margin: 0 0 0 16px !important;
+    box-sizing: border-box !important;
+    border: 1px solid #999 !important;
+    background-color: #333 !important;
+    background-position: 50% !important;
+    background-size: cover !important;
+    background-repeat: no-repeat !important;
+    cursor: pointer !important;
+    overflow: hidden !important;
+}
+
+.ms-editbar__card:last-child {
+    margin: 0 16px !important;
+}
+
+/* 原生 hover 换 2px 橙边且无 transition，这里是"瞬时"手感的一部分，照搬 */
+.ms-editbar__card:hover {
+    border: 2px solid #ff5d23 !important;
+}
+
+/* 卡片底图上层压一层暗罩，保证昵称与角标在浅色封面上也读得清 */
+.ms-editbar__card::after {
+    content: "" !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: rgba(0, 0, 0, 0.28) !important;
+    pointer-events: none !important;
+}
+
+.ms-editbar__tag {
+    position: absolute !important;
+    top: 0 !important;
+    right: 0 !important;
+    z-index: 2 !important;
+    cursor: pointer !important;
+}
+
+/* 选中图标：原生是 CDN 的 24x24 PNG，这里用同尺寸自绘，不引外部图标资源 */
+.ms-editbar__check {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 24px !important;
+    height: 24px !important;
+    background: #ff5d23 !important;
+    color: #fff !important;
+    font-size: 14px !important;
+    line-height: 1 !important;
+}
+
+.ms-editbar__check::before {
+    content: "✓";
+}
+
+/* 「当前」角标：40x24 底橙 */
+.ms-editbar__cur-room {
+    display: block !important;
+    width: 40px !important;
+    height: 24px !important;
+    background: #ff5d23 !important;
+    color: #fff !important;
+    font-size: 14px !important;
+    line-height: 24px !important;
+    text-align: center !important;
+}
+
+/* 「未开播」角标：60x24 底橙，左上角 */
+.ms-editbar__close-tag {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    z-index: 2 !important;
+    width: 60px !important;
+    height: 24px !important;
+    background: #ff5d23 !important;
+    color: #fff !important;
+    font-size: 14px !important;
+    line-height: 24px !important;
+    text-align: center !important;
+    cursor: pointer !important;
+}
+
+/* 卡底信息条：32px 高，底部渐变 */
+.ms-editbar__info {
+    position: absolute !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    z-index: 2 !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    width: 100% !important;
+    height: 32px !important;
+    padding: 0 6px !important;
+    box-sizing: border-box !important;
+    background-image: linear-gradient(180deg, transparent 8%, rgba(0, 0, 0, 0.7)) !important;
+}
+
+.ms-editbar__nn {
+    max-width: 136px !important;
+    font-weight: 400 !important;
+    font-size: 14px !important;
+    color: #fff !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+
+.ms-editbar__hot {
+    display: flex !important;
+    align-items: center !important;
+    font-size: 14px !important;
+    color: #fff !important;
+    flex: 0 0 auto !important;
+}
+
+/* 火苗：原生是 16x16 PNG，这里用纯 CSS 画出同尺寸火苗形状 */
+.ms-editbar__flame {
+    display: inline-block !important;
+    width: 16px !important;
+    height: 16px !important;
+    margin: 0 4px 0 0 !important;
+    background: #ff5d23 !important;
+    border-radius: 50% 0 50% 50% !important;
+    transform: rotate(-45deg) scale(0.72) !important;
+}
+
+/* 左右箭头：28x42，垂直居中，压在最上层以便在卡片上也能点到 */
+.ms-editbar__arrow {
+    position: absolute !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    z-index: 3 !important;
+    width: 28px !important;
+    height: 42px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    background: rgba(0, 0, 0, 0.45) !important;
+    cursor: pointer !important;
+    user-select: none !important;
+}
+
+.ms-editbar__arrow::before {
+    content: "" !important;
+    width: 8px !important;
+    height: 8px !important;
+    border-top: 2px solid #fff !important;
+    border-right: 2px solid #fff !important;
+}
+
+.ms-editbar__arrow--left {
+    left: 0 !important;
+}
+
+.ms-editbar__arrow--left::before {
+    transform: rotate(-135deg) !important;
+}
+
+.ms-editbar__arrow--right {
+    right: 0 !important;
+}
+
+.ms-editbar__arrow--right::before {
+    transform: rotate(45deg) !important;
+}
+
+.ms-editbar__arrow:hover::before {
+    border-color: #ff5d23 !important;
+}
+
+/* 顶栏里的画质档位：必须压在 24px 高以内。原生的顶栏是 16+24+16=56，
+   条体固定 226 且 overflow:hidden，顶栏一旦变高就会把卡片底部裁掉。 */
+.ms-editbar__quality.miuix-seg {
+    flex: 0 0 auto !important;
+    margin: 0 !important;
+}
+
+.ms-editbar__quality .miuix-seg__item {
+    height: 24px !important;
+    min-height: 24px !important;
+}
+
+.ms-editbar__quality .miuix-seg__label {
+    height: 24px !important;
+    line-height: 24px !important;
+    padding: 0 10px !important;
+    font-size: 12px !important;
+}
+
+/* ==========================================================================
+   22. 同屏播放器面板的「多屏观看」页
+   面板本体是浅色玻璃（--miuix-modal-bg 为白），所以这一节全部走浅色口径；
+   格子区与编辑条压在视频上，用深色口径。两套不混用。
+   ========================================================================== */
+
+/* 页签常驻顶部：多屏页内容会滚动，页签不能跟着滚走 */
+.popup-panel__tabs.miuix-seg {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 3 !important;
+    margin: 0 0 12px 0 !important;
+}
+
+.popup-panel__page[hidden] {
+    display: none !important;
+}
+
+.popup-panel__page {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+}
+
+/* 已加入数量：跟在标题后面的小胶囊 */
+.popup-ms__count {
+    margin-left: 6px !important;
+    padding: 1px 6px !important;
+    font-style: normal !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    color: var(--miuix-blue) !important;
+    background: rgba(0, 102, 255, 0.1) !important;
+    border-radius: 6px !important;
+}
+
+.popup-ms__rooms,
+.popup-ms__results {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 6px !important;
+}
+
+.popup-ms__results {
+    max-height: 132px !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain !important;
+}
+
+/* 已加入的每一行 */
+.popup-ms__room {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    height: 30px !important;
+    padding: 0 8px !important;
+    box-sizing: border-box !important;
+    background: var(--miuix-item-bg) !important;
+    border: var(--miuix-item-border) !important;
+    border-radius: 8px !important;
+}
+
+.popup-ms__room-name {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    font-size: 12px !important;
+    color: #0f172a !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+
+.popup-ms__room-rid {
+    flex: 0 0 auto !important;
+    font-size: 11px !important;
+    color: rgba(15, 23, 42, 0.55) !important;
+}
+
+.popup-ms__room-del {
+    flex: 0 0 auto !important;
+    width: 20px !important;
+    height: 20px !important;
+    padding: 0 !important;
+    font-size: 14px !important;
+    line-height: 1 !important;
+    color: rgba(15, 23, 42, 0.5) !important;
+    background: transparent !important;
+    border: none !important;
+    border-radius: 50% !important;
+    cursor: pointer !important;
+    transition: all 0.18s var(--miuix-spring) !important;
+}
+
+.popup-ms__room-del:hover {
+    color: #fff !important;
+    background: #ff5d23 !important;
+}
+
+/* 快捷来源按钮并排 */
+.popup-ms__src {
+    display: flex !important;
+    gap: 8px !important;
+    margin-top: 8px !important;
+}
+
+.popup-ms__src-btn {
+    flex: 1 1 0 !important;
+    justify-content: center !important;
+}
+
+/* 搜索结果行 */
+.popup-ms__result {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    height: 30px !important;
+    padding: 0 8px !important;
+    box-sizing: border-box !important;
+    background: var(--miuix-item-bg) !important;
+    border: var(--miuix-item-border) !important;
+    border-radius: 8px !important;
+    cursor: pointer !important;
+    transition: all 0.18s var(--miuix-spring) !important;
+}
+
+.popup-ms__result:hover {
+    background: var(--miuix-item-hover) !important;
+}
+
+.popup-ms__result.is-on {
+    border-color: rgba(0, 102, 255, 0.45) !important;
+}
+
+.popup-ms__result-name {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    font-size: 12px !important;
+    color: #0f172a !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+
+.popup-ms__result-meta {
+    flex: 0 0 auto !important;
+    font-size: 11px !important;
+    color: rgba(15, 23, 42, 0.55) !important;
+}
+
+.popup-ms__flag {
+    flex: 0 0 auto !important;
+    padding: 1px 5px !important;
+    font-size: 10px !important;
+    color: #ff5d23 !important;
+    background: rgba(255, 93, 35, 0.12) !important;
+    border-radius: 5px !important;
+}
+
+.popup-ms__flag.is-on {
+    color: var(--miuix-blue) !important;
+    background: rgba(0, 102, 255, 0.12) !important;
+}
+
+.popup-ms__empty {
+    padding: 8px 0 !important;
+    font-size: 11px !important;
+    color: rgba(15, 23, 42, 0.5) !important;
+    text-align: center !important;
+}

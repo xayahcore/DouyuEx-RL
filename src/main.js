@@ -92,6 +92,8 @@ function initPkg() {
   initPkg_Monitor();
   initPkg_Lottery();
   initPkg_PopupPlayer();
+  initPkg_PopupPlayer_MultiScreen();
+  initPkg_PopupPlayer_EditBar();
   initPkg_LiveTool();
   initPkg_VideoTools();
   initPkg_ExpandTool();
