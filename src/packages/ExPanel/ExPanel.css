@@ -567,12 +567,18 @@
     user-select: none !important;
 }
 
-/* 抽屉展开后的内容面板（原 LiveTool.css 独有声明，已上收） */
+/* 抽屉展开后的内容面板（原 LiveTool.css 独有声明，已上收）
+   display: none 是五个抽屉的默认收起态，必须由本处统一声明：
+   Enter/Mute/Gift/Reply 此前各自在包级 CSS 里写了同一条，唯独弹幕投票漏了，
+   导致它的面板从加载起就露着（且折叠箭头读不到内联 display，状态与实际相反）。
+   注意这里不能加 !important —— 展开时各抽屉是通过内联 style.display = "block"
+   切显隐的，!important 会压过内联声明让面板再也打不开。 */
 .vote__panel,
 .enter__panel,
 .mute__panel,
 .gift__panel,
 .reply__panel {
+    display: none;
     width: 100% !important;
     max-width: 100% !important;
     box-sizing: border-box !important;

@@ -667,7 +667,37 @@ async function testBuiltBundle() {
         false,
         "抽屉展开互斥：打开「关键词禁言」后「进场欢迎」的箭头必须复位"
     );
-    console.log("✓ 测试场景 13 通过: 五个抽屉标题色值统一、无 royalblue 残留、iOS 披露箭头互斥联动正确");
+    // 5) 回归防线：五个抽屉面板的默认收起态必须由统一引擎【一条】规则统一声明
+    //    历史缺陷：弹幕投票漏了这条 → 其面板从加载起就是展开的，而折叠箭头读的是
+    //    内联 style.display（无值），于是箭头显示"已折叠"、内容却露着，状态与实际相反。
+    const hidesPanel = (r) => String(r.style.getPropertyValue("display")).trim() === "none";
+    const unifyHideRules = allRules.filter(
+        (r) => r.selectorText &&
+               drawerKeys.every((k) => r.selectorText.includes("." + k + "__panel")) &&
+               hidesPanel(r)
+    );
+    assert.strictEqual(
+        unifyHideRules.length,
+        1,
+        `五个抽屉面板必须由同一条规则统一声明默认收起（实际匹配 ${unifyHideRules.length} 条）`
+    );
+    assert.ok(
+        !unifyHideRules[0].style.getPropertyPriority("display"),
+        "抽屉默认收起态（display 这一条声明）不得带 !important —— 展开走的是内联 style.display=\"block\"，加了会让抽屉再也打不开"
+    );
+    drawerKeys.forEach((k) => {
+        assert.ok(
+            allRules.some((r) => r.selectorText && r.selectorText.includes("." + k + "__panel") && hidesPanel(r)),
+            `抽屉 ${k} 的面板必须落在某条 display:none 规则的覆盖范围内（默认收起）`
+        );
+    });
+    assert.strictEqual(
+        win.getComputedStyle(win.document.getElementsByClassName("vote__panel")[0]).display,
+        "none",
+        "弹幕投票面板默认必须收起（此前唯一漏写默认隐藏的抽屉）"
+    );
+
+    console.log("✓ 测试场景 13 通过: 五个抽屉标题色值统一、无 royalblue 残留、iOS 披露箭头互斥联动正确、五个面板默认收起");
 
     // === 测试 14: 统一 UI 引擎单一归属（源码级 + 产物级双重护栏）===
     console.log("--> 测试场景 14: 验证三级面板样式 100% 单一归属 ExPanel.css...");
