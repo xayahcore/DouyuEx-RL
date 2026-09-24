@@ -860,9 +860,10 @@ async function testBuiltBundle() {
     // 转义会直接中断构建。该约束由 build.js 的 verifyCssSafety() 在构建期把关（比在这里
     // 扫产物更准确：产物里本就有 rank_engine 编译后的 "\0" 等正常转义，在此处扫描只会误伤）。
 
-    // 6) 通知停留时长必须与原版一致（3 秒档）：断言 showMessage 真正传给 NoticeJs 的选项，
-    //    而不是去匹配文本 —— 库里也存在同样的 timeout:30 字面量，文本匹配区分不出来。
+    // 6) 通知停留时长契约：断言 showMessage 真正传给 NoticeJs 的选项，而不是去匹配文本 ——
+    //    库里也存在同样的 timeout 字面量，文本匹配区分不出是我们的声明还是库的默认值。
     //    NoticeJs 是 UMD 全局，加载后替换掉它即可捕获实际入参（showMessage 调用时按全局查找）。
+    //    时长 = timeout × 100ms，故 4 秒 → 40。
     const noticeCalls = [];
     const OrigNoticeJs = win.NoticeJs;
     assert.strictEqual(typeof OrigNoticeJs, "function", "产物必须把 NoticeJs 挂到全局（UMD 导出）");
@@ -874,14 +875,14 @@ async function testBuiltBundle() {
         win.NoticeJs = OrigNoticeJs;
     }
     assert.strictEqual(noticeCalls.length, 2, "两次 showMessage 都应构造一次 NoticeJs");
-    assert.strictEqual(noticeCalls[0].timeout, 30,
-        `通知时长必须显式声明为 30（3 秒档，与原版一致），实际 ${noticeCalls[0].timeout}`);
-    assert.strictEqual(noticeCalls[1].timeout, 30, "所有类型的通知时长都应一致");
+    assert.strictEqual(noticeCalls[0].timeout, 40,
+        `通知时长必须为 4 秒档（timeout × 100ms = 4000ms → 40），实际 ${noticeCalls[0].timeout}`);
+    assert.strictEqual(noticeCalls[1].timeout, 40, "所有类型的通知时长都应一致");
     assert.strictEqual(noticeCalls[0].position, "bottomLeft", "通知位置必须固定左下角");
     assert.strictEqual(noticeCalls[0].type, "success", "默认类型必须仍是 success");
     assert.strictEqual(noticeCalls[1].type, "error", "显式传入的类型必须被保留");
 
-    console.log("✓ 测试场景 16 通过: 左下角通知已换装深色玻璃、层级高于面板、四类型图标就位、进度条改细线、时长为原版 3 秒档");
+    console.log("✓ 测试场景 16 通过: 左下角通知已换装深色玻璃、层级高于面板、四类型图标就位、进度条改细线、时长为 4 秒");
 
     // === 收尾断言: 全流程结束后仍必须零未捕获异常 ===
     assert.strictEqual(errors.length, 0, "全流程结束后不应该产生未捕获异常: " + JSON.stringify(errors));
