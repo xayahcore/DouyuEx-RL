@@ -1,1 +1,146 @@
 .noticejs-top{top:0;width:100% !important}.noticejs-top .item{border-radius:0 !important;margin:0 !important}.noticejs-topRight{top:10px;right:10px}.noticejs-topLeft{top:10px;left:10px}.noticejs-topCenter{top:10px;left:50%;transform:translate(-50%)}.noticejs-middleLeft,.noticejs-middleRight{right:10px;top:50%;transform:translateY(-50%)}.noticejs-middleLeft{left:10px}.noticejs-middleCenter{top:50%;left:50%;transform:translate(-50%,-50%)}.noticejs-bottom{bottom:0;width:100% !important}.noticejs-bottom .item{border-radius:0 !important;margin:0 !important}.noticejs-bottomRight{bottom:10px;right:10px}.noticejs-bottomLeft{bottom:10px;left:10px}.noticejs-bottomCenter{bottom:10px;left:50%;transform:translate(-50%)}.noticejs{font-family:Helvetica Neue,Helvetica,Arial,sans-serif}.noticejs .item{margin:0 0 10px;border-radius:3px;overflow:hidden}.noticejs .item .close{float:right;font-size:18px;font-weight:700;line-height:1;color:#fff;text-shadow:0 1px 0 #fff;opacity:1;margin-right:7px}.noticejs .item .close:hover{opacity:.5;color:#000}.noticejs .item a{color:#fff;border-bottom:1px dashed #fff}.noticejs .item a,.noticejs .item a:hover{text-decoration:none}.noticejs .success{background-color:#64ce83}.noticejs .success .noticejs-heading{background-color:#3da95c;color:#fff;padding:10px}.noticejs .success .noticejs-body{color:#fff;padding:10px}.noticejs .success .noticejs-body:hover{visibility:visible !important}.noticejs .success .noticejs-content{visibility:visible}.noticejs .info{background-color:#3ea2ff}.noticejs .info .noticejs-heading{background-color:#067cea;color:#fff;padding:10px}.noticejs .info .noticejs-body{color:#fff;padding:10px}.noticejs .info .noticejs-body:hover{visibility:visible !important}.noticejs .info .noticejs-content{visibility:visible}.noticejs .warning{background-color:#ff7f48}.noticejs .warning .noticejs-heading{background-color:#f44e06;color:#fff;padding:10px}.noticejs .warning .noticejs-body{color:#fff;padding:10px}.noticejs .warning .noticejs-body:hover{visibility:visible !important}.noticejs .warning .noticejs-content{visibility:visible}.noticejs .error{background-color:#e74c3c}.noticejs .error .noticejs-heading{background-color:#ba2c1d;color:#fff;padding:10px}.noticejs .error .noticejs-body{color:#fff;padding:10px}.noticejs .error .noticejs-body:hover{visibility:visible !important}.noticejs .error .noticejs-content{visibility:visible}.noticejs .progressbar{width:100%}.noticejs .progressbar .bar{width:1%;height:30px;background-color:#4caf50}.noticejs .success .noticejs-progressbar{width:100%;background-color:#64ce83;margin-top:-1px}.noticejs .success .noticejs-progressbar .noticejs-bar{width:100%;height:5px;background:#3da95c}.noticejs .info .noticejs-progressbar{width:100%;background-color:#3ea2ff;margin-top:-1px}.noticejs .info .noticejs-progressbar .noticejs-bar{width:100%;height:5px;background:#067cea}.noticejs .warning .noticejs-progressbar{width:100%;background-color:#ff7f48;margin-top:-1px}.noticejs .warning .noticejs-progressbar .noticejs-bar{width:100%;height:5px;background:#f44e06}.noticejs .error .noticejs-progressbar{width:100%;background-color:#e74c3c;margin-top:-1px}.noticejs .error .noticejs-progressbar .noticejs-bar{width:100%;height:5px;background:#ba2c1d}@keyframes noticejs-fadeOut{0%{opacity:1}to{opacity:0}}.noticejs-fadeOut{animation-name:noticejs-fadeOut}@keyframes noticejs-modal-in{to{opacity:.3}}@keyframes noticejs-modal-out{to{opacity:0}}.noticejs-rtl .noticejs-heading{direction:rtl}.noticejs-rtl .close{float:left !important;margin-left:7px;margin-right:0 !important}.noticejs-rtl .noticejs-content{direction:rtl}.noticejs{position:fixed;z-index:10050;width:320px}.noticejs::-webkit-scrollbar{width:8px}.noticejs::-webkit-scrollbar-button{width:8px;height:5px}.noticejs::-webkit-scrollbar-track{border-radius:10px}.noticejs::-webkit-scrollbar-thumb{background:hsla(0,0%,100%,.5);border-radius:10px}.noticejs::-webkit-scrollbar-thumb:hover{background:#fff}.noticejs-modal{position:fixed;width:100%;height:100%;background-color:#000;z-index:10000;opacity:.3;left:0;top:0}.noticejs-modal-open{opacity:0;animation:noticejs-modal-in .3s ease-out}.noticejs-modal-close{animation:noticejs-modal-out .3s ease-out;animation-fill-mode:forwards}.noticejs .special{background-color:rgb(160,37,160)}.noticejs .special .noticejs-heading{background-color:rgb(110,26,110);color:#fff;padding:10px}.noticejs .special .noticejs-body{color:#fff;padding:10px}.noticejs .special .noticejs-body:hover{visibility:visible !important}.noticejs .special .noticejs-content{visibility:visible}.noticejs .special .noticejs-progressbar{width:100%;background-color:rgb(160,37,160);margin-top:-1px}.noticejs .special .noticejs-progressbar .noticejs-bar{width:100%;height:5px;background:rgb(110,26,110)}
+
+/* ==========================================================================
+   MIUIX 深色玻璃通知（方案 C）—— 覆盖本库自带配色
+   --------------------------------------------------------------------------
+   本文件上方是 NoticeJs 库的原样样式（结构、各方向定位、modal 遮罩、关闭动画），
+   此处追加统一 UI 引擎的深色玻璃语言，只改观感、不动结构。
+   之所以追加而非直接改写上方：库的配色规则带类型前缀（如
+   .noticejs .success .noticejs-progressbar），改写容易漏；追加在末尾 + 全部带
+   !important，可确保压过上方所有默认值，同时保留库依赖的每一条结构规则。
+   --------------------------------------------------------------------------
+   注意：本文件最终会被拼进 main.js 的模板字面量，因此内容里不能出现反引号、美元花括号
+   插值，也不能出现单个反斜杠紧跟数字的转义（那是非法八进制转义，会直接中断构建）。
+   所以图标一律写字面字符，不写码点转义。build.js 的 CSS 护栏会拦下这类写法。
+   ========================================================================== */
+
+/* 容器：抬到所有三级面板之上（面板 100030 / 五级礼物选择器 100080 之间）——
+   原值 10050 低于面板，通知堆高时会被面板压住。
+   位置对齐项目 12px 节奏，字体换成项目统一的系统字体栈。 */
+.noticejs {
+    z-index: 100060 !important;
+    width: 320px !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif !important;
+}
+
+.noticejs-bottomLeft {
+    bottom: 12px !important;
+    left: 12px !important;
+}
+
+/* 卡片：深色玻璃。4 种类型统一底色，类型只体现为图标颜色，
+   不再用整块饱和色（原实现是绿 #64ce83 / 红 #e74c3c / 橙 #ff7f48 / 蓝 #3ea2ff）。 */
+.noticejs .item {
+    position: relative !important;
+    margin: 0 0 8px !important;
+    border-radius: 14px !important;
+    overflow: hidden !important;
+    background-color: rgba(28, 30, 38, 0.74) !important;
+    backdrop-filter: blur(36px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(36px) saturate(180%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.14) !important;
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.10), 0 12px 30px rgba(0, 0, 0, 0.34), 0 2px 8px rgba(0, 0, 0, 0.20) !important;
+}
+
+/* 抹掉库对各类型的整块染色与标题底色 */
+.noticejs .success,
+.noticejs .error,
+.noticejs .warning,
+.noticejs .info,
+.noticejs .special {
+    background-color: rgba(28, 30, 38, 0.74) !important;
+}
+
+.noticejs .noticejs-heading {
+    background-color: transparent !important;
+    padding: 0 !important;
+}
+
+/* 类型图标（纯 CSS 生成，无需改动库的 DOM，因此 122 个 showMessage 调用点零改动） */
+.noticejs .item::before {
+    content: "" !important;
+    position: absolute !important;
+    left: 14px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    line-height: 1 !important;
+}
+.noticejs .item.success::before { content: "✓" !important; color: #34c759 !important; }
+.noticejs .item.error::before   { content: "!" !important; color: #ff453a !important; }
+.noticejs .item.warning::before { content: "!" !important; color: #ff9f0a !important; }
+.noticejs .item.info::before    { content: "i" !important; color: #4c9bff !important; }
+
+/* 正文：浅色字 + 让出左侧图标位。visibility 必须显式置为 visible ——
+   库默认把 body 设成 hover 才可见（靠子元素 .noticejs-content 兜底显示），
+   这里直接放开，避免依赖那条兜底。 */
+.noticejs .noticejs-body,
+.noticejs .success .noticejs-body,
+.noticejs .error .noticejs-body,
+.noticejs .warning .noticejs-body,
+.noticejs .info .noticejs-body {
+    color: #f1f5f9 !important;
+    padding: 11px 32px 12px 30px !important;
+    visibility: visible !important;
+}
+
+.noticejs .noticejs-content,
+.noticejs .success .noticejs-content,
+.noticejs .error .noticejs-content,
+.noticejs .warning .noticejs-content,
+.noticejs .info .noticejs-content {
+    visibility: visible !important;
+    font-size: 12.5px !important;
+    font-weight: 600 !important;
+    line-height: 1.35 !important;
+}
+
+/* 关闭按钮：原样式是实心色块时代的产物（白字 + text-shadow: 0 1px 0 #fff），
+   在深色玻璃上换成浅色圆角小方块 */
+.noticejs .item .close {
+    float: none !important;
+    position: absolute !important;
+    top: 6px !important;
+    right: 6px !important;
+    width: 20px !important;
+    height: 20px !important;
+    line-height: 19px !important;
+    text-align: center !important;
+    font-size: 14px !important;
+    font-weight: 400 !important;
+    color: rgba(255, 255, 255, 0.6) !important;
+    text-shadow: none !important;
+    opacity: 1 !important;
+    margin: 0 !important;
+    border-radius: 6px !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+}
+.noticejs .item .close:hover {
+    background: rgba(255, 255, 255, 0.18) !important;
+    color: #ffffff !important;
+}
+
+/* 进度条：原为 5px 实心块（且底色与卡片同色，重复表达），改为 2px 细线 */
+.noticejs .noticejs-progressbar,
+.noticejs .success .noticejs-progressbar,
+.noticejs .error .noticejs-progressbar,
+.noticejs .warning .noticejs-progressbar,
+.noticejs .info .noticejs-progressbar {
+    height: 2px !important;
+    margin-top: 0 !important;
+    background-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+.noticejs .noticejs-bar,
+.noticejs .success .noticejs-bar,
+.noticejs .error .noticejs-bar,
+.noticejs .warning .noticejs-bar,
+.noticejs .info .noticejs-bar {
+    height: 2px !important;
+    border-radius: 2px !important;
+}
+.noticejs .item.success .noticejs-bar { background: #34c759 !important; }
+.noticejs .item.error .noticejs-bar   { background: #ff453a !important; }
+.noticejs .item.warning .noticejs-bar { background: #ff9f0a !important; }
+.noticejs .item.info .noticejs-bar    { background: #4c9bff !important; }

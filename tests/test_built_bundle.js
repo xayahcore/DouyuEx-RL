@@ -796,6 +796,73 @@ async function testBuiltBundle() {
     console.log(`     面板内 select 元素 ${panelSelects.length} 个，全部由统一规则管辖`);
     console.log("✓ 测试场景 15 通过: select 原生外观已抹除并自绘箭头，number 微调箭头已隐藏");
 
+    // === 测试 16: 左下角通知换装 MIUIX 深色玻璃 ===
+    console.log("--> 测试场景 16: 验证左下角通知已换装深色玻璃...");
+    const noticeRules = allRules.filter((r) => r.selectorText && r.selectorText.includes(".noticejs"));
+    assert.ok(noticeRules.length > 0, "样式表里必须能找到 .noticejs 相关规则（通知样式应随产物一并注入）");
+
+    const noticePick = (sel, prop) => {
+        const hit = noticeRules.filter((r) => r.selectorText === sel && r.style.getPropertyValue(prop));
+        return hit.length ? String(hit[hit.length - 1].style.getPropertyValue(prop)).trim() : null;
+    };
+
+    // 1) 层级必须高于所有三级面板：原库值是 10050，低于面板的 100030，
+    //    通知堆到几条以上就会被面板压住
+    const noticeZ = Number(noticePick(".noticejs", "z-index"));
+    assert.ok(
+        noticeZ > 100030,
+        `通知层级必须高于三级面板的 100030（原库值 10050 会被面板压住），实际 ${noticeZ}`
+    );
+
+    // 2) 卡片必须换成深色玻璃，并带磨砂
+    const DARK_GLASS = /rgba\(28,\s*30,\s*38,\s*0?\.74\)/;
+    const itemBg = noticePick(".noticejs .item", "background-color");
+    assert.ok(DARK_GLASS.test(String(itemBg)), `通知卡片必须换装深色玻璃底，实际 ${itemBg}`);
+    assert.ok(noticePick(".noticejs .item", "backdrop-filter"), "通知卡片必须带磨砂 backdrop-filter");
+
+    // 3) 四种类型的最终生效背景必须是深色玻璃，且该声明要晚于库默认的饱和色
+    //    （本文件是"追加覆盖"而非改写库样式，所以库里那几条饱和色规则仍然在表里，
+    //     断言要比对先后顺序，而不是断言它们不存在）
+    const SATURATED_BG = /#(64ce83|e74c3c|ff7f48|3ea2ff)/i;
+    const bgRulesOf = (t) => noticeRules.filter(
+        (r) => r.selectorText && r.selectorText.includes(".noticejs ." + t) &&
+               r.style.getPropertyValue("background-color")
+    );
+    ["success", "error", "warning", "info"].forEach((t) => {
+        const rules = bgRulesOf(t);
+        const glassAt = rules.findLastIndex((r) => DARK_GLASS.test(String(r.style.getPropertyValue("background-color"))));
+        const satAt = rules.findLastIndex((r) => SATURATED_BG.test(String(r.style.getPropertyValue("background-color"))));
+        assert.ok(glassAt >= 0, `类型 ${t} 缺少深色玻璃底声明`);
+        if (satAt >= 0) {
+            assert.ok(
+                glassAt > satAt,
+                `类型 ${t} 的深色玻璃声明必须晚于库默认的饱和色，否则覆盖不生效`
+            );
+        }
+    });
+
+    // 4) 进度条必须由 5px 实心块改为 2px 细线（同样只看最后生效的那条，库里 5px 的默认值仍在表里）
+    const barRules = noticeRules.filter(
+        (r) => r.selectorText && r.selectorText.includes("noticejs-bar") && r.style.getPropertyValue("height")
+    );
+    assert.ok(barRules.length > 0, "必须存在通知进度条的尺寸声明");
+    const effectiveBarH = String(barRules[barRules.length - 1].style.getPropertyValue("height")).trim();
+    assert.strictEqual(effectiveBarH, "2px",
+        `最后生效的进度条高度必须是 2px 细线，实际 ${effectiveBarH}（原库为 5px）`);
+
+    // 5) 类型图标：字面字符（不能用反斜杠转义，否则会打断 main.js 的模板字面量）
+    const iconExpect = { "success": "✓", "error": "!", "warning": "!", "info": "i" };
+    Object.keys(iconExpect).forEach((t) => {
+        const re = new RegExp("\\." + t + "::before\\s*\\{\\s*content:\\s*\"" + iconExpect[t].replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\"");
+        assert.ok(re.test(code), `类型 ${t} 必须带 ::before 图标（字面字符 "${iconExpect[t]}"）`);
+    });
+    // 说明：CSS 会被拼进 main.js 的模板字面量，因此"单个反斜杠 + 数字"这类非法八进制
+    // 转义会直接中断构建。该约束由 build.js 的 verifyCssSafety() 在构建期把关
+    // （比在这里扫产物更准确：产物里本就有 rank_engine 编译后的 "\0" 等正常转义，
+    // 在此处扫描只会误伤）。这里不再重复断言。
+
+    console.log("✓ 测试场景 16 通过: 左下角通知已换装深色玻璃、层级高于面板、四类型图标就位、进度条改细线");
+
     // === 收尾断言: 全流程结束后仍必须零未捕获异常 ===
     assert.strictEqual(errors.length, 0, "全流程结束后不应该产生未捕获异常: " + JSON.stringify(errors));
 
