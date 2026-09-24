@@ -62,6 +62,7 @@
 // 核心层标记 勿删
 
 function init() {
+  initPkg_PopupPlayer_MergeDanmaku_ScriptHook();
   initPkg_Shield_RemoveRepeatedDanmaku_ScriptHook();
   initPkg_ShowDanmaku_ScriptHook();
   initScriptHook();
@@ -94,6 +95,7 @@ function initPkg() {
   initPkg_PopupPlayer();
   initPkg_PopupPlayer_MultiScreen();
   initPkg_PopupPlayer_EditBar();
+  initPkg_PopupPlayer_MergeDanmaku();
   initPkg_LiveTool();
   initPkg_VideoTools();
   initPkg_ExpandTool();

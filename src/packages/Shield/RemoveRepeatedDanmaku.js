@@ -120,6 +120,21 @@ function initPkg_Shield_RemoveRepeatedDanmaku_ScriptHook() {
   });
 }
 
+/* 去重键。
+   不用 dom.textContent：它会把勋章、右侧附加文本、以及多屏合并弹幕的「来源横条」统统算进去，
+   于是出现两个问题——跨房同文本弹幕无法去重，且 key 随附加内容变化导致 map 膨胀。
+   优先取引擎给的原始文本（comment.data.text），并带上来源房间前缀：
+   不同房间的相同内容必须各自计数，同房间的重复才归并。 */
+function RemoveRepeatedDanmaku_getKey(dom) {
+  const c = dom && dom.comment;
+  const d = c && c.data;
+  let text = (d && typeof d.text === "string") ? d.text.trim() : "";
+  if (!text) text = dom && dom.textContent ? dom.textContent.trim() : "";
+  if (!text) return "";
+  const src = d && d.extraData && d.extraData.exMsSrcRid;
+  return src ? "r" + src + "|" + text : text;
+}
+
 function removeRepeatedDanmaku() {
   // 添加计数显示和动画的样式
   StyleHook_set(
@@ -178,7 +193,7 @@ function removeRepeatedDanmaku() {
           repeatedDanmakuUuidMap[uuid] = now + repeatedDanmakuSeconds * 1000;
 
           // 清理与该弹幕相关的DOM映射，防止内存泄露
-          const danmakuText = removedDom.textContent ? removedDom.textContent.trim() : "";
+          const danmakuText = RemoveRepeatedDanmaku_getKey(removedDom);
           if (danmakuText && repeatedDanmakuDomMap[danmakuText] === removedDom) {
             // 移除DOM引用，避免内存泄露
             delete repeatedDanmakuDomMap[danmakuText];
@@ -198,7 +213,7 @@ function removeRepeatedDanmaku() {
         const uuidExpireTime = repeatedDanmakuUuidMap[uuid];
         if (uuidExpireTime && now <= uuidExpireTime) return;
 
-        const danmakuText = dom.textContent ? dom.textContent.trim() : "";
+        const danmakuText = RemoveRepeatedDanmaku_getKey(dom);
         if (!danmakuText || danmakuText.length === 0) return;
 
         // 检查弹幕是否在指定秒数内出现过

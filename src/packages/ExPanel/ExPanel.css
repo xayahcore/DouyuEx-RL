@@ -2786,3 +2786,39 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
     color: rgba(15, 23, 42, 0.5) !important;
     text-align: center !important;
 }
+
+/* ==========================================================================
+   23. 多屏弹幕合并的来源横条
+   横条贴在弹幕节点内部（textWrap 层、避开 .barrage-gradient），也贴在聊天区条目上。
+   字号刻意压到原生弹幕字号的一半左右，并且不改动弹幕本体的颜色与特效：
+   横条只有自己的半透明底，弹幕文字的颜色仍由原生渲染器决定。
+   pointer-events:none 是必须的：否则会挡住弹幕本体，原生悬停菜单就出不来了。
+   ========================================================================== */
+.ex-ms-badge {
+    display: inline-block !important;
+    margin-right: 6px !important;
+    padding: 0 6px !important;
+    font-size: 12px !important;
+    font-weight: 400 !important;
+    line-height: 18px !important;
+    color: #fff !important;
+    background: rgba(255, 255, 255, 0.22) !important;
+    border-radius: 9px !important;
+    vertical-align: middle !important;
+    white-space: nowrap !important;
+    pointer-events: none !important;
+    letter-spacing: 0 !important;
+    text-shadow: none !important;
+}
+
+/* 聊天区条目里的横条：聊天区正文字号更小，横条跟着再降一档 */
+.ex-ms-badge--chat {
+    font-size: 10px !important;
+    line-height: 15px !important;
+    padding: 0 5px !important;
+    margin-right: 4px !important;
+    border-radius: 8px !important;
+    background: rgba(127, 127, 127, 0.28) !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+    vertical-align: 1px !important;
+}
