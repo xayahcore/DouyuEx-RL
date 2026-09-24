@@ -291,6 +291,7 @@ function MultiScreen_renderSlot(idx, room) {
     video: slot.querySelector(".ms-slot__video"),
     reloadTimer: 0,
     startTimer: 0,
+    url: "",
   };
   // 外房一律静音：只有当前直播间的原生播放器出声，避免几路声音叠在一起
   if (rec.video) {
@@ -384,6 +385,7 @@ function MultiScreen_fetchStream(idx, room, epoch) {
 function MultiScreen_startFlv(idx, url, epoch) {
   const rec = msSlotPlayers.get(idx);
   if (!rec || rec.epoch !== epoch) return;
+  MultiScreen_noteStreamUrl(idx, url);
   const slot = MultiScreen_slotDom(idx);
   if (!rec.video) { MultiScreen_setTip(slot, "播放器未就绪"); return; }
   // flv.js 已由 @require 预注入；只有真的缺失时才按需加载，避免重复 eval 覆盖全局
@@ -518,10 +520,45 @@ function MultiScreen_exit() { return MultiScreen_apply("close"); }
 function MultiScreen_addRoom(room) { return MultiScreen_apply("add", room); }
 function MultiScreen_removeRoom(rid) { return MultiScreen_apply("delete", rid); }
 
+/* 换档自检：斗鱼对同一房间在不同档位可能返回**同一个流地址**（该房间只提供一档，
+   或该档位不可用）。早先换档后界面毫无反馈，看起来就像"切了但没生效"。
+   这里对比换档前后拿到的地址：全部没变就明确提示，别让人以为切成功了。 */
+let msQnCompare = null;
+function MultiScreen_beginQnCompare(idxList) {
+  const prev = {};
+  idxList.forEach(function (i) {
+    const rec = msSlotPlayers.get(i);
+    prev[i] = rec ? rec.url || "" : "";
+  });
+  msQnCompare = { prev: prev, same: {}, done: {} };
+}
+function MultiScreen_noteStreamUrl(idx, url) {
+  const rec = msSlotPlayers.get(idx);
+  if (rec) rec.url = url || "";
+  if (!msQnCompare || !(idx in msQnCompare.prev)) return;
+  if (msQnCompare.done[idx]) return;
+  msQnCompare.done[idx] = 1;
+  if ((url || "") === msQnCompare.prev[idx]) msQnCompare.same[idx] = 1;
+  const total = Object.keys(msQnCompare.prev).length;
+  if (Object.keys(msQnCompare.done).length >= total) {
+    const sameCount = Object.keys(msQnCompare.same).length;
+    msQnCompare = null;
+    if (sameCount >= total && total > 0) {
+      showMessage("该直播间只提供同一档画质，流地址未变化", "info");
+    } else if (sameCount > 0) {
+      showMessage("部分直播间只提供同一档画质（" + sameCount + "/" + total + " 未变化）", "info");
+    } else {
+      showMessage("画质已切换", "success");
+    }
+  }
+}
 function MultiScreen_setQuality(qn) {
   if (!qn || String(qn) === msQn) return;
   msQn = String(qn);
   MultiScreen_save();
+  const targets = [];
+  for (let i = 1; i < msActiveList.length && i < MS_SLOT_COUNT; i++) targets.push(i);
+  MultiScreen_beginQnCompare(targets);
   // 只有外房格子需要重拉；主画面归斗鱼原生管
   for (let i = 1; i < msActiveList.length && i < MS_SLOT_COUNT; i++) {
     MultiScreen_renderSlot(i, msActiveList[i]);

@@ -424,6 +424,7 @@ function MergeDanmaku_flushPending() {
 /* 拿一个原生条目当模板。我们自己插的条目带 ex-ms-item，必须排除，
    否则会越克隆越"自己的样子"。 */
 let msChatTemplate = null;
+let msChatSeq = 0;
 
 function MergeDanmaku_getChatTemplate() {
   if (msChatTemplate && msChatTemplate.isConnected) return msChatTemplate;
@@ -476,16 +477,17 @@ function MergeDanmaku_buildChatItem(item) {
   li.className = String(li.className).indexOf("ex-ms-item") === -1 ? li.className + " ex-ms-item" : li.className;
   // 绝不带 is-self：BarrageSendCheck 以它为门槛比对回执，命中外房弹幕会被标删除线并污染熔断计数
   li.classList.remove("is-self");
-  ["id", "data-guid", "data-uid"].forEach(function (a) {
-    li.removeAttribute(a);
+  // 身份标识必须**给新的**而不是删掉：原生在 #js-barrage-list 上的事件委托要靠
+  // 条目的 id / data-guid 与昵称上的 data-uid 去组装用户卡片上下文，
+  // 早先我把它们一并删掉，结果就是"聊天区点用户没反应"。
+  const guid = "exms-" + String(item.srcRid) + "-" + String(item.uid || "0") + "-" + (++msChatSeq);
+  li.setAttribute("id", guid);
+  li.setAttribute("data-guid", guid);
+  // 先摘掉模板原主人的身份与装饰（下面按外房用户的真实数据重建）
+  Array.prototype.forEach.call(li.querySelectorAll('[class*="is-self"]'), function (n) {
+    n.remove();
   });
-  // 摘掉模板原主人的身份与装饰
-  Array.prototype.forEach.call(
-    li.querySelectorAll('[class*="is-self"],[class*="FansMedal"],[class*="Medal"],[class*="UserLevel"],[class*="RoomLevel"],[class*="Noble"]'),
-    function (n) {
-      n.remove();
-    }
-  );
+  MergeDanmaku_fillChatAssets(li, item);
 
   const nicks = li.querySelectorAll(".Barrage-nickName");
   const nick = nicks[0];
@@ -513,6 +515,61 @@ function MergeDanmaku_buildChatItem(item) {
   return li;
 }
 
+/* 把等级徽章与粉丝牌按**外房用户自己的真实数据**填进克隆件。
+   两处结构都是实机摸出来的原生结构，所以直接用原生写法构造，而不是自己画一个像的：
+     等级：<span class="js-user-level UserLevel" title="用户等级：N"
+             style="background-image:url(.../userLevelIconV6/web-light/newm3_lvN.png?v=1.2)">
+     粉丝牌：<a class="FansMedalWrap js-fans-dysclick" data-rid=主播房号>
+               <dy-fan-medal medal-name=勋章名 medal-level=勋章等级 medal-id=主播房号 …></a>
+   dy-fan-medal 是斗鱼自己注册的自定义元素（页面里已定义），只要属性给对，它会自己渲染成原生样式。
+   外房用户没有该项时就把对应节点删掉 —— 绝不能留着模板原主人的，那会张冠李戴。 */
+function MergeDanmaku_fillChatAssets(li, item) {
+  const raw = item.raw || {};
+  const level = parseInt(raw.level, 10) || 0;
+  const lvlEl = li.querySelector('[class*="UserLevel"]');
+  if (lvlEl) {
+    if (level > 0) {
+      lvlEl.setAttribute("title", "用户等级：" + level);
+      lvlEl.style.backgroundImage =
+        'url("https://shark2.douyucdn.cn/front-publish/static-file-master/userLevelIconV6/web-light/newm3_lv' +
+        level + '.png?v=1.2")';
+      lvlEl.style.display = "";
+    } else {
+      lvlEl.remove();
+    }
+  }
+
+  // 粉丝牌：字段名取自斗鱼 chatmsg（bnn=勋章名 bl=勋章等级 brid=主播房号）
+  const medalName = String(raw.bnn || "");
+  const medalLevel = parseInt(raw.bl, 10) || 0;
+  const medalRid = String(raw.brid || raw.brid2 || "");
+  const wrap = li.querySelector('[class*="FansMedalWrap"]') || li.querySelector('[class*="Medal"]');
+  const oldMedal = li.querySelector("dy-fan-medal");
+  const hasMedal = !!(medalName && medalLevel > 0 && medalRid);
+  if (hasMedal) {
+    let host = wrap;
+    if (!host) {
+      host = document.createElement("a");
+      host.className = "FansMedalWrap js-fans-dysclick";
+      host.setAttribute("href", "javascript:void(0);");
+      const first = lvlEl && lvlEl.parentNode ? lvlEl.nextSibling : li.firstChild;
+      if (first && first.parentNode) first.parentNode.insertBefore(host, first);
+      else if (li.firstChild) li.insertBefore(host, li.firstChild);
+    }
+    host.setAttribute("data-rid", medalRid);
+    if (oldMedal) oldMedal.remove();
+    const med = document.createElement("dy-fan-medal");
+    med.setAttribute("medal-name", medalName);
+    med.setAttribute("medal-level", String(medalLevel));
+    med.setAttribute("medal-id", medalRid);
+    if (raw.bnnSuffix) med.setAttribute("medal-suffix", String(raw.bnnSuffix));
+    host.appendChild(med);
+  } else {
+    // 没有粉丝牌就整块摘掉，不留别人的
+    if (oldMedal) oldMedal.remove();
+    if (wrap && wrap.querySelectorAll("dy-fan-medal").length === 0) wrap.remove();
+  }
+}
 // 没有原生条目可克隆时的兜底（原生的清单还没渲染出来，通常是刚进直播间）
 function MergeDanmaku_buildChatItemFallback(item) {
   const li = document.createElement("li");
