@@ -240,12 +240,21 @@ function getUID() {
 	return ret;
 }
 
+// 通知停留时长：与原版一致。NoticeJs 的进度条是 timeout 毫秒一跳、共 100 跳，
+// 因此 timeout:30 → 3000ms，再加 200ms 移除延迟，实际约 3.3 秒。
+// 这里显式写出而非依赖库内默认值，有两个原因：
+//   1) 把"与原版一致"从库的隐式默认变成我们代码里的明确契约，将来换库或改库都看得见；
+//   2) NoticeJs 内部是 Object.assign(Defaults, options)，会**改写全局默认值** ——
+//      任何一次 showMessage 传了 options 都会永久影响之后所有通知的时长。
+//      每次显式指定 timeout 可把该项复位（不必依赖调用方自觉）。
+const NOTICE_TIMEOUT_TICK_MS = 30;
 function showMessage(msg, type="success", options) {
 	// type: success[green] error[red] warning[orange] info[blue]
 	let option = {
 		text: msg,
 		type: type,
 		position: 'bottomLeft',
+		timeout: NOTICE_TIMEOUT_TICK_MS,
 		...options
 	}
 	new NoticeJs(option).show();
