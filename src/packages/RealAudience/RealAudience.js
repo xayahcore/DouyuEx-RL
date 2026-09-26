@@ -174,9 +174,14 @@ function realAudienceSet(id, prop, value) {
 	function initPkg_RealAudience_Func() {
 		let audience = document.getElementsByClassName("real-audience")[0];
 		if (audience) {
-			audience.addEventListener("click", function() {
+			// ⚠ 这里必须用 onclick 赋值、不能用 addEventListener。
+			// 原因：initPkg_RealAudience_Dom 插入成功时会自己调一次本函数，而
+			// initPkg_RealAudience() 紧接着又会调一次，同一个节点因此会被绑两次监听，
+			// 点一下「真实人数」就会连开两个 doseeing 标签页。onclick 是覆盖式赋值，
+			// 重复调用天然幂等；addEventListener 是累加的，谁再多调一次就再开一个标签页。
+			audience.onclick = function() {
 				openPage(`https://www.doseeing.com/room/${rid}`, true);
-			});
+			};
 		}
 	}
 

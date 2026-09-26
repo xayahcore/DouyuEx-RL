@@ -79,38 +79,50 @@ function init() {
   initPkg_FollowList();
 }
 function initPkg() {
-  initPkg_DanmakuTail();
-  initPkg_ExIcon();
-  initPkg_ExPanel();
-  initPkg_RealAudience();
-  initPkg_CopyRealLive();
-  initPkg_AudioLine();
-  initPkg_RemoveAD();
-  initPkg_Shield();
-  initPkg_BagInfo();
-  initPkg_Update();
-  initPkg_Monitor();
-  initPkg_Lottery();
-  initPkg_PopupPlayer();
-  initPkg_LiveTool();
-  initPkg_VideoTools();
-  initPkg_ExpandTool();
-  initPkg_Refresh();
-  initPkg_BarrageLoop();
-  initPkg_FansContinue();
-  initPkg_Sign();
-  initPkg_BarragePanel();
-  initPkg_DanmakuHistory();
-  initPkg_AccountList();
-  initPkg_ChatTools();
-  initPkg_MonthCost();
-  initPkg_RoomVip();
-  initPkg_DanmakuCollect();
-  initPkg_RestoreYuba();
-  initPkg_ChangeDanmakuLengthLimit();
-  initPkg_CheckAnchorPocket();
-  initPkg_LastLiveTime();
-  initPkg_VolumeMouseScrolling();
+  // 单个包初始化失败不得拖垮其余包。
+  // 此前这里是 30 多个平铺直调：任何一处抛异常，它**后面**的包就全部不再初始化，
+  // 表现就是"脚本没加载出来"（而刷新一次页面可能又好了 —— 抛不抛取决于当时的 DOM 时机），
+  // 且完全没有任何线索。逐项隔离 + 报出包名，既保住其余功能，也让偶发问题可定位。
+  initPkg_Safe("DanmakuTail", initPkg_DanmakuTail);
+  initPkg_Safe("ExIcon", initPkg_ExIcon);
+  initPkg_Safe("ExPanel", initPkg_ExPanel);
+  initPkg_Safe("RealAudience", initPkg_RealAudience);
+  initPkg_Safe("CopyRealLive", initPkg_CopyRealLive);
+  initPkg_Safe("AudioLine", initPkg_AudioLine);
+  initPkg_Safe("RemoveAD", initPkg_RemoveAD);
+  initPkg_Safe("Shield", initPkg_Shield);
+  initPkg_Safe("BagInfo", initPkg_BagInfo);
+  initPkg_Safe("Update", initPkg_Update);
+  initPkg_Safe("Monitor", initPkg_Monitor);
+  initPkg_Safe("Lottery", initPkg_Lottery);
+  initPkg_Safe("PopupPlayer", initPkg_PopupPlayer);
+  initPkg_Safe("LiveTool", initPkg_LiveTool);
+  initPkg_Safe("VideoTools", initPkg_VideoTools);
+  initPkg_Safe("ExpandTool", initPkg_ExpandTool);
+  initPkg_Safe("Refresh", initPkg_Refresh);
+  initPkg_Safe("BarrageLoop", initPkg_BarrageLoop);
+  initPkg_Safe("FansContinue", initPkg_FansContinue);
+  initPkg_Safe("Sign", initPkg_Sign);
+  initPkg_Safe("BarragePanel", initPkg_BarragePanel);
+  initPkg_Safe("DanmakuHistory", initPkg_DanmakuHistory);
+  initPkg_Safe("AccountList", initPkg_AccountList);
+  initPkg_Safe("ChatTools", initPkg_ChatTools);
+  initPkg_Safe("MonthCost", initPkg_MonthCost);
+  initPkg_Safe("RoomVip", initPkg_RoomVip);
+  initPkg_Safe("DanmakuCollect", initPkg_DanmakuCollect);
+  initPkg_Safe("RestoreYuba", initPkg_RestoreYuba);
+  initPkg_Safe("ChangeDanmakuLengthLimit", initPkg_ChangeDanmakuLengthLimit);
+  initPkg_Safe("CheckAnchorPocket", initPkg_CheckAnchorPocket);
+  initPkg_Safe("LastLiveTime", initPkg_LastLiveTime);
+  initPkg_Safe("VolumeMouseScrolling", initPkg_VolumeMouseScrolling);
+}
+function initPkg_Safe(name, fn) {
+  try {
+    if (typeof fn === "function") fn();
+  } catch (e) {
+    const err = e || {};
+    console.error("[DouyuEx] 初始化失败：" + name + " —— " + (err.message || err));
+  }
 }
 function initPkg_Timer() {
   initPkg_LevelTask_Timer();

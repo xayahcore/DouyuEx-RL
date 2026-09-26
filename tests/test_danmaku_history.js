@@ -462,7 +462,11 @@ async function run() {
     // ---------- 9. 接线与 SSOT（源码级断言，防止未来改版静默脱落） ----------
     {
         const main = fs.readFileSync(MAIN_PATH, "utf8");
-        assert.ok(/initPkg\(\)[\s\S]*?initPkg_DanmakuHistory\(\);/.test(main),
+        // 接线有两种等价写法：平铺直调，或经 initPkg_Safe 逐包隔离（后者保证单个包抛异常
+        // 不会拖垮它后面的包）。两种都算接上了，但必须真的出现在 initPkg() 内部，
+        // 否则构建期 tree-shaking 会把这个包整体删掉。
+        assert.ok(/initPkg\(\)[\s\S]*?initPkg_DanmakuHistory\(\);/.test(main)
+            || /initPkg\(\)[\s\S]*?initPkg_Safe\(\s*"DanmakuHistory"\s*,\s*initPkg_DanmakuHistory\s*\)/.test(main),
             "initPkg() 必须调用 initPkg_DanmakuHistory()，否则会被 tree-shaking 静默删除");
         ok("main.js 接线存在（防被 tree-shaking 静默删除）");
 

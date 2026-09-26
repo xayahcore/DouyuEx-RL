@@ -316,13 +316,14 @@ async function executeSignEngine(options, onLog) {
     }
   }
 
-  // 7. 看直播领积分：本身是常驻计时，这里只负责"开关对齐 + 立刻兜底查一次"。
-  //    点「开始签到」是一个明确的用户意向，此时顺手把看播拿到的能领档位也领掉。
+  // 7. 看直播领积分：本身是常驻轮询（观看时长由服务端统计，脚本只负责达标即领），
+  //    这里负责"开关对齐 + 立刻查一次"。点「开始签到」是明确的用户意向，
+  //    此时顺手把已经达标、还没领的档位领掉。
   try {
     if (typeof Sign_WatchPoints_setEnabled === "function") {
       Sign_WatchPoints_setEnabled(!!opts.watchpoints);
       if (opts.watchpoints) {
-        onLog("【看播积分】本地计时已启动（仅页面可见时计时）", true);
+        onLog("【看播积分】自动领取已启动（仅页面可见时轮询）", true);
         if (typeof Sign_WatchPoints_checkNow === "function") Sign_WatchPoints_checkNow();
       } else {
         onLog("【看播积分】未勾选，本次不启用", false);
