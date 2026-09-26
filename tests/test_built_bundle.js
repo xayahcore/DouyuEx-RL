@@ -5,7 +5,8 @@ let JSDOM;
 try {
     JSDOM = require("jsdom").JSDOM;
 } catch (e) {
-    JSDOM = require("D:/harness/_cdp/node_modules/jsdom").JSDOM;
+    console.error("[测试] 缺少依赖 jsdom，请先执行：npm install");
+    throw e;
 }
 
 // 从源码读取 @version 作为期望值：既避免每次发版都要手改这里的版本字面量，
@@ -667,7 +668,37 @@ async function testBuiltBundle() {
         false,
         "抽屉展开互斥：打开「关键词禁言」后「进场欢迎」的箭头必须复位"
     );
-    console.log("✓ 测试场景 13 通过: 五个抽屉标题色值统一、无 royalblue 残留、iOS 披露箭头互斥联动正确");
+    // 5) 回归防线：五个抽屉面板的默认收起态必须由统一引擎【一条】规则统一声明
+    //    历史缺陷：弹幕投票漏了这条 → 其面板从加载起就是展开的，而折叠箭头读的是
+    //    内联 style.display（无值），于是箭头显示"已折叠"、内容却露着，状态与实际相反。
+    const hidesPanel = (r) => String(r.style.getPropertyValue("display")).trim() === "none";
+    const unifyHideRules = allRules.filter(
+        (r) => r.selectorText &&
+               drawerKeys.every((k) => r.selectorText.includes("." + k + "__panel")) &&
+               hidesPanel(r)
+    );
+    assert.strictEqual(
+        unifyHideRules.length,
+        1,
+        `五个抽屉面板必须由同一条规则统一声明默认收起（实际匹配 ${unifyHideRules.length} 条）`
+    );
+    assert.ok(
+        !unifyHideRules[0].style.getPropertyPriority("display"),
+        "抽屉默认收起态（display 这一条声明）不得带 !important —— 展开走的是内联 style.display=\"block\"，加了会让抽屉再也打不开"
+    );
+    drawerKeys.forEach((k) => {
+        assert.ok(
+            allRules.some((r) => r.selectorText && r.selectorText.includes("." + k + "__panel") && hidesPanel(r)),
+            `抽屉 ${k} 的面板必须落在某条 display:none 规则的覆盖范围内（默认收起）`
+        );
+    });
+    assert.strictEqual(
+        win.getComputedStyle(win.document.getElementsByClassName("vote__panel")[0]).display,
+        "none",
+        "弹幕投票面板默认必须收起（此前唯一漏写默认隐藏的抽屉）"
+    );
+
+    console.log("✓ 测试场景 13 通过: 五个抽屉标题色值统一、无 royalblue 残留、iOS 披露箭头互斥联动正确、五个面板默认收起");
 
     // === 测试 14: 统一 UI 引擎单一归属（源码级 + 产物级双重护栏）===
     console.log("--> 测试场景 14: 验证三级面板样式 100% 单一归属 ExPanel.css...");
@@ -765,6 +796,94 @@ async function testBuiltBundle() {
     );
     console.log(`     面板内 select 元素 ${panelSelects.length} 个，全部由统一规则管辖`);
     console.log("✓ 测试场景 15 通过: select 原生外观已抹除并自绘箭头，number 微调箭头已隐藏");
+
+    // === 测试 16: 左下角通知换装 MIUIX 深色玻璃 ===
+    console.log("--> 测试场景 16: 验证左下角通知已换装深色玻璃...");
+    const noticeRules = allRules.filter((r) => r.selectorText && r.selectorText.includes(".noticejs"));
+    assert.ok(noticeRules.length > 0, "样式表里必须能找到 .noticejs 相关规则（通知样式应随产物一并注入）");
+
+    const noticePick = (sel, prop) => {
+        const hit = noticeRules.filter((r) => r.selectorText === sel && r.style.getPropertyValue(prop));
+        return hit.length ? String(hit[hit.length - 1].style.getPropertyValue(prop)).trim() : null;
+    };
+
+    // 1) 层级必须高于所有三级面板：原库值是 10050，低于面板的 100030，
+    //    通知堆到几条以上就会被面板压住
+    const noticeZ = Number(noticePick(".noticejs", "z-index"));
+    assert.ok(
+        noticeZ > 100030,
+        `通知层级必须高于三级面板的 100030（原库值 10050 会被面板压住），实际 ${noticeZ}`
+    );
+
+    // 2) 卡片必须换成深色玻璃，并带磨砂
+    const DARK_GLASS = /rgba\(28,\s*30,\s*38,\s*0?\.74\)/;
+    const itemBg = noticePick(".noticejs .item", "background-color");
+    assert.ok(DARK_GLASS.test(String(itemBg)), `通知卡片必须换装深色玻璃底，实际 ${itemBg}`);
+    assert.ok(noticePick(".noticejs .item", "backdrop-filter"), "通知卡片必须带磨砂 backdrop-filter");
+
+    // 3) 四种类型的最终生效背景必须是深色玻璃，且该声明要晚于库默认的饱和色
+    //    （本文件是"追加覆盖"而非改写库样式，所以库里那几条饱和色规则仍然在表里，
+    //     断言要比对先后顺序，而不是断言它们不存在）
+    const SATURATED_BG = /#(64ce83|e74c3c|ff7f48|3ea2ff)/i;
+    const bgRulesOf = (t) => noticeRules.filter(
+        (r) => r.selectorText && r.selectorText.includes(".noticejs ." + t) &&
+               r.style.getPropertyValue("background-color")
+    );
+    ["success", "error", "warning", "info"].forEach((t) => {
+        const rules = bgRulesOf(t);
+        const glassAt = rules.findLastIndex((r) => DARK_GLASS.test(String(r.style.getPropertyValue("background-color"))));
+        const satAt = rules.findLastIndex((r) => SATURATED_BG.test(String(r.style.getPropertyValue("background-color"))));
+        assert.ok(glassAt >= 0, `类型 ${t} 缺少深色玻璃底声明`);
+        if (satAt >= 0) {
+            assert.ok(
+                glassAt > satAt,
+                `类型 ${t} 的深色玻璃声明必须晚于库默认的饱和色，否则覆盖不生效`
+            );
+        }
+    });
+
+    // 4) 进度条必须由 5px 实心块改为 2px 细线（同样只看最后生效的那条，库里 5px 的默认值仍在表里）
+    const barRules = noticeRules.filter(
+        (r) => r.selectorText && r.selectorText.includes("noticejs-bar") && r.style.getPropertyValue("height")
+    );
+    assert.ok(barRules.length > 0, "必须存在通知进度条的尺寸声明");
+    const effectiveBarH = String(barRules[barRules.length - 1].style.getPropertyValue("height")).trim();
+    assert.strictEqual(effectiveBarH, "2px",
+        `最后生效的进度条高度必须是 2px 细线，实际 ${effectiveBarH}（原库为 5px）`);
+
+    // 5) 类型图标：字面字符（不能用反斜杠转义，否则会打断 main.js 的模板字面量）
+    const iconExpect = { "success": "✓", "error": "!", "warning": "!", "info": "i" };
+    Object.keys(iconExpect).forEach((t) => {
+        const re = new RegExp("\\." + t + "::before\\s*\\{\\s*content:\\s*\"" + iconExpect[t].replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\"");
+        assert.ok(re.test(code), `类型 ${t} 必须带 ::before 图标（字面字符 "${iconExpect[t]}"）`);
+    });
+    // 说明：CSS 会被拼进 main.js 的模板字面量，因此单个反斜杠紧跟数字这类非法八进制
+    // 转义会直接中断构建。该约束由 build.js 的 verifyCssSafety() 在构建期把关（比在这里
+    // 扫产物更准确：产物里本就有 rank_engine 编译后的 "\0" 等正常转义，在此处扫描只会误伤）。
+
+    // 6) 通知停留时长契约：断言 showMessage 真正传给 NoticeJs 的选项，而不是去匹配文本 ——
+    //    库里也存在同样的 timeout 字面量，文本匹配区分不出是我们的声明还是库的默认值。
+    //    NoticeJs 是 UMD 全局，加载后替换掉它即可捕获实际入参（showMessage 调用时按全局查找）。
+    //    时长 = timeout × 100ms，故 4 秒 → 40。
+    const noticeCalls = [];
+    const OrigNoticeJs = win.NoticeJs;
+    assert.strictEqual(typeof OrigNoticeJs, "function", "产物必须把 NoticeJs 挂到全局（UMD 导出）");
+    win.NoticeJs = function (opts) { noticeCalls.push(opts); return { show() {} }; };
+    try {
+        win.showMessage("时长契约测试-默认");
+        win.showMessage("时长契约测试-错误", "error");
+    } finally {
+        win.NoticeJs = OrigNoticeJs;
+    }
+    assert.strictEqual(noticeCalls.length, 2, "两次 showMessage 都应构造一次 NoticeJs");
+    assert.strictEqual(noticeCalls[0].timeout, 40,
+        `通知时长必须为 4 秒档（timeout × 100ms = 4000ms → 40），实际 ${noticeCalls[0].timeout}`);
+    assert.strictEqual(noticeCalls[1].timeout, 40, "所有类型的通知时长都应一致");
+    assert.strictEqual(noticeCalls[0].position, "bottomLeft", "通知位置必须固定左下角");
+    assert.strictEqual(noticeCalls[0].type, "success", "默认类型必须仍是 success");
+    assert.strictEqual(noticeCalls[1].type, "error", "显式传入的类型必须被保留");
+
+    console.log("✓ 测试场景 16 通过: 左下角通知已换装深色玻璃、层级高于面板、四类型图标就位、进度条改细线、时长为 4 秒");
 
     // === 收尾断言: 全流程结束后仍必须零未捕获异常 ===
     assert.strictEqual(errors.length, 0, "全流程结束后不应该产生未捕获异常: " + JSON.stringify(errors));

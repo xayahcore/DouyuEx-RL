@@ -51,29 +51,132 @@ function safeEl(id) {
 }
 
 var exTimer = 0; // 总时钟句柄
-var url = document.getElementsByTagName('html')[0].innerHTML;
-var urlLen = ("$ROOM.room_id =").length;
-var ridPos = url.indexOf('$ROOM.room_id =');
-var rid = "";
-if (ridPos > 0) {
-	rid = url.substring(ridPos + urlLen, url.indexOf(';', ridPos + urlLen));
-	if (rid) rid = rid.trim();
-} else {
-	rid = getStrMiddle(url, `roomID:`, `,`);
-	if (rid) {
-		rid = rid.trim();
-	} else {
-		let canonicalLink = document.querySelector(`link[rel="canonical"]`);
-		if (canonicalLink) {
-			let href = canonicalLink.getAttribute(`href`);
-			rid = href.split('/').pop().trim();
+/**
+ * 真实 room_id 运行时解析。
+ *
+ * 靓号(vipId)直播间的 URL 数字只是展示短号（如 /15000），真实 room_id 是另一个号
+ * （如 796449）。脚本是 @run-at document-start，顶层读 HTML 时页面尚未解析，
+ * "$ROOM.room_id =" 与 "roomID:" 双双落空后只能兜底到 canonical 上的短号，
+ * 而全局 rid 一旦定死便再也不会重算 —— 依赖真实 room_id 的 doseeing 统计接口
+ * 于是整场返回 0（实测 rid=15000 四项全 0，rid=796449 有真实数据）。
+ *
+ * 因此改为可反复调用的解析器：候选按可靠度排序，并排除 pathname 上的短号。
+ * 首选顺序与 src/core/rank_engine.js 的 getRid() 保持一致 —— 页面自己使用的真实
+ * 房间号（room_id / $ROOM.room_id）与斗鱼同一数据源，最可靠。
+ *
+ * 注意：本文件运行在油猴沙箱内，页面全局（room_id / $ROOM）必须经 unsafeWindow 读取，
+ * 直接读 window 取不到 —— 这正是核心层 rank_engine.js 能读 window、此处却不能的原因。
+ */
+function exPageWindow() {
+	try {
+		if (typeof unsafeWindow !== "undefined" && unsafeWindow && unsafeWindow.document) {
+			return unsafeWindow;
 		}
-	}
+	} catch (e) {}
+	return window;
 }
 
-url = null;	
-urlLen = null;
-ridPos = null;
+// URL 上的展示短号（靓号）；既作最后的兜底候选，也用于判断是否已拿到真实号
+function exPathShortId() {
+	try {
+		let m = location.pathname.match(/\/(\d+)(?:\/|$)/);
+		if (m) return m[1];
+	} catch (e) {}
+	return "";
+}
+
+// 是否已从可信来源（页面全局 / HTML 内联脚本）拿到房间号；拿到了就不必再重算
+let exRidConfident = false;
+
+function exParseRealRid() {
+	let cands = [];
+	let push = function(v) {
+		if (v === null || v === undefined) return;
+		v = String(v).replace(/['"\s;,]/g, "");
+		if (!/^\d{3,12}$/.test(v)) return;
+		if (cands.indexOf(v) === -1) cands.push(v);
+	};
+
+	// 快路径：页面自己使用的真实房间号。与斗鱼同一数据源，且无需序列化 DOM。
+	try {
+		let pageWindow = exPageWindow();
+		let pageRid = pageWindow.room_id || (pageWindow.$ROOM && pageWindow.$ROOM.room_id);
+		if (pageRid !== null && pageRid !== undefined && String(pageRid).trim() !== "") {
+			let normalized = String(pageRid).replace(/['"\s;,]/g, "");
+			if (/^\d{3,12}$/.test(normalized)) {
+				exRidConfident = true;
+				return normalized;
+			}
+		}
+	} catch (e) {}
+
+	// 慢路径：解析 HTML 内联脚本。document-start 时通常还没内容，DOMContentLoaded 之后才有效。
+	try {
+		let htmlEl = document.getElementsByTagName("html")[0];
+		let html = htmlEl && htmlEl.innerHTML ? htmlEl.innerHTML : "";
+		if (html) {
+			let pos = html.indexOf("$ROOM.room_id =");
+			if (pos > 0) {
+				let rest = html.substring(pos + 15);
+				let end = rest.indexOf(";");
+				push(end > 0 ? rest.substring(0, end) : rest.substring(0, 24));
+			}
+			push(getStrMiddle(html, `roomID:`, `,`));
+			let roomIdMatch = html.match(/"room_id"\s*:\s*(\d+)/);
+			if (roomIdMatch) push(roomIdMatch[1]);
+		}
+	} catch (e) {}
+	// HTML 内联脚本一旦命中即视为可信来源：正常房间此处拿到的就是真实号（恰好等于 URL 数字）
+	if (cands.length) exRidConfident = true;
+
+	// 兜底：canonical 链接（部分房间真实 room_id 恰好等于 URL 数字）
+	try {
+		let canonicalLink = document.querySelector(`link[rel="canonical"]`);
+		if (canonicalLink) {
+			push(String(canonicalLink.getAttribute("href") || "").split("/").pop());
+		}
+	} catch (e) {}
+
+	push(exPathShortId());
+
+	// 优先返回与 URL 短号不同的候选；全部相同（真实号本就等于短号）才回退第一个
+	let shortId = exPathShortId();
+	for (let i = 0; i < cands.length; i++) {
+		if (cands[i] !== shortId) return cands[i];
+	}
+	return cands.length ? cands[0] : "";
+}
+
+// 回写全局 rid：只在拿到有效值时覆盖，避免被限流页把已经求出的好值冲成空
+function exRefreshRid() {
+	try {
+		let realRid = exParseRealRid();
+		if (realRid && String(realRid) !== String(rid)) {
+			rid = String(realRid);
+		}
+	} catch (e) {}
+	return rid;
+}
+
+// document-start 首帧尽力而为：HTML 未解析时多半只能落到短号，由下面的生命周期纠偏
+var rid = exParseRealRid();
+
+// 真实 room_id 要等页面自己的脚本跑起来才可见，故在生命周期节点上反复纠偏；
+// 一旦从可信来源拿到号就立刻停手，之后不再产生任何开销。
+(function exRidLifecycle() {
+	let recalc = function() {
+		if (exRidConfident) return;
+		exRefreshRid();
+	};
+	if (document.readyState === "loading") {
+		safeBind(document, "DOMContentLoaded", recalc);
+	}
+	safeBind(window, "load", recalc);
+	setTimeout(recalc, 800);
+	setTimeout(recalc, 2500);
+	setTimeout(recalc, 6000);
+})();
+
 var my_uid = getCookieValue("acf_uid"); // 自己的uid
 var myName = "";
 var dyToken = getToken();
@@ -240,12 +343,21 @@ function getUID() {
 	return ret;
 }
 
+// 通知停留时长：4 秒。
+// NoticeJs 的进度条按 timeout 毫秒一跳、共 100 跳递减到底后移除，故时长 = timeout × 100ms，
+// 这里由目标时长反推单跳间隔，避免以后改时长还要心算乘 100。
+// 注意不能省掉这个显式 timeout：NoticeJs 内部是 Object.assign(Defaults, options)，
+// 第一个参数就是要被改写的目标 —— 任何一次 showMessage 传了 options 都会**永久改写全局
+// 默认值**，之后所有通知的时长都跟着变。每次显式指定可把该项复位，不必依赖调用方自觉。
+const NOTICE_DURATION_MS = 4000;
+const NOTICE_TIMEOUT_TICK_MS = NOTICE_DURATION_MS / 100;
 function showMessage(msg, type="success", options) {
 	// type: success[green] error[red] warning[orange] info[blue]
 	let option = {
 		text: msg,
 		type: type,
 		position: 'bottomLeft',
+		timeout: NOTICE_TIMEOUT_TICK_MS,
 		...options
 	}
 	new NoticeJs(option).show();

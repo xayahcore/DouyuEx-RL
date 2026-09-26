@@ -4,6 +4,8 @@ const vm = require("vm");
 const uglifyjs = require("uglify-js");
 
 let css = "";
+const cssFileSpans = [];
+let cssNormalizedLength = 0;
 let js = "";
 let coreJs = "";
 
@@ -29,7 +31,14 @@ function handleFolder(folderPath, excludingFileName) {
     } else {
       if (item !== excludingFileName) {
         const fileContent = fs.readFileSync(itemPath, "utf8");
-        if (item.includes(".css")) css += fileContent + "\r\n";
+        // 记录每个 CSS 文件在拼接串中的起始偏移：CSS 拼接后会删掉 CRLF 变成一整行，
+        // 行号随之失去意义，只有偏移量能把报错定位回具体文件（见 verifyCssSafety）。
+        // 注意偏移必须按"删除 CRLF 之后"的长度累计，否则会整体错位、指到隔壁文件。
+        if (item.includes(".css")) {
+          cssFileSpans.push({ file: itemPath, start: cssNormalizedLength });
+          cssNormalizedLength += fileContent.replace(/\r\n/g, "").length;
+          css += fileContent + "\r\n";
+        }
         if (item.includes(".js")) js += fileContent + "\r\n";
       }
     }
@@ -194,22 +203,50 @@ function extractHeader(code) {
 }
 
 /**
- * CSS 不能出现反引号或 ${ —— 因为 CSS 是注入到 main.js 的模板字面量
- * (`document.createTextNode(\`...\`)`) 内的，这两者会提前闭合模板字面量，
- * 让语法核验报出 "missing ) after argument list" 这类极难定位的错误。
+ * CSS 不能出现反引号、${ 或"单个反斜杠 + 数字"—— 因为 CSS 是注入到 main.js 的
+ * 模板字面量 (`document.createTextNode(\`...\`)`) 内的：
+ *  - 反引号会提前闭合模板字面量
+ *  - ${ 会被当成插值起始
+ *  - \<数字> 是非法八进制转义（模板字面量不允许），如写 CSS 码点转义 "\\2713" 时会命中
+ * 三者都会让语法核验报出 "missing ) after argument list" 这类极难定位的错误。
+ * 注意 "\\2713"（双反斜杠）是安全的 —— 只在 CSS 里写转义时才需要改成字面字符。
+ *
+ * 报错定位用「偏移量 + 具体文件」而非行号：CSS 在拼接时已删除 CRLF，整份样式是一行，
+ * 行号恒为 1，没有参考价值。
  */
 function verifyCssSafety() {
-  const lines = css.split("\n");
   const offenders = [];
-  lines.forEach((line, idx) => {
-    if (line.includes("`")) offenders.push({ idx: idx + 1, line, why: "反引号" });
-    else if (line.includes("${")) offenders.push({ idx: idx + 1, line, why: "${" });
-  });
+  const mark = (why, at, len) => offenders.push({ why, at, len });
+
+  let i = -1;
+  while ((i = css.indexOf("`", i + 1)) !== -1) mark("反引号", i, 1);
+  i = -1;
+  while ((i = css.indexOf("${", i + 1)) !== -1) mark("${（模板插值起始）", i, 2);
+  const escRe = /(^|[^\\])\\[\d]/g;
+  let m;
+  while ((m = escRe.exec(css)) !== null) {
+    mark("反斜杠+数字（非法八进制转义）", m.index + m[1].length, m[0].length - m[1].length);
+  }
+
   if (offenders.length === 0) return;
-  console.error("[Verify] CSS 含会破坏模板字面量的字符（反引号 / ${），请改为普通文字：");
+
+  const fileOf = (at) => {
+    let hit = "(未知文件)";
+    for (const span of cssFileSpans) {
+      if (span.start <= at) hit = span.file; else break;
+    }
+    return hit;
+  };
+
+  console.error("[Verify] CSS 含会破坏模板字面量的字符（反引号 / ${ / 反斜杠+数字），请改为普通文字：");
   offenders.slice(0, 10).forEach((o) => {
-    console.error(`  第 ${o.idx} 行 (${o.why}): ${o.line.trim().slice(0, 100)}`);
+    const from = Math.max(0, o.at - 70);
+    const snippet = css.slice(from, o.at + o.len + 70).replace(/\s+/g, " ");
+    console.error(`  ${fileOf(o.at)}`);
+    console.error(`    (${o.why}) …${snippet}…`);
   });
+  if (offenders.length > 10) console.error(`  …另有 ${offenders.length - 10} 处`);
+  console.error(`  共 ${offenders.length} 处`);
   process.exit(1);
 }
 
