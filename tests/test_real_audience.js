@@ -52,6 +52,13 @@ function loadRealAudience(opts) {
         warn: (...args) => warnings.push(args.join(" "))
     };
 
+    // doseeing 的可控桩：用例可以在中途把接口打挂，验证"接口不可达时统计条还剩什么"。
+    // payload.data 直接喂给 getRealViewer 的返回值（真实实现取的是 response.response）。
+    const gmState = {
+        fail: !!opts.gmFail,
+        payload: opts.gmPayload || { error: 0, data: {} }
+    };
+
     const factory = new Function(
         "window", "document", "location", "unsafeWindow",
         "setTimeout", "clearTimeout", "setInterval", "clearInterval",
@@ -63,6 +70,7 @@ function loadRealAudience(opts) {
             refreshRid: exRefreshRid,
             pathShortId: exPathShortId,
             isConfident: function () { return exRidConfident; },
+            info: function () { return real_info; },
             initDom: initPkg_RealAudience_Dom,
             ensure: realAudienceEnsure,
             switchWatch: switchRealAndTodayWatch,
@@ -75,14 +83,21 @@ function loadRealAudience(opts) {
         win, win.document, win.location, win,
         win.setTimeout, win.clearTimeout, win.setInterval, win.clearInterval,
         () => Promise.resolve({ json: async () => ({ error: 0, data: { todayWatch: 0 } }) }),
-        (req) => { if (req && typeof req.onload === "function") req.onload({ response: { data: {} } }); },
+        (req) => {
+            if (!req) return;
+            if (gmState.fail) {
+                if (typeof req.onerror === "function") req.onerror(new Error("blocked"));
+                return;
+            }
+            if (typeof req.onload === "function") req.onload({ response: gmState.payload });
+        },
         () => {},
         () => "unknown",
         () => {},
         quietConsole
     );
 
-    return { dom, win, api, warnings };
+    return { dom, win, api, warnings, gmState };
 }
 
 function wait(ms) {
@@ -95,6 +110,18 @@ function statsBarEl(win) {
 
 function countBars(win) {
     return win.document.querySelectorAll(".real-audience").length;
+}
+
+/**
+ * 读统计条的“已写入值”。
+ * 真实代码走 realAudienceSet(id, "innerText", v)，写的是 innerText 属性；
+ * jsdom 不实现 innerText（不会反映到 textContent），HTML 里的 **** 占位符却在 textContent 上。
+ * 所以读值必须读属性本身，两者不能混为一谈。
+ */
+function statValue(win, id) {
+    const el = win.document.getElementById(id);
+    if (!el) return null;
+    return el.innerText === undefined ? null : String(el.innerText);
 }
 
 async function testRealRid() {
@@ -249,7 +276,80 @@ async function testStatsBarSustain() {
         dom.window.close();
     }
 
-    console.log("=== 统计条落点与自愈 4/4 场景全部通过 ===");
+    // === 场景 9: doseeing 不可达时，本地就能算出来的项（已播）仍必须写进去 ===
+    {
+        console.log("--> 场景 9: doseeing 全程失败 → 已播仍要写、已有数字不得被清成 0...");
+        // ① 从一开始就挂掉：旧实现是 try 两个请求、一挂就 return，
+        //    于是"已播"（只用本地 showtime）也永远不写 —— 这一条是分水岭。
+        const {
+            dom: domFail,
+            win: winFail,
+            api: apiFail,
+            warnings: warnFail
+        } = loadRealAudience({ url: "https://www.douyu.com/74751", gmFail: true });
+        apiFail.initDom();
+        await apiFail.setViewer();
+        const timeVal = statValue(winFail, "real-audience__time");
+        assert.ok(
+            timeVal !== null && timeVal.indexOf("****") === -1,
+            "doseeing 不可达时【已播】仍必须写进去（它只用本地 showtime），实际 " + JSON.stringify(timeVal)
+        );
+        assert.ok(
+            warnFail.some((w) => w.indexOf("真实人数") !== -1),
+            "接口失败必须留下 warn 线索，不能静默"
+        );
+        domFail.window.close();
+
+        // ② 先正常取到数据、再挂掉：已知的真实人数不得被覆盖成占位符或 0
+        const gmPayload = { error: 0, data: { "active.uv": 12345, "chat.uv": 678, "gift.all.uv": 90, "gift.paid.price": 123456, "gift.all.price": 234567 } };
+        const { dom, win, api, gmState } = loadRealAudience({ url: "https://www.douyu.com/74751", gmPayload: gmPayload });
+        api.initDom();
+        await api.setViewer();
+        assert.strictEqual(statValue(win, "real-audience__total"), "12345", "接口正常时今日累计观看必须写进去");
+        assert.strictEqual(api.info().view, 12345, "接口正常时 real_info.view 必须更新");
+
+        gmState.fail = true;
+        await api.setViewer();
+        assert.strictEqual(
+            statValue(win, "real-audience__total"),
+            "12345",
+            "doseeing 失败时不得把已知的真实人数覆盖成占位符或 0"
+        );
+        assert.strictEqual(api.info().view, 12345, "doseeing 失败时 real_info.view 必须保持上一次的值");
+        console.log("✓ 场景 9 通过: 接口不可达时本地项照写、已知数字不被清 0、失败有线索");
+        dom.window.close();
+    }
+
+    // === 场景 10: 自愈重建出来的只是空壳，必须自动补一次数据 ===
+    {
+        console.log("--> 场景 10: 自愈后必须自动补数据，不能只恢复空壳等 150 秒...");
+        const { dom, win, api } = loadRealAudience({ url: "https://www.douyu.com/74751" });
+        api.initDom();
+        await api.setViewer();
+        const before = statValue(win, "real-audience__time");
+
+        // 页面重绘把节点连根拔掉，再由**外部调用方**（switchRealAndTodayWatch 那条路）触发自愈
+        win.document.querySelectorAll(".real-audience").forEach((el) => el.remove());
+        assert.strictEqual(api.ensure(), true, "自愈必须成功");
+        assert.strictEqual(
+            win.document.getElementById("real-audience__time").textContent,
+            "已播:****",
+            "重建后的节点带的是 HTML 里的 **** 占位符（前提：数据必须靠补刷回来）"
+        );
+
+        await wait(80); // 让自愈排的那次补刷跑完
+        const after = statValue(win, "real-audience__time");
+        assert.strictEqual(
+            String(after),
+            String(before),
+            "自愈必须自动补一次数据 —— 否则要等下一次 setRealViewer（150 秒）才有人数，实际 " + after
+        );
+        assert.ok(String(after).indexOf("****") === -1, "补刷后的【已播】不得仍是占位符");
+        console.log("✓ 场景 10 通过: 自愈后自动补数据，不再空等 150 秒");
+        dom.window.close();
+    }
+
+    console.log("=== 统计条落点与自愈 6/6 场景全部通过 ===");
 }
 
 (async function main() {

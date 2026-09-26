@@ -125,12 +125,19 @@ function realAudienceInsert(node) {
 	return true;
 }
 
+// 自愈重建后的补数据节流时间戳
+let realAudienceRefillAt = 0;
+
 /**
  * 统计条自愈：页面重绘把节点冲掉后，清掉残留并就地重建。
  * 容器尚未渲染时直接返回 false —— 冷启动的轮询补插由 initPkg_RealAudience_Dom 负责，
  * 此处不再另起定时器，避免被 5 秒级调用叠成一堆。
+ *
+ * fromRefresh：由 setRealViewer 自己调用时为 true。那条路径接下来马上就会写值，
+ * 不需要再补一次；只有"别的调用方发现节点没了"时才需要触发补数据 ——
+ * 否则重建出来的节点会带着 **** 占位符一直等下一次 setRealViewer（150 秒）。
  */
-function realAudienceEnsure() {
+function realAudienceEnsure(fromRefresh) {
 	if (document.getElementById("real-audience__total")) return true;
 	if (!getValidDom([".layout-Player-announce", ".layout-Player-rankAll", ".layout-Player-rank"])) return false;
 	let stale = document.querySelectorAll(".real-audience");
@@ -144,7 +151,16 @@ function realAudienceEnsure() {
 		console.warn("[DouyuEx] 统计条重建异常:", e);
 		return false;
 	}
-	return !!document.getElementById("real-audience__total");
+	const ok = !!document.getElementById("real-audience__total");
+	// 重建出来的只是空壳（**** 占位符），必须立刻补一次数据；
+	// 5 秒节流：页面反复重绘时不至于把刷新叠成一堆
+	if (ok && !fromRefresh && Date.now() - realAudienceRefillAt > 5000) {
+		realAudienceRefillAt = Date.now();
+		Promise.resolve()
+			.then(() => setRealViewer())
+			.catch(() => {});
+	}
+	return ok;
 }
 
 // 统计条节点随时可能被页面重绘移除，写值统一走判空，避免定时器反复抛 TypeError
@@ -165,21 +181,27 @@ function realAudienceSet(id, prop, value) {
 	}
 
 async function setRealViewer() {
-	// 统计条可能已被页面重绘冲掉：先自愈，拿不到节点就不再往下走（绝不抛异常）
-	if (!realAudienceEnsure()) return;
+	// 统计条可能已被页面重绘冲掉：先自愈，拿不到节点就不再往下走（绝不抛异常）。
+	// 传 true 表示"本函数马上就会写值"，不需要 self-heal 再补一次刷新
+	if (!realAudienceEnsure(true)) return;
 	if(document.querySelector(".MatchSystemChatRoomEntry") != null){
 		document.querySelector(".MatchSystemChatRoomEntry").style.display = "none";
 	}
+	// 两个请求各自容错：doseeing 不可达时，不能让"已播"这种本地就能算出来的项一起消失
 	let retData = null;
 	let todayWatchData = null;
 	try {
 		retData = await getRealViewer(rid);
+	} catch (e) {
+		console.warn("[DouyuEx] 真实人数请求失败（本轮跳过人数/礼物项）:", e);
+	}
+	try {
 		todayWatchData = await getTodayWatch(rid);
 	} catch (e) {
-		console.warn("[DouyuEx] 真实人数数据请求失败:", e);
-		return;
+		console.warn("[DouyuEx] 今日观看请求失败（本轮跳过已观看项）:", e);
 	}
-	let stat = (retData && retData.data) ? retData.data : {};
+	// stat 为 null 表示本轮拿不到数据：**保持上一次的数值**，绝不覆盖成 0
+	let stat = (retData && retData.data) ? retData.data : null;
 	let todayWatchSeconds = (todayWatchData && todayWatchData.data && todayWatchData.data.todayWatch !== undefined) ? todayWatchData.data.todayWatch : 0;
 	let todayWatchOk = !!(todayWatchData && todayWatchData.error == 0);
 	let showedTime = 0;
@@ -192,23 +214,28 @@ async function setRealViewer() {
 			showedTime = Math.floor(Date.now()/1000) - Number(real_info.showtime);
 		}
 	}
-	real_info.view = stat["active.uv"] || 0;
-	real_info.danmu_person_count = stat["chat.uv"] || 0;
-	real_info.gift_person_count = stat["gift.all.uv"] || 0;
+	if (stat) {
+		real_info.view = stat["active.uv"] || 0;
+		real_info.danmu_person_count = stat["chat.uv"] || 0;
+		real_info.gift_person_count = stat["gift.all.uv"] || 0;
 	real_info.paid_person_count = stat["gift.paid.uv"] || 0;
 	real_info.money_yc = Number(stat["gift.paid.price"] / 100 || 0).toFixed(2);
 	real_info.money_total = Number(stat["gift.all.price"] / 100 || 0).toFixed(2);
 	
-	realAudienceSet("real-audience__total", "innerText", real_info.view);
-	realAudienceSet("real-audience__t", "title", "今日累计活跃人数:" + real_info.view + " 弹幕人数:" + real_info.danmu_person_count + " 送礼人数:" + real_info.gift_person_count + " 付费人数:" + real_info.paid_person_count);
-	realAudienceSet("real-audience__barrage", "innerText", real_info.danmu_person_count);
-	// 送礼人数一项当前未展示（real-audience__gift 节点已在 Dom 中注释掉）
-	realAudienceSet("real-audience__money_yc", "innerText", real_info.money_yc);
-	realAudienceSet("real-audience__money", "title", "总礼物价值:" + real_info.money_total + " 鱼翅礼物:" + real_info.money_yc);
+		realAudienceSet("real-audience__total", "innerText", real_info.view);
+		realAudienceSet("real-audience__t", "title", "今日累计活跃人数:" + real_info.view + " 弹幕人数:" + real_info.danmu_person_count + " 送礼人数:" + real_info.gift_person_count + " 付费人数:" + real_info.paid_person_count);
+		realAudienceSet("real-audience__barrage", "innerText", real_info.danmu_person_count);
+		// 送礼人数一项当前未展示（real-audience__gift 节点已在 Dom 中注释掉）
+		realAudienceSet("real-audience__money_yc", "innerText", real_info.money_yc);
+		realAudienceSet("real-audience__money", "title", "总礼物价值:" + real_info.money_total + " 鱼翅礼物:" + real_info.money_yc);
+	}
+	// 贵宾数来自长连接消息、不依赖 doseeing，任何时候都可以写
 	if (real_info.noble_count !== "") {
 		realAudienceSet("real-audience__noble", "innerText", formatNobleCount(real_info.noble_count));
 	}
 	
+	// 下面两项本地就算得出来（已播用 showtime、已观看用 todayWatch），
+	// 所以**放在 doseeing 的 if 之外**：接口不可达时统计条也不该整条空着
 	realAudienceSet("real-audience__time", "innerText", "已播:" + formatSeconds(showedTime));
 	realAudienceSet("real-audience__time", "title", "开播时间:" + String(dateFormat("yyyy年MM月dd日hh时mm分ss秒 ",new Date(Number(real_info.showtime + "000")))) + "\n已观看:" + formatSeconds(todayWatchSeconds));
 	
