@@ -925,6 +925,34 @@ async function testBuiltBundle() {
     );
     console.log("✓ 测试场景 17 通过: 摄像头分支的 isClosed 已声明、注释不干扰扫描、模块已进产物");
 
+    console.log("--> 测试场景 18: 包初始化必须逐项隔离（单个包抛异常不得拖垮其余包）...");
+    // 背景：initPkg() 原本是 30 多个平铺直调，任何一处抛异常，它**后面**的包就全部不再初始化，
+    // 用户看到的就是"脚本没加载出来"，而刷新一次可能又好了（抛不抛取决于当时的 DOM 时机）。
+    // 现在统一走 initPkg_Safe(name, fn) 逐项 try/catch，这里把这条纪律钉住。
+    {
+        // ⚠ 这里**不能**过 stripComments：main.js 的 `@match *://*.douyu.com/0*` 里
+        // `//*` 会被当成块注释开头，一路吃到文件末尾，把整份源码抹成 144 字节（实测踩到）。
+        // 好在断言用的正则是"整行只有一句 initPkg_Xxx();"，注释行以 // 开头，天然不会误命中。
+        const mainSrc = fs.readFileSync(path.join(__dirname, "../src/main.js"), "utf8");
+        const bodyStart = mainSrc.indexOf("function initPkg() {");
+        const bodyEnd = mainSrc.indexOf("function initPkg_Safe(");
+        assert.ok(bodyStart >= 0 && bodyEnd > bodyStart, "应能在 main.js 里定位 initPkg() 与 initPkg_Safe()");
+        const body = mainSrc.slice(bodyStart, bodyEnd);
+        const direct = body.match(/^[ \t]*initPkg_[A-Za-z0-9_]+\([ \t]*\)[ \t]*;[ \t]*$/gm) || [];
+        assert.strictEqual(
+            direct.length, 0,
+            "initPkg() 内不得再有平铺直调的包初始化，必须经 initPkg_Safe 隔离：" + JSON.stringify(direct)
+        );
+        const wrappers = body.match(/initPkg_Safe\([ \t]*"[A-Za-z0-9_]+"[ \t]*,/g) || [];
+        assert.ok(wrappers.length >= 30, "initPkg_Safe 包裹的包数量异常（当前 " + wrappers.length + "）");
+        // initPkg_Safe 本体必须真的兜住异常并报出包名，否则"隔离"只是摆设
+        const safeBody = mainSrc.slice(bodyEnd, bodyEnd + 400);
+        assert.ok(safeBody.indexOf("try") >= 0 && safeBody.indexOf("catch") >= 0, "initPkg_Safe 必须 try/catch");
+        assert.ok(safeBody.indexOf("console.error") >= 0, "初始化失败必须留下可定位的错误日志");
+        assert.ok(safeBody.indexOf("name") >= 0, "错误日志必须报出是哪个包失败");
+    }
+    console.log("✓ 测试场景 18 通过: initPkg() 逐包隔离，失败会报出包名而不是静默中断");
+
     // === 收尾断言: 全流程结束后仍必须零未捕获异常 ===
     assert.strictEqual(errors.length, 0, "全流程结束后不应该产生未捕获异常: " + JSON.stringify(errors));
 
