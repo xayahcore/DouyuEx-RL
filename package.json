@@ -4,7 +4,7 @@
   "description": "DouyuEx-RL 斗鱼直播间增强插件 (Reborn Lite)",
   "scripts": {
     "build": "node build.js",
-    "test": "node tests/test_danmaku_blocked.js && node tests/test_metadata_probe.js && node tests/test_danmaku_history.js && node tests/test_built_bundle.js"
+    "test": "node tests/test_danmaku_blocked.js && node tests/test_metadata_probe.js && node tests/test_danmaku_history.js && node tests/test_real_audience.js && node tests/test_built_bundle.js"
   },
   "repository": {
     "type": "git",

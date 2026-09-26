@@ -11,6 +11,8 @@ let real_info = {
 	noble_count: "",
 }
 let hasAvatarBottom = false;
+// 统计模块定时器只允许启动一次（与 h5room 请求解耦后，任何重试都不重复挂表）
+let real_audience_booted = false;
 
 function formatNobleCount(vn) {
 	const n = Number(vn);
@@ -29,6 +31,15 @@ function initPkg_RealAudience() {
 	initPkg_RealAudience_Func();
 	setAvatarVideo();
 
+	// 定时器与 h5room 请求解耦：该请求失败或超时也必须让统计条继续工作，
+	// 不能把 setInterval 挂在 .then() 里（请求一挂，整场统计再也不会启动）。
+	if (!real_audience_booted) {
+		real_audience_booted = true;
+		setRealViewer();
+		setInterval(setRealViewer, 150000);
+		setInterval(switchRealAndTodayWatch, 5000);
+	}
+
 	fetch("https://www.douyu.com/swf_api/h5room/" + rid, {
 		method: 'GET',
 		mode: 'no-cors',
@@ -39,8 +50,6 @@ function initPkg_RealAudience() {
 		real_info.showtime = retData.data.show_time;
 		real_info.isShow = retData.data.show_status;
 		setRealViewer();
-		setInterval(setRealViewer, 150000);
-		setInterval(switchRealAndTodayWatch, 5000);
 	}).catch(err => {
 		console.log("请求失败!", err);
 	})
@@ -76,11 +85,75 @@ function initPkg_RealAudience_Dom() {
 	html += '<span id="real-audience__watchtime" style="white-space: nowrap;display: none;">' + "已观看:" + "****" + "</span>";
 	a.innerHTML = html;
 	
-		let b = getValidDom([".layout-Player-announce", ".layout-Player-rankAll", ".layout-Player-rank", ".Barrage-main"]);
-		if (b) {
-			b.insertBefore(a, b.childNodes[0]);
-		}
+	if (realAudienceInsert(a)) {
+		initPkg_RealAudience_Func();
+		return true;
 	}
+	// 播放器区块尚未渲染：500ms × 60 ≈ 30 秒内轮询补插；仍未等到则留一条线索，不再静默失败
+	let retry = 0;
+	let retryTimer = setInterval(function() {
+		if (retry++ >= 60) {
+			clearInterval(retryTimer);
+			console.warn("[DouyuEx] 真实人数统计条插入失败：30 秒内未等到播放器区块");
+			return;
+		}
+		if (document.getElementById("real-audience__total")) {
+			// 已被 realAudienceEnsure 的定时器补上，收工
+			clearInterval(retryTimer);
+			return;
+		}
+		if (realAudienceInsert(a)) {
+			clearInterval(retryTimer);
+			initPkg_RealAudience_Func();
+			// 首插失败时启动的那次 setRealViewer 会因无节点提前返回，这里补一次
+			setRealViewer();
+		}
+	}, 500);
+	return false;
+}
+
+/**
+ * 插入统计条节点。候选里绝不包含 .Barrage-main：
+ * 弹幕区会被页面持续重绘，插进去的节点很快被冲掉；而启动门槛
+ * （initRouter_DouyuRoom_Main）只等 .Barrage-main + 背包按钮、并不等
+ * .layout-Player-announce，所以冷启动时它必然过早命中 —— 统计条当场消失且再无自愈。
+ */
+function realAudienceInsert(node) {
+	let container = getValidDom([".layout-Player-announce", ".layout-Player-rankAll", ".layout-Player-rank"]);
+	if (!container) return false;
+	container.insertBefore(node, container.childNodes[0]);
+	return true;
+}
+
+/**
+ * 统计条自愈：页面重绘把节点冲掉后，清掉残留并就地重建。
+ * 容器尚未渲染时直接返回 false —— 冷启动的轮询补插由 initPkg_RealAudience_Dom 负责，
+ * 此处不再另起定时器，避免被 5 秒级调用叠成一堆。
+ */
+function realAudienceEnsure() {
+	if (document.getElementById("real-audience__total")) return true;
+	if (!getValidDom([".layout-Player-announce", ".layout-Player-rankAll", ".layout-Player-rank"])) return false;
+	let stale = document.querySelectorAll(".real-audience");
+	for (let i = 0; i < stale.length; i++) {
+		if (stale[i].parentNode) stale[i].parentNode.removeChild(stale[i]);
+	}
+	try {
+		// 插入成功后 Dom 内部会自行调用 initPkg_RealAudience_Func 绑定点击事件
+		initPkg_RealAudience_Dom();
+	} catch (e) {
+		console.warn("[DouyuEx] 统计条重建异常:", e);
+		return false;
+	}
+	return !!document.getElementById("real-audience__total");
+}
+
+// 统计条节点随时可能被页面重绘移除，写值统一走判空，避免定时器反复抛 TypeError
+function realAudienceSet(id, prop, value) {
+	let el = document.getElementById(id);
+	if (!el) return false;
+	el[prop] = value;
+	return true;
+}
 	
 	function initPkg_RealAudience_Func() {
 		let audience = document.getElementsByClassName("real-audience")[0];
@@ -92,11 +165,23 @@ function initPkg_RealAudience_Dom() {
 	}
 
 async function setRealViewer() {
+	// 统计条可能已被页面重绘冲掉：先自愈，拿不到节点就不再往下走（绝不抛异常）
+	if (!realAudienceEnsure()) return;
 	if(document.querySelector(".MatchSystemChatRoomEntry") != null){
 		document.querySelector(".MatchSystemChatRoomEntry").style.display = "none";
 	}
-	let retData = await getRealViewer(rid);
-	let todayWatchData = await getTodayWatch(rid);
+	let retData = null;
+	let todayWatchData = null;
+	try {
+		retData = await getRealViewer(rid);
+		todayWatchData = await getTodayWatch(rid);
+	} catch (e) {
+		console.warn("[DouyuEx] 真实人数数据请求失败:", e);
+		return;
+	}
+	let stat = (retData && retData.data) ? retData.data : {};
+	let todayWatchSeconds = (todayWatchData && todayWatchData.data && todayWatchData.data.todayWatch !== undefined) ? todayWatchData.data.todayWatch : 0;
+	let todayWatchOk = !!(todayWatchData && todayWatchData.error == 0);
 	let showedTime = 0;
 	if (real_info.isShow == 2) {
 		showedTime = 0;
@@ -107,29 +192,29 @@ async function setRealViewer() {
 			showedTime = Math.floor(Date.now()/1000) - Number(real_info.showtime);
 		}
 	}
-	real_info.view = retData.data["active.uv"] || 0;
-	real_info.danmu_person_count = retData.data["chat.uv"] || 0;
-	real_info.gift_person_count = retData.data["gift.all.uv"] || 0;
-	real_info.paid_person_count = retData.data["gift.paid.uv"] || 0;
-	real_info.money_yc = Number(retData.data["gift.paid.price"] / 100 || 0).toFixed(2);
-	real_info.money_total = Number(retData.data["gift.all.price"] / 100 || 0).toFixed(2);
+	real_info.view = stat["active.uv"] || 0;
+	real_info.danmu_person_count = stat["chat.uv"] || 0;
+	real_info.gift_person_count = stat["gift.all.uv"] || 0;
+	real_info.paid_person_count = stat["gift.paid.uv"] || 0;
+	real_info.money_yc = Number(stat["gift.paid.price"] / 100 || 0).toFixed(2);
+	real_info.money_total = Number(stat["gift.all.price"] / 100 || 0).toFixed(2);
 	
-	document.getElementById("real-audience__total").innerText = real_info.view;
-	document.getElementById("real-audience__t").title = "今日累计活跃人数:" + real_info.view + " 弹幕人数:" + real_info.danmu_person_count + " 送礼人数:" + real_info.gift_person_count + " 付费人数:" + real_info.paid_person_count;
-	document.getElementById("real-audience__barrage").innerText = real_info.danmu_person_count;
-	// document.getElementById("real-audience__gift").innerText = real_info.gift_person_count;
-	document.getElementById("real-audience__money_yc").innerText = real_info.money_yc;
-	document.getElementById("real-audience__money").title = "总礼物价值:" + real_info.money_total + " 鱼翅礼物:" + real_info.money_yc;
+	realAudienceSet("real-audience__total", "innerText", real_info.view);
+	realAudienceSet("real-audience__t", "title", "今日累计活跃人数:" + real_info.view + " 弹幕人数:" + real_info.danmu_person_count + " 送礼人数:" + real_info.gift_person_count + " 付费人数:" + real_info.paid_person_count);
+	realAudienceSet("real-audience__barrage", "innerText", real_info.danmu_person_count);
+	// 送礼人数一项当前未展示（real-audience__gift 节点已在 Dom 中注释掉）
+	realAudienceSet("real-audience__money_yc", "innerText", real_info.money_yc);
+	realAudienceSet("real-audience__money", "title", "总礼物价值:" + real_info.money_total + " 鱼翅礼物:" + real_info.money_yc);
 	if (real_info.noble_count !== "") {
-		document.getElementById("real-audience__noble").innerText = formatNobleCount(real_info.noble_count);
+		realAudienceSet("real-audience__noble", "innerText", formatNobleCount(real_info.noble_count));
 	}
 	
-	document.getElementById("real-audience__time").innerText = "已播:" + formatSeconds(showedTime);
-	document.getElementById("real-audience__time").title = "开播时间:" + String(dateFormat("yyyy年MM月dd日hh时mm分ss秒 ",new Date(Number(real_info.showtime + "000")))) + "\n已观看:" + formatSeconds(todayWatchData.data.todayWatch);
+	realAudienceSet("real-audience__time", "innerText", "已播:" + formatSeconds(showedTime));
+	realAudienceSet("real-audience__time", "title", "开播时间:" + String(dateFormat("yyyy年MM月dd日hh时mm分ss秒 ",new Date(Number(real_info.showtime + "000")))) + "\n已观看:" + formatSeconds(todayWatchSeconds));
 	
-	if (todayWatchData.error == 0) {
-		document.getElementById("real-audience__watchtime").innerText = "已观看:" + formatSeconds(todayWatchData.data.todayWatch);
-		document.getElementById("real-audience__watchtime").title = "开播时间:" + String(dateFormat("yyyy年MM月dd日hh时mm分ss秒 ",new Date(Number(real_info.showtime + "000")))) + "\n已观看:" + formatSeconds(todayWatchData.data.todayWatch);
+	if (todayWatchOk) {
+		realAudienceSet("real-audience__watchtime", "innerText", "已观看:" + formatSeconds(todayWatchSeconds));
+		realAudienceSet("real-audience__watchtime", "title", "开播时间:" + String(dateFormat("yyyy年MM月dd日hh时mm分ss秒 ",new Date(Number(real_info.showtime + "000")))) + "\n已观看:" + formatSeconds(todayWatchSeconds));
 	}
 }
 
@@ -270,8 +355,11 @@ function initPkg_RealAudience_Handle(ret) {
 }
 
 function switchRealAndTodayWatch() {
+	// 节点可能已被页面重绘冲掉：先自愈，拿不到就跳过本轮，绝不抛异常
+	if (!realAudienceEnsure()) return;
 	let realDom = document.getElementById("real-audience__time");
 	let watchDom = document.getElementById("real-audience__watchtime");
+	if (!realDom || !watchDom) return;
 	if (realDom.style.display == "none") {
 		realDom.style.display = "block";
 		watchDom.style.display = "none";
