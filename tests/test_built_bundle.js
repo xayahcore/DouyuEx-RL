@@ -5,7 +5,8 @@ let JSDOM;
 try {
     JSDOM = require("jsdom").JSDOM;
 } catch (e) {
-    JSDOM = require("D:/harness/_cdp/node_modules/jsdom").JSDOM;
+    console.error("[测试] 缺少依赖 jsdom，请先执行：npm install");
+    throw e;
 }
 
 // 从源码读取 @version 作为期望值：既避免每次发版都要手改这里的版本字面量，

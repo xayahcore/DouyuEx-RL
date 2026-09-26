@@ -5,7 +5,8 @@ let JSDOM;
 try {
     JSDOM = require("jsdom").JSDOM;
 } catch (e) {
-    JSDOM = require("D:/harness/_cdp/node_modules/jsdom").JSDOM;
+    console.error("[测试] 缺少依赖 jsdom，请先执行：npm install");
+    throw e;
 }
 
 const SRC_PATH = path.join(__dirname, "../src/packages/VideoTools/MetaData/MetaData.js");
