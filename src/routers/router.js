@@ -63,12 +63,29 @@ function initRouter_DouyuRoom_Main() {
     // 主要
     document.domain = "douyu.com";
     init();
+    // ⚠ 这里是**整份插件唯一的初始化入口**，所以这道门槛必须"一定会打开"。
+    // 原实现要求「弹幕区」与「背包入口（.BackpackButton 或 #js-backpack-enter）」同时在场，
+    // 否则只是每秒空跑一次、永不放弃 —— 而背包入口跟插件毫无关系：页面版式一变，
+    // 或用户装了清理页面元素/广告拦截类扩展把它去掉，整份插件就永远不会初始化，
+    // 用户看到的就是"脚本没加载出来"，刷新一次可能又好了（取决于那次它渲染没渲染）。
+    // 现在：最多等 15 秒，到点无论元素齐不齐都继续初始化（单包异常已由 initPkg_Safe 隔离），
+    // 宁可少几个入口，也不能整份插件不加载；等不到时留一条线索便于定位。
+    let waited = 0;
     let intID = setInterval(() => {
         let dom1 = document.getElementsByClassName("BackpackButton")[0];
         let dom2 = document.getElementsByClassName("Barrage-main")[0];
         let dom3 = document.querySelector("#js-backpack-enter")
-        if (!dom2 || (!dom1 && !dom3)) {
+        waited++;
+        const ready = !!dom2 && (!!dom1 || !!dom3);
+        if (!ready && waited < 15) {
             return;
+        }
+        if (!ready) {
+            console.warn(
+                "[DouyuEx] 未等到预期页面元素（弹幕区: " + !!dom2 +
+                "，背包入口: " + (!!dom1 || !!dom3) +
+                "），已等待 " + waited + " 秒，仍继续初始化"
+            );
         }
         setTimeout(() => {
             initStyles();

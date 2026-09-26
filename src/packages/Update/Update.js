@@ -1,4 +1,4 @@
-var curVersion = (typeof GM_info !== "undefined" && GM_info.script && GM_info.script.version) ? GM_info.script.version : "2026.09.26.02";
+var curVersion = (typeof GM_info !== "undefined" && GM_info.script && GM_info.script.version) ? GM_info.script.version : "2026.09.26.03";
 var isNeedUpdate = false;
 var lastestVersion = "";
 
