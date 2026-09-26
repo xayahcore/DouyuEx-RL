@@ -1,6 +1,9 @@
 function initPkg_Sign() {
   initPkg_Sign_Dom();
   initPkg_Sign_Func();
+  // 「看直播领积分」不是点一次的活儿，而是常驻计时：勾选后即使不打开签到面板也要跑，
+  // 所以在这里按已存配置引导一次（没勾选则完全不启动，零开销）
+  if (typeof Sign_WatchPoints_boot === "function") Sign_WatchPoints_boot();
 }
 
 function initPkg_Sign_Dom() {
@@ -92,6 +95,20 @@ function createSignPanel() {
               <span class="sign-option-desc">粉丝家园打卡与钻粉日常领奖</span>
             </div>
           </label>
+          <label class="sign-option-item">
+            <input type="checkbox" id="sign_opt_points" class="sign-checkbox" data-key="points">
+            <div class="sign-option-text">
+              <span class="sign-option-title">活动中心签到领积分</span>
+              <span class="sign-option-desc">每日签到并领取签到礼包（需登录）</span>
+            </div>
+          </label>
+          <label class="sign-option-item">
+            <input type="checkbox" id="sign_opt_watchpoints" class="sign-checkbox" data-key="watchpoints">
+            <div class="sign-option-text">
+              <span class="sign-option-title">看直播领积分（自动）</span>
+              <span class="sign-option-desc">本页观看时长达标后自动领取，仅页面可见时计时</span>
+            </div>
+          </label>
         </div>
       </div>
 
@@ -116,7 +133,7 @@ function createSignPanel() {
     ensureMiuixPanelHeader(p, "一键签到");
   }
 
-  var defCfg = { room: true, client: true, yuba: true, fanshome: true, stardiscover: true };
+  var defCfg = { room: true, client: true, yuba: true, fanshome: true, stardiscover: true, points: true, watchpoints: false };
   var currentCfg = defCfg;
   try {
     var saved = JSON.parse(localStorage.getItem("ExSave_SignConfig"));
@@ -134,6 +151,10 @@ function createSignPanel() {
       try {
         localStorage.setItem("ExSave_SignConfig", JSON.stringify(currentCfg));
       } catch (e) {}
+      // 看播积分是常驻项：勾上就立刻开始计时，取消就立刻停，不必等重开页面
+      if (key === "watchpoints" && typeof Sign_WatchPoints_setEnabled === "function") {
+        Sign_WatchPoints_setEnabled(this.checked);
+      }
     });
   });
 
@@ -189,7 +210,7 @@ async function executeSignEngine(options, onLog) {
       showMessage(msg, isSuccess ? "success" : "info");
     };
   }
-  var opts = options || { room: true, client: true, yuba: true, fanshome: true, stardiscover: true };
+  var opts = options || { room: true, client: true, yuba: true, fanshome: true, stardiscover: true, points: true, watchpoints: false };
 
   onLog("正在准备签到环境...", true);
 
@@ -280,6 +301,35 @@ async function executeSignEngine(options, onLog) {
     } catch (err) {
       onLog("【粉丝家园】执行异常", false);
     }
+  }
+
+  // 6. 活动中心签到领积分（签到 + 签到礼包）
+  if (opts.points) {
+    try {
+      if (typeof executeSignPoints === "function") {
+        await executeSignPoints(onLog);
+      } else {
+        onLog("【积分签到】模块未加载，已跳过", false);
+      }
+    } catch (err) {
+      onLog("【积分签到】执行异常: " + (err.message || "未知错误"), false);
+    }
+  }
+
+  // 7. 看直播领积分：本身是常驻计时，这里只负责"开关对齐 + 立刻兜底查一次"。
+  //    点「开始签到」是一个明确的用户意向，此时顺手把看播拿到的能领档位也领掉。
+  try {
+    if (typeof Sign_WatchPoints_setEnabled === "function") {
+      Sign_WatchPoints_setEnabled(!!opts.watchpoints);
+      if (opts.watchpoints) {
+        onLog("【看播积分】本地计时已启动（仅页面可见时计时）", true);
+        if (typeof Sign_WatchPoints_checkNow === "function") Sign_WatchPoints_checkNow();
+      } else {
+        onLog("【看播积分】未勾选，本次不启用", false);
+      }
+    }
+  } catch (err) {
+    onLog("【看播积分】启动异常: " + (err.message || "未知错误"), false);
   }
 
   onLog("所有已选签到任务执行完毕！", true);
