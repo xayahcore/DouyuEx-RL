@@ -885,6 +885,46 @@ async function testBuiltBundle() {
 
     console.log("✓ 测试场景 16 通过: 左下角通知已换装深色玻璃、层级高于面板、四类型图标就位、进度条改细线、时长为 4 秒");
 
+    // === 测试 17: 重制时丢声明类的作用域护栏 ===
+    console.log("--> 测试场景 17: 包内不得读取未声明的标识符（重制丢声明是高发坑）...");
+    // 背景：camera 的关闭状态 isClosed 曾在一次"全量重制"里被漏掉声明，
+    // 结果那个分支一走到 if (isClosed || ...) 就抛 ReferenceError，功能等于废掉。
+    // 这类漏声明在语法检查下是合法的（非严格模式的读会在运行时才炸），只能静态兜住。
+    const scopeCases = [
+        {
+            file: "src/packages/VideoTools/Camera/Main/Camera.js",
+            ident: "isClosed",
+            decl: "let isClosed",
+        },
+        {
+            file: "src/packages/VideoTools/Camera/Video/Camera.js",
+            ident: "isClosed",
+            decl: "let isClosed",
+        },
+    ];
+    // 扫描前必须剥掉注释：注释里出现同名字符串会把断言骗过去（第一版就栽在这上面）
+    const stripComments = (t) => t.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
+    scopeCases.forEach((c) => {
+        const src = stripComments(fs.readFileSync(path.join(__dirname, "..", c.file), "utf8"));
+        const declAt = src.indexOf(c.decl);
+        const useAt = src.indexOf(c.ident + " ||");
+        assert.ok(declAt >= 0, c.file + " 必须声明 " + c.decl + "（漏了会让该分支抛 ReferenceError）");
+        assert.ok(
+            useAt < 0 || declAt < useAt,
+            c.file + " 里 " + c.ident + " 的声明必须出现在首次读取之前（当前声明位置 " + declAt + "，首次读取 " + useAt + "）"
+        );
+    });
+    // 同时确认摄像头那段代码确实进了产物（只改源码、构建时被 tree-shaking 摘掉 = 白改）。
+    // ⚠ 这里必须用**字符串字面量**验证，不能用 isClosed 本身：修好之前它是"未声明的全局"，
+    // 压缩器不能改名所以名字侥幸留在产物里；修成正常的局部变量后压缩器会把它改名，
+    // 字面量就消失了 —— 拿它断言会得到一个假失败。
+    const built = fs.readFileSync(bundlePath, "utf8");
+    assert.ok(
+        built.indexOf("ex-camera-close") >= 0 && built.indexOf("ExSave_Camera_Hidden") >= 0,
+        "摄像头画面模块必须进入产物（未接线会被 tree-shaking 静默删除）"
+    );
+    console.log("✓ 测试场景 17 通过: 摄像头分支的 isClosed 已声明、注释不干扰扫描、模块已进产物");
+
     // === 收尾断言: 全流程结束后仍必须零未捕获异常 ===
     assert.strictEqual(errors.length, 0, "全流程结束后不应该产生未捕获异常: " + JSON.stringify(errors));
 

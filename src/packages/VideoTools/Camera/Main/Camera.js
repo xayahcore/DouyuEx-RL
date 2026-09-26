@@ -45,6 +45,11 @@ function initPkg_VideoTools_Camera_Func() {
     let dom_video = document.getElementsByClassName("room-Player-Box")[0];
     let camera = document.getElementById("ex-camera");
     let closeBtn = document.getElementById("ex-camera-close");
+    // ⚠ 这个声明是必需的：下面三处循环都靠它提前退出。
+    // 它在某次"全量重制"里被漏掉过，导致摄像头画面分支一走到 if (isClosed || ...) 就抛
+    // ReferenceError（读未声明的标识符），该分支等于废掉。改动此处请连带跑
+    // tests/test_built_bundle.js 里那条作用域断言。
+    let isClosed = false;
     if (!camera || !closeBtn || !dom) return;
     
     closeBtn.addEventListener("click", (e) => {
