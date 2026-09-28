@@ -869,24 +869,16 @@ function init(){initPkg_Shield_RemoveRepeatedDanmaku_ScriptHook(),initPkg_ShowDa
         </div>`,e.style="position:absolute;left:18px;bottom:58px;padding:0 10px;height:28px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55);color:#fff;z-index:9999;cursor:pointer;user-select:none;opacity:0;transform:scale(.9);transition:opacity .15s ease,transform .15s ease,background-color .15s ease,box-shadow .3s ease;pointer-events:none;",t=document.getElementById("js-player-dialog"))&&t.insertBefore(e,t.childNodes[0])}function initPkg_Refresh_Video_Func(){function i(){let e=!1;var t=!!(document.fullscreenElement||document.webkitFullscreenElement||document.mozFullScreenElement||document.msFullscreenElement);let n=!1;(document.querySelector(".wfs-2a8e83.removed-9d4c42")||document.querySelector(".toggle__P8TKM"))&&(e=!0),document.querySelector(".shrink__Sd0uK")&&(n=!0);var o=document.getElementById("js-player-toolbar"),i=(o.style=e?"z-index:20":"z-index:30",document.getElementsByClassName("case__f4yex")[0]),i=(i&&(i.style=(t||e&&n)&&refresh_Video_getStatus()?"bottom: -84px;":"bottom: 0;"),!!document.getElementsByClassName("live-next-body")[0]);i&&(o.parentElement.style="z-index:20")}new DomHook(".right-e7ea5d",!0,()=>{i()}),new DomHook(".right-17e251",!0,()=>{i()}),new DomHook(".video__VfhVg",!0,e=>{for(var t of e)t.target.className.includes("toggle__P8TKM")&&i()});var e=getValidDom([".layout-Player-video",".stream__T55I3"]),t=document.getElementsByClassName("room-Player-Box")[0];let n=document.getElementById("refresh-video3"),a=0,o=!1;function r(){!n||o||(n.style.transition="opacity .15s ease,transform .15s ease,background-color .15s ease,box-shadow .3s ease",n.style.opacity="0",n.style.transform="scale(.9)",n.style.pointerEvents="none",clearTimeout(a))}function s(){n&&(n.style.transition="opacity .15s ease,transform .15s ease,background-color .15s ease,box-shadow .3s ease",n.style.opacity="1",n.style.transform="scale(1)",n.style.pointerEvents="auto",clearTimeout(a),a=setTimeout(()=>{r()},2e3))}function l(){var e=document.getElementsByClassName("PlayerToolbar-ContentRow")[0],t=getValidDom([".layout-Player-video",".stream__T55I3"]),n=document.getElementById("refresh-video");let o=document.getElementById("refresh-video3");e&&t&&n&&(("hidden"==e.style.visibility?(e.style.visibility="visible","function"==typeof ExPanel_onGiftBarShow&&ExPanel_onGiftBarShow(),t.style="",o&&(o.style.opacity="0",o.style.transform="scale(.9)",o.style.pointerEvents="none",o.title="点击隐藏礼物栏"),updateRefreshSwitchUI(!(n.innerText="隐藏礼物栏")),refresh_Video_removeStyle):(e.style.visibility="hidden","function"==typeof ExPanel_onGiftBarHide&&ExPanel_onGiftBarHide(),t.style="bottom:0;z-index:25",n.innerText="✓ 隐藏礼物栏",o&&(o.title="点击显示礼物栏"),updateRefreshSwitchUI(!0),o&&(o.style.transition="opacity .3s ease,transform .3s cubic-bezier(0.175, 0.885, 0.32, 1.275),background-color .3s ease,box-shadow .3s ease",o.style.opacity="1",o.style.transform="scale(1.1)",o.style.pointerEvents="auto",o.style.backgroundColor="rgba(0,0,0,.8)",o.style.boxShadow="0 0 15px rgba(255, 102, 0, 0.6)",clearTimeout(a),a=setTimeout(()=>{o.style.transition="opacity .15s ease,transform .15s ease,background-color .15s ease,box-shadow .15s ease",o.style.transform="scale(1)",o.style.backgroundColor="rgba(0,0,0,.55)",o.style.boxShadow="none",a=setTimeout(()=>{r()},1500)},800)),refresh_Video_setStyle))(),i(),saveData_Refresh(),resizeWindow())}e&&n&&(e.addEventListener("mouseenter",()=>{s()}),e.addEventListener("mouseleave",()=>{r()})),t&&n&&t.addEventListener("mousemove",()=>{s()}),n&&(n.addEventListener("mouseenter",()=>{o=!0,n.style.transition="opacity .15s ease,transform .15s ease,background-color .15s ease,box-shadow .3s ease",n.style.opacity="1",n.style.transform="scale(1.08)",n.style.pointerEvents="auto",n.style.backgroundColor="rgba(0,0,0,.7)",clearTimeout(a)}),n.addEventListener("mouseleave",()=>{o=!1,n.style.transform="scale(1)",n.style.backgroundColor="rgba(0,0,0,.55)",s()}));e=document.getElementById("refresh-video");e&&e.addEventListener("click",e=>{l()}),n&&n.addEventListener("click",e=>{e.stopPropagation(),l()})}function updateRefreshSwitchUI(e){var t=document.getElementById("ex-refresh-switch"),n=document.getElementById("ex-refresh-switch-circle");t&&n&&(e?(t.style.background="#f60",n.style.left="14px"):(t.style.background="rgba(255,255,255,0.3)",n.style.left="2px"))}function refresh_Video_getStatus(){var e=document.getElementsByClassName("PlayerToolbar-ContentRow")[0];return!(!e||"hidden"!=e.style.visibility)}function initPkg_Refresh_Video_Set(){var e,t,n,o,i=localStorage.getItem("ExSave_Refresh");null!=i&&("video"in(i=JSON.parse(i))==0&&(i.video={status:!1}),1==i.video.status)&&(i=document.getElementsByClassName("PlayerToolbar-ContentRow")[0],e=getValidDom([".layout-Player-video",".stream__T55I3"]),t=document.getElementById("refresh-video"),n=document.getElementById("refresh-video3"),o=document.getElementById("js-player-toolbar"),i.style.visibility="hidden",e.style="bottom:0;z-index:25",o.style="z-index:30",null!=(i=localStorage.getItem("ExSave_FullScreen"))&&JSON.parse(i).isFullScreen&&(o.style="z-index:20"),document.getElementsByClassName("live-next-body")[0]&&(o.parentElement.style="z-index:20"),n&&(n.style.opacity="0",n.style.transform="scale(.9)",n.style.pointerEvents="none",n.title="点击显示礼物栏"),t.innerText="✓ 隐藏礼物栏",refresh_Video_setStyle(),resizeWindow(),setTimeout(()=>{updateRefreshSwitchUI(!0)},500))}function refresh_Video_setStyle(){StyleHook_set("Ex_Style_VideoRefresh",`
     .PELact,.pushTower-wrapper-gf1HG,.PkView-9f6a2c,.MorePk,.RandomPKBar,.LiveRoomLoopVideo,.LiveRoomDianzan,.maiMaitView-68e80c,.PkView{display:none !important;}
     `)}function refresh_Video_removeStyle(){StyleHook_remove("Ex_Style_VideoRefresh")}function initPkg_RemoveAD(){optimizePageStyle(),"function"==typeof initPkg_RemoveMsgNotice&&initPkg_RemoveMsgNotice()}function removeAD(){StyleHook_set("Ex_Style_RemoveAD",`
-    .ScreenBannerAd,.XinghaiAd,.CustomGroupGuide,.FudaiGiftToolBarTips,.UserInfo-tryEnterHiddenLead,.BargainingKit,.AnchorPocketTips,.FishShopTip,.FollowGuide,#js-bottom-right-cloudGame,.CloudGameLink,.RoomText-icon-horn,.RoomText-list,.Search-ad,.RedEnvelopAd,.noHandlerAd-0566b9,.PcDiversion,.DropMenuList-ad,.DropPane-ad,.WXTipsBox,.igl_bg-b0724a,.closure-ab91fb,.VideoAboveVivoAd,.css-widgetWrapper-EdVVC,.watermark-442a18,.FollowGuide-FadeOut,.MatchSystemChatRoomEntry-roomTabs,.FansMedalDialog-normal,.GameLauncher,.recommendAD-54569e,.recommendApp-0e23eb,.Title-ad,.Bottom-ad,.SignBarrage,.corner-ad-495ade,.SignBaseComponent-sign-ad,.SuperFansBubble,.is-noLogin,.PlayerToolbar-signCont,#js-widget,.Frawdroom,.HeaderGif-right,.HeaderGif-left,.liveos-workspace{display:none !important;}
+    .ScreenBannerAd,.XinghaiAd,.UserInfo-tryEnterHiddenLead,.AnchorPocketTips,.FishShopTip,.FollowGuide,.RoomText-icon-horn,.RoomText-list,.noHandlerAd-0566b9,.DropMenuList-ad,.DropPane-ad,.igl_bg-b0724a,.closure-ab91fb,.VideoAboveVivoAd,.watermark-442a18,.FollowGuide-FadeOut,.FansMedalDialog-normal,.recommendAD-54569e,.recommendApp-0e23eb,.Bottom-ad,.SignBarrage,.SignBaseComponent-sign-ad,.SuperFansBubble,.Frawdroom,.HeaderGif-right,.HeaderGif-left{display:none !important;}
     .Barrage-topFloater{z-index:999}
     .danmuAuthor-3d7b4a, .danmuContent-25f266{overflow: initial}
-    .BattleShipTips{display:none !important;}
     .LastLiveTime,.recommendView-3e8b62{display:none !important;}
-    .TurntableLottery-actTips{display:none !important;}
-    .feedback-e27241{display:none !important;}
+    .feedback-e36e9d{display:none !important;}
     .FansMedalEnter-maxFlag{display:none !important;}
     .Header-follow-listBox{max-height:640px !important;}
 
     .GuessGameMiniPanelB-wrapper{display:none !important;}
 
-    .ZoomTip{display:none !important;}
-
-    /*福利券*/
-    .PlayerToolbar-couponInfo{display:none !important;}
-    /*太空探险tips*/
-    .AroundStarsActTips-actTips,.AroundStarsMoonBoxTips,.AroundStarsPlanetTips{display:none !important;}
     /*优化页面*/
     #js-barrage-list-parent{scrollbar-width: none;-ms-overflow-style: none;width:98%;height:100%}
     #js-barrage-list-parent::-webkit-scrollbar{display: none;}
@@ -895,10 +887,6 @@ function init(){initPkg_Shield_RemoveRepeatedDanmaku_ScriptHook(),initPkg_ShowDa
 
     /*恢复emoji彩色 chrome加粗情况下emoji会变灰，需要找一个fontweight起始值在500的字体库才可以兼容*/
 
-    /*右侧分享*/
-    .SharePanel,.CommonShareToolkit{
-        display: none!important;
-    }
     /*去除还在电脑面前的mask*/
     .mask1-63237a,.mask2-a8df6e,.panel1-1484c9,.panel2-5ece0e{
         display: none!important;
@@ -912,7 +900,7 @@ function init(){initPkg_Shield_RemoveRepeatedDanmaku_ScriptHook(),initPkg_ShowDa
         display: none!important;
     }
     /*视频区视频广告*/
-    .CloseVideoPlayerAd,.IconCardAdBoundsBox{
+    .IconCardAdBoundsBox{
         display: none!important;
     }
     /*直播间顶部广告*/
@@ -924,13 +912,6 @@ function init(){initPkg_Shield_RemoveRepeatedDanmaku_ScriptHook(),initPkg_ShowDa
         display: none!important;
         display: var(--enter-display, none) !important;
     }
-    /*直播间右侧广告*/
-    .LadderNav {
-        display: none!important;
-    }
-    #js-bottom-right-recommendAd {
-        display: none!important;
-    }
     /*弹幕框顶部广告*/
     .aside-top-uspension-box {
         display: none!important;
@@ -938,14 +919,33 @@ function init(){initPkg_Shield_RemoveRepeatedDanmaku_ScriptHook(),initPkg_ShowDa
     #js-player-asideMain {
         top: 0!important;
     }
-    /*右下角联系客服*/
-    .bacpCommonKeFu {
-        display: none!important;
-    }
 
-    .werbungContainer__2sv7h{display:none !important;}
     #js-player-asideTopSuspension{display:none !important;}
     .Search-Panel-Advert{display:none !important;}
+
+    /*推广位：德语 werbung = 广告。类名带构建哈希会轮换，故用包含匹配*/
+    [class*="werbungText"]{display:none !important;}
+    /*播放器工具条：任务大厅 / 免费火箭。
+      dataid 比类名稳定，且工具条（.ToolBarCardProxyItem）与展开面板（.InteractItem）
+      用的是同一套 dataid，所以这里通吃两处，不必分别写选择器。*/
+    .PlayerToolbar-Task,
+    [dataid="taskPanel"],
+    [dataid="webGame"]{display:none !important;}
+
+    /*以下用 :has() 连同外层槽位一起收起，否则只藏内容会留空白。
+      单独成条：不支持 :has() 的浏览器会整条丢弃，上面那条仍生效（内容照藏，只是留白）。
+      槽位不是只装广告，故必须 :has 精确匹配——
+      工具条同排还有选手评分/异域商人/至臻殿堂/全民星推，activeItem 槽还有游戏榜/挑战进度。*/
+    .ToolbarCardModule:has(.PlayerToolbar-Task),
+    .ToolbarCardModule:has(.ToolBarCardProxyItem[dataid="taskPanel"]),
+    .ToolbarCardModule:has(.ToolBarCardProxyItem[dataid="webGame"]),
+    [class*="activeItem__"]:has([class*="werbungText"]){display:none !important;}
+
+    /*上面那排是绝对定位 + 写死的 right 偏移（0/78/156…），藏掉一个不会自动补位，会留空白。
+      改成正常流并反向排列：既让剩下的贴右对齐，又保持原来「从右往左」的顺序。
+      作用域限定在该容器内，避免误伤其它同名类。*/
+    [class*="activeContainer__"] [class*="activeBar__"]{width:auto !important;display:flex !important;flex-direction:row-reverse !important;align-items:center !important;}
+    [class*="activeContainer__"] [class*="activeItem__"]{position:static !important;left:auto !important;right:auto !important;}
     `)}function optimizePageStyle(){var e=document.getElementById("js-barrage-list");e&&e.parentNode&&(e.parentNode.id="js-barrage-list-parent")}let isRemoveMsgNotice=0;function initPkg_RemoveMsgNotice(){initPkg_RemoveMsgNotice_Dom(),initPkg_RemoveMsgNotice_Func(),initPkg_RemoveMsgNotice_Set()}function initPkg_RemoveMsgNotice_Dom(){var e=document.createElement("div"),t=(e.style="position: absolute;right: 5px;top: 40px;cursor: pointer;",e.id="ex-removeMsgNotice",e.innerHTML='<label id="msg-removeNotice" style="cursor: pointer;"><input type="checkbox" />关闭角标提醒</label>',e.title="关闭角标提醒",document.getElementsByClassName("PrivateLetter-frame")[0]);t&&t.appendChild(e)}function initPkg_RemoveMsgNotice_Func(){var t=document.getElementById("msg-removeNotice");if(t){let e=t.querySelector("input");t.addEventListener("click",()=>{(1==e.checked?(isRemoveMsgNotice=1,removeMsgNotice):(isRemoveMsgNotice=0,removeMsgNoticeCanel))(),saveData_removeMsgNotice()})}}function initPkg_RemoveMsgNotice_Set(){var e=localStorage.getItem("ExSave_isRemoveMsgNotice");e&&"1"==e&&(isRemoveMsgNotice=1,removeMsgNotice(),e=document.getElementById("msg-removeNotice"))&&(e.querySelector("input").checked=!0)}function removeMsgNotice(){StyleHook_set("Ex_Style_RemoveMsgNotice",".UserInfo .Badge,.ChatLetter-PopUnread{display:none!important;}")}function removeMsgNoticeCanel(){StyleHook_remove("Ex_Style_RemoveMsgNotice")}function saveData_removeMsgNotice(){localStorage.setItem("ExSave_isRemoveMsgNotice",isRemoveMsgNotice)}function initPkg_ChangeDanmakuLengthLimit(){let e=0,t=setInterval(()=>{100<++e?clearInterval(t):null!=document.getElementsByClassName("ChatSend-txt")[0]&&(changeChatTextareaMaxLength(),clearInterval(t))},1e3)}function changeChatTextareaMaxLength(){let e;null!=(e=document.getElementsByClassName("ChatSend-button")[0])&&(e.className="ChatSend-button"),null!=(e=document.getElementsByClassName("ChatSend-txt")[0])&&(e.maxLength=e.maxLength+20)}function initPkg_Reset(){GM_registerMenuCommand("重置所有设置",()=>{Reset_run()})}function Reset_isPluginLocalStorageKey(e){return e.startsWith("ExSave_")||e.startsWith("Ex_")||"Ex_isJoysound"===e||"freetimed"===e}function Reset_clearPluginLocalStorage(){try{var t=[];for(let e=0;e<localStorage.length;e++){var n=localStorage.key(e);n&&Reset_isPluginLocalStorageKey(n)&&t.push(n)}t.forEach(e=>localStorage.removeItem(e))}catch(e){}}async function Reset_clearGMStorage(){if("function"==typeof GM_deleteValue){let t=[];try{var e;"function"==typeof GM_listValues?(e=GM_listValues(),t=e&&"function"==typeof e.then?await e:e||[]):"undefined"!=typeof GM&&GM.listValues&&(t=await GM.listValues())}catch(e){return}Array.isArray(t)||(t=[]);for(let e=0;e<t.length;e++)try{GM_deleteValue(t[e])}catch(e){}}}async function Reset_run(){confirm("确定要清空 DouyuEx 的所有本地设置吗？\n\n包括：油猴存储(GM)与本站 localStorage 中的插件数据。\n此操作不可恢复。")&&(await Reset_clearGMStorage(),Reset_clearPluginLocalStorage(),alert("已清空。请刷新斗鱼页面以使界面与功能恢复默认状态。"))}function initPkg_RestoreYuba(){responseHook((e,t)=>-1!==e.indexOf("group/getBindGroup")?t.replace('"group_status":4','"group_status":0'):t)}function initPkg_RestoreYuba_restore(){var e=RestoreYuba_getYubaId(window.location.href),t=new URLSearchParams(window.location.search).get("exRestore");t&&e!==(t=Number(t))&&(RestoreYuba_initHook(e,t),RestoreYuba_changeDom(e,t))}function RestoreYuba_checkRedirect(){let t=RestoreYuba_getYubaId(window.location.href);t&&getYubaStatus(t).then(e=>{3002==e.status_code&&(e="https://yuba.douyu.com/discussion/4815048/posts?exRestore="+t,window.location.href=e)})}function RestoreYuba_getYubaId(e){e=e.match(/\/discussion\/(\d+)/);return e&&e[1]?e[1]:null}function RestoreYuba_initHook(r,s){let e=["web/group/head","/follow/topic","group/unfollowGroup"];function l(t){return"string"==typeof t&&e.some(e=>t.includes(e))}let a=unsafeWindow.XMLHttpRequest.prototype.open,c=unsafeWindow.XMLHttpRequest.prototype.send,d=(unsafeWindow.XMLHttpRequest.prototype.open=function(e,t,n,o,i){return"string"==typeof t&&t.includes(r)&&!l(t)&&(t=t.replace(new RegExp(r,"g"),s)),a.call(this,e,t,n,o,i)},unsafeWindow.XMLHttpRequest.prototype.send=function(e){var t=this.responseURL||this._url||"";if(!l(t))if(e&&"string"==typeof e&&e.includes(r))e=e.replace(new RegExp(r,"g"),s);else if(e&&e instanceof FormData){var n,o=new FormData;for(n of e.entries()){var i=n[0];let e=n[1];"string"==typeof e&&e.includes(r)&&(e=e.replace(new RegExp(r,"g"),s)),o.append(i,e)}e=o}return c.call(this,e)},unsafeWindow.fetch);unsafeWindow.fetch=function(e,t){let n="";if("string"==typeof e?(n=e).includes(r)&&!l(e)&&(e=e.replace(new RegExp(r,"g"),s)):e instanceof Request&&(n=e.url).includes(r)&&!l(n)&&(e=new Request(n.replace(new RegExp(r,"g"),s),e)),!l(n)&&t&&t.body)if("string"==typeof t.body&&t.body.includes(r))t.body=t.body.replace(new RegExp(r,"g"),s);else if(t.body instanceof FormData){var o,i=new FormData;for(o of t.body.entries()){var a=o[0];let e=o[1];"string"==typeof e&&e.includes(r)&&(e=e.replace(new RegExp(r,"g"),s)),i.append(a,e)}t.body=i}return d.call(unsafeWindow,e,t)}}async function RestoreYuba_changeDom(e,n){n=await getYubaAnchorInfo(n);if(n){n=n.data.generalOP[0];let e=n.avatar,t=n.nick_name;function o(){document.querySelector(".groupavatar__9mD1S .image__GNnZC").src=e,document.getElementsByClassName("groupname__BUzOM")[0].innerText=t,document.getElementsByClassName("groupdesc__b8-53")[0].innerText=t+"的鱼吧",document.title=t+"的鱼吧"}o(),new DomHook(".groupavatar__9mD1S",!1,()=>{o()})}}function getYubaAnchorInfo(e){return new Promise(t=>{fetch("https://yuba.douyu.com/wbapi/web/group/managersdetail?group_id="+e).then(e=>e.json()).then(e=>{t(e)}).catch(()=>{t(null)})})}function getYubaStatus(e){return new Promise((t,n)=>{fetch("https://yuba.douyu.com/wbapi/web/group/head?group_id="+e).then(e=>e.json()).then(e=>{t(e)}).catch(e=>{n(e)})})}let roomVipExpireDayLimit=5;function initPkg_RoomVip(){setRoomVipExpireDays()}function initPkg_RoomVip_Dom(){var e=document.createElement("span"),t=(e.className="room-vip",e.innerHTML=`
 	距VIP到期 <span id="room-vip-expire-days">**</span> 天
 	`,getValidDom(["#js-backpack-enter"]));t&&(t=t.parentElement)&&t.insertBefore(e,t.childNodes[0])}function setRoomVipExpireDays(){fetch("https://www.douyu.com/member/platform_task/effect_list",{method:"GET",mode:"no-cors",cache:"default",credentials:"include"}).then(e=>e.text()).then(async e=>{e=(e=(new DOMParser).parseFromString(e,"text/html")).getElementsByClassName("enter-wraper is-effect");if(e&&0!=e.length){var t=e[0].getElementsByClassName("show-effect-more");if(t&&0!=t.length)for(let e=0;e<t.length;e++){var n=JSON.parse(t[e].getAttribute("data-detail"));"1646"===String(n.property_id)&&String(n.show_id_list)===String(rid)&&(n=1e3*n.expire_time,(n=Math.floor((n-Date.now())/864e5))<=roomVipExpireDayLimit)&&(initPkg_RoomVip_Dom(),document.getElementById("room-vip-expire-days").innerText=n)}}}).catch(e=>{console.log("请求失败!",e)})}let isRemoveDanmakuBackground=getLocalIsRemoveDanmakuBackground();function initPkg_Shield_RemoveDanmakuBackground(){document.getElementsByClassName("FilterKeywords")[0].insertAdjacentHTML("afterbegin",`<div class="FilterSwitchStatus" id="ex-removeDanmakuBackground">
