@@ -122,28 +122,27 @@ function MultiScreen_resetPosOwner() {
   msPosOwner = [0, 1, 2, 3, 4];
 }
 
-/* 播放器区域最上层压着 #__h5player —— 一个全屏透明但 pointer-events:auto 的旧播放器树。
-   它会把鼠标事件全部吃掉，后果是**连原生弹幕的悬停菜单、用户卡片、弹幕点击都点不出来**
-   （用户反馈"没办法点击用户或弹幕出现本来该有的功能"就是这个）。多屏开启期间把它放行，
-   关掉多屏时恢复原样。控制条是它上面的独立层，不受影响。 */
-const MS_LEGACY_OVERLAY_ID = "__h5player";
-let msOverlayPatched = null;
-
-function MultiScreen_setOverlayPassthrough(on) {
-  const ov = document.getElementById(MS_LEGACY_OVERLAY_ID);
-  if (!ov) return;
-  if (on) {
-    if (msOverlayPatched === ov) return;
-    ov.style.pointerEvents = "none";
-    ov.setAttribute("data-ex-ms-passthrough", "1");
-    msOverlayPatched = ov;
-  } else {
-    if (msOverlayPatched !== ov) return;
-    ov.style.removeProperty("pointer-events");
-    ov.removeAttribute("data-ex-ms-passthrough");
-    msOverlayPatched = null;
-  }
-}
+/* ⚠⚠ 不要再给 #__h5player 设 pointer-events:none（2026-09-29 实测推翻，原实现已撤除）
+ *
+ * 曾经的做法：多屏开启期间给 `#__h5player` 设 `pointer-events:none`，以为这样能让鼠标事件
+ * "穿过"它落到多屏容器上（当时把"点不出原生弹幕菜单/用户卡片"归因于它吃事件）。
+ * 实机量测后发现**这个推断是错的，而且这个补丁本身在制造故障**：
+ *
+ * ① 弹幕层就在这棵树里（实测的祖先链，别再猜）：
+ *      .danmuItem → div.danmu-fbb2a3（弹幕层容器）→ div.comment-37342a → **#__h5player** → room-html5-player
+ *    悬停时被暂停的那条弹幕会被原生搬进 `#comment-higher-container`，它同样在 `#__h5player` 里。
+ * ② `pointer-events` 是**继承**属性：整棵树被置 none 后，只有**自己显式声明 auto** 的后代
+ *    才还能点（弹幕节点 `.danmuItem` 与悬停快捷菜单 `.btnscontainer-*` 恰好都声明了，所以它们
+ *    看起来正常，把问题掩盖了）；其余原生 UI 一律变成"看得见、点不动"：
+ *      · 弹幕右键面板（`clickDanmu` → danmuMenu store，定位基准就是弹幕层容器 cmdiv）
+ *      · 我们自己往菜单里插的「+1」按钮（BarragePanel_Tip）
+ *      · 任何渲染在这棵树里的原生弹层（举报/屏蔽/字幕等）
+ *    表现正是用户报的"右键面板展开了、点 × 关不掉"，以及菜单卡住不走、后续悬停像没悬停上。
+ * ③ 这个补丁**没有带来它声称的好处**：把 pointer-events 还原成 auto 后量测，
+ *    弹幕节点在自身坐标上依旧是最顶层命中目标（悬停/暂停/快捷菜单全部照常）；
+ *    而多屏容器自己的 UI 无论补丁开不开都被原生层盖着（所以"重新加载"按钮一直靠坐标代理）。
+ *
+ * 结论：这棵树一格 pointer-events 都不要动。要让自有 UI 可点，就用坐标代理（见 onClick 里的做法）。 */
 
 function MultiScreen_slotDom(idx) {
   return MultiScreen_slots()[idx] || null;
@@ -202,7 +201,6 @@ function MultiScreen_applyLayout() {
      都写成了 width:0;height:0;visibility:hidden —— 连主画面格一起，整块播放器区域变成零尺寸，
      后果是原生弹幕飘屏直接不再出现（引擎的轨道数按容器尺寸算，0 高就是 0 轨），
      而画面上看起来"什么都没发生"。 */
-  MultiScreen_setOverlayPassthrough(msMultiType > 1);
   if (msMultiType <= 1) {
     MultiScreen_slots().forEach(function (slot) {
       if (!slot) return;

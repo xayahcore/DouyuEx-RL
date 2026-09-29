@@ -751,6 +751,21 @@ async function run() {
     assert.strictEqual(el.style.transform, "", "单屏下槽 " + i + " 不得残留 transform");
   }
   assert.strictEqual(container.className, "layout-Player-multiContainer", "单屏下容器类名必须回到原生")
+  // ---------- 23. 绝不给 #__h5player 设 pointer-events（会连坐整棵原生弹幕树） ----------
+  console.log("--> 23. 不得改写 #__h5player 的 pointer-events");
+  /* 实测（2026-09-29，2288 房间）：
+     · 弹幕层就在这棵树里：.danmuItem → div.danmu-fbb2a3 → div.comment-* → **#__h5player**
+       （悬停暂停的弹幕会被原生搬进 #comment-higher-container，它也在里面）
+     · pointer-events 是继承属性：整棵树置 none 后，只有**自己显式声明 auto** 的后代还能点
+       —— 弹幕节点与悬停快捷菜单恰好都声明了，于是故障被掩盖成"右键面板点 × 关不掉"
+       "菜单卡住不走、后续悬停像没悬停上"这类"看得见、点不动"。
+     · 这个补丁**没有**带来它声称的好处：还原成 auto 后量测，弹幕节点在自身坐标上依旧是最顶层命中目标。
+     所以这条纪律必须钉住：那棵树一格 pointer-events 都不要动。 */
+  const stripMsComments = (t) => t.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
+  const msSrc = stripMsComments(fs.readFileSync(path.join(__dirname, "../src/packages/PopupPlayer/PopupPlayer_MultiScreen.js"), "utf8"));
+  assert.strictEqual(/pointerEvents|pointer-events/.test(msSrc), false, "多屏代码不得再出现 pointer-events 改写（原生弹幕层在 #__h5player 里）");
+  const msBundle = fs.readFileSync(bundlePath(), "utf8");
+  assert.strictEqual(msBundle.indexOf("data-ex-ms-passthrough") < 0, true, "产物里不得残留覆盖层放行标记（源码改了没重建也会被这条抓住）");
   dom.window.close();
   console.log("=== 多屏复刻单元测试 100% 通过 ===");
 }
