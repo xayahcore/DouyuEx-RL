@@ -356,7 +356,7 @@ async function run() {
   assert.strictEqual(win6.MergeDanmaku_parseChatmsg(room, "type@=uenter/nn@=A/uid@=1/"), null, "进场消息不得当弹幕处理");
   assert.strictEqual(win6.MergeDanmaku_parseChatmsg(room, "type@=mrkl/"), null, "心跳包不得当弹幕处理");
   // 带二进制头残字符时也必须能解析（这正是不能用 startsWith 的原因）
-  const dirty = "   " + pkt;
+  const dirty = "\u0002\x00\x00\x00" + pkt;
   assert.ok(win6.MergeDanmaku_parseChatmsg(room, dirty), "收包带残字符时仍必须能解析");
   // 空文本不生成弹幕
   assert.strictEqual(win6.MergeDanmaku_parseChatmsg(room, "type@=chatmsg/nn@=A/txt@=/"), null, "空文本不得上屏");
@@ -399,6 +399,103 @@ async function run() {
   noComment.textContent = "  abc  ";
   assert.strictEqual(win7.RemoveRepeatedDanmaku_getKey(noComment), "abc", "无 comment 时必须退回 textContent");
   win7.close();
+
+  // ---------- 8. 运行时抓取"播放器自己的管线"（React fiber） ----------
+  // 这是原生资产（粉丝牌/等级/贵族渐变底）的唯一来源：外房报文要经 convertComment → cm.send
+  // 才有原生类型选择与资产。组件是 React 类组件，容器是 React 渲染的，所以沿 fiber 能爬到。
+  console.log("--> 8. 运行时抓取播放器自己的弹幕管线");
+  const win8 = load(makeDom());
+  const container8 = win8.document.createElement("div");
+  // 故意用与斗鱼类名完全无关的名字：锚点必须靠 fiber，不能靠构建期哈希类名（发版就变）
+  container8.className = "随机哈希容器-9f2a";
+  const hostConvertArgs = [];
+  const hostSent = [];
+  const fakeHost = {
+    convertComment(raw) {
+      hostConvertArgs.push(raw);
+      // 如实模拟：原生自己选类型（带粉丝牌的用户会走 fans），并把资产字段填好
+      return {
+        type: "fans",
+        text: raw.txt,
+        space: "scroll",
+        color: "#ffffff",
+        extraData: { sendName: raw.nn, dbid: raw.cid, level: raw.level }
+      };
+    },
+    cm: {
+      send(d) { hostSent.push(d); return true; }
+    }
+  };
+  // fiber 链如实机：容器自己的 fiber（stateNode 是 DOM 节点）→ 上一层 → 带 convertComment 的组件
+  container8["__reactFiber$t1"] = {
+    stateNode: container8,
+    return: { stateNode: {}, return: { stateNode: fakeHost } }
+  };
+  win8.document.body.appendChild(container8);
+  const space8 = makeSpace();
+  space8._renderer = { dom: container8 };
+  const c8 = fakeComment(win8, { srcName: "外房", text: "主房第一条" }, space8);
+  win8.__onDouyuExDanmakuRendered(c8);
+  assert.strictEqual(win8.MergeDanmaku_getStats().ready, true, "引擎必须就绪");
+  // 关键：此时**没有任何在飘的弹幕节点**（jsdom 里宽度都是 0），只能靠渲染器容器当锚点
+  assert.strictEqual(win8.MergeDanmaku_getHost(), fakeHost, "必须能从引擎容器沿 fiber 爬到弹幕组件");
+  assert.strictEqual(win8.MergeDanmaku_getStats().host, true, "统计里必须标出已接上原生管线");
+  assert.strictEqual(win8.MergeDanmaku_getStats().hostVia, "fiber", "接上方式必须是 fiber");
+
+  // 有 host 时：外房报文必须走原生管线，且资产字段与来源标记同时在
+  win8.MergeDanmaku_push({
+    text: "带资产的弹幕", color: "#ff2e2e", nn: "观众D", uid: "5", srcRid: "1234", srcName: "外房",
+    raw: { txt: "带资产的弹幕", nn: "观众D", cid: "勋章id-abc", level: "20" }
+  });
+  assert.strictEqual(hostConvertArgs.length, 1, "必须把原始报文交给原生 convertComment");
+  assert.strictEqual(hostConvertArgs[0].txt, "带资产的弹幕", "convertComment 收到的必须是原始报文对象");
+  assert.strictEqual(hostSent.length, 1, "必须经原生 cm.send 上屏");
+  assert.strictEqual(space8.added.length, 0, "走通原生管线时不得再走自建数据那条路");
+  assert.strictEqual(hostSent[0].type, "fans", "类型必须由原生自己选（不能我们写死 scroll）");
+  assert.strictEqual(hostSent[0].extraData.dbid, "勋章id-abc", "原生资产字段必须原样保留");
+  assert.strictEqual(hostSent[0].extraData.exMsSrcName, "外房", "来源标记必须塞进原生数据里");
+  assert.strictEqual(hostSent[0].extraData.exMsSrcRid, "1234", "来源房间也必须塞进去");
+  // 返回值语义：cm.send 就是 space.addComment 的结果，**true = 真的上屏了**。
+  // 早先这里写成 !send，把成功记成失败 —— 实机上表现为 pushed 恒为 0。
+  assert.strictEqual(win8.MergeDanmaku_getStats().pushed, 1, "走原生管线上屏成功必须计进 pushed");
+  // 原生返回 false（无空轨 / 自适应丢弃 / 类型不支持）→ 如实返回 false 并计进 noTrack
+  fakeHost.cm.send = (d) => { hostSent.push(d); return false; };
+  const okFalse = win8.MergeDanmaku_push({ text: "没上去", color: "#ffffff", nn: "E", uid: "6", srcRid: "1234", srcName: "外房", raw: { txt: "没上去", nn: "E" } });
+  assert.strictEqual(okFalse, false, "原生没上屏时必须如实返回 false");
+  assert.strictEqual(win8.MergeDanmaku_getStats().noTrack, 1, "原生没上屏必须计进 noTrack");
+
+  // 脚本钩子在场上时优先用它（document-start 那条最早、最稳）
+  const hookedHost = {
+    convertComment: () => ({ type: "scroll", text: "x", space: "scroll", extraData: {} }),
+    cm: { send: () => true }
+  };
+  win8.__ExDanmuHost = hookedHost;
+  assert.strictEqual(win8.MergeDanmaku_getHost(), hookedHost, "有脚本钩子时必须优先用钩子捕获的实例");
+  assert.strictEqual(win8.MergeDanmaku_getStats().hostVia, "hook", "接上方式必须标成 hook");
+
+  // 一条 fiber 都爬不到时：不得抛错，且必须退回自建数据上屏（弹幕不能丢）
+  const win9 = load(makeDom());
+  const space9 = makeSpace();
+  const c9 = fakeComment(win9, { srcName: "无主机" }, space9);
+  win9.__onDouyuExDanmakuRendered(c9);
+  assert.strictEqual(win9.MergeDanmaku_getHost(), null, "没有任何 React fiber 时必须安全返回 null");
+  win9.MergeDanmaku_push({ text: "退回自建", color: "#ffffff", nn: "A", uid: "1", srcRid: "9", srcName: "无主机", raw: { txt: "退回自建", nn: "A" } });
+  assert.strictEqual(space9.added.length, 1, "拿不到 host 时必须退回自建数据上屏");
+  assert.strictEqual(win9.MergeDanmaku_getStats().hostVia, null, "没接上时不得谎报接上");
+
+  // 上溯必须有上限：超长 fiber 链（不含组件）不能无限爬
+  let deepFiber = { stateNode: {} };
+  for (let i = 0; i < 300; i++) deepFiber = { stateNode: {}, return: deepFiber };
+  const deepEl = win9.document.createElement("div");
+  deepEl.className = "x";
+  deepEl["__reactFiber$deep"] = deepFiber;
+  win9.document.body.appendChild(deepEl);
+  assert.strictEqual(win9.MergeDanmaku_walkFiberForHost(deepEl), null, "超长 fiber 链必须在上限内停下并返回 null");
+  // 没有 fiber 键的普通节点：安全返回 null
+  assert.strictEqual(win9.MergeDanmaku_walkFiberForHost(win9.document.createElement("div")), null, "普通节点必须安全返回 null");
+  assert.strictEqual(win9.MergeDanmaku_walkFiberForHost(null), null, "空入参必须安全返回 null");
+  win8.close();
+  win9.close();
 
   dom.window.close();
   win2.close();

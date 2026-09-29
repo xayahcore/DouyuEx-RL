@@ -55,6 +55,8 @@ const MS_MERGE_BADGE_COLOR = "rgba(255,255,255,0.22)"; // 统一中性色横条
 
 let msMergeSpace = null;              // 捕获到的原生 scroll 空间（提供 addComment）
 let msMergeCtors = {};               // 弹幕类型 -> 弹幕类（来自 cm.constructor）
+let msMergeHost = null;              // 播放器自己的弹幕组件实例（convertComment → cm.send 全管线）
+let msMergeHostVia = null;           // 拿到它的方式："hook"（脚本钩子）/ "fiber"（运行时爬 React fiber）
 let msMergeInstalled = false;
 let msMergeConns = [];               // { rid, nn, ws }
 let msMergeRate = { at: 0, count: 0 };
@@ -79,8 +81,11 @@ let msMergePending = [];             // 引擎未就绪时的暂存（极短，�
  * 聊天区同理：aside 分块里 eb.subscribe("chatmsg", …) 的那个 eb 就是事件总线，
  * 把外房报文 publish 上去，聊天条目就由斗鱼自己的管线渲染（含勋章/等级/可点）。
  *
- * 两者都必须在 document-start 装（脚本钩子的机制决定了），所以在 TM 里正常生效；
- * 在"产物后注入"的取证环境里装不上，此时会自动退回运行时自举那条路。
+ * 两者都能在 document-start 装（脚本钩子的机制决定了），所以在 TM 里正常生效；
+ * 在"产物后注入"的取证环境里装不上。
+ * ⚠ 但**弹幕组件不必依赖脚本钩子**：它是 React 类组件，而弹幕层容器是 React 渲染的，
+ * 于是运行时沿 React fiber 从容器往上爬就能拿到实例（实测 2 跳命中，见 MergeDanmaku_findHostByFiber）。
+ * 脚本钩子只是更快、更早；两条路都拿不到时退回"自建数据喂引擎"那条。
  */
 function initPkg_PopupPlayer_MergeDanmaku_ScriptHook() {
   scriptHook({
@@ -143,39 +148,40 @@ let msBootTries = 0;
 let msRendererProto = null;
 
 function MergeDanmaku_bootstrap() {
-  // 必须同时拿到 space 与 **scroll 类型**的弹幕类才算就绪：我们喂进去的都是普通滚动弹幕。
+  // ① 引擎本体：必须同时拿到 space 与 **scroll 类型**的弹幕类。
   // 若只按 space 判就绪，第一条恰好是 fans/noble 之类的弹幕就会提前收工，
   // 之后永远补不到 scroll 的构造器（实测踩过）。
-  if (msMergeSpace && msMergeCtors.scroll) return true;
-  // 一次采样**尽量把屏幕上所有飘屏节点都悬停一遍**：只挑最后一个的话，
-  // 若那一条恰好不是普通滚动弹幕（fans/贵族等），就永远补不齐 scroll 类型
-  // 的构造器 —— 实测在弹幕稀疏时会一直 ready 不了。
-  const nodes = MergeDanmaku_findDanmakuNodes();
-  if (!nodes.length) return false;
-  for (let i = 0; i < nodes.length; i++) {
-    const node = nodes[i];
-    if (!node.comment) {
-      // 引擎的悬停处理器里有 event.target.comment = comment，派发一次就能拿到实例
-      ["mouseover", "mouseout"].forEach(function (t) {
-        if (node.comment) return;
-        try {
-          node.dispatchEvent(new MouseEvent(t, { bubbles: true, cancelable: true, view: window }));
-        } catch (e) {
-          try { node.dispatchEvent(new Event(t, { bubbles: true })); } catch (e2) {}
-        }
-      });
+  if (!msMergeSpace || !msMergeCtors.scroll) {
+    // 一次采样**尽量把屏幕上所有飘屏节点都悬停一遍**：只挑最后一个的话，
+    // 若那一条恰好不是普通滚动弹幕（fans/贵族等），就永远补不齐 scroll 类型
+    // 的构造器 —— 实测在弹幕稀疏时会一直 ready 不了。
+    const nodes = MergeDanmaku_findDanmakuNodes();
+    if (!nodes.length) return false;
+    for (let i = 0; i < nodes.length; i++) {
+      const node = nodes[i];
+      if (!node.comment) {
+        // 引擎的悬停处理器里有 event.target.comment = comment，派发一次就能拿到实例
+        ["mouseover", "mouseout"].forEach(function (t) {
+          if (node.comment) return;
+          try {
+            node.dispatchEvent(new MouseEvent(t, { bubbles: true, cancelable: true, view: window }));
+          } catch (e) {
+            try { node.dispatchEvent(new Event(t, { bubbles: true })); } catch (e2) {}
+          }
+        });
+      }
+      const cm = node.comment;
+      if (!cm || !cm.space || typeof cm.space.addComment !== "function") continue;
+      msMergeSpace = cm.space;
+      if (cm.data && cm.data.type && typeof cm.constructor === "function") msMergeCtors[cm.data.type] = cm.constructor;
+      MergeDanmaku_wrapRenderer();
+      if (msMergeCtors.scroll) break;
     }
-    const cm = node.comment;
-    if (!cm || !cm.space || typeof cm.space.addComment !== "function") continue;
-    msMergeSpace = cm.space;
-    if (cm.data && cm.data.type && typeof cm.constructor === "function") msMergeCtors[cm.data.type] = cm.constructor;
-    MergeDanmaku_wrapRenderer();
-    if (msMergeCtors.scroll) break;
+    if (!msMergeSpace) return false;
+    if (!msMergeCtors.scroll) return false;   // 还差一条普通滚动弹幕，下一轮继续
+    MergeDanmaku_flushPending();
+    console.log("[DouyuEx] 多屏弹幕合并已接入原生引擎");
   }
-  if (!msMergeSpace) return false;
-  if (!msMergeCtors.scroll) return false;   // 还差一条普通滚动弹幕，下一轮继续
-  MergeDanmaku_flushPending();
-  console.log("[DouyuEx] 多屏弹幕合并已接入原生引擎");
   return true;
 }
 
@@ -211,14 +217,105 @@ function MergeDanmaku_wrapRenderer() {
 
 function MergeDanmaku_startBootstrap() {
   if (msBootTimer) return;
-  MergeDanmaku_bootstrap();
-  msBootTimer = setInterval(function () {
+  // 两件事各自重试：① 原生引擎本体（space + scroll 类）② 播放器自己的弹幕组件。
+  // ②拿不到不算失败 —— 外房弹幕退回自建数据上屏（颜色与来源横条照旧），
+  // 所以轮询只在"两件都拿到"或"等够了"时停。
+  const tick = function () {
+    const engineReady = MergeDanmaku_bootstrap();
+    const hostReady = !!MergeDanmaku_getHost();
     msBootTries++;
-    if (MergeDanmaku_bootstrap() || msBootTries >= MS_BOOTSTRAP_MAX_TRIES) {
+    if ((engineReady && hostReady) || msBootTries >= MS_BOOTSTRAP_MAX_TRIES) {
       clearInterval(msBootTimer);
       msBootTimer = 0;
+      // 引擎接上了、播放器自己的管线没接上：留一条线索，别让它静默降级
+      if (engineReady && !hostReady) {
+        console.warn("[DouyuEx] 未能接入播放器自己的弹幕管线（React fiber 上溯失败），" +
+          "外房弹幕暂按自建数据上屏：颜色与来源横条正常，粉丝牌/等级/贵族底不显示。");
+      }
     }
-  }, MS_BOOTSTRAP_POLL_MS);
+  };
+  tick();
+  msBootTimer = setInterval(tick, MS_BOOTSTRAP_POLL_MS);
+}
+
+/* ---------- ②b 运行时抓取"播放器自己的弹幕组件" ---------- */
+/*
+ * 为什么能抓到：那个组件（原型上有 convertComment / dataHandle）是 **React 类组件**，
+ * 而弹幕层容器是 React 渲染出来的 —— 容器节点上挂着 __reactFiber$… / __reactInternalInstance$…，
+ * 沿 fiber 的 return 链往上走，stateNode 上带 convertComment 的那个就是它。
+ * 实测（2288 房间）：从容器出发 **2 跳**命中，实例上 cm / cmdiv 都在。
+ *
+ * 锚点用**引擎自己持有的容器**（space._renderer.dom）而不是类名：
+ * 类名是构建期哈希（danmu-fbb2a3 这种），斗鱼一发版就变；容器是引擎传进渲染器的，永远指对。
+ * 引擎容器还没拿到时，退回"拿一个正在飘的弹幕节点，从它的 React 宿主祖先往上爬"。
+ */
+const MS_HOST_FIBER_MAX_HOPS = 120;   // 实测 2 跳命中，留足余量防将来层级变深
+
+function MergeDanmaku_walkFiberForHost(el) {
+  if (!el || el.nodeType !== 1) return null;
+  // ① 先沿 DOM 往上找最近的 React 宿主节点：引擎自己造的弹幕节点没有 fiber 键
+  let cur = el;
+  let key = null;
+  let anchor = null;
+  while (cur && cur !== document.documentElement) {
+    const keys = Object.keys(cur);
+    for (let i = 0; i < keys.length; i++) {
+      const k = keys[i];
+      if (k.indexOf("__reactFiber$") === 0 || k.indexOf("__reactInternalInstance$") === 0) {
+        key = k;
+        anchor = cur;
+        break;
+      }
+    }
+    if (key) break;
+    cur = cur.parentElement;
+  }
+  if (!key) return null;
+  // ② 再沿 fiber 上溯找组件实例。cm 必须一并就位 —— 只有 convertComment 没有 cm 的
+  //    不是我们要的那个组件（投递时要用它的 cm.send）
+  let fiber = anchor[key];
+  let hops = 0;
+  while (fiber && hops < MS_HOST_FIBER_MAX_HOPS) {
+    const sn = fiber.stateNode;
+    if (sn && typeof sn === "object" && typeof sn.convertComment === "function" && sn.cm) return sn;
+    fiber = fiber.return;
+    hops++;
+  }
+  return null;
+}
+
+function MergeDanmaku_findHostByFiber() {
+  const seeds = [];
+  const rd = msMergeSpace && msMergeSpace._renderer;
+  if (rd && rd.dom) seeds.push(rd.dom);
+  MergeDanmaku_findDanmakuNodes().forEach(function (n) {
+    seeds.push(n);
+  });
+  for (let i = 0; i < seeds.length; i++) {
+    const host = MergeDanmaku_walkFiberForHost(seeds[i]);
+    if (host) return host;
+  }
+  return null;
+}
+
+/* 取"播放器自己的管线"。优先级：
+ *   ① 脚本钩子捕获的 __ExDanmuHost（TM document-start 时最早、最稳）
+ *   ② 运行时爬 React fiber 拿到的实例（不依赖 document-start，取证环境也能用）
+ *   ③ 都没有 → null，调用方退回自建数据那条路
+ */
+function MergeDanmaku_getHost() {
+  const W = typeof unsafeWindow !== "undefined" ? unsafeWindow : window;
+  const hooked = W.__ExDanmuHost;
+  if (hooked && typeof hooked.convertComment === "function" && hooked.cm) {
+    msMergeHost = hooked;
+    msMergeHostVia = "hook";
+    return msMergeHost;
+  }
+  if (msMergeHost && typeof msMergeHost.convertComment === "function" && msMergeHost.cm) return msMergeHost;
+  msMergeHost = MergeDanmaku_findHostByFiber();
+  msMergeHostVia = msMergeHost ? "fiber" : null;
+  if (msMergeHost) console.log("[DouyuEx] 已接入播放器自己的弹幕管线（粉丝牌/等级/贵族样式走原生）");
+  return msMergeHost;
 }
 
 /* ---------- ② 页面侧钩子（在页面上下文被调用） ---------- */
@@ -227,6 +324,12 @@ function initPkg_PopupPlayer_MergeDanmaku() {
   if (msMergeInstalled) return;
   msMergeInstalled = true;
   const W = typeof unsafeWindow !== "undefined" ? unsafeWindow : window;
+  /* 诊断入口必须挂到**页面 window**：TM 沙箱里 window.* 只在脚本自己的作用域里可见，
+    用户在页面控制台里读不到（实测：沙箱里是 function、页面控制台是 undefined），
+    而排障话术是"控制台执行 MergeDanmaku_getStats()"。
+    ⚠ 必须挂在这里而不是模块顶层：同一句放在顶层实测**不生效**（页面 window 上连属性都没有），
+    放到 init 阶段就生效 —— 与本文件里 __onDouyuExDanmakuRendered 的做法一致。 */
+  W.MergeDanmaku_getStats = window.MergeDanmaku_getStats;
   W.__onDouyuExDanmakuRendered = function (cm) {
     try {
       MergeDanmaku_onRendered(cm);
@@ -477,8 +580,8 @@ function MergeDanmaku_buildCommentData(item) {
 /* 走播放器自己的管线。返回 true/false 表示"已由原生管线处理"，
    返回 null 表示原生组件还没捕获到（此时退回自建数据那条路）。 */
 function MergeDanmaku_feedViaHost(item) {
-  const host = (typeof unsafeWindow !== "undefined" ? unsafeWindow : window).__ExDanmuHost;
-  if (!host || typeof host.convertComment !== "function" || !host.cm || typeof host.cm.send !== "function") return null;
+  const host = MergeDanmaku_getHost();
+  if (!host) return null;
   const raw = item.raw;
   if (!raw) return null;
   try {
@@ -488,7 +591,12 @@ function MergeDanmaku_feedViaHost(item) {
     // 只加来源标记：渲染钩子靠它贴来源横条；主房弹幕没有这两个字段，所以不会被贴
     data.extraData.exMsSrcRid = String(item.srcRid);
     data.extraData.exMsSrcName = item.srcName;
-    return !host.cm.send(data);
+    /* ⚠ 返回值语义（实测源码 + 实机双向确认）：cm.send → sendSync → **返回 space.addComment 的结果**，
+       也就是 **true = 真的上屏了**，false = 没上去（无空轨 / 自适应丢弃 / 类型不支持）。
+       这里早先写成 `!send`，把成功记成失败 —— 表现为 pushed 恒为 0（实机验证时抓出来的）。 */
+    const ok = host.cm.send(data);
+    if (!ok) msMergeStats.noTrack++;
+    return !!ok;
   } catch (e) {
     return null;                                    // 原生管线出错就退回自建那条，别把弹幕弄丢
   }
@@ -733,6 +841,10 @@ window.MergeDanmaku_getStats = function () {
     dropped: msMergeStats.dropped,
     noTrack: msMergeStats.noTrack,
     ready: !!(msMergeSpace && msMergeCtors.scroll),
+    // host = 是否接上了播放器自己的管线（原生资产）；via 是接上的方式：
+    //   "hook" 脚本钩子（document-start）/ "fiber" 运行时爬 React fiber / null 没接上
+    host: !!msMergeHost,
+    hostVia: msMergeHostVia,
     conns: msMergeConns.map(function (c) {
       return c.rid;
     })
@@ -748,3 +860,6 @@ window.MergeDanmaku_buildCommentData = MergeDanmaku_buildCommentData;
 window.MergeDanmaku_patchFirstqueue = MergeDanmaku_patchFirstqueue;
 window.MergeDanmaku_patchBarrageGroup = MergeDanmaku_patchBarrageGroup;
 window.MergeDanmaku_feedViaHost = MergeDanmaku_feedViaHost;
+window.MergeDanmaku_getHost = MergeDanmaku_getHost;
+window.MergeDanmaku_findHostByFiber = MergeDanmaku_findHostByFiber;
+window.MergeDanmaku_walkFiberForHost = MergeDanmaku_walkFiberForHost;
