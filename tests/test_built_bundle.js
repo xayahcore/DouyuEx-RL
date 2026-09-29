@@ -137,7 +137,14 @@ async function testBuiltBundle() {
     const tipEl = liBlocked.querySelector(".ex-danmaku-blocked-tip");
     assert.ok(tipEl !== null, "被系统屏蔽的弹幕必须带有 (可能发送失败) 提示标签");
     assert.strictEqual(tipEl.textContent, "(可能发送失败)");
-    assert.strictEqual(tipEl.title, "该条弹幕发送失败/可能被系统屏蔽，不会被其他人看到（可能会误判）");
+    // 悬停提示 = 原免责说明 + 判定依据（判定原因走悬停展示；弹幕区可见文案不新增字）
+    assert.ok(
+        tipEl.title.indexOf("该条弹幕发送失败/可能被系统屏蔽，不会被其他人看到（可能会误判）") === 0,
+        "悬停提示必须保留原免责说明作为开头"
+    );
+    assert.ok(tipEl.title.indexOf("判定依据：") !== -1, "悬停提示必须带出判定依据");
+    assert.ok(tipEl.title.indexOf("本条文本=") !== -1, "判定依据必须含本条文本");
+    assert.ok(tipEl.title.indexOf("通道活性：") !== -1, "判定依据必须含通道活性");
     console.log("✓ 测试场景 2 通过: 屏蔽弹幕准确识别并渲染删除线与(可能发送失败)提示");
 
     // === 测试 2.1: 斗鱼重渲染产生同文本双节点，两个都不得误判 ===

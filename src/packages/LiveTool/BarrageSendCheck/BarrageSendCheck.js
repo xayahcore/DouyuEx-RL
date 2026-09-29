@@ -12,10 +12,14 @@
  * 加固项：
  *   1. 自弹幕识别优先用 uid 精确匹配，昵称归一化匹配次之，最后才用原作者宽松包含兜底；
  *   2. 回执文本经 stt_unescape 反转义（@S→/、@A→@）后再比对；
- *   3. 剥离图片弹幕占位符；
+ *   3. 剥离图片弹幕占位符与斗鱼表情码（[表情名] / [emot:dyXXX]），回执与 DOM 两侧对称处理；
  *   4. 只要尚未收到过任何自身回执，一律不做判定（宁可不报，绝不误报）；
  *   5. 熔断保护：连续跟踪到自身弹幕却始终零回执时整体停用检测，杜绝全量误判；
  *   6. 迟到回执自愈：回执到达后自动撤销已误标的删除线与提示标签。
+ *
+ * 误判史（都指向同一类根因：回执原文与 DOM 文本不等价）：
+ *   - 重渲染双节点：单槽算法天然免疫（见上）；
+ *   - 表情弹幕：斗鱼把表情码渲染成 <img>，DOM 文本里整段消失 → 第 3 项加固修复。
  */
 
 let myLastBarrage = ""; // 最近一条属于自己的原始弹幕报文
@@ -24,6 +28,14 @@ let selfNodeTrackedCount = 0;
 let firstSelfNodeAt = 0;
 let barrageCheckDisabled = false;
 let barrageCheckNoticeShown = false;
+
+// 判定现场快照。这条链路线上无法复现（既可能是消息真被房间静默丢弃，
+// 也可能是某条回执通道断线窗口内漏掉了回执），所以判定时把比对双方与
+// 各通道活性记进提示标签的悬停 title，并同步打一条控制台日志；
+// 弹幕区的可见文案（删除线 + (可能发送失败)）不因此改变。
+let lastSelfEchoAt = 0;
+let lastSelfEchoChannel = "";
+let channelLastSeenAt = {};
 
 // 判定防抖延时(ms)：需留出服务端回执在网络上的往返时间
 const BARRAGE_CHECK_DELAY = 400;
@@ -43,9 +55,17 @@ function normalizeNick(s) {
   return String(s || "").replace(/[：:]+$/g, "").replace(/\s+/g, " ").trim();
 }
 
-// 弹幕文本归一化：剥离图片弹幕占位符并压缩空白
+// 弹幕文本归一化：剥离"会被渲染成图片的占位符"并压缩空白。
+// 斗鱼会把 [表情名] / [emot:dyXXX] 整段替换成 <img>（实机：<picture><img class="Emot-image">），
+// 该段在 DOM 文本里彻底消失，而回执报文里仍是原文；若只比对原文，
+// 任何"文字+表情"的弹幕都会被误判成发送失败，且迟到回执自愈用同一套比对、同样救不回来。
+// 因此回执侧与 DOM 侧必须走同一个归一化，对称剥离这些占位符。
 function normalizeDanmakuText(s) {
-  return String(s || "").replace(/\[DouyuEx图片[^\]]+\]/g, "").replace(/\s+/g, " ").trim();
+  return String(s || "")
+    .replace(/\[DouyuEx图片[^\]]+\]/g, "")
+    .replace(/\[(?:emot:dy)?[^\]\s]{1,32}\]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 // 判断报文是否属于自己发送
@@ -106,7 +126,23 @@ function recordSelfEcho(text) {
   healDanmakuFailedMark(extractEchoText(text));
 }
 
-function markDanmakuFailed(node, contentEl) {
+// 判定现场快照：比对双方 + 各回执通道的最近活动时间。
+// 展示位置：提示标签的悬停 title（用户看）+ 控制台 console.log（开发者看）。
+// 弹幕区的可见文案不新增任何字——仍是 删除线 + (可能发送失败)。
+function buildCheckDiagnostic(localText, echoText) {
+  let now = Date.now();
+  let ago = function (t) { return t ? Math.round((now - t) / 1000) + "s前" : "无"; };
+  let chans = Object.keys(channelLastSeenAt).map(function (k) {
+    return k + " " + ago(channelLastSeenAt[k]);
+  }).join("，") || "无";
+
+  return "回执文本=" + (echoText || "(空)") +
+    "；本条文本=" + (localText || "(空)") +
+    "；上次自身回执=" + ago(lastSelfEchoAt) + (lastSelfEchoChannel ? "（" + lastSelfEchoChannel + "）" : "") +
+    "；通道活性：" + chans;
+}
+
+function markDanmakuFailed(node, contentEl, diagnostic) {
   if (!contentEl || !contentEl.parentNode) return;
 
   contentEl.style.textDecoration = "line-through gray 1px";
@@ -122,9 +158,14 @@ function markDanmakuFailed(node, contentEl) {
   tip.style.color = "gray";
   tip.style.fontSize = "9px";
   tip.style.cursor = "pointer";
-  tip.title = "该条弹幕发送失败/可能被系统屏蔽，不会被其他人看到（可能会误判）";
+  tip.title = "该条弹幕发送失败/可能被系统屏蔽，不会被其他人看到（可能会误判）。" +
+    (diagnostic ? "判定依据：" + diagnostic + "（若本条其实已发出，可截图此提示反馈）" : "");
 
   contentEl.parentNode.insertBefore(tip, contentEl.nextSibling);
+
+  if (diagnostic) {
+    try { console.log("[DouyuEx][弹幕发送检测] 判定发送失败：" + diagnostic); } catch (e) {}
+  }
 }
 
 function checkAndTrackSelfDanmu(node) {
@@ -170,15 +211,23 @@ function checkAndTrackSelfDanmu(node) {
     if (!echoText) return;
     if (echoText === localText) return; // 回执文本一致 = 发送成功
 
-    markDanmakuFailed(node, contentEl);
+    markDanmakuFailed(node, contentEl, buildCheckDiagnostic(localText, echoText));
   }, BARRAGE_CHECK_DELAY);
 }
 
 // 主长连接旁路广播通道（rank_engine 在页面主上下文注入）
-function handleChatmsgPacket(msg) {
+function handleChatmsgPacket(msg, channel) {
   if (!msg || typeof msg !== "string") return;
   if (msg.indexOf("type@=chatmsg") === -1) return;
+
+  // 通道活性：收到任意 chatmsg 即说明该通道可用（用于判断漏回执是否发生在断线窗口）
+  let ch = channel || "主长连接";
+  channelLastSeenAt[ch] = Date.now();
+
   if (!isSelfChatmsg(msg)) return;
+
+  lastSelfEchoAt = Date.now();
+  lastSelfEchoChannel = ch;
   recordSelfEcho(msg);
 }
 
@@ -222,5 +271,5 @@ function initPkg_LiveTool_BarrageSendCheck() {
 }
 
 function initPkg_LiveTool_BarrageSendCheck_Handle(text) {
-  handleChatmsgPacket(text);
+  handleChatmsgPacket(text, "免登录");
 }
