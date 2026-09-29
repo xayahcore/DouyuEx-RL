@@ -497,6 +497,80 @@ async function run() {
   win8.close();
   win9.close();
 
+  // ---------- 9. 首选路径：把报文推回斗鱼自己的 socket 总线 ----------
+  // 目标：聊天条目由斗鱼自己渲染（原生资产/颜色/点击），我们只补来源横条；
+  // 飘屏同样由原生渲染，横条靠 (uid+文本) 认领。
+  console.log("--> 9. 走原生 socket 总线（聊天区与飘屏都原生）");
+  const win9b = load(makeDom());
+  const busPushes = [];
+  win9b.socketProxy = { socketStream: { push(p) { busPushes.push(p); return this; } } };
+  assert.ok(win9b.MergeDanmaku_getStream(), "必须能从 socketProxy.socketStream 拿到总线");
+  const room9 = { rid: "71415", nn: "外房主播" };
+  const pkt9 = "type@=chatmsg/rid@=71415/uid@=555001/nn@=外房用户/txt@=总线测试/cid@=chatid-9/col@=1/level@=30/bnn@=牌子/bl@=10/brid@=71415/";
+  const item9 = win9b.MergeDanmaku_parseChatmsg(room9, pkt9);
+  assert.strictEqual(item9.cid, "chatid-9", "解析必须带出 cid（用于认领原生聊天条目）");
+  assert.strictEqual(item9.packet, pkt9, "解析必须带出清洗后的原始报文（要原样推回总线）");
+  // 带二进制残字符时，packet 必须是切干净的（从第一个 type@= 起）
+  const dirty9 = win9b.MergeDanmaku_parseChatmsg(room9, "\u0002\x00\x00\x00" + pkt9);
+  assert.strictEqual(dirty9.packet, pkt9, "残字符必须被切掉，否则推回总线会带脏字节");
+  // 推一条：必须走总线，且**不得**再走自建数据上屏、不得再克隆聊天条目
+  const space9b = makeSpace();
+  const c9b = fakeComment(win9b, { srcName: "外房主播" }, space9b);
+  win9b.__onDouyuExDanmakuRendered(c9b);
+  assert.strictEqual(win9b.MergeDanmaku_push(item9), true, "推回总线成功必须返回 true");
+  assert.strictEqual(busPushes.length, 1, "必须把报文推给原生总线，实际 " + busPushes.length + " 次");
+  assert.strictEqual(busPushes[0], pkt9, "推回去的必须是清洗后的原始报文（不能是我们拼的对象）");
+  assert.strictEqual(space9b.added.length, 0, "走总线时不得再自己喂引擎（否则飘屏会重复一条）");
+  assert.strictEqual(win9b.document.querySelectorAll("#js-barrage-list .ex-ms-item").length, 0, "走总线时不得再克隆聊天条目");
+  assert.strictEqual(win9b.MergeDanmaku_getStats().viaBus, 1, "必须计入 viaBus");
+
+  // ① 原生渲染出来的聊天条目：按 data-chatid 认领并补来源横条
+  assert.strictEqual(win9b.MergeDanmaku_watchChatList(), true, "聊天列表存在时必须能挂上观察器");
+  const nativeLi9 = win9b.document.createElement("li");
+  nativeLi9.className = "Barrage-listItem";
+  nativeLi9.innerHTML = '<div class="Barrage-notice--normalBarrage"><div>' +
+    '<span class="js-user-level UserLevel"></span>' +
+    '<span class="Barrage-nickName Barrage-nickName--blue js-nick" data-uid="555001">外房用户</span>' +
+    '<span class="Barrage-nickName js-nick is-colon" data-uid="555001">：</span>' +
+    '<span class="Barrage-content" data-chatid="chatid-9">总线测试</span></div></div>';
+  win9b.document.getElementById("js-barrage-list").appendChild(nativeLi9);
+  await new Promise((r) => setTimeout(r, 30));   // MutationObserver 是微任务，等一拍
+  const badge9 = nativeLi9.querySelector(".ex-ms-badge--chat");
+  assert.ok(badge9, "原生渲染出来的条目必须被补上来源横条");
+  assert.strictEqual(badge9.textContent, "外房主播", "横条文字必须是来源主播名");
+  assert.ok(nativeLi9.querySelector('[class*="UserLevel"]'), "原生等级图标必须原样保留（我们只插横条）");
+  assert.strictEqual(nativeLi9.querySelector('[class*="Barrage-nickName"]').getAttribute("data-uid"), "555001", "原生 data-uid 必须原样保留（点用户靠它）");
+  assert.strictEqual(nativeLi9.className.indexOf("is-self"), -1, "原生条目本来就没有 is-self，我们也不得加");
+  // 幂等：重复观察不得叠加横条
+  win9b.MergeDanmaku_badgeNativeChatItem(nativeLi9);
+  assert.strictEqual(nativeLi9.querySelectorAll(".ex-ms-badge--chat").length, 1, "横条必须幂等");
+
+  // ② 原生渲染出来的飘屏：按 (uid+文本) 认领并贴横条
+  const injectedCm = fakeComment(win9b, { text: "总线测试", type: "scroll" }, space9b);
+  injectedCm.data.extraData = { uid: "555001" };   // 原生管线出来的数据里没有我们的标记
+  win9b.__onDouyuExDanmakuRendered(injectedCm);
+  const dBadge9 = injectedCm.display.raw.querySelector(".ex-ms-badge");
+  assert.ok(dBadge9, "走总线注入的弹幕必须靠 (uid+文本) 认领并贴上来源横条");
+  assert.strictEqual(dBadge9.textContent, "外房主播", "飘屏横条文字必须是来源主播名");
+  // 认领是消费式的：再来一条同 uid 同文本（非注入）不得被误贴
+  const stranger = fakeComment(win9b, { text: "总线测试" }, space9b);
+  stranger.data.extraData = { uid: "555001" };
+  win9b.__onDouyuExDanmakuRendered(stranger);
+  assert.strictEqual(stranger.display.raw.querySelector(".ex-ms-badge"), null, "已认领过的条目不得被二次匹配（避免误贴）");
+
+  // ③ 拿不到总线时必须退回老路径（自建数据 + 克隆条目），功能不降级
+  const win9c = load(makeDom());
+  assert.strictEqual(win9c.MergeDanmaku_getStream(), null, "没有 socketProxy 时必须安全返回 null");
+  const space9c = makeSpace();
+  const c9c = fakeComment(win9c, { srcName: "退回房" }, space9c);
+  win9c.__onDouyuExDanmakuRendered(c9c);
+  win9c.MergeDanmaku_push(win9c.MergeDanmaku_parseChatmsg({ rid: "9", nn: "退回房" }, "type@=chatmsg/rid@=9/uid@=1/nn@=A/txt@=退回测试/cid@=c9/"));
+  assert.strictEqual(space9c.added.length, 1, "拿不到总线时必须退回自建数据上屏");
+  assert.strictEqual(win9c.document.querySelectorAll("#js-barrage-list .ex-ms-item").length, 1, "拿不到总线时必须退回克隆条目");
+  assert.strictEqual(win9c.MergeDanmaku_getStats().viaBus, 0, "退回路径不得计入 viaBus");
+  win9b.close();
+  win9c.close();
+
   dom.window.close();
   win2.close();
   win3.close();
