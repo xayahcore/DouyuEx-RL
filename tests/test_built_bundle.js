@@ -5,7 +5,8 @@ let JSDOM;
 try {
     JSDOM = require("jsdom").JSDOM;
 } catch (e) {
-    JSDOM = require("D:/harness/_cdp/node_modules/jsdom").JSDOM;
+    console.error("[测试] 缺少依赖 jsdom，请先执行：npm install");
+    throw e;
 }
 
 // 从源码读取 @version 作为期望值：既避免每次发版都要手改这里的版本字面量，
@@ -136,7 +137,14 @@ async function testBuiltBundle() {
     const tipEl = liBlocked.querySelector(".ex-danmaku-blocked-tip");
     assert.ok(tipEl !== null, "被系统屏蔽的弹幕必须带有 (可能发送失败) 提示标签");
     assert.strictEqual(tipEl.textContent, "(可能发送失败)");
-    assert.strictEqual(tipEl.title, "该条弹幕发送失败/可能被系统屏蔽，不会被其他人看到（可能会误判）");
+    // 悬停提示 = 原免责说明 + 判定依据（判定原因走悬停展示；弹幕区可见文案不新增字）
+    assert.ok(
+        tipEl.title.indexOf("该条弹幕发送失败/可能被系统屏蔽，不会被其他人看到（可能会误判）") === 0,
+        "悬停提示必须保留原免责说明作为开头"
+    );
+    assert.ok(tipEl.title.indexOf("判定依据：") !== -1, "悬停提示必须带出判定依据");
+    assert.ok(tipEl.title.indexOf("本条文本=") !== -1, "判定依据必须含本条文本");
+    assert.ok(tipEl.title.indexOf("通道活性：") !== -1, "判定依据必须含通道活性");
     console.log("✓ 测试场景 2 通过: 屏蔽弹幕准确识别并渲染删除线与(可能发送失败)提示");
 
     // === 测试 2.1: 斗鱼重渲染产生同文本双节点，两个都不得误判 ===
@@ -883,6 +891,74 @@ async function testBuiltBundle() {
     assert.strictEqual(noticeCalls[1].type, "error", "显式传入的类型必须被保留");
 
     console.log("✓ 测试场景 16 通过: 左下角通知已换装深色玻璃、层级高于面板、四类型图标就位、进度条改细线、时长为 4 秒");
+
+    // === 测试 17: 重制时丢声明类的作用域护栏 ===
+    console.log("--> 测试场景 17: 包内不得读取未声明的标识符（重制丢声明是高发坑）...");
+    // 背景：camera 的关闭状态 isClosed 曾在一次"全量重制"里被漏掉声明，
+    // 结果那个分支一走到 if (isClosed || ...) 就抛 ReferenceError，功能等于废掉。
+    // 这类漏声明在语法检查下是合法的（非严格模式的读会在运行时才炸），只能静态兜住。
+    const scopeCases = [
+        {
+            file: "src/packages/VideoTools/Camera/Main/Camera.js",
+            ident: "isClosed",
+            decl: "let isClosed",
+        },
+        {
+            file: "src/packages/VideoTools/Camera/Video/Camera.js",
+            ident: "isClosed",
+            decl: "let isClosed",
+        },
+    ];
+    // 扫描前必须剥掉注释：注释里出现同名字符串会把断言骗过去（第一版就栽在这上面）
+    const stripComments = (t) => t.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
+    scopeCases.forEach((c) => {
+        const src = stripComments(fs.readFileSync(path.join(__dirname, "..", c.file), "utf8"));
+        const declAt = src.indexOf(c.decl);
+        const useAt = src.indexOf(c.ident + " ||");
+        assert.ok(declAt >= 0, c.file + " 必须声明 " + c.decl + "（漏了会让该分支抛 ReferenceError）");
+        assert.ok(
+            useAt < 0 || declAt < useAt,
+            c.file + " 里 " + c.ident + " 的声明必须出现在首次读取之前（当前声明位置 " + declAt + "，首次读取 " + useAt + "）"
+        );
+    });
+    // 同时确认摄像头那段代码确实进了产物（只改源码、构建时被 tree-shaking 摘掉 = 白改）。
+    // ⚠ 这里必须用**字符串字面量**验证，不能用 isClosed 本身：修好之前它是"未声明的全局"，
+    // 压缩器不能改名所以名字侥幸留在产物里；修成正常的局部变量后压缩器会把它改名，
+    // 字面量就消失了 —— 拿它断言会得到一个假失败。
+    const built = fs.readFileSync(bundlePath, "utf8");
+    assert.ok(
+        built.indexOf("ex-camera-close") >= 0 && built.indexOf("ExSave_Camera_Hidden") >= 0,
+        "摄像头画面模块必须进入产物（未接线会被 tree-shaking 静默删除）"
+    );
+    console.log("✓ 测试场景 17 通过: 摄像头分支的 isClosed 已声明、注释不干扰扫描、模块已进产物");
+
+    console.log("--> 测试场景 18: 包初始化必须逐项隔离（单个包抛异常不得拖垮其余包）...");
+    // 背景：initPkg() 原本是 30 多个平铺直调，任何一处抛异常，它**后面**的包就全部不再初始化，
+    // 用户看到的就是"脚本没加载出来"，而刷新一次可能又好了（抛不抛取决于当时的 DOM 时机）。
+    // 现在统一走 initPkg_Safe(name, fn) 逐项 try/catch，这里把这条纪律钉住。
+    {
+        // ⚠ 这里**不能**过 stripComments：main.js 的 `@match *://*.douyu.com/0*` 里
+        // `//*` 会被当成块注释开头，一路吃到文件末尾，把整份源码抹成 144 字节（实测踩到）。
+        // 好在断言用的正则是"整行只有一句 initPkg_Xxx();"，注释行以 // 开头，天然不会误命中。
+        const mainSrc = fs.readFileSync(path.join(__dirname, "../src/main.js"), "utf8");
+        const bodyStart = mainSrc.indexOf("function initPkg() {");
+        const bodyEnd = mainSrc.indexOf("function initPkg_Safe(");
+        assert.ok(bodyStart >= 0 && bodyEnd > bodyStart, "应能在 main.js 里定位 initPkg() 与 initPkg_Safe()");
+        const body = mainSrc.slice(bodyStart, bodyEnd);
+        const direct = body.match(/^[ \t]*initPkg_[A-Za-z0-9_]+\([ \t]*\)[ \t]*;[ \t]*$/gm) || [];
+        assert.strictEqual(
+            direct.length, 0,
+            "initPkg() 内不得再有平铺直调的包初始化，必须经 initPkg_Safe 隔离：" + JSON.stringify(direct)
+        );
+        const wrappers = body.match(/initPkg_Safe\([ \t]*"[A-Za-z0-9_]+"[ \t]*,/g) || [];
+        assert.ok(wrappers.length >= 30, "initPkg_Safe 包裹的包数量异常（当前 " + wrappers.length + "）");
+        // initPkg_Safe 本体必须真的兜住异常并报出包名，否则"隔离"只是摆设
+        const safeBody = mainSrc.slice(bodyEnd, bodyEnd + 400);
+        assert.ok(safeBody.indexOf("try") >= 0 && safeBody.indexOf("catch") >= 0, "initPkg_Safe 必须 try/catch");
+        assert.ok(safeBody.indexOf("console.error") >= 0, "初始化失败必须留下可定位的错误日志");
+        assert.ok(safeBody.indexOf("name") >= 0, "错误日志必须报出是哪个包失败");
+    }
+    console.log("✓ 测试场景 18 通过: initPkg() 逐包隔离，失败会报出包名而不是静默中断");
 
     // === 收尾断言: 全流程结束后仍必须零未捕获异常 ===
     assert.strictEqual(errors.length, 0, "全流程结束后不应该产生未捕获异常: " + JSON.stringify(errors));

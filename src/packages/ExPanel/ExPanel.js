@@ -41,6 +41,52 @@ function initPkg_ExPanel() {
       });
     }
   }
+
+  ExPanel_startSelfHeal();
+}
+
+/* ==================== Dock 自愈 ====================
+ * 症状（用户报障）：工具条"加载出来后刷新又消失"，且再也回不来 —— 连精灵球都找不到。
+ * 根因：Dock 只在 initPkg_ExPanel 里插一次，插入点是播放器礼物流水条的单元格，
+ * 而那是页面框架自己渲染的区域；框架重绘时把整个单元格换掉，Dock 随之脱离文档，
+ * 此后没有任何代码再把它插回去（精灵球在 Dock 内部，所以用户连"点一下让它出来"都做不到）。
+ *
+ * ⚠ 自愈只能"搬回原节点"，绝不能重建：九个按钮是九个包在各自 init 里插进去的
+ * （Sign_insertIcon 之类都不做去重，重建后调用会得到重复图标），而且按钮上的事件绑定
+ * 都在节点上。框架摘掉的是 DOM 位置，节点对象本身还活着、子节点与监听器都在，
+ * 所以把它原样挂回就是完整恢复。
+ */
+let ExPanel_dockNode = null;
+let ExPanel_healTimer = 0;
+
+function ExPanel_startSelfHeal() {
+  if (ExPanel_healTimer) return;
+  ExPanel_healTimer = setInterval(ExPanel_ensureAttached, 3000);
+}
+
+function ExPanel_ensureAttached() {
+  const node = ExPanel_dockNode;
+  if (!node) return false;
+  if (document.contains(node)) return true;
+
+  // 已经脱离文档：按当前页面状态挑宿主挂回去（礼物流水条优先，否则回浮动态）
+  const anchor = ExPanel_getGiftBarAnchor();
+  if (anchor && !ExPanel_isGiftBarHidden()) {
+    anchor.insertBefore(node, anchor.childNodes[0]);
+    node.classList.remove("ex-panel--floating");
+    node.style.removeProperty("position");
+    node.style.removeProperty("left");
+    node.style.removeProperty("right");
+    node.style.removeProperty("top");
+    if (typeof ensureDockIndicators === "function") ensureDockIndicators();
+  } else {
+    ExPanel_getFloatingHost().appendChild(node);
+    node.classList.add("ex-panel--floating");
+    ExPanel_updateFloatingPosition();
+    if (typeof ensureDockIndicators === "function") ensureDockIndicators();
+  }
+  console.warn("[DouyuEx] 工具条被页面重绘移除，已重新挂回（按钮与事件原样保留）");
+  return true;
 }
 
 function ExPanel_getGiftBarAnchor() {
@@ -162,6 +208,8 @@ function initPkg_ExPanel_insertDom() {
     }
   }
   b.insertBefore(a, b.childNodes[0]);
+  // 记住 Dock 节点本体：页面重绘把它摘掉后，自愈要靠这个引用把它原样搬回来
+  ExPanel_dockNode = a;
   ExPanel_saveAnchor(a);
   if (ExPanel_isGiftBarHidden()) {
     ExPanel_attachToFloatingHost();

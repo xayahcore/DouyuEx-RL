@@ -5,7 +5,8 @@ let JSDOM;
 try {
     JSDOM = require("jsdom").JSDOM;
 } catch (e) {
-    JSDOM = require("D:/harness/_cdp/node_modules/jsdom").JSDOM;
+    console.error("[测试] 缺少依赖 jsdom，请先执行：npm install");
+    throw e;
 }
 
 const STT_SRC = fs.readFileSync(path.join(__dirname, "../src/require/STT/STT.js"), "utf8");
@@ -34,8 +35,11 @@ function loadRealModule(opts) {
             normalizeDanmakuText: normalizeDanmakuText,
             normalizeNick: normalizeNick,
             getFieldValue: getFieldValue,
+            buildCheckDiagnostic: buildCheckDiagnostic,
             isBarrageCheckDisabled: function () { return barrageCheckDisabled; },
-            getMyLastBarrage: function () { return myLastBarrage; }
+            getMyLastBarrage: function () { return myLastBarrage; },
+            getLastSelfEchoChannel: function () { return lastSelfEchoChannel; },
+            getChannelLastSeenAt: function () { return channelLastSeenAt; }
         };
     `;
 
@@ -211,7 +215,91 @@ async function runTests() {
         console.log("✓ Case 7 通过: 零回执熔断保护生效，杜绝全量误判");
     }
 
-    console.log("=== 全部 8 项核心测试 100% 通过 ===");
+    // ---------- Case 8: 文本 + 斗鱼表情码 → 不误判 ----------
+    // 实机取证：回执报文 txt 为原文「无敌[南波儿9]」，而渲染后 .Barrage-content 里
+    // 表情码被整段替换成 <picture><img class="Emot-image">，DOM 文本只剩「无敌」。
+    {
+        const { win, api } = loadRealModule({});
+        assert.strictEqual(api.normalizeDanmakuText("无敌[南波儿9]"), "无敌", "表情码必须被剥离");
+        assert.strictEqual(api.normalizeDanmakuText("[emot:dy666]"), "", "emot:dy 形式同样剥离");
+
+        api.handleChatmsgPacket("type@=chatmsg/rid@=9999/uid@=276064895/nn@=测试大神/txt@=无敌[南波儿9]/cid@=a8/");
+        const li = addSelfDanmaku(
+            win,
+            '无敌<picture><source type="image/webp" srcset="x.webp"><img class="Emot-image" src="x.png"></picture>'
+        );
+        api.checkAndTrackSelfDanmu(li);
+        await wait(700);
+        assertNotFlagged(li, "含斗鱼表情的弹幕");
+        console.log("✓ Case 8 通过: 文字+斗鱼表情的弹幕不再误判（表情码两侧对称剥离）");
+    }
+
+    // ---------- Case 9: 纯表情弹幕（DOM 文本为空）→ 不误判 ----------
+    {
+        const { win, api } = loadRealModule({});
+        api.handleChatmsgPacket("type@=chatmsg/rid@=9999/uid@=276064895/nn@=测试大神/txt@=先来一条正常弹幕/cid@=a9a/");
+        const li = addSelfDanmaku(win, '<picture><img class="Emot-image" src="x.png"></picture>');
+        api.checkAndTrackSelfDanmu(li);
+        await wait(700);
+        assertNotFlagged(li, "纯表情弹幕");
+        console.log("✓ Case 9 通过: 纯表情弹幕（DOM 文本为空）不误判");
+    }
+
+    // ---------- Case 10: 加固不得削弱检测——含表情的弹幕真被屏蔽（零回执）时仍要标记 ----------
+    {
+        const { win, api } = loadRealModule({});
+        api.handleChatmsgPacket("type@=chatmsg/rid@=9999/uid@=276064895/nn@=测试大神/txt@=上一条正常弹幕/cid@=a10a/");
+        const li = addSelfDanmaku(
+            win,
+            '违规词<picture><img class="Emot-image" src="x.png"></picture>'
+        );
+        api.checkAndTrackSelfDanmu(li);
+        await wait(700);
+        assertFlagged(li, "含表情的违规弹幕");
+        console.log("✓ Case 10 通过: 含表情的违规弹幕零回执仍被标记（加固未削弱检测能力）");
+    }
+
+    // ---------- Case 11: 判定依据只进控制台，弹幕区文案保持原样 ----------
+    {
+        const { win, api } = loadRealModule({});
+        // 免登录通道先来一条别人的弹幕（证明通道活着），再来自己的回执
+        api.handleChatmsgPacket("type@=chatmsg/rid@=9999/uid@=1/nn@=路人甲/txt@=别人的弹幕/cid@=b1/", "免登录");
+        api.handleChatmsgPacket("type@=chatmsg/rid@=9999/uid@=276064895/nn@=测试大神/txt@=上一条正常弹幕/cid@=b2/", "免登录");
+        assert.strictEqual(api.getLastSelfEchoChannel(), "免登录", "自身回执必须记下来源通道");
+        assert.ok(api.getChannelLastSeenAt()["免登录"] > 0, "通道活性时间戳必须被记录");
+
+        const logged = [];
+        const origLog = console.log;
+        console.log = function () { logged.push(Array.prototype.join.call(arguments, " ")); };
+        let li;
+        try {
+            li = addSelfDanmaku(win, "这条没收到回执");
+            api.checkAndTrackSelfDanmu(li);
+            await wait(700);
+        } finally {
+            console.log = origLog;
+        }
+        assertFlagged(li, "带诊断的失败弹幕");
+
+        // 弹幕区可见文案保持原样，判定依据挂在悬停提示里
+        const tip = li.querySelector(".ex-danmaku-blocked-tip");
+        assert.strictEqual(tip.textContent, "(可能发送失败)");
+        assert.ok(
+            tip.title.indexOf("该条弹幕发送失败/可能被系统屏蔽，不会被其他人看到（可能会误判）") === 0,
+            "悬停提示必须保留原免责说明作为开头"
+        );
+        assert.ok(tip.title.indexOf("本条文本=这条没收到回执") !== -1, "悬停提示必须含本条文本");
+        assert.ok(tip.title.indexOf("回执文本=上一条正常弹幕") !== -1, "悬停提示必须含被比对上的回执文本");
+        assert.ok(tip.title.indexOf("免登录") !== -1, "悬停提示必须含回执来源通道");
+
+        // 同一份判定依据也同步打一条控制台日志
+        const line = logged.filter(function (s) { return s.indexOf("[DouyuEx][弹幕发送检测]") !== -1; })[0] || "";
+        assert.ok(line.indexOf("本条文本=这条没收到回执") !== -1, "控制台必须含本条文本");
+        assert.ok(line.indexOf("免登录") !== -1, "控制台必须含回执来源通道");
+        console.log("✓ Case 11 通过: 判定依据悬停可见 + 同步进控制台，弹幕区可见文案不变");
+    }
+
+    console.log("=== 全部 12 项核心测试 100% 通过 ===");
 }
 
 runTests().catch((err) => {
