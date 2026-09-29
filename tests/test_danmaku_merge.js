@@ -239,79 +239,47 @@ async function run() {
   assert.ok(gBadge, "彩色弹幕也必须贴横条");
   assert.strictEqual(gBadge.closest(".barrage-gradient"), null, "横条绝不能落进 .barrage-gradient，否则文字会被裁成透明");
 
-  // 上屏：调用原生 space.addComment，且数据形状符合引擎要求
+  // 上屏：把原始报文交给斗鱼自己的入口（socketStream），我们不再自己拼数据/拼条目
   W.MultiScreen_enter([{ rid: "1234", nn: "老王", avatar: "" }]);
-  const beforeAdded = 0;
   const space = engineSpace;
-  W.MergeDanmaku_push({ text: "合并测试", color: "#ff2e2e", nn: "观众A", uid: "1", srcRid: "1234", srcName: "老王" });
-  const pushed = space.added.filter((c) => (c.data || c).text === "合并测试");
-  assert.strictEqual(pushed.length, 1, "合并弹幕必须通过原生 addComment 上屏（实际 " + space.added.length + " 条）");
-  const payload = pushed[0].data || pushed[0];
-  assert.strictEqual(payload.type, "scroll", "上屏类型必须是 scroll");
-  assert.strictEqual(payload.space, "scroll", "space 必须是 scroll");
-  assert.strictEqual(payload.color, "#ff2e2e", "颜色必须原样传给引擎（原生颜色表）");
-  assert.strictEqual(payload.extraData.exMsSrcRid, "1234", "必须把来源房间塞进 extraData");
-  assert.strictEqual(payload.extraData.exMsSrcName, "老王", "必须把来源主播塞进 extraData");
-  assert.strictEqual(payload.alpha, 1, "alpha 必须显式给 1，否则原生会写出 opacity:undefined");
-  assert.ok(payload.stime > 0, "必须带 stime");
-  void beforeAdded;
-
-  // 没有空轨时返回 false，且计入 noTrack（原生语义，不算错误）
-  const statsBefore = W.MergeDanmaku_getStats();
-  const noTrackWin = makeDom();
-  const win2 = load(noTrackWin);
-  const nt = fakeComment(win2, { srcName: "满轨道" }, makeSpace(true));
-  win2.__onDouyuExDanmakuRendered(nt);
-  win2.MergeDanmaku_push({ text: "无空轨", color: "#ffffff", nn: "A", uid: "2", srcRid: "5", srcName: "满轨道" });
-  assert.strictEqual(win2.MergeDanmaku_getStats().noTrack, 1, "无空轨必须计入 noTrack");
-  assert.ok(statsBefore.pushed >= 1, "正常上屏必须计入 pushed");
+  const bus2 = [];
+  W.socketProxy = { socketStream: { push(p) { bus2.push(p); return this; }, decoder() {}, subscribe() {} } };
+  const pkt2 = "type@=chatmsg/rid@=1234/uid@=1/nn@=观众A/txt@=合并测试/cid@=cid-2/col@=1/";
+  W.MergeDanmaku_push(W.MergeDanmaku_parseChatmsg({ rid: "1234", nn: "老王" }, pkt2));
+  assert.strictEqual(bus2.length, 1, "必须把报文交给斗鱼自己的入口（实际 " + bus2.length + " 次）");
+  assert.strictEqual(bus2[0], pkt2, "交过去的必须是清洗后的原始报文");
+  assert.strictEqual(space.added.length, 0, "交给原生管线后不得再自己喂引擎（否则飘屏会重复一条）");
+  assert.strictEqual(W.document.querySelectorAll("#js-barrage-list .ex-ms-item").length, 0, "绝不再自己拼聊天条目");
+  assert.strictEqual(W.MergeDanmaku_getStats().viaBus, 1, "必须计入 viaBus");
+  assert.ok(W.MergeDanmaku_getStats().pushed >= 1, "正常上屏必须计入 pushed");
 
   // ---------- 3. 限流 ----------
   console.log("--> 3. 限流");
   const win3 = load(makeDom());
   const c3 = fakeComment(win3, { srcName: "限流房" }, makeSpace());
   win3.__onDouyuExDanmakuRendered(c3);
+  const bus3 = [];
+  win3.socketProxy = { socketStream: { push(p) { bus3.push(p); return this; }, decoder() {}, subscribe() {} } };
   let ok = 0;
   for (let i = 0; i < 40; i++) {
-    if (win3.MergeDanmaku_push({ text: "t" + i, color: "#ffffff", nn: "A", uid: "1", srcRid: "6", srcName: "限流房" })) ok++;
+    if (win3.MergeDanmaku_push({ text: "t" + i, color: "#ffffff", nn: "A", uid: "1", srcRid: "6", srcName: "限流房", packet: "type@=chatmsg/txt@=t" + i + "/" })) ok++;
   }
   assert.ok(ok <= 12, "同一秒内上屏数必须被限流压住（实际 " + ok + "）");
+  assert.ok(bus3.length <= 12, "交给原生的条数也必须被限流压住（实际 " + bus3.length + "）");
   assert.ok(win3.MergeDanmaku_getStats().dropped > 0, "被限流丢弃的必须计数");
 
-  // ---------- 4. 聊天区条目 ----------
-  console.log("--> 4. 聊天区同步");
+  // ---------- 4. 聊天区：只由斗鱼自己渲染 ----------
+  console.log("--> 4. 聊天区不自拼条目");
   const win4 = load(makeDom());
   const c4 = fakeComment(win4, { srcName: "聊天房" }, makeSpace());
   win4.__onDouyuExDanmakuRendered(c4);
-  win4.MergeDanmaku_push({ text: "聊天区也要有", color: "#00ccff", nn: "观众B", uid: "9", srcRid: "77", srcName: "聊天房" });
+  const bus4 = [];
+  win4.socketProxy = { socketStream: { push(p) { bus4.push(p); return this; }, decoder() {}, subscribe() {} } };
   const list = win4.document.getElementById("js-barrage-list");
-  const item = list.querySelector(".ex-ms-item");
-  assert.ok(item, "聊天区必须插入条目");
-  assert.strictEqual(item.tagName, "LI", "条目必须是 li（原生结构）");
-  assert.ok(item.className.includes("Barrage-listItem"), "条目必须带原生 Barrage-listItem 类");
-  assert.ok(item.querySelector(".Barrage-content"), "条目必须有 .Barrage-content");
-  assert.ok(item.querySelector(".Barrage-nickName"), "条目必须有 .Barrage-nickName");
-  assert.strictEqual(item.querySelector(".Barrage-content").textContent, "聊天区也要有", "正文必须原样");
-  assert.strictEqual(item.querySelector(".ex-ms-badge--chat").textContent, "聊天房", "聊天区条目必须带来源横条");
-  // 最关键的一条：绝不能出现 is-self
-  assert.strictEqual(item.className.includes("is-self"), false, "条目自身绝不允许带 is-self");
-  assert.strictEqual(item.querySelectorAll(".is-self").length, 0, "条目内部绝不允许有 .is-self（会被发送检测误判）");
-  // 彩色弹幕必须带颜色
-  assert.strictEqual(item.querySelector(".Barrage-content").style.color, "rgb(0, 204, 255)", "彩色弹幕要带原生色值");
-  // 白色弹幕不加内联色（保持原生默认）
-  win4.MergeDanmaku_push({ text: "白色", color: "#ffffff", nn: "观众C", uid: "10", srcRid: "77", srcName: "聊天房" });
-  const items = list.querySelectorAll(".ex-ms-item");
-  assert.strictEqual(items[items.length - 1].querySelector(".Barrage-content").style.color, "", "白色弹幕不得加内联色");
-
-  // 上限：只回收我们自己插入的节点，绝不碰原生条目
-  const nativeLi = win4.document.createElement("li");
-  nativeLi.className = "Barrage-listItem";
-  list.insertBefore(nativeLi, list.firstChild);
-  for (let i = 0; i < 260; i++) {
-    win4.MergeDanmaku_push({ text: "刷屏" + i, color: "#ffffff", nn: "刷", uid: "1", srcRid: "77", srcName: "聊天房" });
-  }
-  assert.ok(list.querySelectorAll(".ex-ms-item").length <= 240, "我们插入的条目必须自收口到上限内");
-  assert.ok(nativeLi.isConnected, "绝不能删掉原生条目");
+  win4.MergeDanmaku_push(win4.MergeDanmaku_parseChatmsg({ rid: "77", nn: "聊天房" }, "type@=chatmsg/rid@=77/uid@=9/nn@=观众B/txt@=聊天区也要有/cid@=cid-4/col@=2/"));
+  assert.strictEqual(bus4.length, 1, "聊天条目同样交给斗鱼自己画");
+  assert.strictEqual(list.querySelectorAll(".ex-ms-item").length, 0, "绝不允许出现我们自己拼的聊天条目（ex-ms-item）");
+  assert.strictEqual(list.children.length, 0, "我们一条聊天条目都不自己插");
 
   // ---------- 5. N 路连接 ----------
   console.log("--> 5. 多屏连接管理");
@@ -442,8 +410,9 @@ async function run() {
   assert.strictEqual(win8.MergeDanmaku_getStats().host, true, "统计里必须标出已接上原生管线");
   assert.strictEqual(win8.MergeDanmaku_getStats().hostVia, "fiber", "接上方式必须是 fiber");
 
-  // 有 host 时：外房报文必须走原生管线，且资产字段与来源标记同时在
-  win8.MergeDanmaku_push({
+  // 播放器自己的管线（convertComment → cm.send）：这是"报文入口一直没就位"时的补画路径，
+  // 资产字段与来源标记必须同时在。
+  const feedOk = win8.MergeDanmaku_feedViaHost({
     text: "带资产的弹幕", color: "#ff2e2e", nn: "观众D", uid: "5", srcRid: "1234", srcName: "外房",
     raw: { txt: "带资产的弹幕", nn: "观众D", cid: "勋章id-abc", level: "20" }
   });
@@ -455,14 +424,17 @@ async function run() {
   assert.strictEqual(hostSent[0].extraData.dbid, "勋章id-abc", "原生资产字段必须原样保留");
   assert.strictEqual(hostSent[0].extraData.exMsSrcName, "外房", "来源标记必须塞进原生数据里");
   assert.strictEqual(hostSent[0].extraData.exMsSrcRid, "1234", "来源房间也必须塞进去");
+  assert.strictEqual(feedOk, true, "原生上屏成功必须返回 true");
   // 返回值语义：cm.send 就是 space.addComment 的结果，**true = 真的上屏了**。
   // 早先这里写成 !send，把成功记成失败 —— 实机上表现为 pushed 恒为 0。
-  assert.strictEqual(win8.MergeDanmaku_getStats().pushed, 1, "走原生管线上屏成功必须计进 pushed");
   // 原生返回 false（无空轨 / 自适应丢弃 / 类型不支持）→ 如实返回 false 并计进 noTrack
   fakeHost.cm.send = (d) => { hostSent.push(d); return false; };
-  const okFalse = win8.MergeDanmaku_push({ text: "没上去", color: "#ffffff", nn: "E", uid: "6", srcRid: "1234", srcName: "外房", raw: { txt: "没上去", nn: "E" } });
+  const okFalse = win8.MergeDanmaku_feedViaHost({ text: "没上去", color: "#ffffff", nn: "E", uid: "6", srcRid: "1234", srcName: "外房", raw: { txt: "没上去", nn: "E" } });
   assert.strictEqual(okFalse, false, "原生没上屏时必须如实返回 false");
   assert.strictEqual(win8.MergeDanmaku_getStats().noTrack, 1, "原生没上屏必须计进 noTrack");
+  // 而正常入口（push）在报文入口还没就位时：必须挂起等它，不能自己画
+  assert.strictEqual(win8.MergeDanmaku_push({ text: "挂起测试", nn: "F", uid: "7", srcRid: "1234", srcName: "外房", packet: "type@=chatmsg/txt@=挂起测试/" }), false, "没有入口时不算已上屏");
+  assert.strictEqual(win8.MergeDanmaku_getStats().held, 1, "没有入口时必须挂起等入口");
 
   // 脚本钩子在场上时优先用它（document-start 那条最早、最稳）
   const hookedHost = {
@@ -473,14 +445,15 @@ async function run() {
   assert.strictEqual(win8.MergeDanmaku_getHost(), hookedHost, "有脚本钩子时必须优先用钩子捕获的实例");
   assert.strictEqual(win8.MergeDanmaku_getStats().hostVia, "hook", "接上方式必须标成 hook");
 
-  // 一条 fiber 都爬不到时：不得抛错，且必须退回自建数据上屏（弹幕不能丢）
+  // 一条 fiber 都爬不到时：不得抛错（此时没有"播放器自己的管线"可用，报文会挂起等报文入口）
   const win9 = load(makeDom());
   const space9 = makeSpace();
   const c9 = fakeComment(win9, { srcName: "无主机" }, space9);
   win9.__onDouyuExDanmakuRendered(c9);
   assert.strictEqual(win9.MergeDanmaku_getHost(), null, "没有任何 React fiber 时必须安全返回 null");
-  win9.MergeDanmaku_push({ text: "退回自建", color: "#ffffff", nn: "A", uid: "1", srcRid: "9", srcName: "无主机", raw: { txt: "退回自建", nn: "A" } });
-  assert.strictEqual(space9.added.length, 1, "拿不到 host 时必须退回自建数据上屏");
+  win9.MergeDanmaku_push({ text: "挂起待入口", color: "#ffffff", nn: "A", uid: "1", srcRid: "9", srcName: "无主机", packet: "type@=chatmsg/txt@=挂起待入口/" });
+  assert.strictEqual(space9.added.length, 0, "拿不到 host 时也不得自己拼数据喂引擎");
+  assert.strictEqual(win9.MergeDanmaku_getStats().held, 1, "此时必须挂起等报文入口");
   assert.strictEqual(win9.MergeDanmaku_getStats().hostVia, null, "没接上时不得谎报接上");
 
   // 上溯必须有上限：超长 fiber 链（不含组件）不能无限爬
@@ -503,7 +476,7 @@ async function run() {
   console.log("--> 9. 走原生 socket 总线（聊天区与飘屏都原生）");
   const win9b = load(makeDom());
   const busPushes = [];
-  win9b.socketProxy = { socketStream: { push(p) { busPushes.push(p); return this; } } };
+  win9b.socketProxy = { socketStream: { push(p) { busPushes.push(p); return this; }, decoder() {}, subscribe() {} } };
   assert.ok(win9b.MergeDanmaku_getStream(), "必须能从 socketProxy.socketStream 拿到总线");
   const room9 = { rid: "71415", nn: "外房主播" };
   const pkt9 = "type@=chatmsg/rid@=71415/uid@=555001/nn@=外房用户/txt@=总线测试/cid@=chatid-9/col@=1/level@=30/bnn@=牌子/bl@=10/brid@=71415/";
@@ -558,21 +531,44 @@ async function run() {
   win9b.__onDouyuExDanmakuRendered(stranger);
   assert.strictEqual(stranger.display.raw.querySelector(".ex-ms-badge"), null, "已认领过的条目不得被二次匹配（避免误贴）");
 
-  // ③ 拿不到总线时必须退回老路径（自建数据 + 克隆条目），功能不降级
+  // ③ 报文入口还没就位：**挂起**等它（绝不自拼条目），入口一出现原样交过去
   const win9c = load(makeDom());
   assert.strictEqual(win9c.MergeDanmaku_getStream(), null, "没有 socketProxy 时必须安全返回 null");
   const space9c = makeSpace();
-  const c9c = fakeComment(win9c, { srcName: "退回房" }, space9c);
+  const c9c = fakeComment(win9c, { srcName: "晚到房" }, space9c);
   win9c.__onDouyuExDanmakuRendered(c9c);
-  win9c.MergeDanmaku_push(win9c.MergeDanmaku_parseChatmsg({ rid: "9", nn: "退回房" }, "type@=chatmsg/rid@=9/uid@=1/nn@=A/txt@=退回测试/cid@=c9/"));
-  assert.strictEqual(space9c.added.length, 1, "拿不到总线时必须退回自建数据上屏");
-  assert.strictEqual(win9c.document.querySelectorAll("#js-barrage-list .ex-ms-item").length, 1, "拿不到总线时必须退回克隆条目");
-  assert.strictEqual(win9c.MergeDanmaku_getStats().viaBus, 0, "退回路径不得计入 viaBus");
+  const pkt9c = "type@=chatmsg/rid@=9/uid@=1/nn@=A/txt@=晚到测试/cid@=c9/";
+  const item9c = win9c.MergeDanmaku_parseChatmsg({ rid: "9", nn: "晚到房" }, pkt9c);
+  assert.strictEqual(win9c.MergeDanmaku_push(item9c), false, "入口没就位时这条不算已上屏");
+  assert.strictEqual(win9c.MergeDanmaku_getStats().held, 1, "必须挂起等入口（实际 " + win9c.MergeDanmaku_getStats().held + "）");
+  assert.strictEqual(space9c.added.length, 0, "挂起期间不得自己喂引擎");
+  assert.strictEqual(win9c.document.querySelectorAll("#js-barrage-list .ex-ms-item").length, 0, "挂起期间绝不自拼聊天条目");
+  const late = [];
+  win9c.socketProxy = { socketStream: { push(p) { late.push(p); return this; }, decoder() {}, subscribe() {} } };
+  win9c.MergeDanmaku_flushBusHold();
+  assert.strictEqual(late.length, 1, "入口出现后必须把挂起的报文原样交过去");
+  assert.strictEqual(late[0], pkt9c, "补交的必须是同一条报文");
+  assert.strictEqual(win9c.MergeDanmaku_getStats().held, 0, "补交后挂起队列必须清空");
+  assert.strictEqual(win9c.MergeDanmaku_getStats().viaBus, 1, "补交必须计入 viaBus");
+
+  // ④ 等超时仍没有入口：这条放弃（聊天区不自己拼），飘屏用播放器自己的管线补画
+  const win9d = load(makeDom());
+  const space9d = makeSpace();
+  const c9d = fakeComment(win9d, { srcName: "超时房" }, space9d);
+  win9d.__onDouyuExDanmakuRendered(c9d);
+  const host9d = { convertComment(raw) { return { type: "scroll", text: raw.txt, space: "scroll", extraData: {} }; }, cm: { send() { return true; } } };
+  win9d.__ExDanmuHost = host9d;
+  const item9d = win9d.MergeDanmaku_parseChatmsg({ rid: "9", nn: "超时房" }, "type@=chatmsg/rid@=9/uid@=2/nn@=B/txt@=超时测试/cid@=c9d/");
+  win9d.MergeDanmaku_push(item9d);
+  win9d.MergeDanmaku_dropHeld(item9d);
+  assert.strictEqual(win9d.MergeDanmaku_getStats().expired, 1, "超时必须计入 expired");
+  assert.strictEqual(win9d.MergeDanmaku_getStats().viaHost, 1, "超时后飘屏必须由播放器自己的管线补画（仍是原生渲染）");
+  assert.strictEqual(win9d.document.querySelectorAll("#js-barrage-list .ex-ms-item").length, 0, "超时也绝不自拼聊天条目");
   win9b.close();
   win9c.close();
+  win9d.close();
 
   dom.window.close();
-  win2.close();
   win3.close();
   win4.close();
   win5.close();

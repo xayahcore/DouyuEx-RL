@@ -50,8 +50,11 @@ const MS_MERGE_COLORS = {
 const MS_MERGE_BADGE_MAX = 5;      // 来源横条最多显示几个字
 const MS_MERGE_RATE_WINDOW_MS = 1000;
 const MS_MERGE_RATE_MAX = 12;      // 每秒最多上屏多少条合并弹幕（含所有外房）
-const MS_MERGE_CHAT_MAX = 240;     // 聊天区我们插入的条目上限
 const MS_MERGE_BADGE_COLOR = "rgba(255,255,255,0.22)"; // 统一中性色横条
+/* 总线还没就位时先把报文挂起（不自己拼条目），等到就位再原样交过去；
+   挂起队列的上限与寿命：超时仍未等到总线就丢弃并计数（宁可少显示，也不显示非原生的） */
+const MS_BUS_HOLD_MAX = 200;
+const MS_BUS_HOLD_TTL_MS = 15000;
 
 let msMergeSpace = null;              // 捕获到的原生 scroll 空间（提供 addComment）
 let msMergeCtors = {};               // 弹幕类型 -> 弹幕类（来自 cm.constructor）
@@ -60,9 +63,7 @@ let msMergeHostVia = null;           // 拿到它的方式："hook"（脚本钩�
 let msMergeInstalled = false;
 let msMergeConns = [];               // { rid, nn, ws }
 let msMergeRate = { at: 0, count: 0 };
-let msMergeStats = { pushed: 0, dropped: 0, noTrack: 0, viaBus: 0 };
-let msMergeChatCount = 0;
-let msMergePending = [];             // 引擎未就绪时的暂存（极短，通常几秒内就绪）
+let msMergeStats = { pushed: 0, dropped: 0, noTrack: 0, viaBus: 0, viaHost: 0, held: 0, expired: 0 };
 
 /* ---------- ① 脚本钩子 ---------- */
 
@@ -97,7 +98,7 @@ function initPkg_PopupPlayer_MergeDanmaku_ScriptHook() {
      而原始 script 元素的 onload 永远不会触发；aside 微前端的加载器在等它，于是
      **整个聊天区不初始化**（实测：聊天列表节点都不存在、聊天 0 条）。
      相比之下 /firstqueue 那条是项目长期在用的、播放器能容忍，所以只保留它。
-     聊天区因此走【克隆原生条目 + 填真实资产】那条安全路径。 */
+     聊天区因此不走那条路：改成把报文推回斗鱼自己的 socket 总线（见 ③b），由它自己渲染。 */
 }
 
 // 捕获弹幕组件实例：convertComment 是报文进管线的必经之处，this 就是那个组件
@@ -112,7 +113,7 @@ function MergeDanmaku_patchFirstqueue(content) {
 
 // 捕获聊天事件总线：把 subscribe("chatmsg") 的持有者暴露出来。
 // ⚠ 仅留档：实测拦截 /BarrageGroup 会让聊天区整个不初始化，因此**不注册**这条钩子。
-// 运行时那条 chatViaBus 路径保留着：万一将来有安全的捕获方式，它就能直接生效。
+// 聊天区已改走 socketProxy.socketStream（见 ③b），这里只留形状备查。
 function MergeDanmaku_patchBarrageGroup(content) {
   const anchor = /(\w+)\.subscribe\(\s*"chatmsg"/;
   if (!anchor.test(content)) return content;
@@ -179,7 +180,6 @@ function MergeDanmaku_bootstrap() {
     }
     if (!msMergeSpace) return false;
     if (!msMergeCtors.scroll) return false;   // 还差一条普通滚动弹幕，下一轮继续
-    MergeDanmaku_flushPending();
     console.log("[DouyuEx] 多屏弹幕合并已接入原生引擎");
   }
   return true;
@@ -353,7 +353,6 @@ function MergeDanmaku_onRendered(cm) {
   // 捕获 space：addComment 先赋 cm.space 再 render，这里一定有
   if (!msMergeSpace && cm.space && typeof cm.space.addComment === "function") {
     msMergeSpace = cm.space;
-    MergeDanmaku_flushPending();
   }
   // 按类型记录弹幕类，供我们构造实例
   const t = cm.data.type;
@@ -475,11 +474,48 @@ function MergeDanmaku_syncConnections() {
  * 二进制分帧（[L][L][690][0][payload][NUL]，L = 载荷字节数 + 9），长度算错就会让原生解析器
  * 错位、**只有第一条能渲染**。push 这条没有分帧问题，所以首选它。
  */
+/* 取页面自己的 socket 数据总线（"把报文交给斗鱼自己画"的那扇门）。
+   ① 首选 socketProxy.socketStream（页面公开全局，项目里 ExpandTool_Treasure 已在用）；
+   ② 兜底：在页面全局里找一个 SocketData 形状的对象（有 push + decoder + subscribe），
+      防的是"斗鱼改版把这个全局换了名字/挪了位置"——同一套管线换个门，仍然是原生渲染。
+   结果缓存；门没找到时返回 null（调用方把报文挂起等它）。 */
+let msBusCache = null;
+let msBusVia = null;   // 命中来源："socketProxy" 或 "scan:<全局名>"（排障用）
+
+function MergeDanmaku_isSocketData(v) {
+  try {
+    return !!(v && typeof v === "object" &&
+      typeof v.push === "function" && typeof v.decoder === "function" && typeof v.subscribe === "function");
+  } catch (e) {
+    return false;
+  }
+}
+
 function MergeDanmaku_getStream() {
+  if (msBusCache && MergeDanmaku_isSocketData(msBusCache)) return msBusCache;
+  msBusCache = null;
   const W = typeof unsafeWindow !== "undefined" ? unsafeWindow : window;
   const sp = W.socketProxy;
-  const ss = sp && sp.socketStream;
-  return (ss && typeof ss.push === "function") ? ss : null;
+  if (sp && MergeDanmaku_isSocketData(sp.socketStream)) {
+    msBusCache = sp.socketStream;
+    msBusVia = "socketProxy";
+    return msBusCache;
+  }
+  // 兜底扫描：只扫页面全局的第一层，命中即止；读属性一律 try 包住（可能有 getter 抛错）
+  let keys = [];
+  try { keys = Object.getOwnPropertyNames(W); } catch (e) { keys = []; }
+  for (let i = 0; i < keys.length; i++) {
+    const k = keys[i];
+    if (k === "window" || k === "self" || k === "top" || k === "parent" || k === "frames") continue;
+    let v;
+    try { v = W[k]; } catch (e) { continue; }
+    if (!v || typeof v !== "object") continue;
+    if (MergeDanmaku_isSocketData(v)) { msBusCache = v; msBusVia = "scan:" + k; return msBusCache; }
+    let inner;
+    try { inner = v.socketStream; } catch (e) { continue; }
+    if (MergeDanmaku_isSocketData(inner)) { msBusCache = inner; msBusVia = "scan:" + k + ".socketStream"; return msBusCache; }
+  }
+  return null;
 }
 
 /* 注入队列：报文是从原生总线进去的，出来的弹幕/聊天条目上**没有我们的标记**，
@@ -518,13 +554,10 @@ function MergeDanmaku_claimInjected(kind, match) {
   return null;
 }
 
-/* 把外房报文推回原生总线。返回 true = 已由原生管线接管（飘屏 + 聊天区都不需要我们再动手）。 */
+/* 把外房报文交给斗鱼自己画。返回 true = 已由原生管线接管（飘屏 + 聊天区都不需要我们再动手）。 */
 function MergeDanmaku_injectNative(item) {
   const ss = MergeDanmaku_getStream();
-  if (!ss || !item || !item.packet) {
-    MergeDanmaku_warnNoStream();
-    return false;
-  }
+  if (!ss || !item || !item.packet) return false;
   /* ⚠ 顺序必须是"先记账再 push"：push 是**同步扇出**（decoder → channel.next → 订阅者立刻渲染），
      记账放在后面的话，飘屏渲染时队列还是空的 → 认领不到来源（实测踩过：只有 3/13 条贴上横条）。 */
   MergeDanmaku_rememberInjected(item);
@@ -533,20 +566,74 @@ function MergeDanmaku_injectNative(item) {
     msMergeStats.viaBus++;
     return true;
   } catch (e) {
-    // push 抛错（报文畸形等）→ 撤回刚记的账，退回自建那条路，别让队列留下会误贴的条目
+    // push 抛错（报文畸形等）→ 撤回刚记的账，避免留下会误贴来源的脏条目
     if (msInjectQueue.length) msInjectQueue.pop();
     return false;
   }
 }
 
-/* 拿不到总线时只告警一次：这条退回路径外观接近原生但不是原生（资产/颜色/点击会有差距），
-   静默降级会让人误判成"功能就是这样"。排障入口：MergeDanmaku_getStats().stream / viaBus。 */
+/* ---------- 总线还没就位时的挂起队列 ----------
+ * 门没装好（实测：页面刚起来时播放器容器 0.4s 就有，这扇门要到 ~4.5s 才装好）时，
+ * **不自己拼条目**，而是把报文按原样挂起，等门一出现立刻原样交过去 —— 这样聊天区与飘屏
+ * 仍然是原生渲染，只是晚一点。挂起有上限与寿命：超时仍未等到门就丢弃并计数
+ * （宁可少显示几条，也不显示"看着像但不是原生"的条目）。 */
+let msBusHold = [];
+let msBusHoldTimer = 0;
+
+function MergeDanmaku_holdForBus(item) {
+  msBusHold.push({ item: item, at: Date.now() });
+  if (msBusHold.length > MS_BUS_HOLD_MAX) msBusHold.shift();
+  msMergeStats.held++;
+  if (!msBusHoldTimer) {
+    msBusHoldTimer = setInterval(function () {
+      MergeDanmaku_flushBusHold();
+      if (!msBusHold.length) {
+        clearInterval(msBusHoldTimer);
+        msBusHoldTimer = 0;
+      }
+    }, 500);
+  }
+}
+
+function MergeDanmaku_flushBusHold() {
+  if (!msBusHold.length) return;
+  const now = Date.now();
+  const ss = MergeDanmaku_getStream();
+  if (ss) {
+    // 门出现了：按顺序原样交过去（它们都还在寿命内，等于"这几条晚到了一会儿"）
+    const held = msBusHold;
+    msBusHold = [];
+    held.forEach(function (x) {
+      if (!MergeDanmaku_injectNative(x.item)) MergeDanmaku_dropHeld(x.item);
+    });
+    return;
+  }
+  const keep = [];
+  msBusHold.forEach(function (x) {
+    if (now - x.at >= MS_BUS_HOLD_TTL_MS) MergeDanmaku_dropHeld(x.item);
+    else keep.push(x);
+  });
+  msBusHold = keep;
+}
+
+/* 等到超时都没等到门：这条只能放弃。飘屏用**播放器自己的管线**补上（同样是斗鱼自己画的，
+   只是这条没有对应的原生聊天条目）——聊天区我们绝不自己拼条目。 */
+function MergeDanmaku_dropHeld(item) {
+  msMergeStats.expired++;
+  MergeDanmaku_warnNoStream();
+  try {
+    if (MergeDanmaku_feedViaHost(item)) msMergeStats.viaHost++;
+  } catch (e) {}
+}
+
+/* 只告警一次：这条退化路径外观会差一截（聊天区没有对应条目、飘屏走另一条原生管线），
+   静默降级会让人误判成"功能就是这样"。排障入口：MergeDanmaku_getStats().stream / viaBus / expired。 */
 let msWarnedNoStream = false;
 function MergeDanmaku_warnNoStream() {
   if (msWarnedNoStream) return;
   msWarnedNoStream = true;
-  console.warn("[DouyuEx] 未拿到 socketProxy.socketStream，外房弹幕暂按「自建数据 + 克隆条目」上屏（不是原生渲染）。" +
-    "常见原因是此刻页面还没初始化完（实测该全局比播放器容器晚约 4 秒出现）—— 之后会自动切回原生，无需干预。");
+  console.warn("[DouyuEx] 一直没等到 socketProxy.socketStream（斗鱼自己的报文入口），" +
+    "这段时间的外房弹幕只在飘屏显示、聊天区没有对应条目；等它出现会自动恢复正常。");
 }
 
 /* ---------- ③c 给"原生渲染出来的"聊天条目补来源横条 ---------- */
@@ -659,24 +746,21 @@ function MergeDanmaku_handleMsg(room, ret) {
   if (item) MergeDanmaku_push(item);
 }
 
+/* 唯一上屏路径：把报文原样交给斗鱼自己。
+   ① 门在 → 总线推回去，飘屏与聊天区都由原生管线渲染（原生资产/颜色/点击全在）；
+   ② 门还没装好 → 挂起（不自己拼条目），等门出现原样交过去；超时才放弃。 */
 function MergeDanmaku_push(item) {
   if (!item || !item.text) return false;
   if (!MergeDanmaku_allowRate()) {
     msMergeStats.dropped++;
     return false;
   }
-  /* 首选：把原始报文推回斗鱼自己的 socket 总线 —— 飘屏与聊天区都由原生管线渲染
-     （原生资产、原生颜色、原生点击都在；我们只补一条来源横条）。 */
   if (MergeDanmaku_injectNative(item)) {
     msMergeStats.pushed++;
     return true;
   }
-  /* 退回（拿不到 socketProxy.socketStream 时）：自建数据喂引擎 + 克隆原生条目。 */
-  const ok = MergeDanmaku_feed(item);
-  if (ok) msMergeStats.pushed++;
-  // 聊天区与原引擎是否可用无关，始终补
-  MergeDanmaku_chatAppend(item);
-  return ok;
+  MergeDanmaku_holdForBus(item);
+  return false;
 }
 
 // 限流：滑动窗口。超过窗口上限直接丢（并计数），避免把原生轨道池打爆导致整屏弹幕被拖慢
@@ -689,72 +773,6 @@ function MergeDanmaku_allowRate() {
   if (msMergeRate.count >= MS_MERGE_RATE_MAX) return false;
   msMergeRate.count++;
   return true;
-}
-
-function MergeDanmaku_feed(item) {
-  const Ctor = msMergeCtors.scroll;
-  if (!msMergeSpace || !Ctor) {
-    // 引擎或 scroll 类还没捕获到：暂存（有上限，避免无限堆积）
-    if (msMergePending.length < 60) msMergePending.push(item);
-    return false;
-  }
-  // 首选：播放器自己的管线（convertComment → cm.send）。类型选择与全部资产都由它自己算，
-  // 贵族渐变底、粉丝牌、等级图标这些外部复刻不出来的东西全靠这条。
-  const native = MergeDanmaku_feedViaHost(item);
-  if (native !== null) return native;
-  // 退回：我们自己按原生字段名构造后喂引擎（资产会少一些，但颜色与来源标记是对的）
-  try {
-    const cm = new Ctor(MergeDanmaku_buildCommentData(item));
-    // 返回 false = 原生没有空轨，静默丢弃（原生语义，不算错误）
-    const ok = msMergeSpace.addComment(cm);
-    if (!ok) msMergeStats.noTrack++;
-    return !!ok;
-  } catch (e) {
-    msMergeStats.dropped++;
-    return false;
-  }
-}
-
-/* 按**原生字段名**构造弹幕数据 —— 这是让引擎自己去解析头像、粉丝牌、等级、贵族色的关键。
-   字段名全部来自实测的 firstqueue 源码（dataHandle / 各弹幕构造器）：
-     userIcon      = 头像地址，由报文的 ic 拼出（$SYS.avatar_url + "upload/" + ic + "_small.jpg"）
-     extraData.dbid= 粉丝牌 id（原生就是 e.cid），引擎据此渲染粉丝牌
-     extraData.pg / pid / mgt / nl = 房间等级 / 角色 / 房管 / 贵族等级
-   只挑 text/color/uid 转发的话，飘屏上就只有一条"光秃秃"的弹幕，资产全丢。 */
-function MergeDanmaku_buildCommentData(item) {
-  const raw = item.raw || {};
-  const ic = raw.ic || raw.icon || "";
-  const avatar = ic ? "https://apic.douyucdn.cn/upload/" + ic + "_small.jpg" : "";
-  const data = {
-    type: "scroll",
-    stime: Date.now(),
-    text: item.text,
-    size: 24,
-    space: "scroll",
-    color: item.color,
-    bold: true,
-    border: false,
-    alpha: 1,
-    cursor: raw.uid || item.uid ? "pointer" : "auto",
-    extraData: {
-      uid: String(item.uid || raw.uid || ""),
-      sendName: item.nn,
-      dbid: String(raw.cid || raw.bid || ""),
-      pg: String(raw.pg || ""),
-      pid: String(raw.pid || ""),
-      mgt: String(raw.mgt || ""),
-      nl: String(raw.nl || ""),
-      level: String(raw.level || ""),
-      brid: String(raw.brid || ""),
-      bnn: String(raw.bnn || ""),
-      bl: String(raw.bl || ""),
-      // 我们自己加的来源标记：只有它能触发"来源横条"，主房弹幕没有它
-      exMsSrcRid: String(item.srcRid),
-      exMsSrcName: item.srcName
-    }
-  };
-  if (avatar) data.userIcon = avatar;
-  return data;
 }
 
 /* 走播放器自己的管线。返回 true/false 表示"已由原生管线处理"，
@@ -782,244 +800,6 @@ function MergeDanmaku_feedViaHost(item) {
   }
 }
 
-function MergeDanmaku_flushPending() {
-  if (!msMergeSpace || !msMergeCtors.scroll || !msMergePending.length) return;
-  const pending = msMergePending;
-  msMergePending = [];
-  pending.forEach(function (item) {
-    MergeDanmaku_feed(item);
-  });
-}
-
-/* ---------- ⑤ 主房间聊天区同步展示 ---------- */
-
-/* ★ 首选路径已换成"把报文推回斗鱼自己的 socket 总线"（见 ③b）：条目由斗鱼自己渲染，
-   资产/颜色/点击全原生，我们只在昵称前补一条来源横条（见 ③c）。
-   下面这一整段（克隆原生条目 + 填资产 + 滚底）是**拿不到 socketProxy.socketStream 时的退回路径**，
-   仍然保留：它保证"最差情况下外房弹幕也能进聊天区"。
-
-   聊天区 ul#js-barrage-list 虽是 React 渲染，但条目全部由原生队列命令式写入
-   （appendChild + innerHTML），React 不 reconcile 子节点，所以我们的插入不会被冲掉。
-   三个必须遵守的副作用约束：
-     1. 绝不能加 is-self —— BarrageSendCheck 以 is-self 为门槛比对回执，
-        命中外房弹幕会被标删除线 +「(可能发送失败)」+ 污染熔断计数
-     2. 插入后若本来就在底部，必须同步滚底 —— 否则 scrollHeight 变大触发原生
-        "离底 > 30px" 判定，进锁屏态并开始显示"有 N 条新消息"
-     3. 不生成图片弹幕占位文本（会被 ImageDanmaku 变成 img） */
-/* 走聊天总线：aside 的聊天管理器订阅的是 chatmsg，把外房报文原样 publish 上去，
-   条目就由斗鱼自己渲染 —— 粉丝牌、等级、昵称配色、点击全部原生，我们一行 DOM 都不用拼。
-   总线实例由脚本钩子在 document-start 捕获（__ExChatBus）；发布方法名各版本可能不同，
-   这里按常见命名依次尝试，都不存在就返回 false 退回克隆那条路。
-   ⚠ 这条（拦 /BarrageGroup 抓总线）实测会让聊天区整个不初始化，所以钩子**不注册**，
-   这段只在万一将来 __ExChatBus 存在时才动作。 */
-const MS_BUS_PUBLISH_METHODS = ["publish", "trigger", "emit", "dispatch", "next", "fire"];
-
-function MergeDanmaku_chatViaBus(item) {
-  const W = typeof unsafeWindow !== "undefined" ? unsafeWindow : window;
-  const bus = W.__ExChatBus;
-  if (!bus || !item.raw) return false;
-  let fn = null;
-  for (let i = 0; i < MS_BUS_PUBLISH_METHODS.length; i++) {
-    const m = MS_BUS_PUBLISH_METHODS[i];
-    if (typeof bus[m] === "function") { fn = bus[m]; break; }
-  }
-  if (!fn) return false;
-  try {
-    const payload = item.raw;
-    if (!payload.type) payload.type = "chatmsg";
-    // 来源标记塞进报文本身，克隆兜底那条路读的就是它
-    payload.__exMsSrcRid = String(item.srcRid);
-    payload.__exMsSrcName = item.srcName;
-    fn.call(bus, "chatmsg", payload);
-    msMergeStats.viaBus = (msMergeStats.viaBus || 0) + 1;
-    return true;
-  } catch (e) {
-    return false;
-  }
-}
-
-/* 拿一个原生条目当模板。我们自己插的条目带 ex-ms-item，必须排除，
-   否则会越克隆越"自己的样子"。 */
-let msChatTemplate = null;
-let msChatSeq = 0;
-
-function MergeDanmaku_getChatTemplate() {
-  if (msChatTemplate && msChatTemplate.isConnected) return msChatTemplate;
-  const list = document.getElementById("js-barrage-list");
-  if (!list) return null;
-  const nodes = list.children;
-  for (let i = nodes.length - 1; i >= 0; i--) {
-    const li = nodes[i];
-    if (!li.classList || li.classList.contains("ex-ms-item")) continue;
-    if (!li.classList.contains("Barrage-listItem")) continue;
-    if (!li.querySelector(".Barrage-nickName") || !li.querySelector(".Barrage-content")) continue;
-    msChatTemplate = li;
-    return li;
-  }
-  return null;
-}
-
-function MergeDanmaku_chatAppend(item) {
-  const list = document.getElementById("js-barrage-list");
-  if (!list) return;
-  // 首选：把报文 publish 到斗鱼自己的事件总线，由它自己的管线渲染条目（含勋章/等级/可点）
-  if (MergeDanmaku_chatViaBus(item)) return;
-  // 距底 30px 内视为"用户在底部"，与原生判定阈值一致
-  const atBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 30;
-  const li = MergeDanmaku_buildChatItem(item);
-  if (!li) return;
-  list.appendChild(li);
-
-  // 自己维护上限与滚底（原生清屏按它自己的 UUID 精确删除，不会动我们的节点）
-  msMergeChatCount++;
-  while (msMergeChatCount > MS_MERGE_CHAT_MAX && list.firstChild) {
-    const first = list.firstChild;
-    if (first.classList && first.classList.contains("ex-ms-item")) {
-      first.remove();
-      msMergeChatCount--;
-    } else {
-      break; // 遇到原生条目就停手，绝不动原生的节点
-    }
-  }
-  if (atBottom) list.scrollTop = list.scrollHeight;
-}
-
-/* 克隆原生条目再填内容：样式、结构、字号、间距、点击命中全部跟着原生走，
-   而不是自己拼一套看起来像的。装饰（等级徽章、粉丝勋章）属于模板原主人，
-   照抄会张冠李戴，所以一并摘掉——宁可空着，也不假装是别人的身份。
-   点击交互是原生在 #js-barrage-list 上做的**事件委托**，所以克隆件也照样能点开用户卡片。 */
-function MergeDanmaku_buildChatItem(item) {
-  const tpl = MergeDanmaku_getChatTemplate();
-  if (!tpl) return MergeDanmaku_buildChatItemFallback(item);
-
-  const li = tpl.cloneNode(true);
-  li.className = String(li.className).indexOf("ex-ms-item") === -1 ? li.className + " ex-ms-item" : li.className;
-  // 绝不带 is-self：BarrageSendCheck 以它为门槛比对回执，命中外房弹幕会被标删除线并污染熔断计数
-  li.classList.remove("is-self");
-  // 身份标识必须**给新的**而不是删掉：原生在 #js-barrage-list 上的事件委托要靠
-  // 条目的 id / data-guid 与昵称上的 data-uid 去组装用户卡片上下文，
-  // 早先我把它们一并删掉，结果就是"聊天区点用户没反应"。
-  const guid = "exms-" + String(item.srcRid) + "-" + String(item.uid || "0") + "-" + (++msChatSeq);
-  li.setAttribute("id", guid);
-  li.setAttribute("data-guid", guid);
-  // 先摘掉模板原主人的身份与装饰（下面按外房用户的真实数据重建）
-  Array.prototype.forEach.call(li.querySelectorAll('[class*="is-self"]'), function (n) {
-    n.remove();
-  });
-  MergeDanmaku_fillChatAssets(li, item);
-
-  const nicks = li.querySelectorAll(".Barrage-nickName");
-  const nick = nicks[0];
-  if (nick) {
-    nick.textContent = String(item.nn || "观众");
-    nick.setAttribute("data-uid", String(item.uid || ""));
-    nick.setAttribute("title", String(item.nn || ""));
-  }
-  if (nicks[1]) nicks[1].textContent = "：";   // 原生把冒号单独放在一个同名 span 里
-
-  const content = li.querySelector(".Barrage-content");
-  if (content) {
-    content.textContent = String(item.text || "");
-    content.style.color = item.color && item.color !== MS_MERGE_COLORS[0] ? item.color : "";
-  }
-
-  // 来源横条插在昵称之前，位置与飘屏一致
-  const badge = document.createElement("span");
-  badge.className = "ex-ms-badge ex-ms-badge--chat";
-  badge.textContent = MergeDanmaku_badgeText(item.srcName);
-  badge.title = String(item.srcName || "");
-  const host = nick && nick.parentNode ? nick.parentNode : li.firstChild;
-  if (host) host.insertBefore(badge, nick || host.firstChild);
-
-  return li;
-}
-
-/* 把等级徽章与粉丝牌按**外房用户自己的真实数据**填进克隆件。
-   两处结构都是实机摸出来的原生结构，所以直接用原生写法构造，而不是自己画一个像的：
-     等级：<span class="js-user-level UserLevel" title="用户等级：N"
-             style="background-image:url(.../userLevelIconV6/web-light/newm3_lvN.png?v=1.2)">
-     粉丝牌：<a class="FansMedalWrap js-fans-dysclick" data-rid=主播房号>
-               <dy-fan-medal medal-name=勋章名 medal-level=勋章等级 medal-id=主播房号 …></a>
-   dy-fan-medal 是斗鱼自己注册的自定义元素（页面里已定义），只要属性给对，它会自己渲染成原生样式。
-   外房用户没有该项时就把对应节点删掉 —— 绝不能留着模板原主人的，那会张冠李戴。 */
-function MergeDanmaku_fillChatAssets(li, item) {
-  const raw = item.raw || {};
-  const level = parseInt(raw.level, 10) || 0;
-  const lvlEl = li.querySelector('[class*="UserLevel"]');
-  if (lvlEl) {
-    if (level > 0) {
-      lvlEl.setAttribute("title", "用户等级：" + level);
-      lvlEl.style.backgroundImage =
-        'url("https://shark2.douyucdn.cn/front-publish/static-file-master/userLevelIconV6/web-light/newm3_lv' +
-        level + '.png?v=1.2")';
-      lvlEl.style.display = "";
-    } else {
-      lvlEl.remove();
-    }
-  }
-
-  // 粉丝牌：字段名取自斗鱼 chatmsg（bnn=勋章名 bl=勋章等级 brid=主播房号）
-  const medalName = String(raw.bnn || "");
-  const medalLevel = parseInt(raw.bl, 10) || 0;
-  const medalRid = String(raw.brid || raw.brid2 || "");
-  const wrap = li.querySelector('[class*="FansMedalWrap"]') || li.querySelector('[class*="Medal"]');
-  const oldMedal = li.querySelector("dy-fan-medal");
-  const hasMedal = !!(medalName && medalLevel > 0 && medalRid);
-  if (hasMedal) {
-    let host = wrap;
-    if (!host) {
-      host = document.createElement("a");
-      host.className = "FansMedalWrap js-fans-dysclick";
-      host.setAttribute("href", "javascript:void(0);");
-      const first = lvlEl && lvlEl.parentNode ? lvlEl.nextSibling : li.firstChild;
-      if (first && first.parentNode) first.parentNode.insertBefore(host, first);
-      else if (li.firstChild) li.insertBefore(host, li.firstChild);
-    }
-    host.setAttribute("data-rid", medalRid);
-    if (oldMedal) oldMedal.remove();
-    const med = document.createElement("dy-fan-medal");
-    med.setAttribute("medal-name", medalName);
-    med.setAttribute("medal-level", String(medalLevel));
-    med.setAttribute("medal-id", medalRid);
-    if (raw.bnnSuffix) med.setAttribute("medal-suffix", String(raw.bnnSuffix));
-    host.appendChild(med);
-  } else {
-    // 没有粉丝牌就整块摘掉，不留别人的
-    if (oldMedal) oldMedal.remove();
-    if (wrap && wrap.querySelectorAll("dy-fan-medal").length === 0) wrap.remove();
-  }
-}
-// 没有原生条目可克隆时的兜底（原生的清单还没渲染出来，通常是刚进直播间）
-function MergeDanmaku_buildChatItemFallback(item) {
-  const li = document.createElement("li");
-  li.className = "Barrage-listItem ex-ms-item";
-  const notice = document.createElement("div");
-  notice.className = "Barrage-notice Barrage-notice--normalBarrage";
-  const elems = document.createElement("div");
-  elems.className = "Barrage-elements";
-
-  const badge = document.createElement("span");
-  badge.className = "ex-ms-badge ex-ms-badge--chat";
-  badge.textContent = MergeDanmaku_badgeText(item.srcName);
-  badge.title = String(item.srcName || "");
-
-  const nick = document.createElement("span");
-  nick.className = "Barrage-nickName Barrage-nickName--blue";
-  nick.textContent = String(item.nn || "观众") + "：";
-
-  const content = document.createElement("span");
-  content.className = "Barrage-content";
-  content.textContent = String(item.text || "");
-  if (item.color && item.color !== MS_MERGE_COLORS[0]) content.style.color = item.color;
-
-  elems.appendChild(badge);
-  elems.appendChild(nick);
-  elems.appendChild(content);
-  notice.appendChild(elems);
-  li.appendChild(notice);
-  return li;
-}
-
 /* ---------- 调试与统计 ---------- */
 
 window.MergeDanmaku_getStats = function () {
@@ -1027,10 +807,16 @@ window.MergeDanmaku_getStats = function () {
     pushed: msMergeStats.pushed,
     dropped: msMergeStats.dropped,
     noTrack: msMergeStats.noTrack,
-    // viaBus = 走斗鱼自己的 socket 总线（原生渲染）的条数；剩余的是退回自建数据那条路的
+    // viaBus = 已交给斗鱼自己渲染的条数（这是唯一的正常路径）
     viaBus: msMergeStats.viaBus,
-    // stream = 此刻是否拿得到原生总线（false 时新消息会退回克隆路径；页面初始化完会自动变 true）
+    // viaHost = 总线一直没就位、超时后用播放器自己的管线补画的飘屏条数（仍是原生渲染，只是没有对应聊天条目）
+    viaHost: msMergeStats.viaHost,
+    // held = 此刻还挂在队列里等总线的条数；expired = 等超时被丢弃的条数
+    held: msBusHold.length,
+    expired: msMergeStats.expired,
+    // stream = 此刻是否拿得到斗鱼自己的报文入口（页面初始化完会自动变 true）
     stream: !!MergeDanmaku_getStream(),
+    streamVia: msBusVia,
     ready: !!(msMergeSpace && msMergeCtors.scroll),
     // host = 是否接上了播放器自己的管线（原生资产）；via 是接上的方式：
     //   "hook" 脚本钩子（document-start）/ "fiber" 运行时爬 React fiber / null 没接上
@@ -1046,8 +832,6 @@ window.MergeDanmaku_parseChatmsg = MergeDanmaku_parseChatmsg;
 window.MergeDanmaku_badgeText = MergeDanmaku_badgeText;
 window.MergeDanmaku_attachBadge = MergeDanmaku_attachBadge;
 window.MergeDanmaku_bootstrap = MergeDanmaku_bootstrap;
-window.MergeDanmaku_buildChatItem = MergeDanmaku_buildChatItem;
-window.MergeDanmaku_buildCommentData = MergeDanmaku_buildCommentData;
 window.MergeDanmaku_patchFirstqueue = MergeDanmaku_patchFirstqueue;
 window.MergeDanmaku_patchBarrageGroup = MergeDanmaku_patchBarrageGroup;
 window.MergeDanmaku_feedViaHost = MergeDanmaku_feedViaHost;
@@ -1055,6 +839,8 @@ window.MergeDanmaku_getHost = MergeDanmaku_getHost;
 window.MergeDanmaku_findHostByFiber = MergeDanmaku_findHostByFiber;
 window.MergeDanmaku_walkFiberForHost = MergeDanmaku_walkFiberForHost;
 window.MergeDanmaku_getStream = MergeDanmaku_getStream;
+window.MergeDanmaku_flushBusHold = MergeDanmaku_flushBusHold;
+window.MergeDanmaku_dropHeld = MergeDanmaku_dropHeld;
 window.MergeDanmaku_injectNative = MergeDanmaku_injectNative;
 window.MergeDanmaku_badgeNativeChatItem = MergeDanmaku_badgeNativeChatItem;
 window.MergeDanmaku_watchChatList = MergeDanmaku_watchChatList;
