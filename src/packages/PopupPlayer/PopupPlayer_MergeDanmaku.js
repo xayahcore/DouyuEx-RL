@@ -521,7 +521,10 @@ function MergeDanmaku_claimInjected(kind, match) {
 /* 把外房报文推回原生总线。返回 true = 已由原生管线接管（飘屏 + 聊天区都不需要我们再动手）。 */
 function MergeDanmaku_injectNative(item) {
   const ss = MergeDanmaku_getStream();
-  if (!ss || !item || !item.packet) return false;
+  if (!ss || !item || !item.packet) {
+    MergeDanmaku_warnNoStream();
+    return false;
+  }
   /* ⚠ 顺序必须是"先记账再 push"：push 是**同步扇出**（decoder → channel.next → 订阅者立刻渲染），
      记账放在后面的话，飘屏渲染时队列还是空的 → 认领不到来源（实测踩过：只有 3/13 条贴上横条）。 */
   MergeDanmaku_rememberInjected(item);
@@ -530,8 +533,20 @@ function MergeDanmaku_injectNative(item) {
     msMergeStats.viaBus++;
     return true;
   } catch (e) {
+    // push 抛错（报文畸形等）→ 撤回刚记的账，退回自建那条路，别让队列留下会误贴的条目
+    if (msInjectQueue.length) msInjectQueue.pop();
     return false;
   }
+}
+
+/* 拿不到总线时只告警一次：这条退回路径外观接近原生但不是原生（资产/颜色/点击会有差距），
+   静默降级会让人误判成"功能就是这样"。排障入口：MergeDanmaku_getStats().stream / viaBus。 */
+let msWarnedNoStream = false;
+function MergeDanmaku_warnNoStream() {
+  if (msWarnedNoStream) return;
+  msWarnedNoStream = true;
+  console.warn("[DouyuEx] 未拿到 socketProxy.socketStream，外房弹幕暂按「自建数据 + 克隆条目」上屏（不是原生渲染）。" +
+    "常见原因是此刻页面还没初始化完（实测该全局比播放器容器晚约 4 秒出现）—— 之后会自动切回原生，无需干预。");
 }
 
 /* ---------- ③c 给"原生渲染出来的"聊天条目补来源横条 ---------- */
@@ -1014,6 +1029,8 @@ window.MergeDanmaku_getStats = function () {
     noTrack: msMergeStats.noTrack,
     // viaBus = 走斗鱼自己的 socket 总线（原生渲染）的条数；剩余的是退回自建数据那条路的
     viaBus: msMergeStats.viaBus,
+    // stream = 此刻是否拿得到原生总线（false 时新消息会退回克隆路径；页面初始化完会自动变 true）
+    stream: !!MergeDanmaku_getStream(),
     ready: !!(msMergeSpace && msMergeCtors.scroll),
     // host = 是否接上了播放器自己的管线（原生资产）；via 是接上的方式：
     //   "hook" 脚本钩子（document-start）/ "fiber" 运行时爬 React fiber / null 没接上
