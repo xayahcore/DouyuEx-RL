@@ -65,10 +65,6 @@ async function setNewFollowList(panel) {
     let followListItems = document.getElementsByClassName("ExFollowListItem");
     for (let i = 0; i < followListItems.length; i++) {
         let cclick = new CClick(followListItems[i]);
-        cclick.longClick(() => {
-            createNewVideo(videoPlayerArr.length, followListItems[i].getAttribute("rid"), "Douyu");
-            document.querySelector(".Follow .public-DropMenu").className = "public-DropMenu";
-        });
         cclick.click(async (event) => {
             event.preventDefault();
             const shouldLoadInCurrentPage = await GM_getValue("Ex_LoadInCurrentPage", false);

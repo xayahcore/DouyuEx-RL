@@ -32,10 +32,6 @@ function VideoToolbarMenu_insertDom() {
                 <span class="vtoolbar-menu__item-icon">${VideoToolbarMenu_iconCopyLive}</span>
                 <span class="vtoolbar-menu__item-label">复制直播流地址</span>
             </button>
-            <button type="button" class="vtoolbar-menu__item" id="vtoolbar-menu-audio-line" role="menuitem">
-                <span class="vtoolbar-menu__item-icon vtoolbar-menu__item-icon--compact">${VideoToolbarMenu_iconAudioLine}</span>
-                <span class="vtoolbar-menu__item-label">切换音频线路</span>
-            </button>
             <button type="button" class="vtoolbar-menu__item" id="vtoolbar-menu-enhanced-pip" role="menuitem">
                 <span class="vtoolbar-menu__item-icon">${VideoToolbarMenu_iconEnhancedPip}</span>
                 <span class="vtoolbar-menu__item-label">加强版画中画</span>
@@ -112,7 +108,6 @@ function VideoToolbarMenu_bindEvents() {
     const filterHost = document.getElementById("ex-vtoolbar-filter-host");
     const filterBtn = document.getElementById("vtoolbar-menu-filter");
     const copyLiveBtn = document.getElementById("vtoolbar-menu-copy-live");
-    const audioLineBtn = document.getElementById("vtoolbar-menu-audio-line");
     const enhancedPipBtn = document.getElementById("vtoolbar-menu-enhanced-pip");
     const expanelBtn = document.getElementById("vtoolbar-menu-expanel");
 
@@ -129,13 +124,6 @@ function VideoToolbarMenu_bindEvents() {
         e.stopPropagation();
         if (typeof CopyRealLive_copySelected === "function") {
             CopyRealLive_copySelected();
-        }
-    });
-
-    audioLineBtn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        if (typeof AudioLine_switch === "function") {
-            AudioLine_switch();
         }
     });
 

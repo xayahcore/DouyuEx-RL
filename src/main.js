@@ -89,7 +89,6 @@ function initPkg() {
   initPkg_Safe("ExPanel", initPkg_ExPanel);
   initPkg_Safe("RealAudience", initPkg_RealAudience);
   initPkg_Safe("CopyRealLive", initPkg_CopyRealLive);
-  initPkg_Safe("AudioLine", initPkg_AudioLine);
   initPkg_Safe("RemoveAD", initPkg_RemoveAD);
   initPkg_Safe("Shield", initPkg_Shield);
   initPkg_Safe("BagInfo", initPkg_BagInfo);

@@ -529,7 +529,8 @@ async function testBuiltBundle() {
     if (typeof win.createPopupPlayerPanel === "function") win.createPopupPlayerPanel();
 
     const radioGroups = [
-        { name: "popup_player_mode", owner: "PopupPlayer", expected: 2 },
+        // 注：单窗播放页（popup_player_mode / popup_player_tab）已按用户决定整个删除（2026-09-30），
+        //     面板只剩「多屏观看」一页，故这里不再有它那两组 radio
         { name: "autofish_mode", owner: "ExpandTool", expected: 2 },
         { name: "DanmakuTailType", owner: "DanmakuTail", expected: 2 },
     ];
