@@ -2667,6 +2667,55 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
     border-radius: 6px !important;
 }
 
+/* 页面整体可滚：房间多时不会把内容顶出面板 */
+.popup-panel__page {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+}
+
+.popup-panel__page::-webkit-scrollbar,
+.popup-ms__rooms::-webkit-scrollbar,
+.popup-ms__results::-webkit-scrollbar {
+    width: 6px !important;
+}
+
+.popup-panel__page::-webkit-scrollbar-thumb,
+.popup-ms__rooms::-webkit-scrollbar-thumb,
+.popup-ms__results::-webkit-scrollbar-thumb {
+    background: rgba(15, 23, 42, 0.18) !important;
+    border-radius: 3px !important;
+}
+
+/* 已加入多屏的列表自己滚，页面其余部分保持不动 */
+.popup-ms__rooms {
+    max-height: 128px !important;
+    overflow-y: auto !important;
+    padding-right: 2px !important;
+}
+
+/* 「上次配置 · 一键恢复」一行 */
+.popup-ms__restore {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    margin: 6px 0 2px !important;
+}
+
+.popup-ms__restore .popup-panel__paste-btn {
+    flex: 0 0 auto !important;
+    white-space: nowrap !important;
+}
+
+.popup-ms__restore-text {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    font-size: 11px !important;
+    color: rgba(15, 23, 42, 0.6) !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+
 .popup-ms__rooms,
 .popup-ms__results {
     display: flex !important;
@@ -2727,6 +2776,52 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
 .popup-ms__room-del:hover {
     color: #fff !important;
     background: #ff5d23 !important;
+}
+/* 每房间音量：细轨 + 圆形滑块（MIUIX），已填充部分用 --vol 变量着色 */
+.popup-ms__room-vol {
+    flex: 0 0 auto !important;
+    width: 62px !important;
+    height: 16px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    cursor: pointer !important;
+    outline: none !important;
+}
+
+.popup-ms__room-vol::-webkit-slider-runnable-track {
+    height: 4px !important;
+    border-radius: 2px !important;
+    background: linear-gradient(to right, var(--miuix-blue) var(--vol, 0%), rgba(15, 23, 42, 0.16) var(--vol, 0%)) !important;
+}
+
+.popup-ms__room-vol::-webkit-slider-thumb {
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    width: 12px !important;
+    height: 12px !important;
+    margin-top: -4px !important;
+    border-radius: 50% !important;
+    background: #ffffff !important;
+    border: 1px solid rgba(15, 23, 42, 0.18) !important;
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.24) !important;
+    transition: transform 0.16s var(--miuix-spring) !important;
+}
+
+.popup-ms__room-vol:hover::-webkit-slider-thumb,
+.popup-ms__room-vol:active::-webkit-slider-thumb {
+    transform: scale(1.15) !important;
+}
+
+.popup-ms__room-volnum {
+    flex: 0 0 auto !important;
+    width: 24px !important;
+    font-size: 11px !important;
+    text-align: right !important;
+    color: rgba(15, 23, 42, 0.55) !important;
+    font-variant-numeric: tabular-nums !important;
 }
 
 /* 快捷来源按钮并排 */

@@ -844,6 +844,63 @@ async function run() {
   win24.MultiScreen_reapplyAutoQuality();
   assert.ok(slots24[2].querySelector("video.ms-slot__video--next"), "跨档后必须发起换档（走平滑路径）");
   win24.close();
+
+  // ---------- 25. 每房间音量 / 按主房记忆 / 外房失败自动重试 ----------
+  console.log("--> 25. 音量、按主房记忆、自动重试");
+  const win25 = load(makeDom());
+  // 主房视频（斗鱼自己的播放器）也造一个，验证主房音量落在它身上
+  const nativeVid = win25.document.createElement("video");
+  nativeVid.id = "__video2";
+  nativeVid.volume = 1;
+  win25.document.body.appendChild(nativeVid);
+  win25.MultiScreen_enter([{ rid: "3001", nn: "甲", avatar: "" }, { rid: "3002", nn: "乙", avatar: "" }]);
+  assert.strictEqual(win25.MultiScreen_getVolume("3001", false), 0, "外房默认静音（0）");
+  assert.strictEqual(win25.MultiScreen_getVolume(win25.MultiScreen_getMainRid(), true), 1, "主房默认满音量（1）");
+  win25.MultiScreen_setVolume("3001", 0.5);
+  assert.strictEqual(win25.MultiScreen_getVolume("3001", false), 0.5, "设置后必须记住");
+  assert.ok(String(win25.localStorage.getItem("ExSave_MultiScreenVol")).indexOf("0.5") >= 0, "音量必须持久化到 ExSave_MultiScreenVol");
+  // 音量落到格子里的 <video> 上（0 = 静音）
+  win25.getRealLive_Douyu = function (rid, v, https, qn, cb) { cb("https://example.com/v.flv"); };
+  win25.flvjs = { isSupported: () => true, createPlayer: () => ({ attachMediaElement() {}, load() {}, play() {}, destroy() {} }) };
+  win25.MultiScreen_renderSlot(1, { rid: "3001", nn: "甲" });
+  const slot25 = win25.MultiScreen_slots()[1];
+  const v25 = slot25.querySelector("video");
+  v25.dispatchEvent(new win25.Event("playing"));
+  assert.strictEqual(v25.volume, 0.5, "出画面后必须套上该房间存的音量");
+  assert.strictEqual(v25.muted, false, "音量 > 0 时不能还是静音");
+  win25.MultiScreen_setVolume("3001", 0);
+  assert.strictEqual(v25.muted, true, "音量 0 必须静音");
+  // 主房音量落在斗鱼自己的视频上
+  win25.MultiScreen_setVolume(win25.MultiScreen_getMainRid(), 0.3);
+  assert.strictEqual(nativeVid.volume, 0.3, "主房音量必须落在原生播放器的 video 上");
+
+  // 按主房记忆：多屏配置写进 ExSave_MultiScreenByRoom，退出后清掉
+  const byRoom = JSON.parse(win25.localStorage.getItem("ExSave_MultiScreenByRoom") || "{}");
+  const mainRid25 = win25.MultiScreen_getMainRid();
+  assert.ok(byRoom[mainRid25] && byRoom[mainRid25].rooms.length === 2, "必须按主房记住多屏配置");
+  assert.strictEqual(win25.MultiScreen_savedConfigForMainRoom(), null, "当前列表就是这套配置时不必提示恢复");
+  // 退出多屏回到单屏（注意：removeRoom 受"最少 2 个直播间"约束，退不到单屏）
+  win25.MultiScreen_removeRoom("3002");
+  win25.MultiScreen_exit();
+  const saved25 = win25.MultiScreen_savedConfigForMainRoom();
+  assert.ok(saved25 && saved25.length === 1, "回到单屏后必须能取回上次配置（供一键恢复），实际 " + JSON.stringify(saved25));
+  const byRoom2 = JSON.parse(win25.localStorage.getItem("ExSave_MultiScreenByRoom") || "{}");
+  assert.ok(byRoom2[mainRid25] && byRoom2[mainRid25].rooms.length === 1, "退出多屏后记录必须还在（否则一键恢复没得恢复）");
+
+  // 外房失败自动重试一次：第一次失败不提示、隔 2 秒再试一次
+  const win26 = load(makeDom());
+  win26.MultiScreen_enter([{ rid: "4001", nn: "丙", avatar: "" }]);
+  let calls = 0;
+  win26.getRealLive_Douyu = function (rid, v, https, qn, cb) { calls++; cb("None"); };
+  win26.flvjs = { isSupported: () => true, createPlayer: () => ({ attachMediaElement() {}, load() {}, play() {}, destroy() {} }) };
+  win26.MultiScreen_renderSlot(1, { rid: "4001", nn: "丙" });
+  assert.strictEqual(calls, 1, "第一次取流必须发生");
+  assert.strictEqual(win26.MultiScreen_slots()[1].classList.contains("ms-slot--notice"), false, "第一次失败不得立刻弹提示（先自动重试）");
+  await new Promise((r) => setTimeout(r, 2400));
+  assert.strictEqual(calls, 2, "2 秒后必须自动重试一次（实际取流 " + calls + " 次）");
+  assert.ok(win26.MultiScreen_slots()[1].classList.contains("ms-slot--notice"), "重试仍失败才给提示");
+  win25.close();
+  win26.close();
   dom.window.close();
   console.log("=== 多屏复刻单元测试 100% 通过 ===");
 }

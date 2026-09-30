@@ -310,12 +310,13 @@ function MultiScreen_renderSlot(idx, room) {
     startTimer: 0,
     url: "",
   };
-  // 外房一律静音：只有当前直播间的原生播放器出声，避免几路声音叠在一起
+  // 起播阶段一律静音（浏览器对"带声音自动播放"有限制）；该房间存的音量在出画面后再套上
   if (rec.video) {
     rec.video.muted = true;
     rec.video.volume = 0;
     rec.video.setAttribute("muted", "");
   }
+  rec.vol = MultiScreen_getVolume(rec.rid, false);
   msSlotPlayers.set(idx, rec);
 
   MultiScreen_fillName(slot, room);
@@ -417,6 +418,81 @@ function MultiScreen_qnFor(idx) {
   return msQn === "auto" ? MultiScreen_pickQnForSlot(idx) : msQn;
 }
 
+/* ---------- 每房间音量 ---------- */
+/*
+ * 用户 2026-09-30 定：每个房间单独设音量（放在面板的房间列表里）。
+ *  · 外房：直接作用在我们自己的 <video> 上（volume + muted），改完立刻生效；
+ *  · 主房：斗鱼自己的播放器，作用在它的 <video> 上 —— 但它自己的音量条/记忆可能把它盖回来，
+ *    所以主房默认仍是 100%，调它属于"顺手改一下"，不是权威音量；
+ *  · 外房默认 0（静音）：几个房间同时出声会很吵，要听哪个自己拉；
+ *  · 起播前先保持 muted（浏览器对"带声音自动播放"有限制），出画面后再套上存的音量。
+ */
+const MS_VOLUME_KEY = "ExSave_MultiScreenVol";
+let msVolumes = null;
+
+function MultiScreen_loadVolumes() {
+  if (msVolumes) return msVolumes;
+  msVolumes = {};
+  try {
+    const j = JSON.parse(localStorage.getItem(MS_VOLUME_KEY) || "null");
+    if (j && typeof j === "object") {
+      Object.keys(j).forEach(function (k) {
+        const v = Number(j[k]);
+        if (v >= 0 && v <= 1) msVolumes[String(k)] = v;
+      });
+    }
+  } catch (e) {}
+  return msVolumes;
+}
+
+function MultiScreen_saveVolumes() {
+  try { localStorage.setItem(MS_VOLUME_KEY, JSON.stringify(msVolumes || {})); } catch (e) {}
+}
+
+function MultiScreen_getVolume(rid, isMain) {
+  const vols = MultiScreen_loadVolumes();
+  const k = String(rid);
+  if (vols[k] === undefined) return isMain ? 1 : 0;
+  return vols[k];
+}
+
+function MultiScreen_setVolume(rid, v) {
+  const val = Math.max(0, Math.min(1, Number(v) || 0));
+  MultiScreen_loadVolumes()[String(rid)] = val;
+  MultiScreen_saveVolumes();
+  MultiScreen_applyVolume(String(rid), val);
+}
+
+// 主房间的视频元素（斗鱼自己的播放器）
+function MultiScreen_nativeVideo() {
+  return document.querySelector("#__video2")
+    || document.querySelector("#__video_container video")
+    || document.querySelector(".layout-Player-videoEntity video")
+    || null;
+}
+
+function MultiScreen_applyVolumeToRec(rec, v) {
+  if (!rec || !rec.video) return;
+  try {
+    rec.video.volume = v;
+    rec.video.muted = v === 0;
+  } catch (e) {}
+}
+
+function MultiScreen_applyVolume(rid, v) {
+  const k = String(rid);
+  if (k === String(MultiScreen_getMainRid())) {
+    const nv = MultiScreen_nativeVideo();
+    if (nv) {
+      try { nv.volume = v; nv.muted = v === 0; } catch (e) {}
+    }
+    return;
+  }
+  msSlotPlayers.forEach(function (rec) {
+    if (rec && String(rec.rid) === k) MultiScreen_applyVolumeToRec(rec, v);
+  });
+}
+
 /* 尺寸/分屏变化后重新按自动档核一遍：只有**档位真的变了**才换那一格。
    换档走**平滑路径**（双画面交叉过渡，见 MultiScreen_switchQuality），不再黑屏重来。 */
 function MultiScreen_reapplyAutoQuality() {
@@ -445,6 +521,7 @@ function MultiScreen_destroyPlayer(rec) {
   clearTimeout(rec.reloadTimer);
   clearTimeout(rec.startTimer);
   clearTimeout(rec.swapTimer);
+  clearTimeout(rec.retryTimer);
   try { if (rec.flv && typeof rec.flv.destroy === "function") rec.flv.destroy(); } catch (e) {}
   try { if (rec.video && rec.video.parentNode) rec.video.parentNode.removeChild(rec.video); } catch (e) {}
 }
@@ -512,6 +589,19 @@ function MultiScreen_onResize() {
   }, 800);
 }
 
+/* 外房失败自动重试一次（用户 2026-09-30 定）：间隔 2 秒，仍失败才把"重新加载"提示交给用户。
+   返回 true = 已经安排了重试，调用方不要再提示。 */
+function MultiScreen_retryOnce(idx, epoch, room) {
+  const rec = msSlotPlayers.get(idx);
+  if (!rec || rec.epoch !== epoch || rec.retried) return false;
+  rec.retried = 1;
+  rec.retryTimer = setTimeout(function () {
+    const cur = msSlotPlayers.get(idx);
+    if (cur && cur.epoch === epoch && room) MultiScreen_fetchStream(idx, room, epoch);
+  }, 2000);
+  return true;
+}
+
 function MultiScreen_fetchStream(idx, room, epoch) {
   const rec = msSlotPlayers.get(idx);
   if (!rec || rec.epoch !== epoch) return;
@@ -528,6 +618,7 @@ function MultiScreen_fetchStream(idx, room, epoch) {
     if (!cur || cur.epoch !== epoch) return;
     if (!url || url === "None") {
       if (cur.switching) { MultiScreen_abortSwap(idx, cur); return; }   // 换档失败：旧流继续
+      if (MultiScreen_retryOnce(idx, epoch, room)) return;              // 先自动重试一次
       MultiScreen_setTip(slot, "房间未开播或其他错误");
       return;
     }
@@ -574,12 +665,16 @@ function MultiScreen_startFlv(idx, url, epoch) {
       const s = MultiScreen_slotDom(idx);
       // 出画面即撤掉整个加载层（转圈态与文案态一起清）
       if (s) s.classList.remove("ms-slot--loading", "ms-slot--notice");
+      // 出画面后再套该房间存的音量（0 就是静音，等于保持现状）
+      MultiScreen_applyVolumeToRec(cur, cur.vol === undefined ? MultiScreen_getVolume(cur.rid, false) : cur.vol);
     }, { once: true });
     // 起播超时兜底：到点仍未出画面就给一个可操作的提示。
     // ⚠ 换档时不提示 —— 旧流还在正常播，提示会盖在画面上（超时由 swapTimer 处理：放弃切换）
     rec.startTimer = setTimeout(function () {
       const cur = msSlotPlayers.get(idx);
-      if (cur === rec && !rec.switching && rec.video && rec.video.readyState < 2) MultiScreen_setTip(slot, "加载缓慢，可点重新加载");
+      if (cur !== rec || rec.switching || !rec.video || rec.video.readyState >= 2) return;
+      if (MultiScreen_retryOnce(idx, epoch, msActiveList[idx])) return;   // 先自动重试一次
+      MultiScreen_setTip(slot, "加载缓慢，可点重新加载");
     }, MS_START_TIMEOUT_MS);
   } catch (e) {
     if (rec.switching) MultiScreen_abortSwap(idx, rec);
@@ -1060,6 +1155,52 @@ function MultiScreen_save() {
       qn: msQn,
     }));
   } catch (e) {}
+  MultiScreen_rememberForMainRoom();
+}
+
+/* ---------- 按主房间记忆多屏配置 ---------- */
+/*
+ * 用户 2026-09-30 定：在 A 房间开过"多屏 = A+B+C"，下次再进 A 房间要能一键恢复。
+ * 存法 { 主房rid: { rooms: [外房...], at } }（主房隐含在键里，不重复存）。
+ * 每房间的音量偏好另存在 ExSave_MultiScreenVol（按房间号，跨主房通用）。
+ */
+const MS_BYROOM_KEY = "ExSave_MultiScreenByRoom";
+let msByRoom = null;
+
+function MultiScreen_loadByRoom() {
+  if (msByRoom) return msByRoom;
+  msByRoom = {};
+  try {
+    const j = JSON.parse(localStorage.getItem(MS_BYROOM_KEY) || "null");
+    if (j && typeof j === "object" && !Array.isArray(j)) msByRoom = j;
+  } catch (e) { msByRoom = {}; }
+  return msByRoom;
+}
+
+/* 每次列表变化都记一笔 —— 但**只在真的有多屏配置时覆盖**：
+   退出多屏（单屏）不该抹掉"这个房间上次的配置"，否则一键恢复永远没得恢复。
+   记录很小（几个房间号），不必清理。 */
+function MultiScreen_rememberForMainRoom() {
+  const main = MultiScreen_getMainRid();
+  if (!main) return;
+  const foreign = msActiveList.slice(1).map(function (r) {
+    return { rid: String(r.rid), nn: r.nn || "", avatar: r.avatar || "" };
+  });
+  if (!foreign.length) return;   // 单屏状态：不覆盖、也不清空
+  const store = MultiScreen_loadByRoom();
+  store[main] = { rooms: foreign, at: Date.now() };
+  try { localStorage.setItem(MS_BYROOM_KEY, JSON.stringify(store)); } catch (e) {}
+}
+
+// 该主房上次的多屏配置；没有、或与当前列表完全一致（不用提示）时返回 null
+function MultiScreen_savedConfigForMainRoom() {
+  const main = MultiScreen_getMainRid();
+  const rec = MultiScreen_loadByRoom()[main];
+  if (!rec || !Array.isArray(rec.rooms) || !rec.rooms.length) return null;
+  const cur = msActiveList.slice(1).map(function (r) { return String(r.rid); }).join(",");
+  const saved = rec.rooms.map(function (r) { return String(r.rid); }).join(",");
+  if (cur === saved) return null;
+  return rec.rooms.slice(0, MS_MAX_ROOMS - 1);
 }
 
 function MultiScreen_load() {
@@ -1173,6 +1314,9 @@ window.MultiScreen_getList = function () { return msActiveList.slice(); };
 window.MultiScreen_getQuality = function () { return msQn; };
 window.MultiScreen_pickQnForSlot = MultiScreen_pickQnForSlot;
 window.MultiScreen_qnFor = MultiScreen_qnFor;
+window.MultiScreen_getVolume = MultiScreen_getVolume;
+window.MultiScreen_setVolume = MultiScreen_setVolume;
+window.MultiScreen_savedConfigForMainRoom = MultiScreen_savedConfigForMainRoom;
 window.MultiScreen_reapplyAutoQuality = MultiScreen_reapplyAutoQuality;
 window.MultiScreen_switchQuality = MultiScreen_switchQuality;
 window.MultiScreen_finishSwap = MultiScreen_finishSwap;

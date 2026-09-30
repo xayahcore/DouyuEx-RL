@@ -54,6 +54,7 @@ function createPopupPlayerPanel() {
             <span class="popup-panel__card-title">已加入多屏 <em class="popup-ms__count" id="popup-ms-count">1 / 5</em></span>
             <button type="button" class="popup-panel__paste-btn" id="popup-ms-edit">编辑位置顺序</button>
           </div>
+          <div class="popup-ms__restore" id="popup-ms-restore" hidden></div>
           <div class="popup-ms__rooms" id="popup-ms-rooms"></div>
         </div>
 
@@ -157,14 +158,37 @@ function PopupPlayer_renderMultiPage() {
   let mainRid = MultiScreen_getMainRid();
   roomsEl.innerHTML = list.map(function (r) {
     let isMain = String(r.rid) === String(mainRid);
+    let vol = Math.round(MultiScreen_getVolume(r.rid, isMain) * 100);
+    let volTitle = isMain
+      ? "主房间音量（斗鱼自己的音量条可能把它盖回来）"
+      : "这个房间的音量（0 = 静音）";
     return (
       '<div class="popup-ms__room" data-rid="' + PopupPlayer_msEsc(r.rid) + '">' +
         '<span class="popup-ms__room-name">' + PopupPlayer_msEsc(r.nn || ("房间 " + r.rid)) + "</span>" +
-        '<span class="popup-ms__room-rid">' + (isMain ? "主画面" : PopupPlayer_msEsc(r.rid)) + "</span>" +
+        (isMain ? '<span class="popup-ms__room-rid">主画面</span>' : "") +
+        '<input type="range" class="popup-ms__room-vol" data-rid="' + PopupPlayer_msEsc(r.rid) + '"' +
+          ' min="0" max="100" step="5" value="' + vol + '" style="--vol:' + vol + '%"' +
+          ' title="' + PopupPlayer_msEsc(volTitle) + '" aria-label="音量" />' +
+        '<span class="popup-ms__room-volnum">' + vol + "</span>" +
         (isMain ? "" : '<button type="button" class="popup-ms__room-del" title="移除">×</button>') +
       "</div>"
     );
   }).join("");
+
+  Array.prototype.forEach.call(roomsEl.querySelectorAll(".popup-ms__room-vol"), function (inp) {
+    let sync = function () {
+      let v = Math.max(0, Math.min(100, Number(inp.value) || 0));
+      inp.style.setProperty("--vol", v + "%");
+      let num = inp.parentElement ? inp.parentElement.querySelector(".popup-ms__room-volnum") : null;
+      if (num) num.textContent = String(v);
+      MultiScreen_setVolume(inp.getAttribute("data-rid"), v / 100);
+    };
+    inp.addEventListener("input", sync);
+    // 拖音量不该被当成"点了面板"（面板/二级菜单有自己的点击与悬停逻辑）
+    ["mousedown", "click", "pointerdown"].forEach(function (t) {
+      inp.addEventListener(t, function (e) { e.stopPropagation(); });
+    });
+  });
 
   Array.prototype.forEach.call(roomsEl.querySelectorAll(".popup-ms__room-del"), function (btn) {
     btn.addEventListener("click", function (e) {
@@ -174,6 +198,30 @@ function PopupPlayer_renderMultiPage() {
       PopupPlayer_renderMultiPage();
     });
   });
+
+  // 上次的多屏配置（按主房记忆）：有就显示一行，一键恢复
+  let restoreEl = document.getElementById("popup-ms-restore");
+  if (restoreEl) {
+    let saved = MultiScreen_savedConfigForMainRoom();
+    if (!saved || !saved.length) {
+      restoreEl.hidden = true;
+      restoreEl.innerHTML = "";
+    } else {
+      let names = saved.map(function (r) { return r.nn || ("房间 " + r.rid); }).join("、");
+      restoreEl.hidden = false;
+      restoreEl.innerHTML =
+        "<span class=\"popup-ms__restore-text\" title=\"" + PopupPlayer_msEsc(names) + "\">上次配置：" +
+          saved.length + " 个房间 · " + PopupPlayer_msEsc(names) + "</span>" +
+        "<button type=\"button\" class=\"popup-panel__paste-btn\" id=\"popup-ms-restore-btn\">一键恢复</button>";
+      let rb = restoreEl.querySelector("#popup-ms-restore-btn");
+      if (rb) rb.addEventListener("click", function (e) {
+        e.stopPropagation();
+        MultiScreen_enter(saved);
+        PopupPlayer_renderMultiPage();
+        showMessage("已恢复上次的多屏配置", "success");
+      });
+    }
+  }
 
   if (toggleBtn) toggleBtn.textContent = list.length > 1 ? "退出多屏" : "开启多屏";
 }
