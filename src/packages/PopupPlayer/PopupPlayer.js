@@ -84,6 +84,17 @@ function createPopupPlayerPanel() {
     ensureMiuixPanelHeader(p, "同屏播放器");
   }
 
+  /* 主操作（开启/退出多屏）常驻面板底部：房间多时页面会滚动，按钮必须一直点得到。
+     刻意用内联样式 —— 操作区容器在构建期有"只允许一条统一规则"的护栏（见测试场景 11），
+     面板专属的粘底不能写进共享 CSS。 */
+  let actWrap = p.querySelector(".popup-panel__action-wrap");
+  if (actWrap) {
+    actWrap.style.position = "sticky";
+    actWrap.style.bottom = "0";
+    actWrap.style.zIndex = "3";
+    actWrap.style.paddingTop = "8px";
+    actWrap.style.background = "linear-gradient(to top, rgba(255,255,255,0.78) 62%, rgba(255,255,255,0)) ";
+  }
   PopupPlayer_renderMultiPage();
   PopupPlayer_initMultiPage(p);
 }

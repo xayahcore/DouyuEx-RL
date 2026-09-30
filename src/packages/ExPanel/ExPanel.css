@@ -2369,8 +2369,11 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
     left: 0 !important;
     bottom: 0 !important;
     width: 100% !important;
-    height: 0 !important;
-    display: none !important;
+    /* ⚠ 高度与 display 都**不能**写 !important：这两样由 JS 的内联样式控制
+       （MS_EditBar_show/hide 做 0↔226 的高度动画），样式表里的 !important 会把它们压死
+       —— 实测：编辑条要么出不来、要么只剩 padding+border 的 17px。 */
+    height: 0;
+    display: none;
     overflow: hidden !important;
     z-index: 10 !important;
     box-sizing: border-box !important;
@@ -2672,6 +2675,19 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
     overflow-y: auto !important;
     overflow-x: hidden !important;
 }
+
+/* 面板内容高于面板时，让页面自己滚（否则底部会被裁掉：实测 5 房时内容 437px > 面板 370px） */
+.popup-player-panel .miuix-modal__body {
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 0 !important;
+}
+
+.popup-player-panel .popup-panel__page {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+}
+
 
 .popup-panel__page::-webkit-scrollbar,
 .popup-ms__rooms::-webkit-scrollbar,
