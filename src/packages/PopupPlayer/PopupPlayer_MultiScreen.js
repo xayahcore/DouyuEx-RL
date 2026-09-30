@@ -33,12 +33,24 @@ const MS_BOTTOM_GUARD_PX = 42;    // 拖拽起手的底部控制条保护带
    想改成点小格把它换到主画面，把下面这个开关打开即可（走位置互换，不跳转）。 */
 const MS_CLICK_SWAP_TO_MAIN = false;
 
-/* 清晰度档位。getRealLive_Douyu 的约定：0=蓝光4M 1=流畅 2=高清 3=超清 */
+/* 清晰度档位。getRealLive_Douyu 的约定：0=蓝光4M 1=流畅 2=高清 3=超清。
+   首个 "auto" 不是真档位，而是"按格子实际大小自动选档"（见 MS_QN_AUTO_TIERS）——
+   多屏之后每格只有几百像素高，喂它 2K 纯属浪费：实测（2288 房间）默认档 qn0 拿到
+   2560×1440、qn2 拿到 960×540，而五格布局里的小格在屏幕上只有约 330×186。 */
 const MS_QUALITY_LIST = [
+  { v: "auto", name: "自动" },
   { v: "0", name: "蓝光4M" },
   { v: "3", name: "超清" },
   { v: "2", name: "高清" },
   { v: "1", name: "流畅" },
+];
+/* 自动档阈值：按格子**渲染高度**（px）取档。只在实测过分辨率的三档里选
+   （0 = 最高，实测 1440p；2 = 高清，实测 540p；1 = 流畅，最低），
+   刻意不选 3（超清）：它的分辨率映射没实测过，宁可用已知的档。 */
+const MS_QN_AUTO_TIERS = [
+  { minH: 620, qn: "0" },
+  { minH: 380, qn: "2" },
+  { minH: 0, qn: "1" },
 ];
 
 /* 布局表：MS_LAYOUT[分屏数][槽位号] = [top%, left%, width%, height%]
@@ -63,7 +75,7 @@ let msSlotPlayers = new Map();  // 位置 -> { rid, epoch, flv, video, reloadTim
    React 管理的，改它的类名会让它重渲染（主房间播放器会在换位后加载出错）。
    位置与几何解耦之后，谁在哪儿只由内联样式表达，React 那一侧完全无感。 */
 let msPosOwner = [0, 1, 2, 3, 4];
-let msQn = MS_QUALITY_LIST[0].v;
+let msQn = "auto";   // "auto" = 按格子尺寸自动选档；其余为手动固定档位
 let msEpoch = 0;                // 每次重渲染 +1，用于丢弃过期异步回调
 let msDrag = null;
 let msDragTimer = null;
@@ -236,6 +248,8 @@ function MultiScreen_applyLayout() {
     slot.style.transform = "scale(1)";
     slot.style.visibility = "visible";
   });
+  // 几何改完，格子像素尺寸变了：自动档要跟着核一遍（只有档位真变了才重拉）
+  MultiScreen_reapplyAutoQuality();
 }
 
 /* ---------- 单格渲染 ---------- */
@@ -367,12 +381,55 @@ function MultiScreen_setTip(slot, tip) {
   if (r) r.classList.add("is-visible");
 }
 
+/* ---------- 自动清晰度：按格子实际渲染高度选档 ---------- */
+
+/* 量的是**格子元素的实际渲染高度**（不是布局表里的百分比）：换位之后外房格可能坐到
+   大格位置上，量 DOM 才能跟着位置走；窗口缩放、2/3/4/5 分屏切换也都会反映进来。 */
+function MultiScreen_pickQnForSlot(idx) {
+  const slot = MultiScreen_slotDom(idx);
+  let h = 0;
+  try { h = slot ? slot.getBoundingClientRect().height : 0; } catch (e) { h = 0; }
+  if (!h) return "2";   // 还没量到尺寸（刚建格/隐藏中）：先给中档，重排时会被纠正
+  for (let i = 0; i < MS_QN_AUTO_TIERS.length; i++) {
+    if (h >= MS_QN_AUTO_TIERS[i].minH) return MS_QN_AUTO_TIERS[i].qn;
+  }
+  return "1";
+}
+
+function MultiScreen_qnFor(idx) {
+  return msQn === "auto" ? MultiScreen_pickQnForSlot(idx) : msQn;
+}
+
+/* 尺寸/分屏变化后重新按自动档核一遍：只有**档位真的变了**才重拉那一格
+   （重拉会闪一下并重新取流，所以不能每次 resize 都做）。手动档位不受影响。 */
+function MultiScreen_reapplyAutoQuality() {
+  if (msQn !== "auto" || msMultiType <= 1 || msDrag) return;
+  for (let i = 1; i < msActiveList.length && i < MS_SLOT_COUNT; i++) {
+    const rec = msSlotPlayers.get(i);
+    if (!rec) continue;
+    const want = MultiScreen_pickQnForSlot(i);
+    if (rec.qn && rec.qn === want) continue;
+    MultiScreen_renderSlot(i, msActiveList[i]);
+  }
+}
+
+let msAutoQnTimer = 0;
+function MultiScreen_onResize() {
+  clearTimeout(msAutoQnTimer);
+  msAutoQnTimer = setTimeout(function () {
+    msAutoQnTimer = 0;
+    MultiScreen_reapplyAutoQuality();
+  }, 800);
+}
+
 function MultiScreen_fetchStream(idx, room, epoch) {
   const rec = msSlotPlayers.get(idx);
   if (!rec || rec.epoch !== epoch) return;
   const slot = MultiScreen_slotDom(idx);
   if (typeof getRealLive_Douyu !== "function") { MultiScreen_setTip(slot, "取流失败，可点重新加载"); return; }
-  getRealLive_Douyu(String(room.rid), true, false, msQn, function (url) {
+  const qn = MultiScreen_qnFor(idx);
+  rec.qn = qn;
+  getRealLive_Douyu(String(room.rid), true, false, qn, function (url) {
     const cur = msSlotPlayers.get(idx);
     if (!cur || cur.epoch !== epoch) return;
     if (!url || url === "None") { MultiScreen_setTip(slot, "房间未开播或其他错误"); return; }
@@ -566,6 +623,15 @@ function MultiScreen_setQuality(qn) {
   if (!qn || String(qn) === msQn) return;
   msQn = String(qn);
   MultiScreen_save();
+  /* 自动档：按尺寸重拉即可，不走"换档前后对比"那套自检 —— 尺寸一变就可能换档，
+     每次都弹提示反而吵；自检只在用户手动选具体档位时做。 */
+  if (msQn === "auto") {
+    for (let i = 1; i < msActiveList.length && i < MS_SLOT_COUNT; i++) {
+      MultiScreen_renderSlot(i, msActiveList[i]);
+    }
+    showMessage("外房清晰度：按格子大小自动", "success");
+    return;
+  }
   const targets = [];
   for (let i = 1; i < msActiveList.length && i < MS_SLOT_COUNT; i++) targets.push(i);
   MultiScreen_beginQnCompare(targets);
@@ -949,6 +1015,8 @@ function MultiScreen_bindOnce() {
     document.addEventListener("click", MultiScreen_onClick);
     document.addEventListener("mousemove", MultiScreen_onMouseMove);
     document.addEventListener("mouseup", MultiScreen_onMouseUp);
+    // 窗口缩放会改变格子像素尺寸 → 自动档需要重新核（防抖，且只在档位变化时重拉）
+    window.addEventListener("resize", MultiScreen_onResize);
   }
   MultiScreen_watchContainer();
   MultiScreen_applyLayout();
@@ -990,6 +1058,10 @@ window.MultiScreen_setQuality = MultiScreen_setQuality;
 window.MultiScreen_isSupported = MultiScreen_isSupported;
 window.MultiScreen_getList = function () { return msActiveList.slice(); };
 window.MultiScreen_getQuality = function () { return msQn; };
+window.MultiScreen_pickQnForSlot = MultiScreen_pickQnForSlot;
+window.MultiScreen_qnFor = MultiScreen_qnFor;
+window.MultiScreen_reapplyAutoQuality = MultiScreen_reapplyAutoQuality;
+window.MS_QN_AUTO_TIERS = MS_QN_AUTO_TIERS;
 window.MultiScreen_onChange = function (fn) {
   // 多播订阅：重复注册同一个函数只记一次
   if (typeof fn === "function" && msOnChangeList.indexOf(fn) < 0) msOnChangeList.push(fn);

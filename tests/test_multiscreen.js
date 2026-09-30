@@ -549,10 +549,11 @@ async function run() {
 
   // ---------- 15. 画质档位 ----------
   console.log("--> 15. 画质档位");
-  assert.strictEqual(win.MultiScreen_getQuality(), "0", "默认档位必须是最高画质 蓝光4M(rate 0)");
+  assert.strictEqual(win.MultiScreen_getQuality(), "auto", "默认档位必须是「自动」（按格子尺寸选档，见场景 24）");
   const qualityRadios = win.document.querySelectorAll('input[name="ms_quality"]');
-  assert.strictEqual(qualityRadios.length, 4, "画质档位必须是 4 档");
+  assert.strictEqual(qualityRadios.length, 5, "画质档位必须是 5 项（自动 + 4 个具体档位）");
   assert.strictEqual(Array.from(qualityRadios).filter((r) => r.checked).length, 1, "画质档位必须恰好一项选中");
+  assert.strictEqual(Array.from(qualityRadios).find((r) => r.checked).value, "auto", "默认选中的必须是「自动」");
   win.MultiScreen_setQuality("3");
   assert.strictEqual(win.MultiScreen_getQuality(), "3", "设置档位必须生效");
 
@@ -766,6 +767,42 @@ async function run() {
   assert.strictEqual(/pointerEvents|pointer-events/.test(msSrc), false, "多屏代码不得再出现 pointer-events 改写（原生弹幕层在 #__h5player 里）");
   const msBundle = fs.readFileSync(bundlePath(), "utf8");
   assert.strictEqual(msBundle.indexOf("data-ex-ms-passthrough") < 0, true, "产物里不得残留覆盖层放行标记（源码改了没重建也会被这条抓住）");
+  // ---------- 24. 自动清晰度：按格子实际渲染高度选档 ----------
+  console.log("--> 24. 自动清晰度按格子尺寸选档");
+  /* 动机（用户反馈 + 实测）：多屏后小格在屏幕上只有约 330×186，而默认档 qn0 拿到的是
+     2560×1440 —— 纯浪费。自动档按**量到的格子高度**选档，手动选档仍然覆盖它。 */
+  const win24 = load(makeDom());
+  win24.MultiScreen_enter([
+    { rid: "1001", nn: "甲", avatar: "" }, { rid: "1002", nn: "乙", avatar: "" },
+    { rid: "1003", nn: "丙", avatar: "" }, { rid: "1004", nn: "丁", avatar: "" },
+    { rid: "1005", nn: "戊", avatar: "" }
+  ]);
+  assert.strictEqual(win24.MultiScreen_getQuality(), "auto", "默认档位必须是自动");
+  const slots24 = win24.MultiScreen_slots();
+  const setH = (i, h) => { const el = slots24[i]; el.getBoundingClientRect = () => ({ left: 0, top: 0, width: Math.round(h * 16 / 9), height: h, right: Math.round(h * 16 / 9), bottom: h }); };
+  setH(0, 900); setH(1, 700); setH(2, 500); setH(3, 300); setH(4, 100);
+  assert.strictEqual(win24.MultiScreen_pickQnForSlot(0), "0", "高度 900 必须给最高档");
+  assert.strictEqual(win24.MultiScreen_pickQnForSlot(1), "0", "高度 700（≥620）必须给最高档");
+  assert.strictEqual(win24.MultiScreen_pickQnForSlot(2), "2", "高度 500（380~620）必须给高清");
+  assert.strictEqual(win24.MultiScreen_pickQnForSlot(3), "1", "高度 300（<380）必须给流畅");
+  assert.strictEqual(win24.MultiScreen_pickQnForSlot(4), "1", "极小的格子也必须是流畅，绝不能反而给高码率");
+  // 手动选具体档位 → 覆盖自动，尺寸不再影响结果
+  win24.MultiScreen_setQuality("3");
+  assert.strictEqual(win24.MultiScreen_qnFor(4), "3", "手动选档后必须无视格子尺寸");
+  assert.strictEqual(win24.MultiScreen_qnFor(0), "3", "手动档位对所有外房生效");
+  // 切回自动 → 立刻按尺寸重新选档
+  win24.MultiScreen_setQuality("auto");
+  assert.strictEqual(win24.MultiScreen_qnFor(4), "1", "切回自动后必须重新按尺寸选档");
+  // 只有**档位真的变了**才重拉那一格（重拉会闪一下，不能每次 resize 都做）
+  win24.MultiScreen_renderSlot(2, { rid: "1003", nn: "丙" });
+  const v24a = slots24[2].querySelector("video");
+  setH(2, 560);                                   // 仍在 380~620 → 同档
+  win24.MultiScreen_reapplyAutoQuality();
+  assert.strictEqual(slots24[2].querySelector("video"), v24a, "档位没变时不得重拉（否则每次 resize 都闪一下）");
+  setH(2, 700);                                   // 跨过 620 → 换档
+  win24.MultiScreen_reapplyAutoQuality();
+  assert.notStrictEqual(slots24[2].querySelector("video"), v24a, "跨档位后必须重拉那一格");
+  win24.close();
   dom.window.close();
   console.log("=== 多屏复刻单元测试 100% 通过 ===");
 }
