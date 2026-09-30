@@ -767,10 +767,11 @@ async function run() {
   assert.strictEqual(/pointerEvents|pointer-events/.test(msSrc), false, "多屏代码不得再出现 pointer-events 改写（原生弹幕层在 #__h5player 里）");
   const msBundle = fs.readFileSync(bundlePath(), "utf8");
   assert.strictEqual(msBundle.indexOf("data-ex-ms-passthrough") < 0, true, "产物里不得残留覆盖层放行标记（源码改了没重建也会被这条抓住）");
-  // ---------- 24. 自动清晰度：按格子实际渲染高度选档 ----------
-  console.log("--> 24. 自动清晰度按格子尺寸选档");
+  // ---------- 24. 自动清晰度：按格子实际渲染高度选档 + 平滑换档 ----------
+  console.log("--> 24. 自动清晰度按格子尺寸选档、换档平滑过渡");
   /* 动机（用户反馈 + 实测）：多屏后小格在屏幕上只有约 330×186，而默认档 qn0 拿到的是
-     2560×1440 —— 纯浪费。自动档按**量到的格子高度**选档，手动选档仍然覆盖它。 */
+     2560×1440 —— 纯浪费。自动档按**量到的格子高度**选档，手动选档仍然覆盖它。
+     用户口径（2026-09-29）：**两房/四房那种大小（格子约占播放区一半高）要给最高档**。 */
   const win24 = load(makeDom());
   win24.MultiScreen_enter([
     { rid: "1001", nn: "甲", avatar: "" }, { rid: "1002", nn: "乙", avatar: "" },
@@ -779,13 +780,23 @@ async function run() {
   ]);
   assert.strictEqual(win24.MultiScreen_getQuality(), "auto", "默认档位必须是自动");
   const slots24 = win24.MultiScreen_slots();
+  // 播放区按 800×450 建模（比例规则的基准），各格再各自给高度
+  stubRect(win24.MultiScreen_getContainer(), { left: 0, top: 0, width: 800, height: 450, right: 800, bottom: 450 });
   const setH = (i, h) => { const el = slots24[i]; el.getBoundingClientRect = () => ({ left: 0, top: 0, width: Math.round(h * 16 / 9), height: h, right: Math.round(h * 16 / 9), bottom: h }); };
-  setH(0, 900); setH(1, 700); setH(2, 500); setH(3, 300); setH(4, 100);
-  assert.strictEqual(win24.MultiScreen_pickQnForSlot(0), "0", "高度 900 必须给最高档");
-  assert.strictEqual(win24.MultiScreen_pickQnForSlot(1), "0", "高度 700（≥620）必须给最高档");
-  assert.strictEqual(win24.MultiScreen_pickQnForSlot(2), "2", "高度 500（380~620）必须给高清");
-  assert.strictEqual(win24.MultiScreen_pickQnForSlot(3), "1", "高度 300（<380）必须给流畅");
-  assert.strictEqual(win24.MultiScreen_pickQnForSlot(4), "1", "极小的格子也必须是流畅，绝不能反而给高码率");
+  setH(0, 900); setH(1, 286); setH(2, 235); setH(3, 200); setH(4, 120);
+  // 进多屏的**第一次**取流发生在布局套上去之前（DOM 还没尺寸）→ 必须用布局表推算，
+  // 否则首屏会全部落到兜底档（实机踩过：进多屏全是 540p，缩放一下才升档）
+  const win24b = load(makeDom());
+  stubRect(win24b.MultiScreen_getContainer(), { left: 0, top: 0, width: 800, height: 450, right: 800, bottom: 450 });
+  win24b.MultiScreen_enter([{ rid: "2001", nn: "甲", avatar: "" }]);
+  // ⚠ 列表里 [0] 恒为主房间，所以"两房"= 只传 1 个外房
+  assert.strictEqual(win24b.MultiScreen_pickQnForSlot(1), "0", "两房布局（占播放区 50%）必须给最高档 —— 即使 DOM 还没量到尺寸");
+  win24b.close();
+  assert.strictEqual(win24.MultiScreen_pickQnForSlot(0), "0", "大格必须给最高档");
+  assert.strictEqual(win24.MultiScreen_pickQnForSlot(1), "0", "两房那种大小（占播放区 64%）必须给最高档");
+  assert.strictEqual(win24.MultiScreen_pickQnForSlot(2), "0", "五房的大格（占播放区 52%）也按最高档 —— 用比例判，不受窗口大小影响");
+  assert.strictEqual(win24.MultiScreen_pickQnForSlot(3), "2", "占比不足且 180~280px 必须给高清");
+  assert.strictEqual(win24.MultiScreen_pickQnForSlot(4), "1", "180px 以下必须给流畅，绝不能反而给高码率");
   // 手动选具体档位 → 覆盖自动，尺寸不再影响结果
   win24.MultiScreen_setQuality("3");
   assert.strictEqual(win24.MultiScreen_qnFor(4), "3", "手动选档后必须无视格子尺寸");
@@ -793,15 +804,45 @@ async function run() {
   // 切回自动 → 立刻按尺寸重新选档
   win24.MultiScreen_setQuality("auto");
   assert.strictEqual(win24.MultiScreen_qnFor(4), "1", "切回自动后必须重新按尺寸选档");
-  // 只有**档位真的变了**才重拉那一格（重拉会闪一下，不能每次 resize 都做）
+
+  // 换档必须**不清空格子**（双画面交叉过渡）：新流叠一层，出画面后淡入、随后撤旧流
+  win24.getRealLive_Douyu = function (rid, v, https, qn, cb) { cb("https://example.com/probe.flv"); };
+  win24.flvjs = { isSupported: () => true, createPlayer: () => ({ attachMediaElement() {}, load() {}, play() {}, destroy() {} }) };
+  win24.MultiScreen_renderSlot(2, { rid: "1003", nn: "丙" });
+  const oldVid24 = slots24[2].querySelector("video.ms-slot__video");
+  assert.ok(oldVid24, "换档前必须已有旧画面");
+  Object.defineProperty(oldVid24, "readyState", { value: 4, configurable: true });   // jsdom 不做加载，手动标成"可播"
+  win24.MultiScreen_switchQuality(2, { rid: "1003", nn: "丙" });
+  const nextVid24 = slots24[2].querySelector("video.ms-slot__video--next");
+  assert.ok(nextVid24, "换档必须叠一个新的 video，而不是清空格子");
+  assert.strictEqual(slots24[2].querySelector("video.ms-slot__video"), oldVid24, "切换成功前旧画面必须一直在（这就是「不黑屏」的关键）");
+  nextVid24.dispatchEvent(new win24.Event("playing"));   // 模拟新流出画面
+  assert.ok(nextVid24.classList.contains("is-live"), "新流出画面后必须进入淡入态");
+  await new Promise((r) => setTimeout(r, 450));          // 等淡入走完（320ms 后撤旧流）
+  assert.strictEqual(oldVid24.isConnected, false, "淡入完成后旧画面必须被撤掉");
+  assert.strictEqual(slots24[2].querySelectorAll("video").length, 1, "格子里只剩新画面（不能新旧叠着留一层）");
+
+  // 换档失败（取流拿不到）：必须保住旧画面，把半成品撤掉
+  const oldVid24b = slots24[3].querySelector("video.ms-slot__video");
+  if (!oldVid24b) { win24.MultiScreen_renderSlot(3, { rid: "1004", nn: "丁" }); }
+  const keepVid = slots24[3].querySelector("video.ms-slot__video");
+  Object.defineProperty(keepVid, "readyState", { value: 4, configurable: true });
+  win24.getRealLive_Douyu = function (rid, v, https, qn, cb) { cb("None"); };   // 房间未开播/取流失败
+  win24.MultiScreen_switchQuality(3, { rid: "1004", nn: "丁" });
+  assert.strictEqual(slots24[3].querySelector("video.ms-slot__video"), keepVid, "换档失败必须保住旧画面");
+  assert.strictEqual(slots24[3].querySelector("video.ms-slot__video--next"), null, "换档失败必须撤掉半成品，不留黑层");
+
+  // 档位没变时不换档（resize 抖动不该反复重载）
+  win24.getRealLive_Douyu = function (rid, v, https, qn, cb) { cb("https://example.com/probe.flv"); };
   win24.MultiScreen_renderSlot(2, { rid: "1003", nn: "丙" });
   const v24a = slots24[2].querySelector("video");
-  setH(2, 560);                                   // 仍在 380~620 → 同档
+  Object.defineProperty(v24a, "readyState", { value: 4, configurable: true });
+  setH(2, 240);                                   // 与 235 同档
   win24.MultiScreen_reapplyAutoQuality();
-  assert.strictEqual(slots24[2].querySelector("video"), v24a, "档位没变时不得重拉（否则每次 resize 都闪一下）");
-  setH(2, 700);                                   // 跨过 620 → 换档
+  assert.strictEqual(slots24[2].querySelector("video.ms-slot__video--next"), null, "同档 resize 不得触发换档");
+  setH(2, 120);                                   // 跨档（0 → 1）
   win24.MultiScreen_reapplyAutoQuality();
-  assert.notStrictEqual(slots24[2].querySelector("video"), v24a, "跨档位后必须重拉那一格");
+  assert.ok(slots24[2].querySelector("video.ms-slot__video--next"), "跨档后必须发起换档（走平滑路径）");
   win24.close();
   dom.window.close();
   console.log("=== 多屏复刻单元测试 100% 通过 ===");

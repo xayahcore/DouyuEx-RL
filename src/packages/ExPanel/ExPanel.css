@@ -2199,6 +2199,20 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
     background: #000 !important;
 }
 
+/* 换档过渡层：新流先叠在旧画面之上（透明）起播，出画面后再淡入、随后旧画面被移除。
+   于是换清晰度看到的是"画面轻轻跳一下"，而不是黑屏 + 转圈。 */
+.layout-Player-multiContainer .layout-Player-multiPlayer > video.ms-slot__video--next {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    opacity: 0 !important;
+    z-index: 2 !important;
+    transition: opacity 0.25s ease !important;
+}
+.layout-Player-multiContainer .layout-Player-multiPlayer > video.ms-slot__video--next.is-live {
+    opacity: 1 !important;
+}
+
 /* 房名胶囊：类名与取值 1:1 对齐原生 .nameAndIcon / .nameIcon / .nameTxt */
 .layout-Player-multiContainer .ms-slot__name {
     position: absolute !important;

@@ -44,12 +44,17 @@ const MS_QUALITY_LIST = [
   { v: "2", name: "高清" },
   { v: "1", name: "流畅" },
 ];
-/* 自动档阈值：按格子**渲染高度**（px）取档。只在实测过分辨率的三档里选
-   （0 = 最高，实测 1440p；2 = 高清，实测 540p；1 = 流畅，最低），
-   刻意不选 3（超清）：它的分辨率映射没实测过，宁可用已知的档。 */
+/* 自动档规则（用户 2026-09-29 定）：**两房/四房那种大小（格子约占播放区一半高）就给最高档**。
+   ① 先看**占播放区高度的比例** ≥ 0.45 → 最高档。用比例而不是绝对像素："两房那种大小"
+      本来就是布局决定的（2/4 房是 50%、五房里那两个大格是 48.6%），用像素判会在临界点抖。
+   ② 比例不够时再按**绝对高度**兜底（窗口很大时小格也够大，值得给更好的档）：
+      ≥ 280px → 最高档；≥ 180px → 高清；否则流畅。
+   只在实测过分辨率的三档里选（0 = 实测 1440p、2 = 实测 540p、1 = 最低），
+   刻意不选 3（超清）：它的分辨率映射没实测过。 */
+const MS_QN_BIG_SHARE = 0.45;
 const MS_QN_AUTO_TIERS = [
-  { minH: 620, qn: "0" },
-  { minH: 380, qn: "2" },
+  { minH: 280, qn: "0" },
+  { minH: 180, qn: "2" },
   { minH: 0, qn: "1" },
 ];
 
@@ -257,9 +262,9 @@ function MultiScreen_applyLayout() {
 function MultiScreen_clearSlot(idx) {
   const rec = msSlotPlayers.get(idx);
   if (rec) {
-    try { if (rec.flv && typeof rec.flv.destroy === "function") rec.flv.destroy(); } catch (e) {}
-    clearTimeout(rec.reloadTimer);
-    clearTimeout(rec.startTimer);
+    // 换档进行中就被清掉（例如切房间）：新旧两条记录都要销毁，否则旧流会在后台继续跑
+    if (rec.prev) MultiScreen_destroyPlayer(rec.prev);
+    MultiScreen_destroyPlayer(rec);
     msSlotPlayers.delete(idx);
   }
   const slot = MultiScreen_slotDom(idx);
@@ -389,7 +394,19 @@ function MultiScreen_pickQnForSlot(idx) {
   const slot = MultiScreen_slotDom(idx);
   let h = 0;
   try { h = slot ? slot.getBoundingClientRect().height : 0; } catch (e) { h = 0; }
-  if (!h) return "2";   // 还没量到尺寸（刚建格/隐藏中）：先给中档，重排时会被纠正
+  let ch = 0;
+  try { const c = MultiScreen_getContainer(); ch = c ? c.getBoundingClientRect().height : 0; } catch (e) { ch = 0; }
+  /* ⚠ 量不到 DOM 尺寸时（进多屏的**第一次**取流就发生在这个时刻：布局还没套上去）
+     用布局表 × 容器高度推算，否则首屏会全部落到兜底档（实测踩过：进多屏全是 540p，
+     缩放一下才升档）。布局表是同步可算的，不依赖 DOM 改完没有。 */
+  if (!h) {
+    const table = MS_LAYOUT[msMultiType];
+    if (table && table[idx]) h = ch * (table[idx][3] / 100);
+  }
+  if (!h) return "2";   // 连布局表都没有（刚建格/隐藏中）：先给中档，重排时会被纠正
+  // ① 约占播放区一半高 → 最高档（两房/四房，以及五房里那两个大格）
+  if (ch > 0 && h / ch >= MS_QN_BIG_SHARE) return "0";
+  // ② 其余按绝对高度兜底
   for (let i = 0; i < MS_QN_AUTO_TIERS.length; i++) {
     if (h >= MS_QN_AUTO_TIERS[i].minH) return MS_QN_AUTO_TIERS[i].qn;
   }
@@ -400,8 +417,8 @@ function MultiScreen_qnFor(idx) {
   return msQn === "auto" ? MultiScreen_pickQnForSlot(idx) : msQn;
 }
 
-/* 尺寸/分屏变化后重新按自动档核一遍：只有**档位真的变了**才重拉那一格
-   （重拉会闪一下并重新取流，所以不能每次 resize 都做）。手动档位不受影响。 */
+/* 尺寸/分屏变化后重新按自动档核一遍：只有**档位真的变了**才换那一格。
+   换档走**平滑路径**（双画面交叉过渡，见 MultiScreen_switchQuality），不再黑屏重来。 */
 function MultiScreen_reapplyAutoQuality() {
   if (msQn !== "auto" || msMultiType <= 1 || msDrag) return;
   for (let i = 1; i < msActiveList.length && i < MS_SLOT_COUNT; i++) {
@@ -409,8 +426,81 @@ function MultiScreen_reapplyAutoQuality() {
     if (!rec) continue;
     const want = MultiScreen_pickQnForSlot(i);
     if (rec.qn && rec.qn === want) continue;
-    MultiScreen_renderSlot(i, msActiveList[i]);
+    MultiScreen_switchQuality(i, msActiveList[i]);
   }
+}
+
+/* ---------- 平滑换档：双画面交叉过渡 ---------- */
+/*
+ * 换清晰度 = 换一条流（斗鱼接口一次只给一条流，没有多码率清单），所以必然要重新取流；
+ * 但**不必清空格子**：新流在叠放的第二个 <video> 里起播，等它真的出画面了，再淡入新的、
+ * 撤掉旧的。用户看到的是"画面轻轻跳一下"，而不是黑屏 + 转圈。
+ * 新流一直起不来（超时/失败）就放弃这次切换，旧流原样继续播 —— 至少不会越切越糟。
+ */
+const MS_SWAP_TIMEOUT_MS = 8000;
+
+// 销毁一条播放记录（flv + video + 计时器）。换档时新旧两条各有一份记录，必须能单独销毁。
+function MultiScreen_destroyPlayer(rec) {
+  if (!rec) return;
+  clearTimeout(rec.reloadTimer);
+  clearTimeout(rec.startTimer);
+  clearTimeout(rec.swapTimer);
+  try { if (rec.flv && typeof rec.flv.destroy === "function") rec.flv.destroy(); } catch (e) {}
+  try { if (rec.video && rec.video.parentNode) rec.video.parentNode.removeChild(rec.video); } catch (e) {}
+}
+
+function MultiScreen_switchQuality(idx, room) {
+  const slot = MultiScreen_slotDom(idx);
+  const old = msSlotPlayers.get(idx);
+  // 没有旧流、或旧流还没出画面（readyState < 2 = 没拿到可播数据）→ 没有"画面"可保住，走普通重渲染
+  if (!slot || !old || !old.video || !old.video.isConnected || old.video.readyState < 2) {
+    return MultiScreen_renderSlot(idx, room);
+  }
+  const epoch = ++msEpoch;
+  const fresh = slot.ownerDocument.createElement("video");
+  fresh.className = "ms-slot__video ms-slot__video--next";
+  fresh.setAttribute("playsinline", "");
+  fresh.muted = true;
+  fresh.volume = 0;
+  fresh.setAttribute("muted", "");
+  slot.appendChild(fresh);
+
+  const rec = {
+    rid: String(room.rid),
+    epoch: epoch,
+    flv: null,
+    video: fresh,
+    reloadTimer: 0,
+    startTimer: 0,
+    url: "",
+    prev: old,          // 旧流：切换成功前一直留着
+    switching: true,
+  };
+  msSlotPlayers.set(idx, rec);
+  clearTimeout(old.reloadTimer);   // 旧流的"重新加载"按钮计时器没意义了，但旧流继续播
+
+  rec.swapTimer = setTimeout(function () {
+    if (msSlotPlayers.get(idx) !== rec) return;
+    // 新流超时没出画面：放弃切换，旧流原地继续
+    msSlotPlayers.set(idx, old);
+    MultiScreen_destroyPlayer(rec);
+  }, MS_SWAP_TIMEOUT_MS);
+
+  MultiScreen_fetchStream(idx, room, epoch);
+}
+
+/* 切换成功（新流已出画面）：淡入新的，随后撤掉旧的。 */
+function MultiScreen_finishSwap(idx, rec) {
+  const prev = rec.prev;
+  rec.prev = null;
+  rec.switching = false;
+  clearTimeout(rec.swapTimer);
+  rec.swapTimer = 0;
+  rec.video.classList.add("is-live");
+  if (!prev) return;
+  setTimeout(function () {
+    MultiScreen_destroyPlayer(prev);
+  }, 320);   // 等淡入（0.25s）走完再删，避免中途露出黑底
 }
 
 let msAutoQnTimer = 0;
@@ -426,15 +516,34 @@ function MultiScreen_fetchStream(idx, room, epoch) {
   const rec = msSlotPlayers.get(idx);
   if (!rec || rec.epoch !== epoch) return;
   const slot = MultiScreen_slotDom(idx);
-  if (typeof getRealLive_Douyu !== "function") { MultiScreen_setTip(slot, "取流失败，可点重新加载"); return; }
+  if (typeof getRealLive_Douyu !== "function") {
+    if (rec.switching) { MultiScreen_abortSwap(idx, rec); return; }
+    MultiScreen_setTip(slot, "取流失败，可点重新加载");
+    return;
+  }
   const qn = MultiScreen_qnFor(idx);
   rec.qn = qn;
   getRealLive_Douyu(String(room.rid), true, false, qn, function (url) {
     const cur = msSlotPlayers.get(idx);
     if (!cur || cur.epoch !== epoch) return;
-    if (!url || url === "None") { MultiScreen_setTip(slot, "房间未开播或其他错误"); return; }
+    if (!url || url === "None") {
+      if (cur.switching) { MultiScreen_abortSwap(idx, cur); return; }   // 换档失败：旧流继续
+      MultiScreen_setTip(slot, "房间未开播或其他错误");
+      return;
+    }
     MultiScreen_startFlv(idx, url, epoch);
   });
+}
+
+/* 换档失败/超时：把旧流放回记录表，销毁新流的半成品。旧流从头到尾没停过。 */
+function MultiScreen_abortSwap(idx, rec) {
+  if (!rec || !rec.prev) return;
+  if (msSlotPlayers.get(idx) === rec) msSlotPlayers.set(idx, rec.prev);
+  const prev = rec.prev;
+  rec.prev = null;
+  rec.switching = false;
+  MultiScreen_destroyPlayer(rec);
+  void prev;
 }
 
 function MultiScreen_startFlv(idx, url, epoch) {
@@ -460,17 +569,21 @@ function MultiScreen_startFlv(idx, url, epoch) {
       const cur = msSlotPlayers.get(idx);
       if (!cur || cur.epoch !== epoch) return;
       clearTimeout(cur.startTimer);
+      // 换档路径：新流已出画面 → 淡入新的、撤掉旧的（旧流此前一直在播，全程没有黑屏）
+      if (cur.switching) { MultiScreen_finishSwap(idx, cur); return; }
       const s = MultiScreen_slotDom(idx);
       // 出画面即撤掉整个加载层（转圈态与文案态一起清）
       if (s) s.classList.remove("ms-slot--loading", "ms-slot--notice");
     }, { once: true });
-    // 起播超时兜底：到点仍未出画面就给一个可操作的提示
+    // 起播超时兜底：到点仍未出画面就给一个可操作的提示。
+    // ⚠ 换档时不提示 —— 旧流还在正常播，提示会盖在画面上（超时由 swapTimer 处理：放弃切换）
     rec.startTimer = setTimeout(function () {
       const cur = msSlotPlayers.get(idx);
-      if (cur === rec && rec.video && rec.video.readyState < 2) MultiScreen_setTip(slot, "加载缓慢，可点重新加载");
+      if (cur === rec && !rec.switching && rec.video && rec.video.readyState < 2) MultiScreen_setTip(slot, "加载缓慢，可点重新加载");
     }, MS_START_TIMEOUT_MS);
   } catch (e) {
-    MultiScreen_setTip(slot, "播放器创建失败");
+    if (rec.switching) MultiScreen_abortSwap(idx, rec);
+    else MultiScreen_setTip(slot, "播放器创建失败");
   }
 }
 
@@ -627,7 +740,7 @@ function MultiScreen_setQuality(qn) {
      每次都弹提示反而吵；自检只在用户手动选具体档位时做。 */
   if (msQn === "auto") {
     for (let i = 1; i < msActiveList.length && i < MS_SLOT_COUNT; i++) {
-      MultiScreen_renderSlot(i, msActiveList[i]);
+      MultiScreen_switchQuality(i, msActiveList[i]);
     }
     showMessage("外房清晰度：按格子大小自动", "success");
     return;
@@ -635,9 +748,9 @@ function MultiScreen_setQuality(qn) {
   const targets = [];
   for (let i = 1; i < msActiveList.length && i < MS_SLOT_COUNT; i++) targets.push(i);
   MultiScreen_beginQnCompare(targets);
-  // 只有外房格子需要重拉；主画面归斗鱼原生管
+  // 只有外房格子需要重拉；主画面归斗鱼原生管。走平滑换档，不黑屏。
   for (let i = 1; i < msActiveList.length && i < MS_SLOT_COUNT; i++) {
-    MultiScreen_renderSlot(i, msActiveList[i]);
+    MultiScreen_switchQuality(i, msActiveList[i]);
   }
 }
 
@@ -1061,6 +1174,11 @@ window.MultiScreen_getQuality = function () { return msQn; };
 window.MultiScreen_pickQnForSlot = MultiScreen_pickQnForSlot;
 window.MultiScreen_qnFor = MultiScreen_qnFor;
 window.MultiScreen_reapplyAutoQuality = MultiScreen_reapplyAutoQuality;
+window.MultiScreen_switchQuality = MultiScreen_switchQuality;
+window.MultiScreen_finishSwap = MultiScreen_finishSwap;
+window.MultiScreen_abortSwap = MultiScreen_abortSwap;
+window.MultiScreen_destroyPlayer = MultiScreen_destroyPlayer;
+window.MS_SWAP_TIMEOUT_MS = MS_SWAP_TIMEOUT_MS;
 window.MS_QN_AUTO_TIERS = MS_QN_AUTO_TIERS;
 window.MultiScreen_onChange = function (fn) {
   // 多播订阅：重复注册同一个函数只记一次
