@@ -901,6 +901,93 @@ async function run() {
   assert.ok(win26.MultiScreen_slots()[1].classList.contains("ms-slot--notice"), "重试仍失败才给提示");
   win25.close();
   win26.close();
+
+  // ---------- 26. 每房间「合入弹幕 / 合入画面」开关 ----------
+  console.log("--> 26. 每房间合入开关（弹幕 / 画面）");
+  /* 用户 2026-09-30 反馈"合入弹幕和直播流的按钮也没有"：这两把开关必须是**每房间**的、
+     缺省即开、关掉立刻生效，并且跟着"按主房记忆"一起存 —— 否则下次恢复多屏又全开了。 */
+  const win27 = load(makeDom());
+  win27.MultiScreen_enter([{ rid: "5001", nn: "甲", avatar: "" }, { rid: "5002", nn: "乙", avatar: "" }]);
+  const mainRid27 = win27.MultiScreen_getMainRid();
+  assert.strictEqual(win27.MultiScreen_isRoomOn("5001", "danmaku"), true, "合入弹幕缺省必须是开");
+  assert.strictEqual(win27.MultiScreen_isRoomOn("5001", "video"), true, "合入画面缺省必须是开");
+  assert.strictEqual(win27.MultiScreen_setRoomFlag(mainRid27, "video", false), false, "主房间没有合入开关（它本来就是原生本体）");
+  assert.strictEqual(win27.MultiScreen_setRoomFlag("5001", "video", true), false, "重复设置同一个状态必须返回「没变化」");
+  let notified27 = 0;
+  win27.MultiScreen_onChange(function () { notified27++; });
+  // 关画面：格子留占位、不取流、不建播放器
+  assert.strictEqual(win27.MultiScreen_setRoomFlag("5001", "video", false), true, "关闭画面必须返回「变了」");
+  assert.strictEqual(notified27 > 0, true, "开关变化必须通知订阅者（合并侧靠它重建连接）");
+  const slot27 = win27.MultiScreen_slots()[win27.MultiScreen_slotIndexOfRid("5001")];
+  assert.strictEqual(slot27.querySelectorAll("video").length, 0, "关掉画面的格子不得再建播放器");
+  assert.strictEqual(slot27.classList.contains("ms-slot--novideo"), true, "关掉画面的格子必须是占位态");
+  assert.ok(/已关闭画面/.test(slot27.textContent), "占位文案要说明「只合入弹幕」，实际：" + slot27.textContent);
+  assert.strictEqual(win27.MultiScreen_roomQnName("5001"), "", "关掉画面的房间没有档位角标");
+  // 自愈不得把有意为之的占位当成"丢了画面"重新渲染
+  const healVideoCount = slot27.querySelectorAll("video").length;
+  win27.MultiScreen_reapplyAutoQuality();
+  assert.strictEqual(slot27.querySelectorAll("video").length, healVideoCount, "自动换档不得给关掉画面的格子取流");
+  // 持久化：开关要进 ExSave_MultiScreen 与按主房记忆
+  assert.ok(String(win27.localStorage.getItem("ExSave_MultiScreen")).indexOf('"video":false') >= 0, "开关必须持久化到 ExSave_MultiScreen");
+  const byRoom27 = JSON.parse(win27.localStorage.getItem("ExSave_MultiScreenByRoom") || "{}");
+  const rec27 = (byRoom27[mainRid27] && byRoom27[mainRid27].rooms || []).filter(function (r) { return String(r.rid) === "5001"; })[0];
+  assert.ok(rec27 && rec27.video === false, "按主房记忆里必须带上开关，实际 " + JSON.stringify(rec27));
+  // 占位里的「开启画面」= 把开关拨回去
+  slot27.querySelector(".ms-slot__reload").dispatchEvent(new win27.MouseEvent("click", { bubbles: true }));
+  assert.strictEqual(win27.MultiScreen_isRoomOn("5001", "video"), true, "点「开启画面」必须把开关拨回开");
+  assert.ok(slot27.querySelector("video"), "开启画面后必须重新建出播放器");
+  // 关弹幕：不建连接，挂起队列里属于它的报文也一并丢掉
+  /* ⚠ Ex_WebSocket_UnLogin 是产物内的模块级 class（不是 window 属性），从测试外面替换不了它；
+     能替换的是它内部用的全局 WebSocket —— 换成一个不会真的联网的空壳即可。 */
+  win27.WebSocket = function (url) {
+    this.url = String(url);
+    this.send = function () {};
+    this.close = function () {};
+  };
+  win27.MergeDanmaku_syncConnections();
+  assert.strictEqual(win27.MergeDanmaku_getStats().conns.join(","), "5001,5002", "两个外房都要建弹幕连接（实际 " + win27.MergeDanmaku_getStats().conns.join(",") + "）");
+  win27.MergeDanmaku_push({ text: "挂着的一条", uid: "u9", cid: "", packet: "type@=chatmsg/txt@=挂着的一条/", srcRid: "5002", srcName: "乙" });
+  assert.strictEqual(win27.MergeDanmaku_getStats().held, 1, "总线未就位时先挂起（前置条件）");
+  assert.strictEqual(win27.MultiScreen_setRoomFlag("5002", "danmaku", false), true, "关掉合入弹幕必须返回「变了」");
+  win27.MergeDanmaku_syncConnections();
+  assert.strictEqual(win27.MergeDanmaku_getStats().conns.join(","), "5001", "关掉合入弹幕的房间必须断开连接");
+  assert.strictEqual(win27.MergeDanmaku_getStats().held, 0, "关掉合入弹幕时，挂起队列里属于该房间的报文必须一并丢掉");
+  win27.close();
+
+  // ---------- 27. 面板上的合入开关与外房清晰度 ----------
+  console.log("--> 27. 面板：合入开关 / 清晰度胶囊 / 档位角标");
+  const win28 = load(makeDom());
+  win28.createPopupPlayerPanel();
+  win28.MultiScreen_enter([{ rid: "6001", nn: "甲", avatar: "" }, { rid: "6002", nn: "乙", avatar: "" }]);
+  win28.PopupPlayer_renderMultiPage();
+  const panel28 = win28.document.querySelector(".popup-player-panel");
+  const rows28 = panel28.querySelectorAll(".popup-ms__room");
+  assert.strictEqual(rows28.length, 3, "三行：主房间 + 两个外房（实际 " + rows28.length + "）");
+  assert.strictEqual(rows28[0].querySelectorAll(".popup-ms__chip").length, 0, "主房间不得有合入开关");
+  const row28a = panel28.querySelector('.popup-ms__room[data-rid="6001"]');
+  const chips28 = row28a.querySelectorAll(".popup-ms__chip");
+  assert.strictEqual(chips28.length, 2, "每个外房必须有两枚合入胶囊（弹幕 / 画面）");
+  assert.strictEqual(row28a.querySelector('.popup-ms__chip[data-key="danmaku"]').getAttribute("aria-pressed"), "true", "胶囊缺省必须是开");
+  // 点「画面」→ 真的关掉，并且重画后胶囊显示关闭态
+  row28a.querySelector('.popup-ms__chip[data-key="video"]').dispatchEvent(new win28.MouseEvent("click", { bubbles: true }));
+  assert.strictEqual(win28.MultiScreen_isRoomOn("6001", "video"), false, "点一下胶囊必须真的关掉画面");
+  const row28b = win28.document.querySelector('.popup-ms__room[data-rid="6001"]');
+  assert.strictEqual(row28b.querySelector('.popup-ms__chip[data-key="video"]').getAttribute("aria-pressed"), "false", "重画后胶囊必须显示关闭态");
+  assert.strictEqual(row28b.querySelectorAll(".popup-ms__room-qn").length, 0, "关掉画面的房间不显示档位角标");
+  // 清晰度胶囊：五档齐全、与状态同步、点击落到多屏
+  const qBox28 = win28.document.getElementById("popup-ms-quality");
+  assert.strictEqual(qBox28.querySelectorAll('input[name="ms_quality_panel"]').length, 5, "清晰度必须五档齐全");
+  assert.strictEqual(qBox28.querySelector('input[value="auto"]').checked, true, "缺省必须是自动档");
+  const r28 = qBox28.querySelector('input[value="1"]');
+  r28.checked = true;
+  r28.dispatchEvent(new win28.Event("change", { bubbles: true }));
+  assert.strictEqual(win28.MultiScreen_getQuality(), "1", "在面板上选档必须落到多屏状态（与编辑条共用一处）");
+  assert.strictEqual(win28.MS_EditBar_getQuality(), "1", "面板与编辑条必须读到同一个档位");
+  const badge28 = win28.document.querySelector('.popup-ms__room[data-rid="6002"] .popup-ms__room-qn');
+  assert.ok(badge28, "外房必须显示当前档位角标");
+  assert.strictEqual(badge28.textContent, "流畅", "手动选流畅后角标必须是流畅，实际 " + badge28.textContent);
+  win28.close();
+
   dom.window.close();
   console.log("=== 多屏复刻单元测试 100% 通过 ===");
 }

@@ -31,6 +31,9 @@ function initPkg_PopupPlayer_Func() {
         if (panel.style.display === "block" || panel.style.display === "flex") {
           panel.style.setProperty("display", "none", "important");
         } else {
+          // 每次打开都重画一遍：多屏状态可能在这期间被别处改过（编辑条选了档位、
+          // 缩窗口触发了自动换档、拖拽换了位），面板上的档位角标与勾选态必须是当下的
+          PopupPlayer_renderMultiPage();
           if (typeof openMiuixPanelCentered === "function") {
             openMiuixPanelCentered(panel, btn);
           } else {
@@ -56,6 +59,10 @@ function createPopupPlayerPanel() {
           </div>
           <div class="popup-ms__restore" id="popup-ms-restore" hidden></div>
           <div class="popup-ms__rooms" id="popup-ms-rooms"></div>
+          <div class="popup-ms__qrow">
+            <span class="popup-ms__qlabel">外房清晰度</span>
+            <div class="popup-ms__quality miuix-seg" id="popup-ms-quality"></div>
+          </div>
         </div>
 
         <div class="popup-panel__card">
@@ -97,6 +104,27 @@ function createPopupPlayerPanel() {
   }
   PopupPlayer_renderMultiPage();
   PopupPlayer_initMultiPage(p);
+  /* 面板开着时，多屏状态一变（增删房间、合入开关、自动换档）就重画一遍 ——
+     否则行里的档位角标/胶囊会停在打开那一刻的旧值上。面板关着（编辑条顶替）时不重画。 */
+  if (typeof MultiScreen_onChange === "function") {
+    MultiScreen_onChange(function () {
+      let el = document.querySelector(".popup-player-panel");
+      if (!el || el.style.display === "none") return;
+      PopupPlayer_renderMultiPage();
+      /* 再收一次口：刚进多屏/刚恢复配置时，格子尺寸与取流都还在路上，
+         档位角标会按"还没套稳的几何"算出来（实测踩过：4 房 50% 的大格先被算成流畅）。
+         延迟一拍重画即可 —— 用户正在拖音量条时跳过，别把人家手里的滑块换掉。 */
+      clearTimeout(msPanelSettleTimer);
+      msPanelSettleTimer = setTimeout(function () {
+        msPanelSettleTimer = 0;
+        let e2 = document.querySelector(".popup-player-panel");
+        if (!e2 || e2.style.display === "none") return;
+        let ae = document.activeElement;
+        if (ae && ae.tagName === "INPUT" && ae.type === "range" && e2.contains(ae)) return;
+        PopupPlayer_renderMultiPage();
+      }, 700);
+    });
+  }
 }
 
 /* ---------- 多屏页 ---------- */
@@ -165,25 +193,49 @@ function PopupPlayer_renderMultiPage() {
 
   let list = MultiScreen_getList();
   countEl.textContent = list.length + " / " + MS_MAX_ROOMS;
+  PopupPlayer_ensureNames(list);
 
   let mainRid = MultiScreen_getMainRid();
   roomsEl.innerHTML = list.map(function (r) {
+    let rid = PopupPlayer_msEsc(r.rid);
     let isMain = String(r.rid) === String(mainRid);
     let vol = Math.round(MultiScreen_getVolume(r.rid, isMain) * 100);
     let volTitle = isMain
       ? "主房间音量（斗鱼自己的音量条可能把它盖回来）"
       : "这个房间的音量（0 = 静音）";
-    return (
-      '<div class="popup-ms__room" data-rid="' + PopupPlayer_msEsc(r.rid) + '">' +
+    let volHtml =
+      '<input type="range" class="popup-ms__room-vol" data-rid="' + rid + '"' +
+        ' min="0" max="100" step="5" value="' + vol + '" style="--vol:' + vol + '%"' +
+        ' title="' + PopupPlayer_msEsc(volTitle) + '" aria-label="音量" />' +
+      '<span class="popup-ms__room-volnum">' + vol + "</span>";
+    // 第一行：房名 + 房号（主画面）/ 移除
+    let head =
+      '<div class="popup-ms__room-main">' +
         '<span class="popup-ms__room-name">' + PopupPlayer_msEsc(r.nn || ("房间 " + r.rid)) + "</span>" +
-        (isMain ? '<span class="popup-ms__room-rid">主画面</span>' : "") +
-        '<input type="range" class="popup-ms__room-vol" data-rid="' + PopupPlayer_msEsc(r.rid) + '"' +
-          ' min="0" max="100" step="5" value="' + vol + '" style="--vol:' + vol + '%"' +
-          ' title="' + PopupPlayer_msEsc(volTitle) + '" aria-label="音量" />' +
-        '<span class="popup-ms__room-volnum">' + vol + "</span>" +
+        '<span class="popup-ms__room-rid">' + (isMain ? "主画面" : rid) + "</span>" +
+        (isMain ? volHtml : "") +
         (isMain ? "" : '<button type="button" class="popup-ms__room-del" title="移除">×</button>') +
-      "</div>"
-    );
+      "</div>";
+    // 主房间是这一页的原生本体（画面与弹幕都归斗鱼自己管），没有"合入"一说
+    if (isMain) return '<div class="popup-ms__room" data-rid="' + rid + '">' + head + "</div>";
+
+    /* 第二行 = 这个房间"怎么合进来"：合弹幕、合画面、音量。
+       两枚胶囊缺省都是开的（aria-pressed=true），点一下即切换并立刻生效。 */
+    let dmOn = MultiScreen_isRoomOn(r.rid, "danmaku");
+    let vdOn = MultiScreen_isRoomOn(r.rid, "video");
+    let qnName = MultiScreen_roomQnName(r.rid);
+    let qnTitle = MultiScreen_getQuality() === "auto"
+      ? "当前档位（自动档按格子大小选出来的，缩放窗口会跟着变）"
+      : "当前档位（手动选择）";
+    let sub =
+      '<div class="popup-ms__room-sub">' +
+        PopupPlayer_chip(r.rid, "danmaku", dmOn, "弹幕", "合入这个房间的弹幕（关掉就不再连它的弹幕）") +
+        PopupPlayer_chip(r.rid, "video", vdOn, "画面", "合入这个房间的画面（关掉后格子留空，省一份带宽）") +
+        (qnName ? '<span class="popup-ms__room-qn" title="' + PopupPlayer_msEsc(qnTitle) + '">' + PopupPlayer_msEsc(qnName) + "</span>" : "") +
+        '<span class="popup-ms__room-grow"></span>' +
+        volHtml +
+      "</div>";
+    return '<div class="popup-ms__room" data-rid="' + rid + '">' + head + sub + "</div>";
   }).join("");
 
   Array.prototype.forEach.call(roomsEl.querySelectorAll(".popup-ms__room-vol"), function (inp) {
@@ -201,14 +253,33 @@ function PopupPlayer_renderMultiPage() {
     });
   });
 
+  Array.prototype.forEach.call(roomsEl.querySelectorAll(".popup-ms__chip"), function (btn) {
+    let stop = function (e) { e.stopPropagation(); };
+    ["mousedown", "click", "pointerdown"].forEach(function (t) { btn.addEventListener(t, stop); });
+    btn.addEventListener("click", function () {
+      let rid = btn.getAttribute("data-rid");
+      let key = btn.getAttribute("data-key");
+      let wasOn = btn.getAttribute("aria-pressed") === "true";
+      if (!MultiScreen_setRoomFlag(rid, key, !wasOn)) return;
+      PopupPlayer_renderMultiPage();
+      if (key === "danmaku") {
+        showMessage(wasOn ? "已停止合入这个房间的弹幕" : "已开始合入这个房间的弹幕", "info");
+      } else {
+        showMessage(wasOn ? "已关闭这个房间的画面（只合入弹幕）" : "已开始加载这个房间的画面", "info");
+      }
+    });
+  });
+
   Array.prototype.forEach.call(roomsEl.querySelectorAll(".popup-ms__room-del"), function (btn) {
     btn.addEventListener("click", function (e) {
       e.stopPropagation();
-      let row = btn.parentElement;
+      let row = btn.closest(".popup-ms__room");
       MultiScreen_removeRoom(row.getAttribute("data-rid"));
       PopupPlayer_renderMultiPage();
     });
   });
+
+  PopupPlayer_renderQualityRow();
 
   // 上次的多屏配置（按主房记忆）：有就显示一行，一键恢复
   let restoreEl = document.getElementById("popup-ms-restore");
@@ -235,6 +306,57 @@ function PopupPlayer_renderMultiPage() {
   }
 
   if (toggleBtn) toggleBtn.textContent = list.length > 1 ? "退出多屏" : "开启多屏";
+}
+
+/* 补房名：一键恢复回来的配置里只有外房，主房间那一行没有名字（列表项 nn 为空）。
+   房名从 betard 补一次（MultiScreen_resolveRoom 自带缓存，同房只请求一次），补到就重画。
+   问过一次就不再问 —— 失败时也不能让"重画 → 再问"转成死循环。 */
+let msPanelNameAsked = {};
+let msPanelSettleTimer = 0;
+
+function PopupPlayer_ensureNames(list) {
+  if (typeof MultiScreen_resolveRoom !== "function") return;
+  list.forEach(function (r) {
+    let k = String(r.rid);
+    if (r.nn || msPanelNameAsked[k]) return;
+    let cached = typeof MultiScreen_getMetaName === "function" ? MultiScreen_getMetaName(k) : "";
+    if (cached) { r.nn = cached; return; }
+    msPanelNameAsked[k] = 1;
+    MultiScreen_resolveRoom(r, function (meta) {
+      if (!meta || !meta.nn || r.nn) return;
+      r.nn = meta.nn;   // 补在列表项上：既修显示，也会随下一次保存一起落盘
+      PopupPlayer_renderMultiPage();
+    });
+  });
+}
+
+/* 每房间那两枚"合入"胶囊：aria-pressed 既是语义也是样式钩子（按下的样子见 CSS） */
+function PopupPlayer_chip(rid, key, on, label, title) {
+  return '<button type="button" class="popup-ms__chip" data-rid="' + PopupPlayer_msEsc(rid) + '"' +
+    ' data-key="' + key + '" aria-pressed="' + (on ? "true" : "false") + '"' +
+    ' title="' + PopupPlayer_msEsc(title) + '">' + label + "</button>";
+}
+
+/* 外房清晰度：与编辑条顶栏那颗胶囊同一处状态（MultiScreen_setQuality）。
+   放这里是为了"不用先开编辑条也能看见/能改"—— 自动档的当前档位就显示在每个房间行里。 */
+function PopupPlayer_renderQualityRow() {
+  let box = document.getElementById("popup-ms-quality");
+  if (!box || typeof MultiScreen_getQuality !== "function") return;
+  let cur = String(MultiScreen_getQuality());
+  box.innerHTML = MS_QUALITY_LIST.map(function (q) {
+    let tip = q.v === "auto"
+      ? "按每个格子的实际大小选档：大格给最高档，小格自动降档（每个房间行的角标就是它选出来的档位）"
+      : "外房固定用「" + q.name + "」";
+    return '<label class="miuix-seg__item" title="' + PopupPlayer_msEsc(tip) + '">' +
+      '<input type="radio" name="ms_quality_panel" value="' + q.v + '"' + (cur === q.v ? " checked" : "") + " />" +
+      '<span class="miuix-seg__label">' + PopupPlayer_msEsc(q.short || q.name) + "</span>" +
+    "</label>";
+  }).join("");
+  Array.prototype.forEach.call(box.querySelectorAll('input[name="ms_quality_panel"]'), function (radio) {
+    radio.addEventListener("change", function () {
+      if (radio.checked) MultiScreen_setQuality(radio.value);
+    });
+  });
 }
 
 // 统一的结果列表渲染：rows = [{ rid, nn, avatar, showStatus, hot }]

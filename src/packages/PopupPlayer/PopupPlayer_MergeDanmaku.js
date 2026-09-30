@@ -417,8 +417,10 @@ function MergeDanmaku_badgeText(name) {
 function MergeDanmaku_syncConnections() {
   const list = MultiScreen_getList();
   const mainRid = MultiScreen_getMainRid();
+  // 关掉「合入弹幕」的房间不建连接（面板房间列表里的那枚胶囊）
   const want = list.filter(function (r) {
-    return String(r.rid) !== mainRid;
+    if (String(r.rid) === mainRid) return false;
+    return r.danmaku !== false;
   });
   const wantMap = {};
   want.forEach(function (r) {
@@ -434,6 +436,14 @@ function MergeDanmaku_syncConnections() {
     } catch (e) {}
     return false;
   });
+
+  // 刚被关掉弹幕的房间：挂起队列里还没交出去的报文也一并丢掉（否则门一出现还会补上它的弹幕）
+  if (msBusHold.length) {
+    msBusHold = msBusHold.filter(function (h) {
+      const rid = h && h.item ? String(h.item.srcRid) : "";
+      return !rid || !list.some(function (r) { return String(r.rid) === rid && r.danmaku === false; });
+    });
+  }
 
   // 新增缺的连接
   const have = {};

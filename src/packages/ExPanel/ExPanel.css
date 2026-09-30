@@ -2702,9 +2702,9 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
     border-radius: 3px !important;
 }
 
-/* 已加入多屏的列表自己滚，页面其余部分保持不动 */
+/* 已加入多屏的列表自己滚，页面其余部分保持不动（外房两行 ≈ 58px/个，五房时滚动看全） */
 .popup-ms__rooms {
-    max-height: 128px !important;
+    max-height: 168px !important;
     overflow-y: auto !important;
     padding-right: 2px !important;
 }
@@ -2745,17 +2745,124 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
     overscroll-behavior: contain !important;
 }
 
-/* 已加入的每一行 */
+/* 已加入的每一行。外房是两行：第一行房名/房号/移除，第二行是"怎么合进来"
+   （合弹幕 · 合画面 · 档位角标 · 音量）；主房间只有第一行（它没有"合入"一说）。
+   单行时 5px+20px+5px = 30px，与改造前完全等高。 */
 .popup-ms__room {
     display: flex !important;
-    align-items: center !important;
-    gap: 8px !important;
-    height: 30px !important;
-    padding: 0 8px !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    gap: 4px !important;
+    min-height: 30px !important;
+    padding: 5px 8px !important;
     box-sizing: border-box !important;
     background: var(--miuix-item-bg) !important;
     border: var(--miuix-item-border) !important;
     border-radius: 8px !important;
+}
+
+.popup-ms__room-main {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    min-height: 20px !important;
+}
+
+.popup-ms__room-sub {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+}
+
+.popup-ms__room-grow {
+    flex: 1 1 auto !important;
+}
+
+/* 每房间的「合入」胶囊（弹幕 / 画面）：按下 = 亮蓝 + 实心圆点，弹起 = 灰 + 淡圆点 */
+.popup-ms__chip {
+    flex: 0 0 auto !important;
+    height: 20px !important;
+    padding: 0 8px !important;
+    font-size: 11px !important;
+    line-height: 18px !important;
+    color: rgba(15, 23, 42, 0.55) !important;
+    background: rgba(15, 23, 42, 0.04) !important;
+    border: 1px solid rgba(15, 23, 42, 0.12) !important;
+    border-radius: 10px !important;
+    cursor: pointer !important;
+    white-space: nowrap !important;
+    transition: color 0.18s ease, background-color 0.18s ease, border-color 0.18s ease, transform 0.18s var(--miuix-spring) !important;
+}
+
+.popup-ms__chip::before {
+    content: "" !important;
+    display: inline-block !important;
+    width: 5px !important;
+    height: 5px !important;
+    margin-right: 4px !important;
+    vertical-align: 1px !important;
+    border-radius: 50% !important;
+    background: currentColor !important;
+    opacity: 0.4 !important;
+}
+
+.popup-ms__chip[aria-pressed="true"] {
+    color: var(--miuix-blue) !important;
+    background: rgba(0, 102, 255, 0.1) !important;
+    border-color: rgba(0, 102, 255, 0.35) !important;
+}
+
+.popup-ms__chip[aria-pressed="true"]::before {
+    opacity: 1 !important;
+}
+
+.popup-ms__chip:hover {
+    color: #0f172a !important;
+    border-color: rgba(15, 23, 42, 0.24) !important;
+}
+
+.popup-ms__chip[aria-pressed="true"]:hover {
+    color: var(--miuix-blue) !important;
+}
+
+.popup-ms__chip:active {
+    transform: scale(0.94) !important;
+}
+
+/* 这个房间此刻用的档位（自动档显示的是"选出来的那一档"，缩窗口会跟着变） */
+.popup-ms__room-qn {
+    flex: 0 0 auto !important;
+    padding: 1px 6px !important;
+    font-size: 10px !important;
+    color: var(--miuix-blue) !important;
+    background: rgba(0, 102, 255, 0.08) !important;
+    border-radius: 6px !important;
+    white-space: nowrap !important;
+}
+
+/* 外房清晰度：与编辑条顶栏那颗胶囊同一处状态，放这里是"不用先开编辑条也能看见、能改" */
+.popup-ms__qrow {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    margin-top: 8px !important;
+}
+
+.popup-ms__qlabel {
+    flex: 0 0 auto !important;
+    font-size: 11px !important;
+    color: rgba(15, 23, 42, 0.6) !important;
+    white-space: nowrap !important;
+}
+
+.popup-ms__quality.miuix-seg {
+    flex: 1 1 auto !important;
+    margin: 0 !important;
+}
+
+.popup-ms__quality .miuix-seg__label {
+    padding: 4px 4px !important;
+    font-size: 11px !important;
 }
 
 .popup-ms__room-name {

@@ -38,11 +38,11 @@ const MS_CLICK_SWAP_TO_MAIN = false;
    多屏之后每格只有几百像素高，喂它 2K 纯属浪费：实测（2288 房间）默认档 qn0 拿到
    2560×1440、qn2 拿到 960×540，而五格布局里的小格在屏幕上只有约 330×186。 */
 const MS_QUALITY_LIST = [
-  { v: "auto", name: "自动" },
-  { v: "0", name: "蓝光4M" },
-  { v: "3", name: "超清" },
-  { v: "2", name: "高清" },
-  { v: "1", name: "流畅" },
+  { v: "auto", name: "自动", short: "自动" },
+  { v: "0", name: "蓝光4M", short: "蓝光" },
+  { v: "3", name: "超清", short: "超清" },
+  { v: "2", name: "高清", short: "高清" },
+  { v: "1", name: "流畅", short: "流畅" },
 ];
 /* 自动档规则（用户 2026-09-29 定）：**两房/四房那种大小（格子约占播放区一半高）就给最高档**。
    ① 先看**占播放区高度的比例** ≥ 0.45 → 最高档。用比例而不是绝对像素："两房那种大小"
@@ -253,8 +253,11 @@ function MultiScreen_applyLayout() {
     slot.style.transform = "scale(1)";
     slot.style.visibility = "visible";
   });
-  // 几何改完，格子像素尺寸变了：自动档要跟着核一遍（只有档位真变了才重拉）
+  // 几何改完，格子像素尺寸变了：自动档要跟着核一遍（只有档位真变了才重拉）。
+  // 这里还要**再通知一次**：面板上的档位角标是"按当前几何算出来的"，布局一变它就得重画 ——
+  // 实测踩过：一键恢复时面板会先渲染一轮，那时布局还没套稳，角标停在了旧档位上。
   MultiScreen_reapplyAutoQuality();
+  MultiScreen_notifyChange(msActiveList.slice());
 }
 
 /* ---------- 单格渲染 ---------- */
@@ -273,7 +276,33 @@ function MultiScreen_clearSlot(idx) {
   // 换位可能把它挪到任意位置，一旦按位置去"清空"就会把播放器 DOM 连根拔掉
   // （实测：换位后 #__video2 消失、主房间加载出错）。只清我们自己的状态类，内容从不动它。
   if (msPosOwner[idx] !== 0) slot.innerHTML = "";
-  slot.classList.remove("ms-slot--loading", "ms-slot--notice", "is-cur", "cur", "dragging-player", "ms-slot--dragging");
+  slot.classList.remove("ms-slot--loading", "ms-slot--notice", "ms-slot--novideo", "is-cur", "cur", "dragging-player", "ms-slot--dragging");
+}
+
+/* 关掉了「合入画面」的房间：格子仍然占位（版面、拖拽、换位全部不变），
+   只是不取流、不建播放器 —— 相当于"只要这个房间的弹幕，不要它的画面"。 */
+function MultiScreen_renderSlotNoVideo(idx, room) {
+  const slot = MultiScreen_slotDom(idx);
+  if (!slot) return;
+  MultiScreen_clearSlot(idx);
+  slot.innerHTML =
+    '<span class="ms-slot__name">' +
+      '<span class="ms-slot__name-icon"></span>' +
+      '<span class="ms-slot__name-text"></span>' +
+    "</span>" +
+    '<div class="ms-slot__loading">' +
+      '<div class="ms-slot__loading-inner">' +
+        '<div class="ms-slot__tip">已关闭画面（只合入弹幕）</div>' +
+        '<div class="ms-slot__reload is-visible">开启画面</div>' +
+      "</div>" +
+    "</div>";
+  MultiScreen_fillName(slot, room);
+  slot.classList.add("ms-slot--novideo", "ms-slot--notice");
+  const btn = slot.querySelector(".ms-slot__reload");
+  if (btn) btn.addEventListener("click", function (e) {
+    e.stopPropagation();
+    MultiScreen_setRoomFlag(String(room.rid), "video", true);
+  });
 }
 
 function MultiScreen_renderSlot(idx, room) {
@@ -282,6 +311,7 @@ function MultiScreen_renderSlot(idx, room) {
   // 主画面格（身份 0）里是斗鱼原生播放器，永远不往里写东西 —— 注意判的是身份不是位置：
   // 换位后它可能在任意位置上，而任意位置上也可能坐着外房格（那种情况要正常渲染）。
   if (msPosOwner[idx] === 0) return;
+  if (room.video === false) return MultiScreen_renderSlotNoVideo(idx, room);
   MultiScreen_clearSlot(idx);
 
   const epoch = ++msEpoch;
@@ -361,6 +391,12 @@ function MultiScreen_resolveRoom(room, cb) {
     .catch(function () { cb(room); });
 }
 
+/* 面板补房名用：betard 已经问过的房名（同房不重复请求） */
+function MultiScreen_getMetaName(rid) {
+  const hit = msMetaCache.get(String(rid));
+  return (hit && hit.nn) || "";
+}
+
 function MultiScreen_fillName(slot, room) {
   const nameEl = slot.querySelector(".ms-slot__name-text");
   const iconEl = slot.querySelector(".ms-slot__name-icon");
@@ -416,6 +452,112 @@ function MultiScreen_pickQnForSlot(idx) {
 
 function MultiScreen_qnFor(idx) {
   return msQn === "auto" ? MultiScreen_pickQnForSlot(idx) : msQn;
+}
+
+/* ---------- 排障：现在每个外房格用的是哪一档 ---------- */
+/* 用户问过「自动清晰度到底生效没有」—— 光看画面看不出来（有些房间只提供一档，换档后地址不变）。
+   这里把「量到的格子高度 / 占播放区比例 / 实际档位 / 实际分辨率 / 音量」一次列出来：
+   页面控制台执行 MultiScreen_getQnReport() 即可。 */
+function MultiScreen_getQnReport() {
+  const c = MultiScreen_getContainer();
+  let ch = 0;
+  try { ch = c ? c.getBoundingClientRect().height : 0; } catch (e) { ch = 0; }
+  const out = [];
+  for (let i = 0; i < MS_SLOT_COUNT; i++) {
+    const room = msActiveList[i];
+    if (!room) continue;
+    const isMain = msPosOwner[i] === 0;
+    const slot = MultiScreen_slotDom(i);
+    let h = 0;
+    try { h = slot ? slot.getBoundingClientRect().height : 0; } catch (e) { h = 0; }
+    const rec = msSlotPlayers.get(i);
+    const v = rec && rec.video;
+    out.push({
+      pos: i,
+      rid: String(room.rid),
+      isMain: isMain,
+      rectH: Math.round(h),
+      share: ch ? Math.round((h / ch) * 100) / 100 : 0,
+      qn: isMain ? "主画面(原生)" : (room.video === false ? "(未取流)" : MultiScreen_qnFor(i)),
+      mode: msQn === "auto" ? "auto" : "manual(" + msQn + ")",
+      res: v && v.videoWidth ? v.videoWidth + "x" + v.videoHeight : "(未出画面)",
+      vol: MultiScreen_getVolume(room.rid, isMain),
+      // 每房间两把"合入"开关（缺省即开）
+      video: room.video !== false,
+      danmaku: room.danmaku !== false
+    });
+  }
+  return out;
+}
+
+/* ---------- 每房间的「合入」开关（弹幕 / 画面） ---------- */
+/*
+ * 用户 2026-09-30 定：外房要能单独关掉「合入弹幕」或「合入画面」（面板房间列表里那两枚胶囊）。
+ *   · 缺省都是**开**：列表项里只存"被关掉"这个事实，字段缺省即开，老配置读进来天然兼容；
+ *   · 关画面：格子仍然占位（版面、拖拽、换位都不变），但不取流、不建播放器，省一份带宽；
+ *   · 关弹幕：不再为这个房间建免登录连接，挂在队列里还没交出去的报文也一并丢掉；
+ *   · 主房间没有这两把开关 —— 它的画面与弹幕本来就是本页的原生本体。
+ * 开关随列表项持久化（MultiScreen_roomRecord），跟着"按主房记忆"一起走。
+ */
+function MultiScreen_roomRecord(r) {
+  const o = { rid: String(r.rid), nn: r.nn || "", avatar: r.avatar || "" };
+  if (r.video === false) o.video = false;
+  if (r.danmaku === false) o.danmaku = false;
+  return o;
+}
+
+function MultiScreen_roomByRid(rid) {
+  const k = String(rid);
+  return msActiveList.filter(function (r) { return String(r.rid) === k; })[0] || null;
+}
+
+function MultiScreen_slotIndexOfRid(rid) {
+  const k = String(rid);
+  for (let i = 0; i < msActiveList.length && i < MS_SLOT_COUNT; i++) {
+    if (String(msActiveList[i].rid) === k) return i;
+  }
+  return -1;
+}
+
+function MultiScreen_isRoomOn(rid, key) {
+  const room = MultiScreen_roomByRid(rid);
+  if (!room) return true;
+  return room[key] !== false;
+}
+
+/* 返回 true = 状态真的变了（面板据此决定要不要重渲染） */
+function MultiScreen_setRoomFlag(rid, key, on) {
+  if (key !== "video" && key !== "danmaku") return false;
+  const room = MultiScreen_roomByRid(rid);
+  if (!room) return false;
+  if (String(MultiScreen_getMainRid()) === String(room.rid)) return false;   // 主房间没有"合入"一说
+  const want = on !== false;
+  if ((room[key] !== false) === want) return false;                          // 没有变化
+  if (want) delete room[key];
+  else room[key] = false;
+  MultiScreen_save();
+  if (key === "video") {
+    const idx = MultiScreen_slotIndexOfRid(room.rid);
+    if (idx >= 0) MultiScreen_renderSlot(idx, room);   // 开 → 取流；关 → 换成占位
+  }
+  // 弹幕开关要靠这条通知让合并侧重建连接；画面开关顺带刷新编辑条/面板上的显示
+  MultiScreen_notifyChange(msActiveList.slice());
+  return true;
+}
+
+/* 面板上那一小枚档位角标：这个房间此刻用的是哪一档（自动档显示的是"选出来的那一档"，
+   这样缩放窗口时角标会跟着变，一眼就能看出自动档在干活）。关掉画面的房间没有档位。
+   ⚠ 取的是**当前应该用的档**（qnFor = 手动档位或按几何算出来的自动档），不是 rec.qn：
+   rec.qn 是"上次取流时用的档"，换档进行中/刚改完档时它还是旧值，角标会显示过期档位。 */
+function MultiScreen_roomQnName(rid) {
+  if (msActiveList.length < MS_MIN_ROOMS) return "";
+  const idx = MultiScreen_slotIndexOfRid(rid);
+  if (idx < 0 || msPosOwner[idx] === 0) return "";
+  const room = msActiveList[idx];
+  if (room && room.video === false) return "";
+  const qn = MultiScreen_qnFor(idx);
+  const hit = MS_QUALITY_LIST.filter(function (q) { return q.v === String(qn); })[0];
+  return hit ? hit.name : "";
 }
 
 /* ---------- 每房间音量 ---------- */
@@ -497,13 +639,17 @@ function MultiScreen_applyVolume(rid, v) {
    换档走**平滑路径**（双画面交叉过渡，见 MultiScreen_switchQuality），不再黑屏重来。 */
 function MultiScreen_reapplyAutoQuality() {
   if (msQn !== "auto" || msMultiType <= 1 || msDrag) return;
+  let changed = false;
   for (let i = 1; i < msActiveList.length && i < MS_SLOT_COUNT; i++) {
     const rec = msSlotPlayers.get(i);
     if (!rec) continue;
     const want = MultiScreen_pickQnForSlot(i);
     if (rec.qn && rec.qn === want) continue;
     MultiScreen_switchQuality(i, msActiveList[i]);
+    changed = true;
   }
+  // 档位真的变了才通知：面板上的档位角标要跟着变（缩放窗口时一眼就能看出自动档在干活）
+  if (changed) MultiScreen_notifyChange(msActiveList.slice());
 }
 
 /* ---------- 平滑换档：双画面交叉过渡 ---------- */
@@ -831,6 +977,8 @@ function MultiScreen_setQuality(qn) {
   if (!qn || String(qn) === msQn) return;
   msQn = String(qn);
   MultiScreen_save();
+  // 面板/编辑条上的档位显示跟着走（面板开着时那枚胶囊与角标要立刻反映新档位）
+  MultiScreen_notifyChange(msActiveList.slice());
   /* 自动档：按尺寸重拉即可，不走"换档前后对比"那套自检 —— 尺寸一变就可能换档，
      每次都弹提示反而吵；自检只在用户手动选具体档位时做。 */
   if (msQn === "auto") {
@@ -1151,7 +1299,7 @@ function MultiScreen_getRecent() {
 function MultiScreen_save() {
   try {
     localStorage.setItem("ExSave_MultiScreen", JSON.stringify({
-      list: msActiveList.map(function (r) { return { rid: r.rid, nn: r.nn || "", avatar: r.avatar || "" }; }),
+      list: msActiveList.map(MultiScreen_roomRecord),
       qn: msQn,
     }));
   } catch (e) {}
@@ -1183,9 +1331,7 @@ function MultiScreen_loadByRoom() {
 function MultiScreen_rememberForMainRoom() {
   const main = MultiScreen_getMainRid();
   if (!main) return;
-  const foreign = msActiveList.slice(1).map(function (r) {
-    return { rid: String(r.rid), nn: r.nn || "", avatar: r.avatar || "" };
-  });
+  const foreign = msActiveList.slice(1).map(MultiScreen_roomRecord);
   if (!foreign.length) return;   // 单屏状态：不覆盖、也不清空
   const store = MultiScreen_loadByRoom();
   store[main] = { rooms: foreign, at: Date.now() };
@@ -1250,6 +1396,8 @@ function MultiScreen_heal() {
   for (let i = 0; i < msActiveList.length && i < MS_SLOT_COUNT; i++) {
     if (msPosOwner[i] === 0) continue;   // 主画面格的内容归斗鱼，永远不重渲染
     // 槽位还没建出来也算需要渲染：renderSlot 内部取不到节点会直接返回，下一次变化再试
+    // ⚠ 关掉了「合入画面」的格子本来就没有 .ms-slot__video，它是有意为之，不能被自愈当成"丢了"
+    if (slots[i] && slots[i].classList.contains("ms-slot--novideo")) continue;
     if (!slots[i] || !slots[i].querySelector(".ms-slot__video")) needRender.push(i);
   }
   MultiScreen_applyLayout();
@@ -1283,6 +1431,12 @@ function MultiScreen_bindOnce() {
 
 function initPkg_PopupPlayer_MultiScreen() {
   MultiScreen_load();
+  /* 排障入口挂到**页面 window**：TM 沙箱里 window.* 用户在控制台读不到（同弹幕那侧的教训），
+     且必须挂在 init 阶段 —— 同一句放模块顶层实测不生效。 */
+  try {
+    const W = typeof unsafeWindow !== "undefined" ? unsafeWindow : window;
+    W.MultiScreen_getQnReport = window.MultiScreen_getQnReport;
+  } catch (e) {}
   /* 播放器 DOM 不一定在脚本初始化时就已经就绪。实测（2288 房间，重载后立即注入）：
      容器存在、主画面格也在，但 is-multi2~is-multi5 还没建出来，于是"受支持"判定为假、
      整个多屏静默失效（监听没绑、格子没渲染，看起来就像功能根本没生效）。
@@ -1316,7 +1470,15 @@ window.MultiScreen_pickQnForSlot = MultiScreen_pickQnForSlot;
 window.MultiScreen_qnFor = MultiScreen_qnFor;
 window.MultiScreen_getVolume = MultiScreen_getVolume;
 window.MultiScreen_setVolume = MultiScreen_setVolume;
+window.MultiScreen_setRoomFlag = MultiScreen_setRoomFlag;
+window.MultiScreen_isRoomOn = MultiScreen_isRoomOn;
+window.MultiScreen_roomQnName = MultiScreen_roomQnName;
+window.MultiScreen_getMetaName = MultiScreen_getMetaName;
+window.MultiScreen_resolveRoom = MultiScreen_resolveRoom;
+window.MultiScreen_slotIndexOfRid = MultiScreen_slotIndexOfRid;
+window.MultiScreen_roomRecord = MultiScreen_roomRecord;
 window.MultiScreen_savedConfigForMainRoom = MultiScreen_savedConfigForMainRoom;
+window.MultiScreen_getQnReport = MultiScreen_getQnReport;
 window.MultiScreen_reapplyAutoQuality = MultiScreen_reapplyAutoQuality;
 window.MultiScreen_switchQuality = MultiScreen_switchQuality;
 window.MultiScreen_finishSwap = MultiScreen_finishSwap;
