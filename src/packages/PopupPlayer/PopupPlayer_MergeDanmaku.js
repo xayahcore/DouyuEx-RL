@@ -47,7 +47,6 @@ const MS_MERGE_COLORS = {
   6: "#f6447f"
 };
 
-const MS_MERGE_BADGE_MAX = 5;      // 来源横条最多显示几个字
 const MS_MERGE_RATE_WINDOW_MS = 1000;
 const MS_MERGE_RATE_MAX = 12;      // 每秒最多上屏多少条合并弹幕（含所有外房）
 const MS_MERGE_BADGE_COLOR = "rgba(255,255,255,0.22)"; // 统一中性色横条
@@ -405,11 +404,10 @@ function MergeDanmaku_isGradient(el) {
   }
 }
 
+/* 来源横条的文字：**房间全名，不截断**（用户 2026-10-06 定）。横条宽度由 CSS 的内边距
+   自适应，多长的主播名都能把字包住；原先"截 5 字"会把名字砍成断头名。 */
 function MergeDanmaku_badgeText(name) {
-  const s = String(name || "").trim();
-  if (!s) return "";
-  const chars = Array.from(s); // 按码点截，别把 emoji 或代理对切坏
-  return chars.slice(0, MS_MERGE_BADGE_MAX).join("");
+  return String(name || "").trim();
 }
 
 /* ---------- ③ N 路免登录弹幕连接 ---------- */
@@ -701,10 +699,15 @@ function MergeDanmaku_badgeNativeChatItem(li) {
   if (!hit || !hit.srcName) return;
   const badge = document.createElement("span");
   badge.className = "ex-ms-badge ex-ms-badge--chat";
+  // 全名，不截断（宽度由 CSS 内边距自适应）
   badge.textContent = MergeDanmaku_badgeText(hit.srcName);
   badge.title = String(hit.srcName);
-  const host = nick && nick.parentNode ? nick.parentNode : li.firstChild;
-  if (host) host.insertBefore(badge, nick || host.firstChild);
+  /* 插在**整行最前面**（等级之前）—— 用户 2026-10-06 指定的排布：
+     来源 ｜ 等级 ｜ 粉丝牌 ｜ 用户名 ｜ ： ｜ 内容。
+     host 取昵称所在的那个节点（等级/粉丝牌/昵称/内容的共同父节点），插它的第一个子节点：
+     在同一行内联渲染，且不会跑出 .Barrage-notice 这一层。 */
+  const host = nick && nick.parentNode ? nick.parentNode : li;
+  if (host) host.insertBefore(badge, host.firstChild);
 }
 
 /* ---------- ④ 解析与上屏 ---------- */

@@ -55,7 +55,6 @@ function createPopupPlayerPanel() {
         <div class="popup-panel__card">
           <div class="popup-panel__card-header">
             <span class="popup-panel__card-title">已加入多屏 <em class="popup-ms__count" id="popup-ms-count">1 / 5</em></span>
-            <button type="button" class="popup-panel__paste-btn" id="popup-ms-edit">编辑位置顺序</button>
           </div>
           <div class="popup-ms__restore" id="popup-ms-restore" hidden></div>
           <div class="popup-ms__rooms" id="popup-ms-rooms"></div>
@@ -130,20 +129,6 @@ function createPopupPlayerPanel() {
 /* ---------- 多屏页 ---------- */
 
 function PopupPlayer_initMultiPage(p) {
-  let editBtn = p.querySelector("#popup-ms-edit");
-  if (editBtn) {
-    editBtn.addEventListener("click", function (e) {
-      e.stopPropagation();
-      if (MultiScreen_getList().length < MS_MIN_ROOMS) {
-        showMessage("多屏模式下，最少需要" + MS_MIN_ROOMS + "个直播间", "warning");
-        return;
-      }
-      // 编辑条是 1:1 复刻的原生编辑面板，开它就收起本面板，避免两层盖住播放器
-      p.style.setProperty("display", "none", "important");
-      MS_EditBar_show();
-    });
-  }
-
   let toggleBtn = p.querySelector("#popup-ms-toggle-btn");
   if (toggleBtn) {
     toggleBtn.addEventListener("click", function (e) {
@@ -230,7 +215,7 @@ function PopupPlayer_renderMultiPage() {
     let sub =
       '<div class="popup-ms__room-sub">' +
         PopupPlayer_chip(r.rid, "danmaku", dmOn, "弹幕", "合入这个房间的弹幕（关掉就不再连它的弹幕）") +
-        PopupPlayer_chip(r.rid, "video", vdOn, "画面", "合入这个房间的画面（关掉后格子留空，省一份带宽）") +
+        PopupPlayer_chip(r.rid, "video", vdOn, "画面", "合入这个房间的画面（关掉后这个房间不占格子，只把它的弹幕合进来，省一份带宽）") +
         (qnName ? '<span class="popup-ms__room-qn" title="' + PopupPlayer_msEsc(qnTitle) + '">' + PopupPlayer_msEsc(qnName) + "</span>" : "") +
         '<span class="popup-ms__room-grow"></span>' +
         volHtml +
@@ -359,6 +344,40 @@ function PopupPlayer_renderQualityRow() {
   });
 }
 
+/* 搜索结果行点击 = 加入 / 移出多屏。
+   这套规则原先寄生在编辑条（MS_EditBar_toggleRoom）里，编辑条整体删掉后搬到这里：
+   主房间本来就在（静默返回）、未开播不加、满员不加、已加入的再点一次即移出。
+   ⚠ 移出不设"最少 2 个"的门槛：关到只剩主房间就自然退回单屏（用户 2026-10-06 定）。
+   ⚠ 必须写成"单出口、最后 return ok"：用 `if (… ) return false;` 的早退写法时，
+     压缩器会把早退折进主体（`if (a && b) { … }`），返回值退化成 undefined，
+     更糟的是"主房间/空 rid"这两条会掉进未开播分支去弹提示（实测：点自己的房间弹"该主播尚未开播喔"）。 */
+function PopupPlayer_toggleRoom(room) {
+  const rid = String((room && room.rid) || "");
+  const mainRid = String(MultiScreen_getMainRid());
+  const list = MultiScreen_getList();
+  const selected = !!rid && list.some(function (r) { return String(r.rid) === rid; });
+  let ok = false;
+  if (!rid || rid === mainRid) {
+    // 主房间本来就在多屏里（它就是当前直播间），什么都不做、也不提示
+  } else if (!selected && room && +room.showStatus === 2) {
+    // 未开播的房间：进不了多屏（真取流也只会失败）。原生在此时会退出全屏再提示，这里照做。
+    try {
+      if (document.fullscreenElement && document.exitFullscreen) {
+        const pr = document.exitFullscreen();
+        if (pr && pr.catch) pr.catch(function () {});
+      }
+    } catch (e) {}
+    showMessage("该主播尚未开播喔", "warning");
+  } else if (!selected && list.length >= MS_MAX_ROOMS) {
+    showMessage("多屏模式下，最多" + MS_MAX_ROOMS + "个直播间", "warning");
+  } else {
+    if (selected) MultiScreen_removeRoom(rid);
+    else MultiScreen_addRoom(room);
+    ok = true;
+  }
+  return ok;
+}
+
 // 统一的结果列表渲染：rows = [{ rid, nn, avatar, showStatus, hot }]
 function PopupPlayer_msRenderResults(rows, emptyTip) {
   let box = document.getElementById("popup-ms-results");
@@ -389,9 +408,7 @@ function PopupPlayer_msRenderResults(rows, emptyTip) {
       let rid = row.getAttribute("data-rid");
       let room = rows.filter(function (x) { return String(x.rid) === rid; })[0];
       if (!room) return;
-      // 借道编辑条的勾选逻辑，四项校验与文案一处实现、两处复用
-      MS_EditBar_addToPool(room);
-      if (MS_EditBar_toggleRoom(rid)) {
+      if (PopupPlayer_toggleRoom(room)) {
         PopupPlayer_renderMultiPage();
         PopupPlayer_msRenderResults(rows, "");
       }
@@ -408,8 +425,7 @@ function PopupPlayer_msSearch(kw) {
   // 纯数字 / 直播间链接直接当房间号处理，省一次搜索
   let bare = String(kw).replace(/^https?:\/\/[^/]*douyu\.com\//i, "").replace(/[^\d]/g, "");
   if (/^\d+$/.test(bare) && String(kw).indexOf("douyu.com") !== -1) {
-    MS_EditBar_addToPool({ rid: bare, nn: "", avatar: "", showStatus: undefined });
-    if (MS_EditBar_toggleRoom(bare)) {
+    if (PopupPlayer_toggleRoom({ rid: bare, nn: "", avatar: "", showStatus: undefined })) {
       PopupPlayer_renderMultiPage();
       PopupPlayer_msRenderResults([], "");
     }

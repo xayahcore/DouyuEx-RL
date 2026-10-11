@@ -80,7 +80,6 @@ function load(dom) {
   // 真实链路里这两个由 initRouter 拉起；宿主初始化在缺 GM_* 时会中断，
   // 所以这里显式初始化，让测试只针对多屏本身
   win.initPkg_PopupPlayer_MultiScreen();
-  win.initPkg_PopupPlayer_EditBar();
   // 样式同样由 initRouter 注入，缺了它 getComputedStyle 解析不到多屏这一节的规则
   win.initStyles();
   assert.strictEqual(String(win.rid), RID, "宿主必须从页面标记解析出全局 rid，否则所有房间判定都会错");
@@ -308,10 +307,15 @@ async function run() {
   assert.strictEqual(list.filter((r) => String(r.rid) === "1005").length, 0, "溢出房间必须被丢弃");
 
   // ---------- 9. 增删的上下限 ----------
-  console.log("--> 9. 添加/移除的上下限");
+  console.log("--> 9. 添加/移除：上限 5；移除可一路到只剩主房间");
   enterGrid(win, 2);
   win.MultiScreen_removeRoom(String(1001));
-  assert.strictEqual(win.MultiScreen_getList().length, 2, "只剩 2 个时不得再移除");
+  /* 用户 2026-10-06 定：只剩「1 主房 + 1 外房」时，× 也必须能关掉外房 ——
+     关完只剩主房间就自然退回单屏，不需要先去点「退出多屏」。 */
+  assert.strictEqual(win.MultiScreen_getList().length, 1, "只剩 2 个时移除外房必须生效（实际 " + win.MultiScreen_getList().length + "）");
+  assert.strictEqual(String(win.MultiScreen_getList()[0].rid), RID, "剩下的必须是主房间");
+  assert.strictEqual(container.className, "layout-Player-multiContainer", "只剩主房间时必须退回单屏容器类名");
+  assert.strictEqual(hit(win, 0.25, 0.5, true), -1, "退回单屏后任何位置都不得判定为可拖拽");
   enterGrid(win, 5);
   win.MultiScreen_addRoom({ rid: "3001" });
   assert.strictEqual(win.MultiScreen_getList().length, 5, "到达上限后不得再添加");
@@ -319,36 +323,33 @@ async function run() {
   assert.strictEqual(win.MultiScreen_getList().length, 5, "上限必须硬生效");
   assert.strictEqual(win.MultiScreen_getList().filter((r) => String(r.rid) === "3002").length, 0, "超限房间不得进入列表");
 
-  // ---------- 10. 编辑条四项校验的文案 ----------
-  console.log("--> 10. 编辑条勾选校验与文案");
+  // ---------- 10. 加房 / 移除的规则与文案（原先寄生在编辑条里，现已并入面板） ----------
+  console.log("--> 10. 加房/移除规则与文案");
   enterGrid(win, 3);
   win.__notices.length = 0;
-  // 校验 1：点当前主房间 → 静默返回，且不给任何提示
-  assert.strictEqual(win.MS_EditBar_toggleRoom(RID), false, "点主房间必须静默返回 false");
+  // 规则 1：主房间本来就在 → 静默返回，不给任何提示
+  assert.strictEqual(win.PopupPlayer_toggleRoom({ rid: RID, nn: "主房" }), false, "点主房间必须静默返回 false");
   assert.strictEqual(win.__notices.length, 0, "点主房间不得弹任何提示：" + JSON.stringify(win.__notices));
-  // 校验 3：取消且只剩 2 个
-  enterGrid(win, 2);
+  // 规则 2：未开播不得加入
   win.__notices.length = 0;
-  assert.strictEqual(win.MS_EditBar_toggleRoom(String(1001)), false, "只剩 2 个时不得取消");
-  assert.ok(win.__notices.some((t) => t && t.indexOf("最少需要2个直播间") !== -1), "必须提示最少 2 个直播间，实际：" + JSON.stringify(win.__notices));
-  // 校验 2：未选中且未开播
-  win.__notices.length = 0;
-  win.MS_EditBar_addToPool({ rid: "8881", nn: "未开播的", showStatus: 2 });
-  assert.strictEqual(win.MS_EditBar_toggleRoom("8881"), false, "未开播的房间不得加入");
+  assert.strictEqual(win.PopupPlayer_toggleRoom({ rid: "8881", nn: "未开播的", showStatus: 2 }), false, "未开播的房间不得加入");
   assert.ok(win.__notices.some((t) => t && t.indexOf("该主播尚未开播") !== -1), "必须提示该主播尚未开播，实际：" + JSON.stringify(win.__notices));
-  // 校验 4：已达上限
+  // 规则 3：已达上限不得加入
   win.__notices.length = 0;
   enterGrid(win, 5);
-  win.MS_EditBar_addToPool({ rid: "3009", nn: "满员测试", showStatus: 1 });
-  assert.strictEqual(win.MS_EditBar_toggleRoom("3009"), false, "满 5 个后不得再加入");
+  assert.strictEqual(win.PopupPlayer_toggleRoom({ rid: "3009", nn: "满员测试", showStatus: 1 }), false, "满 5 个后不得再加入");
   assert.ok(win.__notices.some((t) => t && t.indexOf("最多5个直播间") !== -1), "必须提示最多 5 个直播间，实际：" + JSON.stringify(win.__notices));
-  // 通过：在播且未满
+  // 规则 4：在播且未满 → 允许加入
   enterGrid(win, 4);
   win.__notices.length = 0;
-  win.MS_EditBar_addToPool({ rid: "3010", nn: "可加入", showStatus: 1 });
-  assert.strictEqual(win.MS_EditBar_toggleRoom("3010"), true, "在播且未满应允许加入");
+  assert.strictEqual(win.PopupPlayer_toggleRoom({ rid: "3010", nn: "可加入", showStatus: 1 }), true, "在播且未满应允许加入");
   assert.strictEqual(win.MultiScreen_getList().length, 5, "加入后列表应为 5");
   assert.strictEqual(win.__notices.length, 0, "合法加入不得弹提示：" + JSON.stringify(win.__notices));
+  // 规则 5：已加入的再点一次 = 移出（不再有"最少 2 个"的门槛）
+  win.__notices.length = 0;
+  assert.strictEqual(win.PopupPlayer_toggleRoom({ rid: "3010", nn: "可加入", showStatus: 1 }), true, "已加入的房间再点一次必须移出");
+  assert.strictEqual(win.MultiScreen_getList().length, 4, "移出后列表应为 4");
+  assert.strictEqual(win.__notices.length, 0, "合法移出不得弹提示：" + JSON.stringify(win.__notices));
 
   // ---------- 11. 拖拽换位：数据 / 播放器记录 / 类名三者一致 ----------
   console.log("--> 11. 拖拽换位的一致性与流不中断");
@@ -433,34 +434,8 @@ async function run() {
   await sleep(260);
   assert.strictEqual(win.document.querySelectorAll(".dragging-player").length, 0, "长按定时器必须被 mouseup 取消");
 
-  // ---------- 14. 箭头翻页步进 = 286 x floor(条宽 / 286) ----------
-  console.log("--> 14. 编辑条箭头步进");
-  win.MS_EditBar_show();
-  assert.ok(win.MS_EditBar_isVisible(), "show() 之后必须处于可见态");
-  const bar = win.document.querySelector(".ms-editbar");
-  assert.ok(bar, "编辑条必须已挂载");
-  assert.strictEqual(bar.parentElement.className, "player__6-Nuo", "编辑条必须与事件宿主同处（容器的已定位祖先）");
-  bar.getBoundingClientRect = () => ({ left: 0, top: 0, width: 900, height: 226, right: 900, bottom: 226 });
-  assert.strictEqual(win.MS_EditBar_step(), 858, "条宽 900 时步进必须是 286 x 3 = 858");
-  bar.getBoundingClientRect = () => ({ left: 0, top: 0, width: 300, height: 226, right: 300, bottom: 226 });
-  assert.strictEqual(win.MS_EditBar_step(), 286, "条宽 300 时 step 取整为 1 页 = 286");
-  bar.getBoundingClientRect = () => ({ left: 0, top: 0, width: 200, height: 226, right: 200, bottom: 226 });
-  assert.strictEqual(win.MS_EditBar_step(), 286, "条宽不足 286 时必须回退为一页 286");
-
-  // 卡片宽高与原生一致（270x152）—— 直接查样式表，jsdom 不做布局，getComputedStyle 不可靠
-  const card = win.document.querySelector(".ms-editbar__card");
-  assert.ok(card, "编辑条必须有卡片");
-  const cardRules = cssRules(win, (s) =>
-    s.indexOf(".ms-editbar__card") !== -1 && s.indexOf(":hover") === -1 && s.indexOf(":last-child") === -1 && s.indexOf("::after") === -1
-  );
-  assert.ok(cardRules.length > 0, "必须存在 .ms-editbar__card 规则");
-  assertCss(cardRules, "width", "270px", "卡片");
-  assertCss(cardRules, "height", "152px", "卡片");
-  assertCss(cardRules, "background-color", "#333", "卡片");
-  assertCss(cardRules, "margin", "0 0 0 16px", "卡片");
-
   // ---------- 14.1 关键几何 1:1 保真（全部源自斗鱼样式表的实测原值） ----------
-  console.log("--> 14.1 格子与编辑条关键几何保真");
+  console.log("--> 14.1 格子关键几何保真");
   const geo = [
     {
       name: "房名胶囊",
@@ -483,46 +458,6 @@ async function run() {
       want: { width: "86px", height: "34px", border: "2px solid #ff5d23", "border-radius": "8px", color: "#ff5d23" },
     },
     {
-      name: "箭头",
-      sel: (s) => s.trim() === ".ms-editbar__arrow",
-      want: { width: "28px", height: "42px" },
-    },
-    {
-      name: "左箭头定位",
-      sel: (s) => s.trim() === ".ms-editbar__arrow--left",
-      want: { left: "0px" },
-    },
-    {
-      name: "右箭头定位",
-      sel: (s) => s.trim() === ".ms-editbar__arrow--right",
-      want: { right: "0px" },
-    },
-    {
-      name: "未开播角标",
-      sel: (s) => s.indexOf(".ms-editbar__close-tag") !== -1,
-      want: { width: "60px", height: "24px", background: "#ff5d23", "line-height": "24px" },
-    },
-    {
-      name: "当前角标",
-      sel: (s) => s.indexOf(".ms-editbar__cur-room") !== -1,
-      want: { width: "40px", height: "24px", "line-height": "24px" },
-    },
-    {
-      name: "选中图标",
-      sel: (s) => s.indexOf(".ms-editbar__check") !== -1 && s.indexOf("before") === -1,
-      want: { width: "24px", height: "24px" },
-    },
-    {
-      name: "卡底信息条",
-      sel: (s) => s.indexOf(".ms-editbar__info") !== -1,
-      want: { height: "32px", padding: "0 6px" },
-    },
-    {
-      name: "昵称",
-      sel: (s) => s.indexOf(".ms-editbar__nn") !== -1,
-      want: { "max-width": "136px", "font-size": "14px" },
-    },
-    {
       name: "占位块",
       sel: (s) => s.indexOf(".ms-slot--placeholder") !== -1,
       want: { border: "2px solid #fff", "pointer-events": "none", "background-color": "#333" },
@@ -535,8 +470,6 @@ async function run() {
       assertCss(rules, prop, g.want[prop], `「${g.name}」`);
     });
   });
-  // 编辑条高度必须是原生的 226（走内联样式的入口常量，这里校验常量本身）
-  assert.strictEqual(cssValue(cssRules(win, (s) => s.trim() === ".ms-editbar"), "z-index"), "10", "编辑条层级必须高于槽 0 的 z-index 5");
   // 落点高亮必须同时覆盖 cur 与 is-cur（原生只挂 is-cur，样式表只有 .cur，高亮实际失效）
   const curRules = cssRules(win, (s) => s.indexOf("is-cur") !== -1 && s.indexOf("layout-Player-multiPlayer") !== -1);
   assert.ok(curRules.length > 0, "落点高亮必须同时接 cur 与 is-cur 两个类");
@@ -550,10 +483,10 @@ async function run() {
   // ---------- 15. 画质档位 ----------
   console.log("--> 15. 画质档位");
   assert.strictEqual(win.MultiScreen_getQuality(), "auto", "默认档位必须是「自动」（按格子尺寸选档，见场景 24）");
-  const qualityRadios = win.document.querySelectorAll('input[name="ms_quality"]');
-  assert.strictEqual(qualityRadios.length, 5, "画质档位必须是 5 项（自动 + 4 个具体档位）");
-  assert.strictEqual(Array.from(qualityRadios).filter((r) => r.checked).length, 1, "画质档位必须恰好一项选中");
-  assert.strictEqual(Array.from(qualityRadios).find((r) => r.checked).value, "auto", "默认选中的必须是「自动」");
+  /* 用户 2026-10-06 让把编辑条整个删掉：档位 UI 只剩面板上的胶囊一处（面板断言在场景 27），
+     这里守住"编辑条真的没了"——模块、按钮、样式都必须一起清掉，不能留半截。 */
+  assert.strictEqual(typeof win.MS_EditBar_getQuality, "undefined", "编辑条的模块必须已经不存在");
+  assert.strictEqual(cssRules(win, (s) => s.indexOf(".ms-editbar") !== -1).length, 0, "编辑条的样式规则必须一并删干净");
   win.MultiScreen_setQuality("3");
   assert.strictEqual(win.MultiScreen_getQuality(), "3", "设置档位必须生效");
 
@@ -630,22 +563,21 @@ async function run() {
     overlay.dispatchEvent(new win.MouseEvent("click", { button: 0, clientX: 0.25 * RECT.width, clientY: 0.02 * RECT.height, bubbles: true }));
     assert.strictEqual(opened.length, 0, "死区不得触发任何跳转");
 
-    // 自有界面必须被整片排除：编辑条（含画质档位）上的点击不得被当成点格子
-    const editBar = win.document.createElement("div");
-    editBar.className = "ms-editbar";
-    const quality = win.document.createElement("input");
-    quality.type = "radio";
-    quality.name = "ms_quality";
-    editBar.appendChild(quality);
-    editBar.style.position = "fixed";
-    editBar.style.left = "0px";
-    editBar.style.top = "0px";
-    editBar.style.width = RECT.width + "px";
-    editBar.style.height = RECT.height + "px";
-    win.document.body.appendChild(editBar);
-    // 落点在外房格正中央，但目标在编辑条里 —— 必须被排除
-    quality.dispatchEvent(new win.MouseEvent("click", { button: 0, clientX: 0.75 * RECT.width, clientY: 0.5 * RECT.height, bubbles: true }));
-    assert.strictEqual(opened.length, 0, "编辑条里的点击（画质档位）绝不能被当成点格子");
+    // 自有界面必须被整片排除：面板上的点击不得被当成点格子
+    win.createPopupPlayerPanel();
+    assert.strictEqual(win.document.getElementById("popup-ms-edit"), null, "面板上不得再有「编辑位置顺序」按钮（编辑条已删）");
+    const panelEl = win.document.querySelector(".popup-player-panel");
+    panelEl.style.position = "fixed";
+    panelEl.style.left = "0px";
+    panelEl.style.top = "0px";
+    panelEl.style.width = RECT.width + "px";
+    panelEl.style.height = RECT.height + "px";
+    const panelBtn = win.document.createElement("button");
+    panelBtn.type = "button";
+    panelEl.appendChild(panelBtn);
+    // 落点在外房格正中央，但目标在面板里 —— 必须被排除
+    panelBtn.dispatchEvent(new win.MouseEvent("click", { button: 0, clientX: 0.75 * RECT.width, clientY: 0.5 * RECT.height, bubbles: true }));
+    assert.strictEqual(opened.length, 0, "面板里的点击绝不能被当成点格子");
 
     // 重载按钮热区必须被代理：命中就触发按钮自己的点击，而不是跳转
     const slot1 = cellPos(win, 1);
@@ -660,7 +592,7 @@ async function run() {
     assert.strictEqual(reloaded, 1, "命中重载按钮热区必须触发重载（实机点它被覆盖层挡住）");
     assert.strictEqual(opened.length, 0, "重载按钮点击不得跳转");
     fakeBtn.remove();
-    editBar.remove();
+    panelBtn.remove();
   } finally {
     win.open = origOpen;
     overlay.remove();
@@ -879,13 +811,35 @@ async function run() {
   const mainRid25 = win25.MultiScreen_getMainRid();
   assert.ok(byRoom[mainRid25] && byRoom[mainRid25].rooms.length === 2, "必须按主房记住多屏配置");
   assert.strictEqual(win25.MultiScreen_savedConfigForMainRoom(), null, "当前列表就是这套配置时不必提示恢复");
-  // 退出多屏回到单屏（注意：removeRoom 受"最少 2 个直播间"约束，退不到单屏）
+  // 退出多屏回到单屏（用户 2026-10-06 后：removeRoom 已经没有"最少 2 个"的门槛，可以直接退到单屏）
   win25.MultiScreen_removeRoom("3002");
   win25.MultiScreen_exit();
   const saved25 = win25.MultiScreen_savedConfigForMainRoom();
   assert.ok(saved25 && saved25.length === 1, "回到单屏后必须能取回上次配置（供一键恢复），实际 " + JSON.stringify(saved25));
   const byRoom2 = JSON.parse(win25.localStorage.getItem("ExSave_MultiScreenByRoom") || "{}");
   assert.ok(byRoom2[mainRid25] && byRoom2[mainRid25].rooms.length === 1, "退出多屏后记录必须还在（否则一键恢复没得恢复）");
+
+  // 换档（双画面交叉过渡）后音量必须跟着新流走 —— 用户 2026-10-06 报"切清晰度声音就没了，
+  // 手动拉一下音量才回来"：新流是静音起播的，出画面那一刻必须把该房间存的音量补上。
+  const win29 = load(makeDom());
+  win29.MultiScreen_enter([{ rid: "7001", nn: "甲", avatar: "" }]);
+  win29.MultiScreen_setVolume("7001", 0.6);
+  win29.getRealLive_Douyu = function (rid, v, https, qn, cb) { cb("https://example.com/v.flv"); };
+  win29.flvjs = { isSupported: () => true, createPlayer: () => ({ attachMediaElement() {}, load() {}, play() {}, destroy() {} }) };
+  win29.MultiScreen_renderSlot(1, { rid: "7001", nn: "甲" });
+  const slot29 = win29.MultiScreen_slots()[1];
+  const vOld29 = slot29.querySelector(".ms-slot__video");
+  Object.defineProperty(vOld29, "readyState", { value: 3, configurable: true });   // 旧流已有可播数据（才有"画面"可保住）
+  vOld29.dispatchEvent(new win29.Event("playing"));
+  assert.strictEqual(vOld29.volume, 0.6, "前置条件：换档前旧流已套上该房间的音量");
+  win29.MultiScreen_switchQuality(1, { rid: "7001", nn: "甲" });
+  const vNew29 = slot29.querySelector(".ms-slot__video--next");
+  assert.ok(vNew29, "有画面的格子换档必须走双画面交叉过渡（新建一路播放器）");
+  assert.strictEqual(vNew29.muted, true, "新流起播前必须先静音（浏览器对带声音自动播放有限制）");
+  vNew29.dispatchEvent(new win29.Event("playing"));
+  assert.strictEqual(vNew29.muted, false, "新流出画面后必须立刻取消静音");
+  assert.strictEqual(vNew29.volume, 0.6, "换档后新流必须继承该房间的音量（实际 " + vNew29.volume + "），否则表现为「切完档没声音」");
+  win29.close();
 
   // 外房失败自动重试一次：第一次失败不提示、隔 2 秒再试一次
   const win26 = load(makeDom());
@@ -907,6 +861,7 @@ async function run() {
   /* 用户 2026-09-30 反馈"合入弹幕和直播流的按钮也没有"：这两把开关必须是**每房间**的、
      缺省即开、关掉立刻生效，并且跟着"按主房记忆"一起存 —— 否则下次恢复多屏又全开了。 */
   const win27 = load(makeDom());
+  stubRect(win27.MultiScreen_getContainer(), RECT);
   win27.MultiScreen_enter([{ rid: "5001", nn: "甲", avatar: "" }, { rid: "5002", nn: "乙", avatar: "" }]);
   const mainRid27 = win27.MultiScreen_getMainRid();
   assert.strictEqual(win27.MultiScreen_isRoomOn("5001", "danmaku"), true, "合入弹幕缺省必须是开");
@@ -915,13 +870,25 @@ async function run() {
   assert.strictEqual(win27.MultiScreen_setRoomFlag("5001", "video", true), false, "重复设置同一个状态必须返回「没变化」");
   let notified27 = 0;
   win27.MultiScreen_onChange(function () { notified27++; });
-  // 关画面：格子留占位、不取流、不建播放器
+  /* 关画面（用户 2026-10-06 改口径）：这个房间**不占格子** —— 版面按"有画面的房间数"重排，
+     它只不取流、不建播放器（弹幕照合）。旧口径是"格子留占位"，用户明确否掉了。 */
   assert.strictEqual(win27.MultiScreen_setRoomFlag("5001", "video", false), true, "关闭画面必须返回「变了」");
   assert.strictEqual(notified27 > 0, true, "开关变化必须通知订阅者（合并侧靠它重建连接）");
   const slot27 = win27.MultiScreen_slots()[win27.MultiScreen_slotIndexOfRid("5001")];
   assert.strictEqual(slot27.querySelectorAll("video").length, 0, "关掉画面的格子不得再建播放器");
-  assert.strictEqual(slot27.classList.contains("ms-slot--novideo"), true, "关掉画面的格子必须是占位态");
-  assert.ok(/已关闭画面/.test(slot27.textContent), "占位文案要说明「只合入弹幕」，实际：" + slot27.textContent);
+  assert.strictEqual(slot27.classList.contains("ms-slot--novideo"), true, "关掉画面的格子要留「这是有意为之」的标记（自愈据此跳过）");
+  assert.strictEqual(slot27.style.width, "0px", "关掉画面的格子必须被清零（不占位），实际 " + slot27.style.width);
+  assert.strictEqual(slot27.style.visibility, "hidden", "关掉画面的格子必须隐藏");
+  assert.strictEqual(
+    win27.MultiScreen_getContainer().className,
+    "layout-Player-multiContainer is-multi is-multi2",
+    "3 房关掉 1 路画面后必须按 2 格版面排（实际 " + win27.MultiScreen_getContainer().className + "）"
+  );
+  const slots27 = win27.MultiScreen_slots();
+  assert.strictEqual(slots27[0].style.left, "0%", "主画面格按 2 格版面占左半");
+  assert.strictEqual(slots27[0].style.width, "50%", "主画面格按 2 格版面占一半宽");
+  assert.strictEqual(slots27[2].style.left, "50%", "剩下的那个有画面的外房按 2 格版面占右半");
+  assert.strictEqual(win27.MultiScreen_hitTest(0.75 * RECT.width, 0.5 * RECT.height, true), 2, "2 格版面里点右半必须命中「那个有画面的外房」所在的**位置**（不是被关掉的那格）");
   assert.strictEqual(win27.MultiScreen_roomQnName("5001"), "", "关掉画面的房间没有档位角标");
   // 自愈不得把有意为之的占位当成"丢了画面"重新渲染
   const healVideoCount = slot27.querySelectorAll("video").length;
@@ -932,10 +899,16 @@ async function run() {
   const byRoom27 = JSON.parse(win27.localStorage.getItem("ExSave_MultiScreenByRoom") || "{}");
   const rec27 = (byRoom27[mainRid27] && byRoom27[mainRid27].rooms || []).filter(function (r) { return String(r.rid) === "5001"; })[0];
   assert.ok(rec27 && rec27.video === false, "按主房记忆里必须带上开关，实际 " + JSON.stringify(rec27));
-  // 占位里的「开启画面」= 把开关拨回去
+  // 格子里那枚「开启画面」= 把开关拨回去（格子此刻被版面隐藏着，等价于面板上的胶囊）
   slot27.querySelector(".ms-slot__reload").dispatchEvent(new win27.MouseEvent("click", { bubbles: true }));
   assert.strictEqual(win27.MultiScreen_isRoomOn("5001", "video"), true, "点「开启画面」必须把开关拨回开");
   assert.ok(slot27.querySelector("video"), "开启画面后必须重新建出播放器");
+  assert.strictEqual(
+    win27.MultiScreen_getContainer().className,
+    "layout-Player-multiContainer is-multi is-multi3",
+    "拨回画面后必须回到 3 格版面"
+  );
+  assert.strictEqual(slot27.style.visibility, "visible", "拨回画面后该格必须重新可见");
   // 关弹幕：不建连接，挂起队列里属于它的报文也一并丢掉
   /* ⚠ Ex_WebSocket_UnLogin 是产物内的模块级 class（不是 window 属性），从测试外面替换不了它；
      能替换的是它内部用的全局 WebSocket —— 换成一个不会真的联网的空壳即可。 */
@@ -952,6 +925,14 @@ async function run() {
   win27.MergeDanmaku_syncConnections();
   assert.strictEqual(win27.MergeDanmaku_getStats().conns.join(","), "5001", "关掉合入弹幕的房间必须断开连接");
   assert.strictEqual(win27.MergeDanmaku_getStats().held, 0, "关掉合入弹幕时，挂起队列里属于该房间的报文必须一并丢掉");
+  /* 移除一个「已关画面」的房间：它的格子必须被清空（不能留着"已关闭画面"的占位）——
+     这个位置此后不属于任何房间，占位留着就是颗雷（实机自用一遍时发现过）。放在这里做，
+     是因为它会把房间从列表里去掉，不影响后面还有的断言已经跑完。 */
+  assert.strictEqual(win27.MultiScreen_setRoomFlag("5001", "video", false), true, "（前置）把 5001 的画面关掉");
+  assert.strictEqual(slot27.classList.contains("ms-slot--novideo"), true, "（前置）此时格子处于「只合入弹幕」占位态");
+  win27.MultiScreen_removeRoom("5001");
+  assert.strictEqual(slot27.classList.contains("ms-slot--novideo"), false, "移除房间后，格子里的「已关闭画面」占位必须被清掉");
+  assert.ok(!/已关闭画面/.test(slot27.textContent), "移除房间后格子里不得再留占位文案，实际：" + slot27.textContent);
   win27.close();
 
   // ---------- 27. 面板上的合入开关与外房清晰度 ----------
@@ -981,8 +962,8 @@ async function run() {
   const r28 = qBox28.querySelector('input[value="1"]');
   r28.checked = true;
   r28.dispatchEvent(new win28.Event("change", { bubbles: true }));
-  assert.strictEqual(win28.MultiScreen_getQuality(), "1", "在面板上选档必须落到多屏状态（与编辑条共用一处）");
-  assert.strictEqual(win28.MS_EditBar_getQuality(), "1", "面板与编辑条必须读到同一个档位");
+  assert.strictEqual(win28.MultiScreen_getQuality(), "1", "在面板上选档必须落到多屏状态");
+  assert.strictEqual(win28.MultiScreen_roomQnName("6002"), "流畅", "档位换了，角标也必须跟着换（单一数据源：面板胶囊）");
   const badge28 = win28.document.querySelector('.popup-ms__room[data-rid="6002"] .popup-ms__room-qn');
   assert.ok(badge28, "外房必须显示当前档位角标");
   assert.strictEqual(badge28.textContent, "流畅", "手动选流畅后角标必须是流畅，实际 " + badge28.textContent);

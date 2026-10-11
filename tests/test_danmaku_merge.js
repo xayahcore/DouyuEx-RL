@@ -223,7 +223,7 @@ async function run() {
   W.__onDouyuExDanmakuRendered(foreign);
   const badge = foreign.display.raw.querySelector(".ex-ms-badge");
   assert.ok(badge, "外房弹幕必须贴来源横条");
-  assert.strictEqual(Array.from(badge.textContent).length <= 5, true, "横条必须最多 5 个字，实际 " + badge.textContent);
+  assert.strictEqual(badge.textContent, "很长的主播昵称", "飘屏横条必须显示来源主播全名（用户 2026-10-06 定：不再截到 5 字），实际 " + badge.textContent);
   assert.strictEqual(badge.title, "很长的主播昵称", "横条 title 保留完整昵称");
   // 横条必须排在文字之前
   const holder = foreign.display.raw.querySelector('[class*="textWrap"]');
@@ -329,10 +329,10 @@ async function run() {
   // 空文本不生成弹幕
   assert.strictEqual(win6.MergeDanmaku_parseChatmsg(room, "type@=chatmsg/nn@=A/txt@=/"), null, "空文本不得上屏");
 
-  // 截断规则（纯函数）
+  // 横条文字规则（纯函数）：**全名，不截断**（用户 2026-10-06 定；宽度由 CSS 自适应）
   assert.strictEqual(win6.MergeDanmaku_badgeText(""), "", "空昵称不得生成横条文字");
-  assert.strictEqual(win6.MergeDanmaku_badgeText("abcdefg"), "abcde", "横条必须截到 5 字");
-  assert.strictEqual(Array.from(win6.MergeDanmaku_badgeText("🔥🔥🔥🔥🔥🔥")).join(""), "🔥🔥🔥🔥🔥", "emoji 必须按码点截断，不能截坏代理对");
+  assert.strictEqual(win6.MergeDanmaku_badgeText("abcdefg"), "abcdefg", "横条必须显示主播全名，一个字都不能截");
+  assert.strictEqual(Array.from(win6.MergeDanmaku_badgeText("🔥🔥🔥🔥🔥🔥")).join(""), "🔥🔥🔥🔥🔥🔥", "emoji 必须原样保留，一个都不能丢");
   assert.strictEqual(win6.MergeDanmaku_badgeText("  老王  "), "老王", "昵称必须去空白");
 
   // ---------- 7. 去重键：横条不得污染它 ----------
@@ -511,12 +511,36 @@ async function run() {
   const badge9 = nativeLi9.querySelector(".ex-ms-badge--chat");
   assert.ok(badge9, "原生渲染出来的条目必须被补上来源横条");
   assert.strictEqual(badge9.textContent, "外房主播", "横条文字必须是来源主播名");
+  // 位置：用户 2026-10-06 指定「来源 ｜ 等级 ｜ 粉丝牌 ｜ 用户名 ｜ ： ｜ 内容」——横条必须在等级之前
+  const row9 = badge9.parentNode;
+  assert.strictEqual(row9.children[0], badge9, "横条必须插在整行最前面（等级之前）");
+  assert.ok(
+    Array.prototype.indexOf.call(row9.children, row9.querySelector('[class*="UserLevel"]')) > 0,
+    "原生等级图标必须排在横条之后"
+  );
   assert.ok(nativeLi9.querySelector('[class*="UserLevel"]'), "原生等级图标必须原样保留（我们只插横条）");
   assert.strictEqual(nativeLi9.querySelector('[class*="Barrage-nickName"]').getAttribute("data-uid"), "555001", "原生 data-uid 必须原样保留（点用户靠它）");
   assert.strictEqual(nativeLi9.className.indexOf("is-self"), -1, "原生条目本来就没有 is-self，我们也不得加");
   // 幂等：重复观察不得叠加横条
   win9b.MergeDanmaku_badgeNativeChatItem(nativeLi9);
   assert.strictEqual(nativeLi9.querySelectorAll(".ex-ms-badge--chat").length, 1, "横条必须幂等");
+
+  // 长主播名：横条必须是**全名**（一个不截），宽度交给 CSS 自适应内边距
+  const longName9 = "一二三四五六七八九十很长的主播昵称";
+  const pkt9b = "type@=chatmsg/rid@=71415/uid@=555002/nn@=观众B/txt@=长名测试/cid@=chatid-9b/";
+  assert.strictEqual(win9b.MergeDanmaku_push(win9b.MergeDanmaku_parseChatmsg({ rid: "71415", nn: longName9 }, pkt9b)), true, "长名房那条也必须推进总线（前置条件）");
+  const nativeLi9b = win9b.document.createElement("li");
+  nativeLi9b.className = "Barrage-listItem";
+  nativeLi9b.innerHTML = '<div class="Barrage-notice--normalBarrage"><div>' +
+    '<span class="js-user-level UserLevel"></span>' +
+    '<span class="Barrage-nickName js-nick" data-uid="555002">观众B</span>' +
+    '<span class="Barrage-nickName js-nick is-colon" data-uid="555002">：</span>' +
+    '<span class="Barrage-content" data-chatid="chatid-9b">长名测试</span></div></div>';
+  win9b.document.getElementById("js-barrage-list").appendChild(nativeLi9b);
+  await new Promise((r) => setTimeout(r, 30));
+  const badge9b = nativeLi9b.querySelector(".ex-ms-badge--chat");
+  assert.ok(badge9b, "长名房的原生条目也必须被补上来源横条");
+  assert.strictEqual(badge9b.textContent, longName9, "来源横条必须是主播全名，一个字都不能截，实际 " + badge9b.textContent);
 
   // ② 原生渲染出来的飘屏：按 (uid+文本) 认领并贴横条
   const injectedCm = fakeComment(win9b, { text: "总线测试", type: "scroll" }, space9b);

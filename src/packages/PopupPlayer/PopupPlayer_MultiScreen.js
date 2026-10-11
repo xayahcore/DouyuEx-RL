@@ -139,6 +139,23 @@ function MultiScreen_resetPosOwner() {
   msPosOwner = [0, 1, 2, 3, 4];
 }
 
+/* 参与版面的位置（升序）：**关掉「合入画面」的房间不占格子**（用户 2026-10-06 定）。
+   版面格数、布局表下标、拖拽命中分区、自动档推算一律以这份名单为准 ——
+   房间本身仍留在 msActiveList 里（它的弹幕还要合入、面板里还要能开关），只是不上画面。 */
+function MultiScreen_visiblePositions() {
+  const out = [];
+  for (let i = 0; i < msActiveList.length && i < MS_SLOT_COUNT; i++) {
+    const r = msActiveList[i];
+    if (r && r.video !== false) out.push(i);
+  }
+  return out;
+}
+
+// 位置 → 版面槽号（它是第几个可见格）；显式关掉画面的位置返回 -1
+function MultiScreen_layoutSlotOf(pos) {
+  return MultiScreen_visiblePositions().indexOf(pos);
+}
+
 /* ⚠⚠ 不要再给 #__h5player 设 pointer-events:none（2026-09-29 实测推翻，原实现已撤除）
  *
  * 曾经的做法：多屏开启期间给 `#__h5player` 设 `pointer-events:none`，以为这样能让鼠标事件
@@ -205,7 +222,9 @@ function MultiScreen_applyLayout() {
   const c = MultiScreen_getContainer();
   if (!c || msDrag) return;   // 拖拽中不抢内联样式，否则被拖格会跳回原位
   MultiScreen_watchContainer();   // 容器被整棵替换时重新挂上观察（同元素时是空操作）
-  msMultiType = msActiveList.length;
+  const vis = MultiScreen_visiblePositions();
+  // 版面格数 = **有画面**的房间数：关掉画面的房间不占格，剩下几个就按几个的版面排
+  msMultiType = vis.length;
   // 与原生一致：>1 才加 is-multi；否则回到普通单屏
   if (msMultiType > 1) {
     c.className = "layout-Player-multiContainer is-multi is-multi" + msMultiType;
@@ -213,7 +232,7 @@ function MultiScreen_applyLayout() {
     c.className = "layout-Player-multiContainer";
   }
   const table = MS_LAYOUT[msMultiType];
-  /* 单屏状态（没开多屏或只剩一个房间）：**完全交回原生**，一格的内联尺寸都不要碰。
+  /* 单屏状态（没开多屏或只剩一个可见格）：**完全交回原生**，一格的内联尺寸都不要碰。
      实测线上教训：以前这里走的是"失活位置一律清零隐藏"的分支，于是单屏时把全部 5 个槽位
      都写成了 width:0;height:0;visibility:hidden —— 连主画面格一起，整块播放器区域变成零尺寸，
      后果是原生弹幕飘屏直接不再出现（引擎的轨道数按容器尺寸算，0 高就是 0 轨），
@@ -228,9 +247,11 @@ function MultiScreen_applyLayout() {
     return;
   }
   const slots = MultiScreen_slots();
-  slots.forEach(function (slot, i) {
+  slots.forEach(function (slot, pos) {
     if (!slot) return;
-    if (!table || i >= table.length) {
+    // 该位置在第几个可见格上（关掉画面的位置 = -1，直接隐藏）
+    const k = vis.indexOf(pos);
+    if (k < 0 || !table || k >= table.length) {
       // 不在本次分屏内的位置：显式清零并隐藏。
       // 这里**不能**只清内联样式"交回原生规则"——主画面格没有 is-multiN，原生规则不会隐藏它，
       // 于是被换到多余位置上的格子会一直摆在画面上。
@@ -243,12 +264,12 @@ function MultiScreen_applyLayout() {
       slot.style.visibility = "hidden";
       return;
     }
-    const g = table[i];
+    const g = table[k];
     slot.style.top = g[0] + "%";
     slot.style.left = g[1] + "%";
     slot.style.width = g[2] + "%";
     slot.style.height = g[3] + "%";
-    slot.style.zIndex = String(MS_SLOT_Z[i]);
+    slot.style.zIndex = String(MS_SLOT_Z[k]);
     // 原生靠 .is-multiN 后代规则放开槽位的 scale(0)+hidden；宿主样式缺失时内联兜底
     slot.style.transform = "scale(1)";
     slot.style.visibility = "visible";
@@ -279,8 +300,9 @@ function MultiScreen_clearSlot(idx) {
   slot.classList.remove("ms-slot--loading", "ms-slot--notice", "ms-slot--novideo", "is-cur", "cur", "dragging-player", "ms-slot--dragging");
 }
 
-/* 关掉了「合入画面」的房间：格子仍然占位（版面、拖拽、换位全部不变），
-   只是不取流、不建播放器 —— 相当于"只要这个房间的弹幕，不要它的画面"。 */
+/* 关掉了「合入画面」的房间：**不占格子**（版面按有画面的房间数重排），
+   只是不取流、不建播放器 —— 相当于"只要这个房间的弹幕，不要它的画面"。
+   格子里这份占位内容此刻已被布局隐藏（它连尺寸都没有），留着是为了给自愈一个"这是有意为之"的标记。 */
 function MultiScreen_renderSlotNoVideo(idx, room) {
   const slot = MultiScreen_slotDom(idx);
   if (!slot) return;
@@ -437,8 +459,9 @@ function MultiScreen_pickQnForSlot(idx) {
      用布局表 × 容器高度推算，否则首屏会全部落到兜底档（实测踩过：进多屏全是 540p，
      缩放一下才升档）。布局表是同步可算的，不依赖 DOM 改完没有。 */
   if (!h) {
+    const k = MultiScreen_layoutSlotOf(idx);
     const table = MS_LAYOUT[msMultiType];
-    if (table && table[idx]) h = ch * (table[idx][3] / 100);
+    if (table && k >= 0 && table[k]) h = ch * (table[k][3] / 100);
   }
   if (!h) return "2";   // 连布局表都没有（刚建格/隐藏中）：先给中档，重排时会被纠正
   // ① 约占播放区一半高 → 最高档（两房/四房，以及五房里那两个大格）
@@ -538,7 +561,9 @@ function MultiScreen_setRoomFlag(rid, key, on) {
   MultiScreen_save();
   if (key === "video") {
     const idx = MultiScreen_slotIndexOfRid(room.rid);
-    if (idx >= 0) MultiScreen_renderSlot(idx, room);   // 开 → 取流；关 → 换成占位
+    if (idx >= 0) MultiScreen_renderSlot(idx, room);   // 开 → 取流；关 → 清空格子
+    // 画面开关会改变"谁占格子"→ 版面要立刻重排（关掉的房间不再占位，其余格子跟着变大）
+    MultiScreen_applyLayout();
   }
   // 弹幕开关要靠这条通知让合并侧重建连接；画面开关顺带刷新编辑条/面板上的显示
   MultiScreen_notifyChange(msActiveList.slice());
@@ -698,6 +723,9 @@ function MultiScreen_switchQuality(idx, room) {
     url: "",
     prev: old,          // 旧流：切换成功前一直留着
     switching: true,
+    // 该房间存的音量必须跟着新流走：否则新流以 muted 起播后就再没人给它套音量，
+    // 表现为"切完清晰度声音没了，手动拉一下音量条才回来"（用户 2026-10-06 报）
+    vol: old.vol === undefined ? MultiScreen_getVolume(String(room.rid), false) : old.vol,
   };
   msSlotPlayers.set(idx, rec);
   clearTimeout(old.reloadTimer);   // 旧流的"重新加载"按钮计时器没意义了，但旧流继续播
@@ -807,7 +835,13 @@ function MultiScreen_startFlv(idx, url, epoch) {
       if (!cur || cur.epoch !== epoch) return;
       clearTimeout(cur.startTimer);
       // 换档路径：新流已出画面 → 淡入新的、撤掉旧的（旧流此前一直在播，全程没有黑屏）
-      if (cur.switching) { MultiScreen_finishSwap(idx, cur); return; }
+      if (cur.switching) {
+        MultiScreen_finishSwap(idx, cur);
+        // 新流是静音起播的（自动播放限制），出画面这一刻必须把该房间存的音量补上 ——
+        // 旧的换档分支在这里直接 return，漏了这一步，于是"切完档就没声音"
+        MultiScreen_applyVolumeToRec(cur, cur.vol === undefined ? MultiScreen_getVolume(cur.rid, false) : cur.vol);
+        return;
+      }
       const s = MultiScreen_slotDom(idx);
       // 出画面即撤掉整个加载层（转圈态与文案态一起清）
       if (s) s.classList.remove("ms-slot--loading", "ms-slot--notice");
@@ -841,7 +875,12 @@ function MultiScreen_renderAll() {
     const rec = msSlotPlayers.get(i);
     const have = rec ? rec.rid : null;
     if (!want) {
-      if (have) MultiScreen_clearSlot(i);
+      /* 这个位置不再属于任何房间 → 清干净。
+         ⚠ 判据不能只看播放器记录：关掉「合入画面」的房间本来就没有 rec（见 renderSlotNoVideo），
+         但它格子里留着"已关闭画面（只合入弹幕）"的占位 —— 只按 rec 判就会把这个占位一直留在一个
+         已经没人管的位置上（实机自用一遍时看到过，虽然此刻被隐藏着不显眼，但它是颗雷）。 */
+      const stale = MultiScreen_slotDom(i);
+      if (have || (stale && stale.classList.contains("ms-slot--novideo"))) MultiScreen_clearSlot(i);
       continue;
     }
     if (have === String(want.rid)) continue;   // 同房不动
@@ -891,7 +930,9 @@ function MultiScreen_apply(action, payload) {
     if (msActiveList.length >= MS_MAX_ROOMS) return MultiScreen_after();
     msActiveList = MultiScreen_normalize(msActiveList.concat([payload]));
   } else if (action === "delete") {
-    if (msActiveList.length <= MS_MIN_ROOMS) return MultiScreen_after();
+    /* 用户 2026-10-06：只剩「1 主房 + 1 外房」时，面板上那个 × 也必须能关掉外房 ——
+       关完只剩主房间就自然退回单屏，不需要先去点「退出多屏」。
+       所以这里**不再**设"最少 2 个"的门槛（MS_MIN_ROOMS 只管"几个格才算多屏版面"）。 */
     msActiveList = MultiScreen_normalize(msActiveList.filter(function (r) { return String(r.rid) !== String(payload); }));
   } else {
     // fresh：传入完整列表。数据未变的槽位由差量同步保住，流不会无谓重启
@@ -902,7 +943,7 @@ function MultiScreen_apply(action, payload) {
 }
 
 function MultiScreen_after() {
-  msMultiType = msActiveList.length;
+  msMultiType = MultiScreen_visiblePositions().length;
   MultiScreen_save();
   // 进了多屏的房间都记一笔"最近看过"
   for (let i = 1; i < msActiveList.length; i++) MultiScreen_pushRecent(msActiveList[i]);
@@ -983,16 +1024,20 @@ function MultiScreen_setQuality(qn) {
      每次都弹提示反而吵；自检只在用户手动选具体档位时做。 */
   if (msQn === "auto") {
     for (let i = 1; i < msActiveList.length && i < MS_SLOT_COUNT; i++) {
+      if (msActiveList[i] && msActiveList[i].video === false) continue;
       MultiScreen_switchQuality(i, msActiveList[i]);
     }
     showMessage("外房清晰度：按格子大小自动", "success");
     return;
   }
   const targets = [];
-  for (let i = 1; i < msActiveList.length && i < MS_SLOT_COUNT; i++) targets.push(i);
+  for (let i = 1; i < msActiveList.length && i < MS_SLOT_COUNT; i++) {
+    if (msActiveList[i] && msActiveList[i].video !== false) targets.push(i);   // 关掉画面的房间没流可换
+  }
   MultiScreen_beginQnCompare(targets);
   // 只有外房格子需要重拉；主画面归斗鱼原生管。走平滑换档，不黑屏。
   for (let i = 1; i < msActiveList.length && i < MS_SLOT_COUNT; i++) {
+    if (msActiveList[i] && msActiveList[i].video === false) continue;
     MultiScreen_switchQuality(i, msActiveList[i]);
   }
 }
@@ -1001,7 +1046,9 @@ function MultiScreen_setQuality(qn) {
 
 /* 返回**槽下标 0~4**（0 是主画面格，与布局表、槽位数组同一套编号），死区返回 -1。
    刻意不用原生那套"格子号 1~5"：那个编号比槽下标大 1，很容易在下标运算里错位一格，
-   一错就变成"拖这一格却动了隔壁格"。这里全部统一成下标，只在死区用 -1 哨兵值。 */
+   一错就变成"拖这一格却动了隔壁格"。这里全部统一成下标，只在死区用 -1 哨兵值。
+   ⚠ 分区按**版面槽号**（= 有画面的格子数）算，再换算回位置：关掉画面的房间不占格，
+   指针落在"第几个可见格"上必须映射到那个格子真正所在的位置，否则会拖错格。 */
 function MultiScreen_hitTest(clientX, clientY, forLongPress) {
   const c = MultiScreen_getContainer();
   if (!c) return -1;
@@ -1014,28 +1061,28 @@ function MultiScreen_hitTest(clientX, clientY, forLongPress) {
   const d = (clientX - r.left) / r.width;   // 归一化 x
   const p = yRel / r.height;                // 归一化 y
 
-  // 死区与分区逐条对应原生 switch(n)，返回值已换算为槽下标
+  // 死区与分区逐条对应原生 switch(n)；这里先得到**版面槽号**，最后统一换算成位置
+  let hit = -1;
   if (n === 2) {
     if (p < 0.25 || p > 0.75) return -1;
-    return d > 0.5 ? 1 : 0;
-  }
-  if (n === 3) {
+    hit = d > 0.5 ? 1 : 0;
+  } else if (n === 3) {
     if (p < 0.1713 || p > 0.8287 || d < 0.008 || d > 0.992) return -1;
-    if (d < 0.664) return 0;
-    return p < 0.4993 ? 1 : 2;
-  }
-  if (n === 4) {
-    if (d < 0.5) return p < 0.5 ? 0 : 3;
-    return p < 0.5 ? 1 : 2;
-  }
-  if (n === 5) {
+    if (d < 0.664) hit = 0;
+    else hit = p < 0.4993 ? 1 : 2;
+  } else if (n === 4) {
+    if (d < 0.5) hit = p < 0.5 ? 0 : 3;
+    else hit = p < 0.5 ? 1 : 2;
+  } else if (n === 5) {
     if (p < 0.014 || p > 0.986 || d < 0.095 || d > 0.905) return -1;
-    if (d < 0.581) return p < 0.5 ? 0 : 3;
-    if (p < 0.338) return 1;
-    if (p < 0.662) return 2;
-    return 4;
+    if (d < 0.581) hit = p < 0.5 ? 0 : 3;
+    else if (p < 0.338) hit = 1;
+    else if (p < 0.662) hit = 2;
+    else hit = 4;
   }
-  return -1;
+  if (hit < 0) return -1;
+  const vis = MultiScreen_visiblePositions();
+  return vis[hit] === undefined ? -1 : vis[hit];
 }
 
 /* ---------- 拖拽换位 ---------- */
@@ -1070,11 +1117,13 @@ function MultiScreen_beginDrag(startX, startY, idx) {
   // 否则按类名定位槽位时会命中占位块
   const ph = document.createElement("div");
   ph.className = "layout-Player-multiPlayer ms-slot--placeholder";
-  const g = (MS_LAYOUT[msMultiType] || [])[idx];
+  // 占位块摆在"这格在版面上的位置"（版面槽号），不是房间位置 —— 关掉画面的房间不占格
+  const k = MultiScreen_layoutSlotOf(idx);
+  const g = k >= 0 ? (MS_LAYOUT[msMultiType] || [])[k] : null;
   if (g) {
     ph.style.top = g[0] + "%"; ph.style.left = g[1] + "%";
     ph.style.width = g[2] + "%"; ph.style.height = g[3] + "%";
-    ph.style.zIndex = String(MS_SLOT_Z[idx]);
+    ph.style.zIndex = String(MS_SLOT_Z[k]);
   }
   c.insertBefore(ph, slotEl);
 
@@ -1210,7 +1259,6 @@ function MultiScreen_swapSlotState(a, b) {
    点格子里的"重新加载"按钮，都会冒泡上来被当成"点了格子"→ 开出对应直播间的新标签页。
    这里先把自有界面整片排除掉，再按坐标判定。 */
 const MS_OWN_UI_SELECTOR = [
-  ".ms-editbar",
   ".ms-slot__reload",
   ".popup-player-panel",
   ".popup-player",

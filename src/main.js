@@ -97,7 +97,6 @@ function initPkg() {
   initPkg_Safe("Lottery", initPkg_Lottery);
   initPkg_Safe("PopupPlayer", initPkg_PopupPlayer);
   initPkg_Safe("PopupPlayer_MultiScreen", initPkg_PopupPlayer_MultiScreen);
-  initPkg_Safe("PopupPlayer_EditBar", initPkg_PopupPlayer_EditBar);
   initPkg_Safe("PopupPlayer_MergeDanmaku", initPkg_PopupPlayer_MergeDanmaku);
   initPkg_Safe("LiveTool", initPkg_LiveTool);
   initPkg_Safe("VideoTools", initPkg_VideoTools);
