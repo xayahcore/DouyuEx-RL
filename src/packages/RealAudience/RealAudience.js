@@ -1,3 +1,12 @@
+/*
+ * 统计条数值来源（P0 改造，2026-10）：
+ *   互动人数 / 弹幕人数 / 礼物价值 / 贵宾数  ← 本机档案 ArchiveDB.getRoomDay(rid, 当天)
+ *   贵宾数兜底                              ← 长连接 oni.vn（原链路保留）
+ *   已播                                    ← betard/h5room 的 show_time（本地算，不依赖任何远程接口）
+ *   已观看                                  ← 官方 fsjk/getCardTaskInfo（需登录，仅本人）
+ * 原第三方在看排行数据站已停服，其 /xeee/room/aggr 请求已在本次改造中删除。
+ * 口径如实标注：本机没观测到的一天显示「未观测」，绝不写 0（0 会被误读成"观测到但没人"）。
+ */
 let real_info = {
 	view: "",
 	showtime: 1428,
@@ -9,7 +18,13 @@ let real_info = {
 	money_bag: 0,
 	money_total: 0,
 	noble_count: "",
+	// 本机档案是否已经成功给出过这一天的数字（用于区分"没数据"与"读失败后别清空"）
+	localObserved: false,
+	// 贵宾数当前口径："archive" = 来自档案 nobleCnt；"ws" = 来自长连接 oni.vn
+	noble_source: "ws",
 }
+// 本机没有这一天记录时的展示文案（不写 ****、不写 0）
+const REAL_AUDIENCE_UNOBSERVED = "未观测";
 let hasAvatarBottom = false;
 // 统计模块定时器只允许启动一次（与 h5room 请求解耦后，任何重试都不重复挂表）
 let real_audience_booted = false;
@@ -177,10 +192,12 @@ function realAudienceSet(id, prop, value) {
 			// ⚠ 这里必须用 onclick 赋值、不能用 addEventListener。
 			// 原因：initPkg_RealAudience_Dom 插入成功时会自己调一次本函数，而
 			// initPkg_RealAudience() 紧接着又会调一次，同一个节点因此会被绑两次监听，
-			// 点一下「真实人数」就会连开两个 doseeing 标签页。onclick 是覆盖式赋值，
+			// 点一下「真实人数」就会连开两个第三方数据站标签页。onclick 是覆盖式赋值，
 			// 重复调用天然幂等；addEventListener 是累加的，谁再多调一次就再开一个标签页。
 			audience.onclick = function() {
-				openPage(`https://www.doseeing.com/room/${rid}`, true);
+				// P0：数据源已改为本机档案（原第三方数据站已停服），
+				// 点击不再跳第三方，改为在浏览器里打开当前斗鱼直播间。
+				openPage(`https://www.douyu.com/${rid}`, true);
 			};
 		}
 	}
@@ -192,21 +209,29 @@ async function setRealViewer() {
 	if(document.querySelector(".MatchSystemChatRoomEntry") != null){
 		document.querySelector(".MatchSystemChatRoomEntry").style.display = "none";
 	}
-	// 两个请求各自容错：doseeing 不可达时，不能让"已播"这种本地就能算出来的项一起消失
-	let retData = null;
+	// 数据源分两路：人数/礼物三项读**本机档案**（ArchiveDB），今日观看仍走官方 fsjk 接口。
+	// 两路各自容错：档案不可用时，不能让"已播"这种本地就算得出来的项一起消失。
+	let archiveResult = null;
 	let todayWatchData = null;
 	try {
-		retData = await getRealViewer(rid);
+		archiveResult = await getRoomDayFromArchive(rid, getLocalDateStr(new Date()));
 	} catch (e) {
-		console.warn("[DouyuEx] 真实人数请求失败（本轮跳过人数/礼物项）:", e);
+		archiveResult = null;
+	}
+	if (!archiveResult || !archiveResult.ok) {
+		// 留痕：真实人数改成"本机观测"口径后，读不到档案必须能被看见（不要静默）。
+		console.warn("[DouyuEx] 真实人数读取失败（本机档案不可用，本轮跳过人数/礼物项）:", archiveResult ? archiveResult.reason : "unknown");
 	}
 	try {
 		todayWatchData = await getTodayWatch(rid);
 	} catch (e) {
 		console.warn("[DouyuEx] 今日观看请求失败（本轮跳过已观看项）:", e);
 	}
-	// stat 为 null 表示本轮拿不到数据：**保持上一次的数值**，绝不覆盖成 0
-	let stat = (retData && retData.data) ? retData.data : null;
+	// roomDay 为 null / 全零 = 本机没观测到该房间这一天 → 显示「未观测」，绝不填 0/****。
+	// 读失败时（ok:false）保持上一次的数值，绝不覆盖成占位符或 0。
+	let roomDay = (archiveResult && archiveResult.ok) ? archiveResult.roomDay : null;
+	let hasLocalData = (archiveResult && archiveResult.ok) ? realAudienceRoomDayHasData(roomDay) : false;
+	let observeHint = realAudienceObserveHint(roomDay);
 	let todayWatchSeconds = (todayWatchData && todayWatchData.data && todayWatchData.data.todayWatch !== undefined) ? todayWatchData.data.todayWatch : 0;
 	let todayWatchOk = !!(todayWatchData && todayWatchData.error == 0);
 	let showedTime = 0;
@@ -219,28 +244,55 @@ async function setRealViewer() {
 			showedTime = Math.floor(Date.now()/1000) - Number(real_info.showtime);
 		}
 	}
-	if (stat) {
-		real_info.view = stat["active.uv"] || 0;
-		real_info.danmu_person_count = stat["chat.uv"] || 0;
-		real_info.gift_person_count = stat["gift.all.uv"] || 0;
-	real_info.paid_person_count = stat["gift.paid.uv"] || 0;
-	real_info.money_yc = Number(stat["gift.paid.price"] / 100 || 0).toFixed(2);
-	real_info.money_total = Number(stat["gift.all.price"] / 100 || 0).toFixed(2);
-	
-		realAudienceSet("real-audience__total", "innerText", real_info.view);
-		realAudienceSet("real-audience__t", "title", "今日累计活跃人数:" + real_info.view + " 弹幕人数:" + real_info.danmu_person_count + " 送礼人数:" + real_info.gift_person_count + " 付费人数:" + real_info.paid_person_count);
-		realAudienceSet("real-audience__barrage", "innerText", real_info.danmu_person_count);
+	// 三项人数/金额：节点 id、写入方式、title 文案、元素顺序全部保持改动前的样子，只换数值来源。
+	if (hasLocalData) {
+		real_info.view = realAudienceNumber(roomDay.activeUv);
+		real_info.danmu_person_count = realAudienceNumber(roomDay.chatUv);
+		real_info.gift_person_count = realAudienceNumber(roomDay.giftUv);
+		real_info.paid_person_count = realAudienceNumber(roomDay.paidUv);
+		real_info.money_yc = (realAudienceNumber(roomDay.incomeCents) / 100).toFixed(2);
+		real_info.money_total = real_info.money_yc;
+		real_info.localObserved = true;
+
+		realAudienceSet("real-audience__total", "innerText", String(real_info.view));
+		realAudienceSet("real-audience__t", "title", "今日累计活跃人数:" + real_info.view + " 弹幕人数:" + real_info.danmu_person_count + " 送礼人数:" + real_info.gift_person_count + " 付费人数:" + real_info.paid_person_count + "\n" + observeHint);
+		realAudienceSet("real-audience__barrage", "innerText", String(real_info.danmu_person_count));
 		// 送礼人数一项当前未展示（real-audience__gift 节点已在 Dom 中注释掉）
 		realAudienceSet("real-audience__money_yc", "innerText", real_info.money_yc);
-		realAudienceSet("real-audience__money", "title", "总礼物价值:" + real_info.money_total + " 鱼翅礼物:" + real_info.money_yc);
+		realAudienceSet("real-audience__money", "title", "总礼物价值:" + real_info.money_total + " 鱼翅礼物:" + real_info.money_yc + "\n" + observeHint);
+
+		// 贵宾数：档案里有 nobleCnt 就用档案（与本条其余数字同口径），
+		// 没有则继续沿用长连接的 oni.vn（那条链路一行都没删）。
+		let archivedNoble = realAudienceNumber(roomDay.nobleCnt);
+		if (archivedNoble > 0) {
+			real_info.noble_count = String(archivedNoble);
+			real_info.noble_source = "archive";
+			realAudienceSet("real-audience__noble", "innerText", formatNobleCount(real_info.noble_count));
+		} else if (real_info.noble_source === "archive") {
+			// 新的一天 / 档案里没有贵宾数：把口径还给长连接，别让旧值长期占位。
+			real_info.noble_source = "ws";
+		}
+	} else if (!real_info.localObserved) {
+		// 本机没有这一天的数字（档案里没这条 / 全零 / ArchiveDB 不可用 / 本轮读失败）：
+		// 一律如实显示「未观测」。★只有当"从来没观测到过"时才这么写 ——
+		// 已经有过数字之后再读失败，走下面那条 else 保持原值，绝不把已知数字清成未观测/0。
+		realAudienceSet("real-audience__total", "innerText", REAL_AUDIENCE_UNOBSERVED);
+		realAudienceSet("real-audience__barrage", "innerText", REAL_AUDIENCE_UNOBSERVED);
+		realAudienceSet("real-audience__money_yc", "innerText", REAL_AUDIENCE_UNOBSERVED);
+		realAudienceSet("real-audience__t", "title", "今日累计活跃人数:未观测 弹幕人数:未观测\n" + observeHint);
+		realAudienceSet("real-audience__money", "title", "总礼物价值:未观测\n" + observeHint);
+		if (real_info.noble_count === "") {
+			realAudienceSet("real-audience__noble", "innerText", REAL_AUDIENCE_UNOBSERVED);
+		}
 	}
-	// 贵宾数来自长连接消息、不依赖 doseeing，任何时候都可以写
-	if (real_info.noble_count !== "") {
+	// 贵宾数来自长连接消息（oni.vn），任何时候都可以写；
+	// 但档案给出 nobleCnt 时以档案为准，这里就不能再把它盖回长连接的值。
+	if (real_info.noble_count !== "" && real_info.noble_source !== "archive") {
 		realAudienceSet("real-audience__noble", "innerText", formatNobleCount(real_info.noble_count));
 	}
-	
+
 	// 下面两项本地就算得出来（已播用 showtime、已观看用 todayWatch），
-	// 所以**放在 doseeing 的 if 之外**：接口不可达时统计条也不该整条空着
+	// 所以**放在人数写入的 if 之外**：档案/接口不可达时统计条也不该整条空着
 	realAudienceSet("real-audience__time", "innerText", "已播:" + formatSeconds(showedTime));
 	realAudienceSet("real-audience__time", "title", "开播时间:" + String(dateFormat("yyyy年MM月dd日hh时mm分ss秒 ",new Date(Number(real_info.showtime + "000")))) + "\n已观看:" + formatSeconds(todayWatchSeconds));
 	
@@ -353,32 +405,69 @@ function getTodayWatch(rid) {
 	})
 }
 
-function getRealViewer(rid) {
-	return new Promise((resolve, reject) => {
-		GM_xmlhttpRequest({
-			method: "POST",
-			url: `https://www.doseeing.com/xeee/room/aggr`,
-			headers: {
-				"Connection": "keep-alive",
-				"Content-Type": "application/json;charset=UTF-8",
-				"Origin": "https://www.doseeing.com",
-				"Referer": "https://www.doseeing.com/room/" + rid,
-				"User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1 Edg/91.0.4472.114"
-			},
-			data: `{"m":"${window.btoa(`rid=${rid}&dt=0`).split("").reverse().join("")}"}`,
-			responseType: "json",
-			onload: (response) => {
-				resolve(response.response);
-			},
-			onerror: (err) => {
-				reject(err);
-			}
-		});
-	})
+/* ---------- 本机档案读取（P0：取代已停服的第三方数据站） ----------
+ * ArchiveDB 是异步 IndexedDB 实现（getRoomDay → Promise<room_day|null>），
+ * 但为兼容"同步取值的存档层"，这里对返回值同时接受 thenable 与直接值。
+ * 任何异常都在本层收口：调用方永远只会拿到 {ok:true, roomDay} 或 {ok:false, reason}。
+ */
+function getRoomDayFromArchive(realRid, dayKey) {
+	if (typeof ArchiveDB === "undefined" || !ArchiveDB || typeof ArchiveDB.getRoomDay !== "function") {
+		return Promise.resolve({ ok: false, reason: "unsupported", roomDay: null });
+	}
+	let result = null;
+	try {
+		result = ArchiveDB.getRoomDay(String(realRid), String(dayKey));
+	} catch (e) {
+		return Promise.resolve({ ok: false, reason: "exception", roomDay: null });
+	}
+	if (!result || typeof result.then !== "function") {
+		return Promise.resolve({ ok: true, roomDay: result || null });
+	}
+	return result.then(function (roomDay) {
+		return { ok: true, roomDay: roomDay || null };
+	}, function (error) {
+		return { ok: false, reason: "exception", roomDay: null };
+	});
+}
+
+/** 任意值 -> 有限数字；非法一律 0（room_day 的数值字段本来就只有非负计数）。 */
+function realAudienceNumber(value) {
+	let numeric = Number(value);
+	if (!isFinite(numeric) || numeric < 0) return 0;
+	return Math.floor(numeric);
+}
+
+/** room_day 里是否真有观测数据：全零等于"没观测到"，不能当 0 展示。 */
+function realAudienceRoomDayHasData(roomDay) {
+	if (!roomDay || typeof roomDay !== "object") return false;
+	const countedFields = ["activeUv", "chatUv", "danmakuCnt", "incomeCents", "giftCnt", "giftUv", "enterUv"];
+	for (let i = 0; i < countedFields.length; i++) {
+		if (realAudienceNumber(roomDay[countedFields[i]]) > 0) return true;
+	}
+	return false;
+}
+
+/** 毫秒时间戳 -> "HH:mm"（本地时区）；非法返回空串。 */
+function realAudienceHourMinute(timestamp) {
+	let moment = new Date(Number(timestamp));
+	if (isNaN(moment.getTime()) || Number(timestamp) <= 0) return "";
+	let hour = moment.getHours();
+	let minute = moment.getMinutes();
+	return (hour < 10 ? "0" + hour : String(hour)) + ":" + (minute < 10 ? "0" + minute : String(minute));
+}
+
+/** title 追加的观测口径说明：有档案说"自 HH:mm 起观测"，没档案说"暂无本房间数据"。 */
+function realAudienceObserveHint(roomDay) {
+	if (!roomDay || typeof roomDay !== "object") return "本机暂无本房间数据（未观测）";
+	let startText = realAudienceHourMinute(roomDay.firstTs);
+	if (!startText) return "本机暂无本房间数据（未观测）";
+	return "本机自 " + startText + " 起观测";
 }
 
 function initPkg_RealAudience_Handle(ret) {
 	if (getType(ret) != "oni") return;
+	// 档案已给出贵宾数时以档案为准，长连接不再覆盖。
+	if (real_info.noble_source === "archive") return;
 	let vn = getStrMiddle(ret, "vn@=", "/");
 	if (!vn) return;
 	real_info.noble_count = vn;

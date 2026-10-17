@@ -15,7 +15,10 @@ const REAL_AUDIENCE_SRC = fs.readFileSync(path.join(__dirname, "../src/packages/
  * 「真实人数」统计条的点击必须只开一个页面。
  * 回归背景：initPkg_RealAudience_Dom 插入成功时会自己调一次 initPkg_RealAudience_Func，
  * 而 initPkg_RealAudience() 紧接着又调一次 —— 用 addEventListener 时同一个节点被绑两次，
- * 点一下会连开两个 doseeing 标签页（用户实测报障）。这里把"调多少次"都钉住。
+ * 点一下会连开两个标签页（用户实测报障）。这里把"调多少次"都钉住。
+ *
+ * P0 起数据源改成本机档案，点击目标也随之改为斗鱼直播间页（不再跳第三方数据站），
+ * 但「只能开一个」这条回归意图一个字都没变。
  */
 function makeEnv() {
     const dom = new JSDOM(
@@ -77,7 +80,8 @@ function testClickBindsOnce() {
     env.api.bindClick();
     clickBar(env.win);
     assert.strictEqual(env.opened.length, 1, "点一次只应打开一个页面，实际 " + env.opened.length);
-    assert.ok(env.opened[0].indexOf("https://www.doseeing.com/room/9999") === 0, env.opened[0]);
+    assert.strictEqual(env.opened[0], "https://www.douyu.com/9999",
+        "点击必须打开当前斗鱼直播间（不再跳第三方数据站），实际 " + env.opened[0]);
 
     // 再怎么重复绑定，也还是一个
     env.api.bindClick();

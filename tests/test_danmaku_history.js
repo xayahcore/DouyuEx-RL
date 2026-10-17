@@ -76,14 +76,31 @@ function variantCard(prefix, uid, nick) {
 </div>`;
 }
 
-function makeItem(i, type) {
-    if (type === "gift") {
-        return {
-            ts: 1790022643 + i, rid: "12869486", txt: "赠送主播年度冲鸭x1", c: 1, type: "gift",
-            value: 100, name: "年度冲鸭", img: "https://gfs-op.douyucdn.cn/x.png", "room.nn": "白佑兮",
-        };
+/**
+ * 一条本机档案记录（字段名照 ArchiveDB.queryUserDay 的契约）：
+ *   {kind, txt, gfn, gfcnt, rid, roomName, ts, uid}
+ * 注意：gift 记录来自 dgb 报文，档案里**没有**礼物图（gfn/gfcnt/gfid 而已），
+ * 所以礼物行的徽章只能靠「礼」字区分 —— 断言按这个事实写。
+ */
+function makeRecord(index, kind, extra) {
+    const base = {
+        kind: kind,
+        uid: "109771700",
+        rid: "71415",
+        roomName: "寅子",
+        ts: new Date(2026, 9, 17, 20, 30, index).getTime(),
+    };
+    if (kind === "gift") {
+        return Object.assign({}, base, {
+            kind: "gift",
+            txt: "",
+            gfn: "年度冲鸭",
+            gfcnt: 1,
+            rid: "12869486",
+            roomName: "白佑兮",
+        }, extra || {});
     }
-    return { ts: 1790028942 + i, rid: "71415", txt: "魔法骑士" + i, c: 1, type: "chat", "room.nn": "寅子" };
+    return Object.assign({}, base, { kind: "chat", txt: "魔法骑士" + index, gfn: "", gfcnt: 1 }, extra || {});
 }
 
 function loadModule(opts = {}) {
@@ -93,38 +110,45 @@ function loadModule(opts = {}) {
     );
     const win = dom.window;
 
-    const requests = [];
+    const queries = [];
     const opened = [];
     const messages = [];
+    const metaCalls = [];
     let headerCalls = 0;
     let centeredCalls = 0;
 
-    const GM_xmlhttpRequest = (req) => {
-        requests.push(req);
-        if (opts.neverRespond) return;
-        const offset = Number((req.url.match(/offset=(\d+)/) || [])[1] || 0);
-        const plan = opts.plan ? opts.plan(req.url, offset) : { list: [] };
-        setTimeout(() => {
-            if (plan.reason === "timeout") { if (req.ontimeout) req.ontimeout(); return; }
-            if (plan.reason === "network") { if (req.onerror) req.onerror(); return; }
-            if (plan.reason === "http") { req.onload({ status: 502, finalUrl: req.url, responseText: "502 Bad Gateway" }); return; }
-            if (plan.reason === "parse") { req.onload({ status: 200, finalUrl: req.url, responseText: "<html>not json</html>" }); return; }
-            if (plan.reason === "loginHtml") {
-                // finalUrl 缺失（未提供）且返回登录页 HTML 的兜底路径
-                req.onload({ status: 200, responseText: "<html><body><a href=\"/login?redirect=%2Fdata\">请登录</a></body></html>" });
-                return;
-            }
-            req.onload({
-                status: 200,
-                finalUrl: plan.finalUrl || req.url,
-                responseText: JSON.stringify({ result: plan.list || [], isvip: 0 }),
-            });
-        }, 0);
+    /**
+     * dataPlan(dayKey, offset) -> {ok, list, hasMore} | {ok:false, reason}
+     *                          | {throw:true}（同步抛） | {neverRespond:true}
+     */
+    const ArchiveDB = opts.noArchiveDB ? undefined : {
+        queryUserDay: (uid, dayKey, queryOptions) => {
+            queries.push({ uid: uid, dayKey: dayKey, offset: queryOptions.offset, limit: queryOptions.limit });
+            const plan = opts.dataPlan
+                ? opts.dataPlan(dayKey, queryOptions.offset)
+                : { ok: true, list: [], hasMore: false };
+            if (plan.neverRespond) return new Promise(() => {});
+            if (plan.throw) throw new Error("IndexedDB 抛异常");
+            return Promise.resolve(plan);
+        },
+        stats: () => Promise.resolve(opts.stats === undefined
+            ? { ok: true, rooms: 0, oldestDay: "", newestDay: "" }
+            : opts.stats),
     };
 
+    const ArchiveMeta = opts.noArchiveMeta ? undefined : {
+        room: (rid) => {
+            metaCalls.push(rid);
+            return Promise.resolve(opts.metaPlan ? opts.metaPlan(rid) : { ok: false, reason: "bad-arg" });
+        },
+    };
+
+    // 故意不注入 ArchiveReplay：本文件钉的是"本机档案"这一层；
+    // 回放兜底按钮（存在才渲染 / 点击追加 / 抽样口径）在 test_archive_surfaces.js 第六项单独钉。
     const factory = new Function(
         "document", "setTimeout", "clearTimeout", "MutationObserver",
-        "GM_xmlhttpRequest", "openPage", "showMessage",
+        "ArchiveDB", "ArchiveMeta", "rid",
+        "openPage", "showMessage",
         "ensureMiuixPanelHeader", "openMiuixPanelCentered",
         extractLocalDateFn() + "\n" + fs.readFileSync(SRC_PATH, "utf8") + `
         return {
@@ -137,14 +161,20 @@ function loadModule(opts = {}) {
             panel: function () { return document.querySelector(".danmaku-history-panel"); },
             status: function () { var e = document.querySelector(".danmaku-history-panel__status-text"); return e ? e.textContent : null; },
             statusClickable: function () { var e = document.querySelector(".danmaku-history-panel__status-text"); return !!(e && e.onclick); },
-            moreVisible: function () { var e = document.querySelector(".danmaku-history-panel__more"); return !!(e && e.classList.contains("is-visible")); },
+            moreVisible: function () { var e = document.querySelector('[data-act="more"]'); return !!(e && e.classList.contains("is-visible")); },
+            replayVisible: function () { var e = document.querySelector('[data-act="replay"]'); return !!(e && e.classList.contains("is-visible")); },
+            sourceText: function () { var e = document.querySelector(".danmaku-history-panel__source"); return e ? e.textContent : null; },
             rows: function () { return Array.prototype.slice.call(document.querySelectorAll(".danmaku-history-panel__row")); },
             dateText: function () { var e = document.querySelector(".danmaku-history-panel__date"); return e ? e.textContent : null; },
             countText: function () { var e = document.querySelector(".danmaku-history-panel__count"); return e ? e.textContent : null; },
             listEl: function () { return document.querySelector(".danmaku-history-panel__list"); },
             nextBtn: function () { return document.querySelector('.danmaku-history-panel__date-btn[data-act="next"]'); },
-            clickMore: function () { document.querySelector(".danmaku-history-panel__more").click(); },
+            clickMore: function () { document.querySelector('[data-act="more"]').click(); },
             clickPrev: function () { document.querySelector('.danmaku-history-panel__date-btn[data-act="prev"]').click(); },
+            clickStatus: function () {
+                var e = document.querySelector(".danmaku-history-panel__status-text");
+                if (e && typeof e.onclick === "function") e.onclick();
+            },
             localDate: getLocalDateStr,
         };`
     );
@@ -154,7 +184,9 @@ function loadModule(opts = {}) {
         win.setTimeout,
         win.clearTimeout,
         win.MutationObserver,
-        GM_xmlhttpRequest,
+        ArchiveDB,
+        ArchiveMeta,
+        "71415",
         (url) => opened.push(url),
         (msg, type) => messages.push({ msg, type }),
         () => { headerCalls++; },
@@ -162,7 +194,7 @@ function loadModule(opts = {}) {
     );
 
     return {
-        win, api, requests, opened, messages, dom,
+        win, api, queries, opened, messages, metaCalls, dom,
         get headerCalls() { return headerCalls; },
         get centeredCalls() { return centeredCalls; },
     };
@@ -177,11 +209,19 @@ function expectedLocalToday() {
     return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate());
 }
 
+/** 本地"昨天"的 YYYY-MM-DD（换日箭头必须按它查询）。 */
+function expectedLocalYesterday() {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    const p = (v) => (v < 10 ? "0" + v : "" + v);
+    return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate());
+}
+
 let passed = 0;
 function ok(name) { passed++; console.log(`  ✓ ${name}`); }
 
 async function run() {
-    console.log("=== 正在运行历史弹幕专项单元测试（真实源码 + 卡片/接口桩） ===\n");
+    console.log("=== 正在运行历史弹幕专项单元测试（真实源码 + 卡片桩 + 本机档案桩） ===\n");
 
     // ---------- 1. 卡片按钮注入 ----------
     {
@@ -214,11 +254,11 @@ async function run() {
         const m = loadModule();
         const card = m.win.document.querySelector(".NormalCard");
         assert.strictEqual(m.api.getUid(card), "109771700", "应从卡片链接 href 解析 uid");
-        assert.strictEqual(m.requests.length, 0, "解析 uid 不得发起任何网络请求");
+        assert.strictEqual(m.queries.length, 0, "解析 uid 不得读取任何档案/发起任何请求");
 
         const noUid = m.win.document.querySelectorAll(".NormalCard")[1];
         assert.strictEqual(m.api.getUid(noUid), "", "无 id 的卡片应返回空串");
-        ok("uid 从卡片链接 href 直接解析，零接口调用");
+        ok("uid 从卡片链接 href 直接解析，零档案读取（改造前是零接口调用，语义等价）");
     }
 
     // ---------- 2.1 多卡片变体全覆盖（至尊 / 礼物展馆） ----------
@@ -251,7 +291,7 @@ async function run() {
 
     // ---------- 2.2 点击别处收起（弹窗会盖住聊天区） ----------
     {
-        const m = loadModule({ plan: () => ({ list: [makeItem(0, "chat")] }) });
+        const m = loadModule({ dataPlan: () => ({ ok: true, hasMore: false, list: [makeRecord(0, "chat")] }) });
         m.api.scan();
         m.api.buttons()[0].click();
         await wait(60);
@@ -287,26 +327,28 @@ async function run() {
         ok("MutationObserver 去抖探测：新增卡片在去抖窗口后自动补按钮");
     }
 
-    // ---------- 4. 点击按钮 → 请求参数与渲染 ----------
+    // ---------- 4. 点击按钮 → 档案查询参数与渲染 ----------
     {
         const m = loadModule({
-            plan: (url, offset) => ({
-                list: offset === 0
-                    ? [makeItem(0, "chat"), makeItem(1, "gift")]
-                    : [],
+            dataPlan: (dayKey, offset) => ({
+                ok: true,
+                hasMore: false,
+                list: offset === 0 ? [makeRecord(0, "chat"), makeRecord(1, "gift")] : [],
             }),
         });
         m.api.scan();
         m.api.buttons()[0].click();
         await wait(60);
 
-        assert.strictEqual(m.requests.length, 1, "点击后应发起 1 次请求");
-        const url = m.requests[0].url;
-        assert.ok(url.indexOf("uid=109771700") !== -1, "请求须带正确 uid");
-        assert.ok(url.indexOf("offset=0") !== -1, "首次请求 offset 应为 0");
-        assert.ok(url.indexOf("dt=" + expectedLocalToday()) !== -1, "dt 必须是本地当天日期");
-        assert.ok(url.indexOf("dt=0") === -1, "绝不允许使用已 502 的 dt=0");
-        ok("点击发起请求：uid 正确、offset=0、dt 为本地当天且不含 dt=0");
+        assert.strictEqual(m.queries.length, 1, "点击后应读取 1 次本机档案");
+        const query = m.queries[0];
+        assert.strictEqual(query.uid, "109771700", "查询须带正确 uid");
+        assert.strictEqual(query.offset, 0, "首次查询 offset 应为 0");
+        assert.strictEqual(query.limit, 50, "单页固定 50 条");
+        assert.strictEqual(query.dayKey, expectedLocalToday(), "查询日必须是本地当天日期");
+        assert.ok(/^\d{4}-\d{2}-\d{2}$/.test(query.dayKey), "日期必须是 YYYY-MM-DD 格式，实际 " + query.dayKey);
+        assert.notStrictEqual(query.dayKey, "0", "绝不允许出现 0 这类非法日期锚点");
+        ok("点击读取本机档案：uid 正确、offset=0、limit=50、dayKey 为本地当天且格式合法");
 
         assert.strictEqual(m.centeredCalls, 1, "应调用统一开窗函数");
         assert.ok(m.headerCalls >= 1, "应调用统一顶栏生成函数");
@@ -319,56 +361,83 @@ async function run() {
         assert.strictEqual(chatTitle, "魔法骑士0", "弹幕行标题应为弹幕内容");
         assert.ok(chatDesc.indexOf("寅子") !== -1, "弹幕行描述应含主播名");
         assert.ok(rows[0].querySelector(".danmaku-history-panel__badge").classList.contains("is-chat"));
+        assert.strictEqual(rows[0].querySelector(".danmaku-history-panel__badge").textContent, "弹",
+            "弹幕行徽章必须是「弹」字");
         ok("弹幕行渲染：内容为主标题、主播名+时间为副标题、徽章为弹幕样式");
 
         const giftTitle = rows[1].querySelector(".sign-option-title").textContent;
-        assert.strictEqual(giftTitle, "赠送 年度冲鸭 ×1", "礼物行应使用结构化字段渲染");
+        assert.strictEqual(giftTitle, "赠送 年度冲鸭 ×1", "礼物行应使用结构化字段（gfn/gfcnt）渲染");
         const giftBadge = rows[1].querySelector(".danmaku-history-panel__badge");
         assert.ok(giftBadge.classList.contains("is-gift"));
-        assert.ok(giftBadge.querySelector("img"), "礼物行徽章应显示礼物图标");
-        ok("礼物行渲染：赠送名称×数量，徽章显示礼物图标");
+        // 档案里的礼物记录只有 gfn/gfcnt/gfid，没有礼物图 URL（dgb 报文本身就不带图）——
+        // 礼物行靠「礼」字与弹幕区分，这是改造后可断言的事实，不是把断言放宽。
+        assert.strictEqual(giftBadge.textContent, "礼", "礼物行徽章必须显示「礼」字以与弹幕区分");
+        const giftDesc = rows[1].querySelector(".sign-option-desc").textContent;
+        assert.ok(giftDesc.indexOf("白佑兮") !== -1, "礼物行描述应含房间名");
+        ok("礼物行渲染：赠送名称×数量（结构化字段）、徽章「礼」、描述带房间名");
 
         assert.ok(rows[0].querySelector(".danmaku-history-panel__room"), "有 rid 的行应有去房间按钮");
         assert.ok(m.api.panel().querySelectorAll(".sign-options-list").length === 1,
             "列表应包在统一的 .sign-options-list 容器里");
     }
 
+    // ---------- 4.1 房间名缺失 → ArchiveMeta 补齐（档案只存 rid 时的真实路径） ----------
+    {
+        const m = loadModule({
+            dataPlan: () => ({ ok: true, hasMore: false, list: [makeRecord(0, "chat", { roomName: "" })] }),
+            metaPlan: (rid) => ({ ok: true, room: { rid: rid, roomName: "补出来的房间名" } }),
+        });
+        m.api.scan();
+        m.api.buttons()[0].click();
+        await wait(80);
+        const desc = m.api.rows()[0].querySelector(".sign-option-desc").textContent;
+        assert.ok(desc.indexOf("补出来的房间名") === 0, "缺房间名必须用 ArchiveMeta.room(rid) 补齐，实际 " + desc);
+        assert.deepStrictEqual(m.metaCalls, ["71415"], "只对缺房间名的行查一次元数据");
+        ok("房间名缺失时用 ArchiveMeta.room(rid) 补齐（档案只存 rid 的真实路径）");
+    }
+
     // ---------- 5. 分页边界 ----------
     {
         const full = [];
-        for (let i = 0; i < 50; i++) full.push(makeItem(i, "chat"));
+        for (let i = 0; i < 50; i++) full.push(makeRecord(i, "chat"));
         const tail = [];
-        for (let i = 0; i < 28; i++) tail.push(makeItem(100 + i, "chat"));
+        for (let i = 0; i < 28; i++) tail.push(makeRecord(100 + i, "chat"));
 
-        const m = loadModule({ plan: (url, offset) => ({ list: offset === 0 ? full : tail }) });
+        const m = loadModule({
+            dataPlan: (dayKey, offset) => ({
+                ok: true,
+                hasMore: offset === 0,
+                list: offset === 0 ? full : tail,
+            }),
+        });
         m.api.scan();
         m.api.buttons()[0].click();
         await wait(60);
 
         assert.strictEqual(m.api.rows().length, 50, "首页应渲染 50 行");
-        assert.strictEqual(m.api.moreVisible(), true, "满页时「加载更多」应可见");
+        assert.strictEqual(m.api.moreVisible(), true, "hasMore 为 true 时「加载更多」应可见");
         assert.strictEqual(m.api.countText(), "已加载 50 条");
         ok("首页 50 条、加载更多可见、计数正确");
 
         m.api.clickMore();
         await wait(60);
-        assert.strictEqual(m.requests.length, 2, "加载更多应再发一次请求");
-        assert.ok(m.requests[1].url.indexOf("offset=50") !== -1, "第二次请求 offset 应为 50");
+        assert.strictEqual(m.queries.length, 2, "加载更多应再读一次档案");
+        assert.strictEqual(m.queries[1].offset, 50, "第二次查询 offset 应为 50");
         assert.strictEqual(m.api.rows().length, 78, "应追加至 78 行（不清空已有）");
-        assert.strictEqual(m.api.moreVisible(), false, "不足一页时「加载更多」应隐藏");
-        assert.strictEqual(m.api.status(), "没有更多了");
-        ok("翻页：offset 步长 50、追加而非清空、不足一页判定为没有更多");
+        assert.strictEqual(m.api.moreVisible(), false, "hasMore 为 false 时「加载更多」应隐藏");
+        assert.strictEqual(m.api.status(), "本地有 78 条（已全部加载）", "末页必须如实标注「已全部加载」");
+        ok("翻页：offset 步长 50、追加而非清空、末页标注「已全部加载」");
     }
 
     // ---------- 6. 空数据与日期切换 ----------
     {
-        const m = loadModule({ plan: (url, offset) => ({ list: offset === 0 ? [] : [] }) });
+        const m = loadModule({ dataPlan: () => ({ ok: true, hasMore: false, list: [] }) });
         m.api.scan();
         m.api.buttons()[0].click();
         await wait(60);
-        assert.strictEqual(m.api.status(), "这一天没有记录", "空结果应给出明确文案");
+        assert.strictEqual(m.api.status(), "本地未收录", "空结果应给出明确文案");
         assert.strictEqual(m.api.rows().length, 0);
-        ok("空数据提示「这一天没有记录」");
+        ok("空数据提示「本地未收录」");
 
         assert.ok(m.api.dateText().indexOf("（今天）") !== -1, "默认应显示今天并标注");
         assert.strictEqual(m.api.nextBtn().disabled, true, "今天时「后一天」应禁用");
@@ -378,69 +447,92 @@ async function run() {
         await wait(60);
         assert.ok(m.api.dateText().indexOf("（今天）") === -1, "前一天不应再标注今天");
         assert.strictEqual(m.api.nextBtn().disabled, false, "回到过去后「后一天」应可用");
-        assert.ok(m.requests[m.requests.length - 1].url.indexOf("dt=" + expectedLocalToday()) === -1,
-            "前一天请求不应仍使用今天的日期");
-        ok("日期切换：请求日期随之改变，跨日期状态正确");
+        const lastQuery = m.queries[m.queries.length - 1];
+        assert.notStrictEqual(lastQuery.dayKey, expectedLocalToday(), "前一天查询不应仍使用今天的日期");
+        assert.strictEqual(lastQuery.dayKey, expectedLocalYesterday(), "必须按前一天的本地日期查询，实际 " + lastQuery.dayKey);
+        assert.strictEqual(lastQuery.offset, 0, "换日后 offset 必须归零");
+        ok("日期切换：查询日期随之改变、offset 归零、跨日期状态正确");
     }
 
-    // ---------- 7. 未登录与各类失败路径 ----------
+    // ---------- 7. 档案不可用与各类失败路径（已无"登录"概念） ----------
     {
-        const m = loadModule({
-            plan: () => ({ finalUrl: "https://www.doseeing.com/login?redirect=%2Fdata%2Fapi%2Fuser_feed", list: [] }),
-        });
+        // ① ArchiveDB 整个不可用（IndexedDB 缺失）：如实说明，不伪装成"没有记录"
+        const m = loadModule({ noArchiveDB: true });
         m.api.scan();
         m.api.buttons()[0].click();
         await wait(60);
-        assert.ok(m.api.status().indexOf("登录") !== -1, "未登录应如实提示需登录");
-        assert.strictEqual(m.api.statusClickable(), true, "未登录提示应可点击前往登录");
+        assert.strictEqual(
+            m.api.status(),
+            "本机档案不可用（当前环境不支持 IndexedDB）",
+            "档案不可用必须如实提示，实际 " + m.api.status()
+        );
+        assert.strictEqual(m.api.statusClickable(), false, "环境不支持时无处可去，不应可点击");
         assert.strictEqual(m.api.moreVisible(), false, "失败时不得显示加载更多");
-        ok("未登录（finalUrl 跳登录页）如实提示且可一键前往登录");
-
-        m.api.panel().querySelector(".danmaku-history-panel__status-text").onclick();
-        assert.ok(m.opened.length === 1 && m.opened[0].indexOf("doseeing.com/login") !== -1,
-            "点击提示应打开 doseeing 登录页");
-        ok("未登录提示点击后跳转登录页");
+        assert.strictEqual(m.api.rows().length, 0, "失败时不得渲染任何行");
+        ok("档案不可用（IndexedDB 缺失）如实提示，不伪装成有数据也不假装能重试");
     }
 
-    // finalUrl 缺失时的兜底：返回登录页 HTML 也必须判定为「需登录」而非「数据源异常」
     {
-        const m = loadModule({ plan: () => ({ reason: "loginHtml" }) });
+        // ② queryUserDay 同步抛异常 → 明确提示 + 可点击重试
+        const m = loadModule({ dataPlan: () => ({ throw: true }) });
         m.api.scan();
         m.api.buttons()[0].click();
         await wait(60);
-        assert.ok(m.api.status().indexOf("登录") !== -1,
-            `finalUrl 缺失时应靠响应内容兜底判定为需登录，实际：${m.api.status()}`);
-        ok("finalUrl 缺失时按响应内容兜底判定为「需登录」（不误报为数据源异常）");
+        assert.ok(m.api.status().indexOf("本机档案") !== -1, "异常提示必须点明是本机档案，实际 " + m.api.status());
+        assert.ok(m.api.status().indexOf("重试") !== -1, "异常提示必须引导重试，实际 " + m.api.status());
+        assert.strictEqual(m.api.statusClickable(), true, "读取异常时必须可点击重试");
+        assert.strictEqual(m.api.moreVisible(), false, "失败时不得显示加载更多");
+        ok("读取档案抛异常 → 提示「读取本机档案出错，请重试」且可重试");
     }
 
     {
-        for (const [reason, expectWord] of [["timeout", "超时"], ["network", "失败"], ["http", "失败"], ["parse", "异常"]]) {
-            const m = loadModule({ plan: () => ({ reason }) });
+        // ③ 档案返回 {ok:false, reason:"bad-arg"} → 参数类失败，说清楚而不是含糊重试
+        const m = loadModule({ dataPlan: () => ({ ok: false, reason: "bad-arg", list: [], hasMore: false }) });
+        m.api.scan();
+        m.api.buttons()[0].click();
+        await wait(60);
+        assert.strictEqual(m.api.status(), "缺少用户或日期，无法查询本机档案", "参数缺失必须点名，实际 " + m.api.status());
+        assert.strictEqual(m.api.statusClickable(), false, "参数缺失重试无意义，不应可点击");
+        ok("档案返回 bad-arg → 明确说明参数缺失（重试无意义，故不可点）");
+    }
+
+    // 失败后加载标志必须复位：手动重试能真的再读一次并成功渲染（不会永久卡在"加载中"）
+    {
+        for (const [label, failure] of [
+            ["抛异常", { throw: true }],
+            ["返回 exception", { ok: false, reason: "exception", list: [], hasMore: false }],
+        ]) {
+            let attempt = 0;
+            const m = loadModule({
+                dataPlan: () => (attempt++ === 0 ? failure : { ok: true, hasMore: false, list: [makeRecord(0, "chat")] }),
+            });
             m.api.scan();
             m.api.buttons()[0].click();
             await wait(60);
-            assert.ok(m.api.status().indexOf(expectWord) !== -1,
-                `${reason} 应给出含「${expectWord}」的提示，实际：${m.api.status()}`);
-            assert.strictEqual(m.api.statusClickable(), true, `${reason} 应可点击重试`);
-            ok(`失败路径 ${reason}：如实提示且加载状态已复位（可重试）`);
+            assert.strictEqual(m.queries.length, 1, label + "：首次查询应发生一次");
+            assert.ok(m.api.statusClickable(), label + "：失败态必须可点击重试");
+
+            m.api.clickStatus();
+            await wait(60);
+            assert.strictEqual(m.queries.length, 2, label + "：重试必须真的再读一次档案（加载标志已复位）");
+            assert.strictEqual(m.api.rows().length, 1, label + "：重试成功后应正常渲染");
+            ok("失败（" + label + "）后重试可再次读取并成功渲染（不会永久卡在加载中）");
+            m.dom.window.close();
         }
     }
 
-    // 重试必须真的能再发一次请求（验证加载标志确实复位，不会永久卡在"加载中"）
+    // 房间名补不出来时不得卡在"未知直播间"以外的异常状态（兜底文案必须存在）
     {
-        let attempt = 0;
         const m = loadModule({
-            plan: () => (attempt++ === 0 ? { reason: "timeout" } : { list: [makeItem(0, "chat")] }),
+            dataPlan: () => ({ ok: true, hasMore: false, list: [makeRecord(0, "chat", { roomName: "" })] }),
+            noArchiveMeta: true,
         });
         m.api.scan();
         m.api.buttons()[0].click();
         await wait(60);
-        assert.strictEqual(m.requests.length, 1);
-        m.api.panel().querySelector(".danmaku-history-panel__status-text").onclick();
-        await wait(60);
-        assert.strictEqual(m.requests.length, 2, "重试必须真的再发一次请求（加载标志已复位）");
-        assert.strictEqual(m.api.rows().length, 1, "重试成功后应正常渲染");
-        ok("超时后重试可再次发起请求并成功渲染（不会永久卡在加载中）");
+        const desc = m.api.rows()[0].querySelector(".sign-option-desc").textContent;
+        assert.ok(desc.indexOf("未知直播间") === 0, "没有 ArchiveMeta 时必须回落到「未知直播间」，实际 " + desc);
+        ok("ArchiveMeta 不存在 → 房间名回落「未知直播间」，不抛异常");
     }
 
     // ---------- 8. 本地日期（跨时区） ----------

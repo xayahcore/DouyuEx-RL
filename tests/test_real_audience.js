@@ -52,17 +52,17 @@ function loadRealAudience(opts) {
         warn: (...args) => warnings.push(args.join(" "))
     };
 
-    // doseeing 的可控桩：用例可以在中途把接口打挂，验证"接口不可达时统计条还剩什么"。
-    // payload.data 直接喂给 getRealViewer 的返回值（真实实现取的是 response.response）。
-    const gmState = {
-        fail: !!opts.gmFail,
-        payload: opts.gmPayload || { error: 0, data: {} }
+    // 本机档案的可控桩：用例可以在中途把档案打挂，验证"档案读不到时统计条还剩什么"。
+    // room_day 字段名与 ArchiveDB 契约一致（activeUv / chatUv / giftUv / paidUv / incomeCents / nobleCnt / firstTs）。
+    const archiveState = {
+        fail: !!opts.archiveFail,
+        roomDay: opts.roomDay === undefined ? null : opts.roomDay
     };
 
     const factory = new Function(
         "window", "document", "location", "unsafeWindow",
         "setTimeout", "clearTimeout", "setInterval", "clearInterval",
-        "fetch", "GM_xmlhttpRequest", "StyleHook_set", "getType", "showMessage", "console",
+        "fetch", "StyleHook_set", "getType", "showMessage", "console", "ArchiveDB",
         COMMON_SRC + "\n" + REAL_AUDIENCE_SRC + `
         return {
             getRid: function () { return rid; },
@@ -83,25 +83,31 @@ function loadRealAudience(opts) {
         win, win.document, win.location, win,
         win.setTimeout, win.clearTimeout, win.setInterval, win.clearInterval,
         () => Promise.resolve({ json: async () => ({ error: 0, data: { todayWatch: 0 } }) }),
-        (req) => {
-            if (!req) return;
-            if (gmState.fail) {
-                if (typeof req.onerror === "function") req.onerror(new Error("blocked"));
-                return;
-            }
-            if (typeof req.onload === "function") req.onload({ response: gmState.payload });
-        },
         () => {},
         () => "unknown",
         () => {},
-        quietConsole
+        quietConsole,
+        {
+            getRoomDay: (rid, dayKey) => {
+                archiveState.lastQuery = { rid: rid, dayKey: dayKey };
+                if (archiveState.fail) return Promise.reject(new Error("本机档案读不到"));
+                return Promise.resolve(archiveState.roomDay);
+            }
+        }
     );
 
-    return { dom, win, api, warnings, gmState };
+    return { dom, win, api, warnings, archiveState };
 }
 
 function wait(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/** 本地当天 "YYYY-MM-DD"（与 common.js 的 getLocalDateStr 同口径：本地分量，绝不用 UTC）。 */
+function expectedLocalToday() {
+    const moment = new Date();
+    const pad = (value) => (value < 10 ? "0" + value : "" + value);
+    return moment.getFullYear() + "-" + pad(moment.getMonth() + 1) + "-" + pad(moment.getDate());
 }
 
 function statsBarEl(win) {
@@ -276,47 +282,65 @@ async function testStatsBarSustain() {
         dom.window.close();
     }
 
-    // === 场景 9: doseeing 不可达时，本地就能算出来的项（已播）仍必须写进去 ===
+    // === 场景 9: 本机档案不可达时，本地就能算出来的项（已播）仍必须写进去 ===
     {
-        console.log("--> 场景 9: doseeing 全程失败 → 已播仍要写、已有数字不得被清成 0...");
-        // ① 从一开始就挂掉：旧实现是 try 两个请求、一挂就 return，
+        console.log("--> 场景 9: 本机档案全程读不到 → 已播仍要写、已有数字不得被清成 0...");
+        // ① 从一开始就读不到档案：旧实现是 try 两个请求、一挂就 return，
         //    于是"已播"（只用本地 showtime）也永远不写 —— 这一条是分水岭。
         const {
             dom: domFail,
             win: winFail,
             api: apiFail,
             warnings: warnFail
-        } = loadRealAudience({ url: "https://www.douyu.com/74751", gmFail: true });
+        } = loadRealAudience({ url: "https://www.douyu.com/74751", archiveFail: true });
         apiFail.initDom();
         await apiFail.setViewer();
         const timeVal = statValue(winFail, "real-audience__time");
         assert.ok(
             timeVal !== null && timeVal.indexOf("****") === -1,
-            "doseeing 不可达时【已播】仍必须写进去（它只用本地 showtime），实际 " + JSON.stringify(timeVal)
+            "档案读不到时【已播】仍必须写进去（它只用本地 showtime），实际 " + JSON.stringify(timeVal)
         );
         assert.ok(
             warnFail.some((w) => w.indexOf("真实人数") !== -1),
-            "接口失败必须留下 warn 线索，不能静默"
+            "档案失败必须留下 warn 线索，不能静默"
         );
         domFail.window.close();
 
-        // ② 先正常取到数据、再挂掉：已知的真实人数不得被覆盖成占位符或 0
-        const gmPayload = { error: 0, data: { "active.uv": 12345, "chat.uv": 678, "gift.all.uv": 90, "gift.paid.price": 123456, "gift.all.price": 234567 } };
-        const { dom, win, api, gmState } = loadRealAudience({ url: "https://www.douyu.com/74751", gmPayload: gmPayload });
+        // ② 先正常读到 room_day、再挂掉：已知的数字不得被覆盖成占位符或 0
+        const roomDay = {
+            ridDay: "74751|" + expectedLocalToday(),
+            rid: "74751",
+            dayKey: expectedLocalToday(),
+            activeUv: 12345,
+            chatUv: 678,
+            giftUv: 90,
+            paidUv: 12,
+            danmakuCnt: 900,
+            incomeCents: 12345,
+            nobleCnt: 321,
+            firstTs: new Date(new Date().setHours(9, 5, 0, 0)).getTime(),
+            lastTs: Date.now(),
+        };
+        const { dom, win, api, archiveState } = loadRealAudience({ url: "https://www.douyu.com/74751", roomDay: roomDay });
         api.initDom();
         await api.setViewer();
-        assert.strictEqual(statValue(win, "real-audience__total"), "12345", "接口正常时今日累计观看必须写进去");
-        assert.strictEqual(api.info().view, 12345, "接口正常时 real_info.view 必须更新");
+        assert.strictEqual(statValue(win, "real-audience__total"), "12345", "本地有 room_day 时今日互动人数必须写进去");
+        assert.strictEqual(statValue(win, "real-audience__barrage"), "678", "弹幕人数 ← room_day.chatUv");
+        assert.strictEqual(statValue(win, "real-audience__money_yc"), "123.45", "礼物价值 ← incomeCents/100（两位小数）");
+        assert.strictEqual(statValue(win, "real-audience__noble"), "321", "贵宾数 ← room_day.nobleCnt");
+        assert.strictEqual(api.info().view, 12345, "本地有数据时 real_info.view 必须更新");
+        assert.strictEqual(archiveState.lastQuery.rid, "74751", "必须按当前房间号读档案");
+        assert.strictEqual(archiveState.lastQuery.dayKey, expectedLocalToday(), "必须按本地当天读档案");
 
-        gmState.fail = true;
+        archiveState.fail = true;
         await api.setViewer();
         assert.strictEqual(
             statValue(win, "real-audience__total"),
             "12345",
-            "doseeing 失败时不得把已知的真实人数覆盖成占位符或 0"
+            "档案读不到时不得把已知的互动人数覆盖成占位符或 0"
         );
-        assert.strictEqual(api.info().view, 12345, "doseeing 失败时 real_info.view 必须保持上一次的值");
-        console.log("✓ 场景 9 通过: 接口不可达时本地项照写、已知数字不被清 0、失败有线索");
+        assert.strictEqual(api.info().view, 12345, "档案读不到时 real_info.view 必须保持上一次的值");
+        console.log("✓ 场景 9 通过: 档案不可达时本地项照写、已知数字不被清 0、失败有线索");
         dom.window.close();
     }
 

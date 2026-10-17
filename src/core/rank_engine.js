@@ -491,6 +491,10 @@
 
                 }
 
+                // 采集旁路：仅白名单类型多播整条原文；未知类型到此为止（state.msgTypes 计数不受影响）。
+                // 刻意放在既有分发之后，保证既有逻辑的执行顺序与结果零变化。
+                emitTapPacket(t, part);
+
             }
 
         } catch (e) { }
@@ -527,6 +531,55 @@
 
         } catch (e) { }
 
+    }
+
+
+
+    /* ============================ 采集通道：__douyuExTap（多播旁路，P0 本地弹幕档案） ============================ */
+
+    // 与 __onDouyuExChatmsg 单槽并列存在的只读旁路：消费者只订阅、不回写。
+    // 单个订阅者抛异常不能波及其它订阅者，更不能波及本文件的榜单逻辑（emit 内部逐订阅者隔离）。
+
+    // 白名单 16 类。后 5 类是付费行为（依据 F-付费消息字段.md）：
+    // comm_chatmsg = 高能弹幕的独立类型（价在 cprice/crealPrice，单位分），
+    // dfobc / dfrbc = 钻粉开通 / 续费（报文不带金额，只有 mn = 月数），
+    // prop_order_finish / prop_amountr_finish = 道具·套装成交订单（§4.2，price/org_price 单位分；
+    // 报文只有 user_name、没有 uid，只能记「房间 + 商品 + 价格 + 昵称」）。
+    var TAP_TYPE_WHITELIST = {
+        chatmsg: 1, dgb: 1, uenter: 1, pingreq: 1, hpsc: 1, blab: 1,
+        ranklist: 1, dayrk: 1, weekrk: 1, monthrk: 1, totalrk: 1,
+        comm_chatmsg: 1, dfobc: 1, dfrbc: 1,
+        prop_order_finish: 1, prop_amountr_finish: 1
+    };
+
+    var douyuExTapSubs = new Set();
+
+    // 已存在时沿用旧对象（重复注入不覆盖既有订阅者）；对象结构对齐 E-模块契约 §五
+    window.__douyuExTap = window.__douyuExTap || {
+        subs: douyuExTapSubs,
+        on: function (fn) {
+            if (typeof fn === "function") { douyuExTapSubs.add(fn); }
+            return fn;
+        },
+        off: function (fn) {
+            douyuExTapSubs.delete(fn);
+        },
+        emit: function (type, raw) {
+            douyuExTapSubs.forEach(function (fn) {
+                try { fn(type, raw); } catch (e) { log("__douyuExTap 订阅者异常（已隔离）", e); }
+            });
+        }
+    };
+
+    // 白名单判定 + 全判空：__douyuExTap 被外部删除或改写时静默跳过，绝不打断 decodeBinary
+    function emitTapPacket(type, raw) {
+        try {
+            if (!type) return;
+            if (!Object.prototype.hasOwnProperty.call(TAP_TYPE_WHITELIST, type)) return;
+            var tap = window.__douyuExTap;
+            if (!tap || typeof tap.emit !== "function") return;
+            tap.emit(type, raw);
+        } catch (e) { }
     }
 
 

@@ -145,6 +145,27 @@ DouyuEx-RL/
 | `Ex_LastNotifiedVersion` | GM Storage | String | 已收到确认的更新版本号记录 |
 | `Ex_LastUpdateCheckTime`| GM Storage | String (时间戳) | 12小时限频更新检查时间戳 |
 
+### 6.1 IndexedDB「弹幕档案」库（P0 新增，独立于 `ExSave_` 体系）
+
+库名 **`DouyuExArchive`**（版本 1，随 douyu.com 站点隔离），由 `src/packages/DanmakuArchive/DanmakuArchive_DB.js` 独占读写。
+**这是本仓库唯一使用 IndexedDB 的地方**——localStorage 5 MB 装不下一个房间一天的弹幕流（单房约 2 MB/天起）。
+
+| store | 主键 | 内容 | 保留策略 |
+| :--- | :--- | :--- | :--- |
+| `events` | 自增 `id` | 事件流水：`dedupKey` / `kind`(chat\|gift\|enter) / `uid` / `nn` / `rid` / `ts` / `dayKey` / 弹幕文本 / 礼物字段 / 用户等级与粉丝牌 | **明细 30 天**，到期清理 |
+| `room_day` | `ridDay` | 房间日聚合：弹幕值 `danmakuCnt`、收入值 `incomeCents`、活跃值 `activeUv` + 辅助计数 + 分钟桶 | **永久保留**（每条数百字节~2 KB） |
+| `rooms` | `rid` | 房间元数据（房名/开播时间/分类/关注数/粉丝牌名/`up_id`） | 随库 |
+| `users` | `uid` | 用户轻档案（昵称/等级/粉丝牌/头像标识/最近见到） | 随库 |
+| `gifts` | `gfid` | 礼物价目（`priceCents` 单位 0.01 鱼翅） | 7 天刷新 |
+| `seen` | `key` | 增量去重集合（`scope\|dayKey\|uid`） | 随明细清理 |
+| `meta` | `k` | `schemaVersion` / `clockSkew` / `cutoffHour` / `gifts:v1` 价目表 | 随库 |
+
+**契约**：
+- 换日点 **00:00（自然日）**，`dayKey` 用 `getLocalDateStr`，**禁止** `toISOString().slice(0,10)`。
+- 金额一律存**分（整数）**，展示再除；`null` 价目不得按 0 计。
+- 硬上限 **800 MB**，超限从旧到新删 `events`；`room_day` 不参与容量清理。
+- `src/packages/Reset/Reset.js` 的一键重置**只清 localStorage / GM 存储**，IndexedDB 需单独询问后调 `ArchiveDB.clearAll()`。
+
 ---
 
 ## 七、 开发、编译与测试命令

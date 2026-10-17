@@ -229,6 +229,7 @@ function ensureDockIndicators() {
     "ex-lottery": "全站抽奖信息",
     "exlottery-icon": "全站抽奖信息",
     "popup-player": "同屏播放",
+    "ex-archive": "数据档案",
     "ex-update": "版本更新"
   };
 

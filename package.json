@@ -4,7 +4,7 @@
   "description": "DouyuEx-RL 斗鱼直播间增强插件 (Reborn Lite)",
   "scripts": {
     "build": "node build.js",
-    "test": "node tests/test_danmaku_blocked.js && node tests/test_metadata_probe.js && node tests/test_danmaku_history.js && node tests/test_real_audience.js && node tests/test_real_audience_click.js && node tests/test_expanel_selfheal.js && node tests/test_router_gate.js && node tests/test_sign_points.js && node tests/test_built_bundle.js"
+    "test": "node tests/test_danmaku_blocked.js && node tests/test_metadata_probe.js && node tests/test_danmaku_history.js && node tests/test_real_audience.js && node tests/test_real_audience_click.js && node tests/test_expanel_selfheal.js && node tests/test_router_gate.js && node tests/test_sign_points.js && node tests/test_archive_db.js && node tests/test_archive_tap.js && node tests/test_archive_ingest.js && node tests/test_archive_metrics.js && node tests/test_archive_meta.js && node tests/test_archive_replay.js && node tests/test_archive_ui.js && node tests/test_archive_surfaces.js && node tests/test_built_bundle.js"
   },
   "repository": {
     "type": "git",
@@ -21,6 +21,7 @@
     "uglify-js": "^3.17.4"
   },
   "devDependencies": {
+    "fake-indexeddb": "^6.2.6",
     "jsdom": "^29.1.1"
   }
 }

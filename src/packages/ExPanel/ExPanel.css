@@ -2175,3 +2175,256 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
 .danmaku-history-panel__more.is-visible {
     display: inline-block !important;
 }
+
+/* ==========================================================================
+   20. 数据档案面板（第 10 个 Dock 面板·瘦身版：概览 + 维护两块）
+   尺寸、磨砂、打开态全部由第 2 节铁壁组的 .miuix-modal 继承，本节**不写** width / height，
+   也绝不写模态尺寸令牌 —— 全产物只允许存在一条模态宽度声明，多一处即包级静默覆盖。
+   类名一律 ex-archive- 前缀，与其它面板互不污染。
+   ========================================================================== */
+.ex-archive-panel.miuix-modal > .ex-archive-panel__body {
+    padding: 8px 0 14px 0 !important;
+    box-sizing: border-box !important;
+}
+
+/* 区块卡片：与四级卡片规范同一套视觉语言 */
+.ex-archive-section {
+    margin: 0 12px 10px 12px !important;
+    padding: 10px 12px !important;
+    box-sizing: border-box !important;
+    background: var(--miuix-card-bg) !important;
+    border: var(--miuix-card-border) !important;
+    border-radius: var(--miuix-card-radius) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02) !important;
+}
+
+.ex-archive-section__head {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 6px !important;
+    margin-bottom: 8px !important;
+    padding-bottom: 4px !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
+}
+
+.ex-archive-section__title {
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    color: #0f172a !important;
+}
+
+.ex-archive-switch {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+}
+
+.ex-archive-chip {
+    padding: 2px 9px !important;
+    border-radius: 10px !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    background: rgba(255, 255, 255, 0.7) !important;
+    color: #475569 !important;
+    font-size: 10px !important;
+    line-height: 16px !important;
+    cursor: pointer !important;
+    outline: none !important;
+    transition: all 0.18s ease !important;
+}
+
+.ex-archive-chip:hover {
+    background: rgba(0, 102, 255, 0.12) !important;
+    border-color: rgba(0, 102, 255, 0.3) !important;
+    color: var(--miuix-blue) !important;
+}
+
+.ex-archive-chip.is-active {
+    background: var(--miuix-blue) !important;
+    border-color: var(--miuix-blue) !important;
+    color: #ffffff !important;
+}
+
+/* 概览三数字 */
+.ex-archive-metrics {
+    display: flex !important;
+    align-items: stretch !important;
+    gap: 6px !important;
+}
+
+.ex-archive-metric {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    padding: 4px 0 2px 0 !important;
+    border-radius: 10px !important;
+    background: var(--miuix-item-bg) !important;
+}
+
+.ex-archive-metric__label {
+    font-size: 10px !important;
+    color: #64748b !important;
+    line-height: 14px !important;
+}
+
+.ex-archive-metric__value {
+    font-size: 17px !important;
+    font-weight: 800 !important;
+    color: #0f172a !important;
+    line-height: 22px !important;
+    font-variant-numeric: tabular-nums !important;
+    max-width: 100% !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+}
+
+.ex-archive-metric__unit {
+    font-size: 9px !important;
+    color: #94a3b8 !important;
+    line-height: 12px !important;
+}
+
+.ex-archive-sublines {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 4px 10px !important;
+    margin-top: 8px !important;
+}
+
+.ex-archive-subline {
+    font-size: 10px !important;
+    color: #475569 !important;
+    line-height: 14px !important;
+    white-space: nowrap !important;
+}
+
+/* 时间覆盖率：可悬停看口径 */
+.ex-archive-coverage {
+    font-size: 10px !important;
+    line-height: 14px !important;
+    font-weight: 600 !important;
+    color: var(--miuix-blue) !important;
+    font-variant-numeric: tabular-nums !important;
+    white-space: nowrap !important;
+    cursor: help !important;
+}
+
+/* 维护区：一行留存摘要 */
+.ex-archive-retention {
+    padding: 2px 0 !important;
+    font-size: 10px !important;
+    line-height: 15px !important;
+    color: #475569 !important;
+    font-variant-numeric: tabular-nums !important;
+}
+
+.ex-archive-note {
+    margin-top: 6px !important;
+    font-size: 10px !important;
+    line-height: 15px !important;
+    color: #94a3b8 !important;
+}
+
+.ex-archive-note--error {
+    color: #e11d48 !important;
+    word-break: break-all !important;
+}
+
+.ex-archive-actions {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    flex-wrap: wrap !important;
+    margin-top: 6px !important;
+}
+
+.ex-archive-btn {
+    padding: 4px 10px !important;
+    border-radius: 10px !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    background: rgba(255, 255, 255, 0.75) !important;
+    color: #334155 !important;
+    font-size: 11px !important;
+    line-height: 16px !important;
+    cursor: pointer !important;
+    outline: none !important;
+    transition: all 0.18s ease !important;
+}
+
+.ex-archive-btn:hover {
+    background: rgba(0, 102, 255, 0.12) !important;
+    border-color: rgba(0, 102, 255, 0.3) !important;
+    color: var(--miuix-blue) !important;
+}
+
+.ex-archive-btn--danger {
+    border-color: rgba(225, 29, 72, 0.28) !important;
+    color: #e11d48 !important;
+}
+
+.ex-archive-btn--danger:hover {
+    background: rgba(225, 29, 72, 0.12) !important;
+    border-color: rgba(225, 29, 72, 0.45) !important;
+    color: #be123c !important;
+}
+
+/* ExPanel 未加载时的兜底顶栏（正常产物里不会渲染） */
+.ex-archive-header {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding: 10px 14px !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
+    box-sizing: border-box !important;
+}
+
+.ex-archive-header__title {
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    color: #0f172a !important;
+}
+
+.ex-archive-header__close {
+    padding: 0 !important;
+    border: none !important;
+    background: transparent !important;
+    color: #64748b !important;
+    font-size: 18px !important;
+    line-height: 1 !important;
+    cursor: pointer !important;
+}
+/* 在线弹幕助手入口：一行链接，不是可展开区块 */
+.ex-archive-linkrow {
+    margin: 0 12px 10px 12px !important;
+    padding: 2px 2px !important;
+    box-sizing: border-box !important;
+}
+
+.ex-archive-link {
+    display: inline-block !important;
+    font-size: 11px !important;
+    line-height: 16px !important;
+    color: var(--miuix-blue) !important;
+    text-decoration: none !important;
+    cursor: pointer !important;
+    border-bottom: 1px dashed rgba(0, 102, 255, 0.35) !important;
+    transition: color 0.16s ease !important;
+}
+
+.ex-archive-link::before {
+    content: "↗ " !important;
+}
+
+.ex-archive-link:hover {
+    color: #0047b3 !important;
+    border-bottom-color: rgba(0, 71, 179, 0.6) !important;
+}
+
+.ex-archive-link.is-disabled {
+    color: #94a3b8 !important;
+    cursor: not-allowed !important;
+    border-bottom-color: transparent !important;
+}

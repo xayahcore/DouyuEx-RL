@@ -1,24 +1,21 @@
+/* ==================== 在线弹幕助手（外部数据站入口） ==================== */
+/*
+ * 胶囊条上的图标已撤出：入口并进「数据档案」面板，做成一行链接。
+ * 本文件只保留一个纯函数负责拼地址，面板通过 typeof 判空调用它，
+ * 模块缺失时面板会自己按同一套规则兜底。
+ */
+
+/**
+ * 在线弹幕助手地址。
+ * @param roomId 真实房间号（靓号请先用 exParseRealRid 换算）
+ * @returns 合法房间号 → https://www.douyuex.com/<roomId>；空 / 非法 → ""
+ */
+function Monitor_onlineAssistantUrl(roomId) {
+	var text = roomId === undefined || roomId === null ? "" : String(roomId).trim();
+	if (!/^\d{2,12}$/.test(text)) return "";
+	return "https://www.douyuex.com/" + text;
+}
+
 function initPkg_Monitor() {
-	initPkg_Monitor_Dom();
-	initPkg_Monitor_Func();
+	/* 不再自建 DOM（图标已撤）。保留空初始化是为了 main.js 的接线契约不变。 */
 }
-
-function initPkg_Monitor_Dom() {
-	Monitor_insertIcon();
-}
-function Monitor_insertIcon() {
-	let a = document.createElement("div");
-	a.className = "ex-monitor";
-	a.innerHTML = '<a class="ex-panel__icon" title="在线弹幕助手"><svg style="display:block;" t="1638235744961" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="69800" width="32" height="32"><path d="M426.666667 106.666667a21.333333 21.333333 0 0 1 21.333333-21.333334h512a21.333333 21.333333 0 0 1 0 42.666667H448a21.333333 21.333333 0 0 1-21.333333-21.333333z m533.333333 789.333333H448a21.333333 21.333333 0 0 0 0 42.666667h512a21.333333 21.333333 0 0 0 0-42.666667z m0-554.666667H448a21.333333 21.333333 0 0 0 0 42.666667h512a21.333333 21.333333 0 0 0 0-42.666667z m0 298.666667H448a21.333333 21.333333 0 0 0 0 42.666667h512a21.333333 21.333333 0 0 0 0-42.666667zM245.333333 42.666667H96a53.393333 53.393333 0 0 0-53.333333 53.333333v149.333333a53.393333 53.393333 0 0 0 53.333333 53.333334h149.333333a53.393333 53.393333 0 0 0 53.333334-53.333334V96a53.393333 53.393333 0 0 0-53.333334-53.333333z m0 341.333333H96a53.393333 53.393333 0 0 0-53.333333 53.333333v149.333334a53.393333 53.393333 0 0 0 53.333333 53.333333h149.333333a53.393333 53.393333 0 0 0 53.333334-53.333333V437.333333a53.393333 53.393333 0 0 0-53.333334-53.333333z m0 341.333333H96a53.393333 53.393333 0 0 0-53.333333 53.333334v149.333333a53.393333 53.393333 0 0 0 53.333333 53.333333h149.333333a53.393333 53.393333 0 0 0 53.333334-53.333333v-149.333333a53.393333 53.393333 0 0 0-53.333334-53.333334z" fill="#13227a" p-id="69801"></path></svg><i id="Monitor__tip" class="ex-panel__tip"></i></a>';
-	
-	let b = document.getElementsByClassName("ex-panel__wrap")[0];
-	b.insertBefore(a, b.childNodes[0]);
-	
-}
-
-function initPkg_Monitor_Func() {
-	document.getElementsByClassName("ex-monitor")[0].addEventListener("click", function() {
-        openPage("https://www.douyuex.com/" + String(rid));
-	});
-}
-

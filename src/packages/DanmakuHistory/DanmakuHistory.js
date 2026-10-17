@@ -1,20 +1,26 @@
-/* ==================== 历史弹幕查询（用户卡片入口 + 页内弹窗） ==================== */
+/* ==================== 弹幕/礼物历史面板（用户卡片入口 + 页内弹窗） ==================== */
 /*
- * 数据源：doseeing.com（在看排行）—— 斗鱼第三方数据站，@connect 已在 main.js 声明。
- * 接口契约（2026-09-22 实机实测）：
- *   GET /data/api/user_feed?uid=&dt=<YYYY-MM-DD>&offset=<n>&order=<chat|gift>
- *   · 必须登录，匿名一律 302 跳 /login（用 finalUrl 判定）
- *   · 单页固定 50 条，offset 递增翻页，返回不足 50 即无更多
- *   · 按 ts 时间正序；order 参数实测无过滤作用（chat/gift/chat,gift 返回完全一致）
- *   · dt 是「直播日」锚点，窗口约 [dt-1 20:00, dt 20:00]
- *   · dt=0（"全部"模式）已 502，禁用
+ * 数据源（P0 改造，2026-10）：**本机档案**，不再依赖任何第三方数据站。
+ *   ArchiveDB.queryUserDay(uid, "YYYY-MM-DD", { offset, limit })
+ *     -> Promise<{ ok, list:[{kind, txt, gfn, gfcnt, rid, roomName, ts}], hasMore }>
+ *     kind：chat / gift / enter；txt 弹幕正文；gfn 礼物名；gfcnt 礼物份数；ts 毫秒。
+ *   ArchiveDB.stats() -> Promise<{ ok, rooms, oldestDay, newestDay, ... }>，用于标题栏「覆盖 N 房间 / M 天」。
+ *
+ * 三种状态如实显示（本地没数据时不假装有）：
+ *   ① 本地有 N 条        —— queryUserDay 返回非空
+ *   ② 本地未收录          —— 返回 0 条
+ *   ③ 「查本房间回放」     —— 调 ArchiveReplay.queryUserHistory 兜底，结果必须标注「回放抽样口径」
+ *                            （回放只有弹幕、没有礼物，且库端疑似抽样，见 .zcode/p0-data/B 报告）
+ *
+ * 旧实现里「需登录第三方数据站」那一整套（DANMAKU_HISTORY_API / GM_xmlhttpRequest / 登录跳转）
+ * 已全部删除：本机档案是本地 IndexedDB，不需要登录、不需要跨域。
  */
 
-const DANMAKU_HISTORY_API = "https://www.doseeing.com/data/api/user_feed";
 const DANMAKU_HISTORY_PAGE_SIZE = 50;
-const DANMAKU_HISTORY_TIMEOUT = 8000;
 const DANMAKU_HISTORY_CACHE_MAX = 60;
 const DANMAKU_HISTORY_SCAN_DEBOUNCE = 200;
+const DANMAKU_HISTORY_REPLAY_MAX_PAGES = 10;
+const DANMAKU_HISTORY_REPLAY_NOTICE = "回放抽样口径";
 
 let danmakuHistoryPanel = null;
 let danmakuHistoryUid = "";
@@ -25,6 +31,8 @@ let danmakuHistoryLoading = false;
 let danmakuHistoryReqSeq = 0;
 let danmakuHistoryScanTimer = null;
 const danmakuHistoryCache = new Map();
+// 房间名待补队列：档案里常常只存 rid，房间名先用「未知直播间」占位，稍后用 ArchiveMeta 补齐。
+let danmakuHistoryPendingNames = [];
 
 /* ---------- 日期：一律用本地时间 ---------- */
 // 日期格式化统一走 common.js 的 getLocalDateStr（禁用 UTC 的 toISOString，
@@ -60,58 +68,107 @@ function DanmakuHistory_cacheSet(key, val) {
   danmakuHistoryCache.set(key, val);
 }
 
-/* ---------- 数据层 ---------- */
-function DanmakuHistory_fetch(uid, dateStr, offset) {
+/* ---------- 数据层：本机档案（ArchiveDB） ---------- */
+
+/** 一条档案记录 -> 渲染记录。字段名照契约 {kind, txt, gfn, gfcnt, rid, roomName, ts}。 */
+function DanmakuHistory_normalizeRecord(raw) {
+  if (!raw || typeof raw !== "object") return null;
+  let kind = raw.kind === "gift" ? "gift" : (raw.kind === "enter" ? "enter" : "chat");
+  return {
+    kind: kind,
+    txt: raw.txt === undefined || raw.txt === null ? "" : String(raw.txt),
+    gfn: raw.gfn === undefined || raw.gfn === null ? "" : String(raw.gfn),
+    gfcnt: Number(raw.gfcnt) > 0 ? Number(raw.gfcnt) : 1,
+    rid: raw.rid === undefined || raw.rid === null ? "" : String(raw.rid),
+    roomName: raw.roomName === undefined || raw.roomName === null ? "" : String(raw.roomName),
+    ts: Number(raw.ts) || 0
+  };
+}
+
+/**
+ * 读本机档案：uid + 直播日 + offset -> {ok, list, hasMore}。
+ * 永不 reject、永不抛：ArchiveDB 缺失 / 抛异常 / 返回形状不对都落在 {ok:false} 上。
+ */
+function DanmakuHistory_queryLocal(uid, dateStr, offset) {
   let key = uid + "|" + dateStr + "|" + offset;
   let cached = danmakuHistoryCache.get(key);
   if (cached) return Promise.resolve(cached);
 
-  return new Promise(function (resolve) {
-    let settled = false;
-    // 成功、失败、超时三条路径都必须回调并复位，否则界面会永远停在"加载中"。
-    let done = function (payload) {
-      if (settled) return;
-      settled = true;
-      if (payload && payload.ok) DanmakuHistory_cacheSet(key, payload);
-      resolve(payload);
-    };
+  if (typeof ArchiveDB === "undefined" || !ArchiveDB || typeof ArchiveDB.queryUserDay !== "function") {
+    return Promise.resolve({ ok: false, reason: "unsupported", list: [], hasMore: false });
+  }
 
-    if (typeof GM_xmlhttpRequest !== "function") {
-      done({ ok: false, reason: "unsupported" });
-      return;
-    }
-
-    GM_xmlhttpRequest({
-      method: "GET",
-      url: DANMAKU_HISTORY_API
-        + "?uid=" + encodeURIComponent(uid)
-        + "&dt=" + encodeURIComponent(dateStr)
-        + "&offset=" + offset
-        + "&order=chat,gift",
-      timeout: DANMAKU_HISTORY_TIMEOUT,
-      onload: function (res) {
-        let finalUrl = String((res && res.finalUrl) || "");
-        if (finalUrl.indexOf("/login") !== -1) { done({ ok: false, reason: "login" }); return; }
-        if (!res || res.status !== 200) { done({ ok: false, reason: "http" }); return; }
-        let raw = String(res.responseText || "");
-        let json = null;
-        try {
-          json = (res.response && typeof res.response === "object") ? res.response : JSON.parse(raw);
-        } catch (e) { json = null; }
-        if (!json || !Array.isArray(json.result)) {
-          // finalUrl 缺失时的兜底：未登录会被 302 到 /login，拿到的是登录页而不是 JSON。
-          // 宁可多认一次"需登录"，也不要把它误报成"数据源异常"。
-          let looksLikeLogin = /\/login|sign\s*in/i.test(finalUrl + raw.slice(0, 600));
-          done({ ok: false, reason: looksLikeLogin ? "login" : "parse" });
-          return;
-        }
-        done({ ok: true, list: json.result });
-      },
-      onerror: function () { done({ ok: false, reason: "network" }); },
-      ontimeout: function () { done({ ok: false, reason: "timeout" }); },
-      onabort: function () { done({ ok: false, reason: "abort" }); }
+  let pending = null;
+  try {
+    pending = ArchiveDB.queryUserDay(String(uid), String(dateStr), {
+      offset: offset > 0 ? offset : 0,
+      limit: DANMAKU_HISTORY_PAGE_SIZE
     });
+  } catch (e) {
+    return Promise.resolve({ ok: false, reason: "exception", list: [], hasMore: false });
+  }
+
+  return Promise.resolve(pending).then(function (result) {
+    if (!result || result.ok === false) {
+      return { ok: false, reason: (result && result.reason) || "exception", list: [], hasMore: false };
+    }
+    let rawList = Array.isArray(result.list) ? result.list : [];
+    let list = [];
+    for (let i = 0; i < rawList.length; i++) {
+      let record = DanmakuHistory_normalizeRecord(rawList[i]);
+      if (record) list.push(record);
+    }
+    let payload = {
+      ok: true,
+      list: list,
+      // hasMore 以档案层为准（它才知道后面还有没有）；缺省按"本页满"推断。
+      hasMore: result.hasMore === undefined ? list.length >= DANMAKU_HISTORY_PAGE_SIZE : !!result.hasMore
+    };
+    DanmakuHistory_cacheSet(key, payload);
+    return payload;
+  }, function () {
+    return { ok: false, reason: "exception", list: [], hasMore: false };
   });
+}
+
+/** 标题栏来源行：本地档案 · 覆盖 N 房间 / M 天（stats 拿不到就只写"本地档案"）。 */
+function DanmakuHistory_querySourceText() {
+  if (typeof ArchiveDB === "undefined" || !ArchiveDB || typeof ArchiveDB.stats !== "function") {
+    return Promise.resolve("本地档案");
+  }
+  let pending = null;
+  try {
+    pending = ArchiveDB.stats();
+  } catch (e) {
+    return Promise.resolve("本地档案");
+  }
+  return Promise.resolve(pending).then(function (stats) {
+    if (!stats || stats.ok === false) return "本地档案";
+    let rooms = Number(stats.rooms) > 0 ? Number(stats.rooms) : 0;
+    let days = DanmakuHistory_countDays(stats.oldestDay, stats.newestDay);
+    if (!rooms && !days) return "本地档案";
+    return "本地档案 · 覆盖 " + rooms + " 房间 / " + days + " 天";
+  }, function () {
+    return "本地档案";
+  });
+}
+
+function DanmakuHistory_parseDayKey(dayKey) {
+  let matched = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(String(dayKey || ""));
+  if (!matched) return null;
+  let moment = new Date(Number(matched[1]), Number(matched[2]) - 1, Number(matched[3]), 0, 0, 0, 0);
+  if (isNaN(moment.getTime())) return null;
+  return moment;
+}
+
+/** "YYYY-MM-DD" 起止 -> 覆盖天数（含首尾）；任一非法返回 0。 */
+function DanmakuHistory_countDays(oldestDay, newestDay) {
+  let start = DanmakuHistory_parseDayKey(oldestDay);
+  let end = DanmakuHistory_parseDayKey(newestDay);
+  if (!start || !end) return 0;
+  let span = Math.round((end.getTime() - start.getTime()) / 86400000);
+  if (span < 0) return 0;
+  return span + 1;
 }
 
 /* ---------- 用户卡片探测与按钮注入 ---------- */
@@ -210,11 +267,13 @@ function DanmakuHistory_ensurePanel() {
         <span class="danmaku-history-panel__date"></span>
         <button type="button" class="danmaku-history-panel__date-btn" data-act="next" title="后一天">›</button>
         <span class="danmaku-history-panel__count"></span>
+        <span class="danmaku-history-panel__source"></span>
       </div>
       <div class="danmaku-history-panel__list"></div>
       <div class="danmaku-history-panel__status">
         <span class="danmaku-history-panel__status-text"></span>
-        <button type="button" class="ex-picker-btn danmaku-history-panel__more">加载更多</button>
+        <button type="button" class="ex-picker-btn danmaku-history-panel__more" data-act="more">加载更多</button>
+        <button type="button" class="ex-picker-btn danmaku-history-panel__more danmaku-history-panel__replay" data-act="replay">查本房间回放</button>
       </div>
     </div>
   `;
@@ -232,8 +291,12 @@ function DanmakuHistory_ensurePanel() {
     if (next.getTime() > DanmakuHistory_today().getTime()) return;
     DanmakuHistory_gotoDate(next);
   });
-  p.querySelector(".danmaku-history-panel__more").addEventListener("click", function () {
+  p.querySelector('[data-act="more"]').addEventListener("click", function () {
     DanmakuHistory_loadPage(danmakuHistoryOffset + DANMAKU_HISTORY_PAGE_SIZE, false);
+  });
+  // 第三态兜底：本地没有时，用官方回放接口补一段（结果必须标注抽样口径）。
+  p.querySelector('[data-act="replay"]').addEventListener("click", function () {
+    DanmakuHistory_loadReplay();
   });
 
   return p;
@@ -259,6 +322,7 @@ function DanmakuHistory_clearList() {
   if (!danmakuHistoryPanel) return;
   let listEl = danmakuHistoryPanel.querySelector(".danmaku-history-panel__list");
   if (listEl) listEl.innerHTML = "";
+  danmakuHistoryPendingNames = [];
   DanmakuHistory_updateCount();
 }
 
@@ -271,7 +335,7 @@ function DanmakuHistory_updateCount() {
 }
 
 function DanmakuHistory_renderRow(item) {
-  let isGift = !!item && item.type === "gift";
+  let isGift = !!item && item.kind === "gift";
 
   let row = document.createElement("div");
   row.className = "sign-option-item danmaku-history-panel__row";
@@ -297,8 +361,8 @@ function DanmakuHistory_renderRow(item) {
   let title = document.createElement("span");
   title.className = "sign-option-title";
   if (isGift) {
-    let giftName = item.name || "";
-    let count = item.c || 1;
+    let giftName = item.gfn || "";
+    let count = item.gfcnt || 1;
     title.textContent = giftName ? ("赠送 " + giftName + " ×" + count) : String(item.txt || "礼物");
   } else {
     title.textContent = String(item.txt || "");
@@ -307,8 +371,13 @@ function DanmakuHistory_renderRow(item) {
 
   let desc = document.createElement("span");
   desc.className = "sign-option-desc";
-  desc.textContent = String(item["room.nn"] || "未知直播间") + " · " + DanmakuHistory_formatTime(item.ts);
+  desc.textContent = String(item.roomName || "未知直播间") + " · " + DanmakuHistory_formatTime(item.ts);
   textBox.appendChild(desc);
+
+  // 档案里没存房间名：先按「未知直播间」渲染，稍后用 ArchiveMeta.room(rid) 补（30 分钟缓存）。
+  if (!item.roomName && item.rid) {
+    danmakuHistoryPendingNames.push({ el: desc, rid: String(item.rid), ts: item.ts });
+  }
 
   row.appendChild(textBox);
 
@@ -343,7 +412,7 @@ function DanmakuHistory_appendRows(list) {
   }
 }
 
-function DanmakuHistory_setStatus(text, kind, action) {
+function DanmakuHistory_setStatus(text, kind, action, titleText) {
   if (!danmakuHistoryPanel) return;
   let box = danmakuHistoryPanel.querySelector(".danmaku-history-panel__status-text");
   if (!box) return;
@@ -351,13 +420,10 @@ function DanmakuHistory_setStatus(text, kind, action) {
   box.textContent = text || "";
   box.className = "danmaku-history-panel__status-text" + (kind ? " is-" + kind : "");
   box.onclick = null;
-  box.title = "";
+  box.title = titleText || "";
 
-  if (action === "login") {
-    box.title = "点击前往 doseeing 登录";
-    box.onclick = function () { openPage("https://www.doseeing.com/login", true); };
-  } else if (action === "retry") {
-    box.title = "点击重试";
+  if (action === "retry") {
+    box.title = titleText || "点击重试";
     box.onclick = function () {
       DanmakuHistory_loadPage(danmakuHistoryOffset, danmakuHistoryOffset === 0);
     };
@@ -366,29 +432,41 @@ function DanmakuHistory_setStatus(text, kind, action) {
 
 function DanmakuHistory_setMoreVisible(visible) {
   if (!danmakuHistoryPanel) return;
-  let btn = danmakuHistoryPanel.querySelector(".danmaku-history-panel__more");
+  let btn = danmakuHistoryPanel.querySelector('[data-act="more"]');
+  if (btn) btn.classList.toggle("is-visible", !!visible);
+}
+
+/** 「查本房间回放」按钮：只有 ArchiveReplay 可用、且知道当前房间号时才渲染。 */
+function DanmakuHistory_setReplayVisible(visible) {
+  if (!danmakuHistoryPanel) return;
+  let btn = danmakuHistoryPanel.querySelector('[data-act="replay"]');
   if (btn) btn.classList.toggle("is-visible", !!visible);
 }
 
 function DanmakuHistory_renderError(reason) {
-  let msg = "加载失败，请稍后重试";
+  let msg = "读取本机档案失败，请稍后重试";
   let action = "retry";
-  if (reason === "login") {
-    msg = "需先登录 doseeing 才能查询历史弹幕";
-    action = "login";
-  } else if (reason === "timeout") {
-    msg = "请求超时，请重试";
-  } else if (reason === "parse") {
-    msg = "数据源返回异常，请重试";
-  } else if (reason === "unsupported") {
-    msg = "当前环境不支持跨域请求";
+  if (reason === "unsupported") {
+    msg = "本机档案不可用（当前环境不支持 IndexedDB）";
     action = "";
+  } else if (reason === "bad-arg") {
+    msg = "缺少用户或日期，无法查询本机档案";
+    action = "";
+  } else if (reason === "exception") {
+    msg = "读取本机档案出错，请重试";
   }
   DanmakuHistory_setStatus(msg, "error", action);
   DanmakuHistory_setMoreVisible(false);
 }
 
 /* ---------- 加载流程 ---------- */
+function DanmakuHistory_loadedRowCount() {
+  if (!danmakuHistoryPanel) return 0;
+  let listEl = danmakuHistoryPanel.querySelector(".danmaku-history-panel__list");
+  if (!listEl) return 0;
+  return listEl.querySelectorAll(".danmaku-history-panel__row").length;
+}
+
 function DanmakuHistory_loadPage(offset, reset) {
   if (!danmakuHistoryPanel || !danmakuHistoryUid || danmakuHistoryLoading) return;
 
@@ -396,35 +474,164 @@ function DanmakuHistory_loadPage(offset, reset) {
   danmakuHistoryOffset = offset;
   let seq = ++danmakuHistoryReqSeq;
 
-  DanmakuHistory_setStatus("加载中…", "loading", "");
+  DanmakuHistory_setStatus("读取本机档案…", "loading", "");
   DanmakuHistory_setMoreVisible(false);
 
-  DanmakuHistory_fetch(danmakuHistoryUid, getLocalDateStr(danmakuHistoryDate), offset)
+  DanmakuHistory_queryLocal(danmakuHistoryUid, getLocalDateStr(danmakuHistoryDate), offset)
     .then(function (res) {
-      // 快速切换日期时丢弃过期响应，否则会串台
+      // 快速切换日期/用户时丢弃过期响应，否则会串台
       if (seq !== danmakuHistoryReqSeq) return;
       danmakuHistoryLoading = false;
 
       if (!res || !res.ok) {
-        DanmakuHistory_renderError(res ? res.reason : "network");
+        DanmakuHistory_renderError(res ? res.reason : "exception");
+        DanmakuHistory_setReplayVisible(DanmakuHistory_canReplay());
         return;
       }
 
       if (reset) DanmakuHistory_clearList();
       let list = res.list || [];
       DanmakuHistory_appendRows(list);
+      DanmakuHistory_fillRoomNames();
       DanmakuHistory_updateCount();
 
-      let hasMore = list.length >= DANMAKU_HISTORY_PAGE_SIZE;
       if (list.length === 0) {
-        DanmakuHistory_setStatus(offset === 0 ? "这一天没有记录" : "没有更多了", "empty", "");
-      } else if (hasMore) {
-        DanmakuHistory_setStatus("", "", "");
+        // ② 本地未收录：如实说"没有"，同时把第三态（查回放）露出来
+        DanmakuHistory_setStatus(offset === 0 ? "本地未收录" : "没有更多了", "empty", "");
       } else {
-        DanmakuHistory_setStatus("没有更多了", "empty", "");
+        // ① 本地有 N 条（N = 已渲染行数，翻页后是累计值）
+        let loaded = DanmakuHistory_loadedRowCount();
+        DanmakuHistory_setStatus(
+          "本地有 " + loaded + " 条" + (res.hasMore ? "（还有更多）" : "（已全部加载）"),
+          "ok",
+          ""
+        );
       }
-      DanmakuHistory_setMoreVisible(hasMore);
+      DanmakuHistory_setMoreVisible(!!res.hasMore);
+      DanmakuHistory_setReplayVisible(DanmakuHistory_canReplay());
     });
+}
+
+/* ---------- 第三态：查本房间回放（官方回放接口，抽样口径） ---------- */
+
+/** 面板按钮里的"本房间"= 当前直播间 rid；拿不到返回 ""（这时按钮不渲染）。 */
+function DanmakuHistory_currentRid() {
+  try {
+    if (typeof rid !== "undefined" && rid) return String(rid);
+  } catch (e) {
+    return "";
+  }
+  return "";
+}
+
+function DanmakuHistory_canReplay() {
+  if (typeof ArchiveReplay === "undefined" || !ArchiveReplay) return false;
+  if (typeof ArchiveReplay.queryUserHistory !== "function") return false;
+  return !!DanmakuHistory_currentRid();
+}
+
+function DanmakuHistory_loadReplay() {
+  if (!danmakuHistoryPanel || !danmakuHistoryUid) return;
+  if (!DanmakuHistory_canReplay()) return;
+
+  let ridText = DanmakuHistory_currentRid();
+  let dayKey = getLocalDateStr(danmakuHistoryDate);
+  // 复用同一个序号：换日期 / 换用户都会让这次回放结果作废（否则会串到别人那一天）。
+  let seq = ++danmakuHistoryReqSeq;
+  danmakuHistoryLoading = true;
+  DanmakuHistory_setStatus("正在查本房间回放…", "loading", "");
+
+  let pending = null;
+  try {
+    pending = ArchiveReplay.queryUserHistory(danmakuHistoryUid, ridText, {
+      fromDayKey: dayKey,
+      toDayKey: dayKey,
+      maxPages: DANMAKU_HISTORY_REPLAY_MAX_PAGES
+    });
+  } catch (e) {
+    pending = null;
+  }
+
+  Promise.resolve(pending).then(function (result) {
+    if (seq !== danmakuHistoryReqSeq) return;
+    danmakuHistoryLoading = false;
+    if (!result || !result.ok) {
+      DanmakuHistory_setStatus("回放查询失败（" + ((result && result.reason) || "exception") + "）", "error", "retry");
+      return;
+    }
+    let items = Array.isArray(result.items) ? result.items : [];
+    let rows = [];
+    for (let i = 0; i < items.length; i++) {
+      let raw = items[i];
+      if (!raw || typeof raw !== "object") continue;
+      rows.push({
+        kind: "chat",
+        txt: raw.txt === undefined || raw.txt === null ? "" : String(raw.txt),
+        gfn: "",
+        gfcnt: 1,
+        rid: raw.rid ? String(raw.rid) : ridText,
+        roomName: "",
+        ts: Number(raw.ts) || 0
+      });
+    }
+    DanmakuHistory_appendRows(rows);
+    DanmakuHistory_fillRoomNames();
+    DanmakuHistory_updateCount();
+    // ★口径必须写在脸上：回放只有弹幕、没有礼物，且库端疑似抽样（见 B 报告第四节）。
+    DanmakuHistory_setStatus(
+      DANMAKU_HISTORY_REPLAY_NOTICE + " · 追加 " + rows.length + " 条（本机档案未收录；回放不含礼物）",
+      "notice",
+      "",
+      "回放弹幕是抽样口径：只有弹幕没有礼物，且只有存在回放的场次才有数据"
+    );
+    DanmakuHistory_setMoreVisible(false);
+    DanmakuHistory_setReplayVisible(false);
+  }, function () {
+    if (seq !== danmakuHistoryReqSeq) return;
+    danmakuHistoryLoading = false;
+    DanmakuHistory_setStatus("回放查询失败（exception）", "error", "retry");
+  });
+}
+
+/** 房间名缺失时用 ArchiveMeta.room(rid) 补（它自带 30 分钟缓存，重复调用不额外发请求）。 */
+function DanmakuHistory_fillRoomNames() {
+  if (!danmakuHistoryPendingNames.length) return;
+  if (typeof ArchiveMeta === "undefined" || !ArchiveMeta || typeof ArchiveMeta.room !== "function") {
+    danmakuHistoryPendingNames = [];
+    return;
+  }
+  let queue = danmakuHistoryPendingNames;
+  danmakuHistoryPendingNames = [];
+  for (let i = 0; i < queue.length; i++) {
+    (function (entry) {
+      let pending = null;
+      try {
+        pending = ArchiveMeta.room(entry.rid);
+      } catch (e) {
+        return;
+      }
+      Promise.resolve(pending).then(function (result) {
+        if (!result || !result.ok || !result.room) return;
+        let roomName = result.room.roomName ? String(result.room.roomName) : "";
+        if (!roomName) return;
+        if (!entry.el || !entry.el.parentNode) return;
+        entry.el.textContent = roomName + " · " + DanmakuHistory_formatTime(entry.ts);
+      }, function () {});
+    })(queue[i]);
+  }
+}
+
+/** 标题栏来源行：本地档案 · 覆盖 N 房间 / M 天。 */
+function DanmakuHistory_setSourceText() {
+  if (!danmakuHistoryPanel) return;
+  let el = danmakuHistoryPanel.querySelector(".danmaku-history-panel__source");
+  if (!el) return;
+  el.textContent = "本地档案";
+  DanmakuHistory_querySourceText().then(function (text) {
+    if (!danmakuHistoryPanel) return;
+    let target = danmakuHistoryPanel.querySelector(".danmaku-history-panel__source");
+    if (target) target.textContent = text || "本地档案";
+  }, function () {});
 }
 
 function DanmakuHistory_gotoDate(date) {
@@ -478,6 +685,8 @@ function DanmakuHistory_open(card, triggerBtn) {
 
   ensureMiuixPanelHeader(p, "弹幕历史" + (danmakuHistoryNick ? " · " + danmakuHistoryNick : ""));
   DanmakuHistory_syncToolbar();
+  DanmakuHistory_setSourceText();
+  DanmakuHistory_setReplayVisible(false);
   DanmakuHistory_clearList();
   openMiuixPanelCentered(p, triggerBtn);
 
