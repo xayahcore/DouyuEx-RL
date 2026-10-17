@@ -95,7 +95,6 @@ function initPkg() {
   initPkg_Safe("Update", initPkg_Update);
   // 数据档案必须排在 Update 之后：它的 Dock 图标要用 .ex-update 当插入锚点（插在「检查更新」前）
   initPkg_Safe("DanmakuArchive", initPkg_DanmakuArchive);
-  initPkg_Safe("Monitor", initPkg_Monitor);
   initPkg_Safe("Lottery", initPkg_Lottery);
   initPkg_Safe("PopupPlayer", initPkg_PopupPlayer);
   initPkg_Safe("LiveTool", initPkg_LiveTool);

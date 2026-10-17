@@ -864,18 +864,19 @@ async function run() {
         ok("⑨-2 真实模块的 7 天汇总：按日相加、贵宾数消失、人·日 tooltip、数据覆盖率 6.0%");
     }
 
-    // ---------- ⑨-3 在线弹幕助手入口（源码层）：图标已从胶囊条撤走 ----------
+    // ---------- ⑨-3 在线弹幕助手：Monitor 包已整体删除，只剩数据档案面板里的一个链接 ----------
     {
-        const monitorSource = fs.readFileSync(MONITOR_PATH, "utf8");
-        assert.strictEqual(monitorSource.indexOf(".ex-panel__wrap"), -1,
-            "Monitor 不得再往胶囊条插图标（源码里不应出现 .ex-panel__wrap）");
-        assert.strictEqual(monitorSource.indexOf("Monitor_insertIcon"), -1,
-            "Monitor 源码不得残留 insertIcon 图标构造");
-        assert.ok(/function Monitor_onlineAssistantUrl\(/.test(monitorSource),
-            "Monitor 必须暴露 Monitor_onlineAssistantUrl(roomId) 纯函数");
-        assert.ok(/function initPkg_Monitor\(\)/.test(monitorSource),
-            "initPkg_Monitor 必须保留（main.js 接线契约）");
-        ok("⑨-3 Monitor 已撤图标（无 .ex-panel__wrap / insertIcon），并暴露 Monitor_onlineAssistantUrl");
+        assert.strictEqual(fs.existsSync(MONITOR_PATH), false,
+            "Monitor 包必须已删除（在线弹幕助手不再有自己的胶囊图标与三级面板）");
+        const mainSrc = fs.readFileSync(path.join(__dirname, "../src/main.js"), "utf8");
+        assert.strictEqual(mainSrc.indexOf("initPkg_Monitor"), -1,
+            "main.js 里不得再接线 initPkg_Monitor");
+        const uiSrc = fs.readFileSync(UI_PATH, "utf8");
+        assert.strictEqual(uiSrc.indexOf("Monitor_"), -1,
+            "数据档案 UI 不得再依赖 Monitor_ 模块（URL 规则已内置）");
+        assert.ok(/function archiveUi_assistantUrl\(/.test(uiSrc),
+            "数据档案必须自己提供 archiveUi_assistantUrl（在线弹幕助手入口）");
+        ok("⑨-3 Monitor 包已删除：main.js 无接线、UI 无 Monitor_ 依赖、入口链接由数据档案自己实现");
     }
 
     // ---------- ⑨-4 在线弹幕助手：点击走 openPage，URL 正确 ----------
@@ -901,19 +902,18 @@ async function run() {
         assert.strictEqual(scenario.openedPages[0].newTab, true, "必须在新标签页打开");
         ok("⑨-4 「在线弹幕助手」入口点击 → openPage(\"https://www.douyuex.com/9263298\", true)");
 
-        // Monitor_onlineAssistantUrl 缺失时，面板必须自己按同一规则拼 URL
-        const noMonitorScenario = setupScenario({
-            noMonitor: true,
+        // 入口的 URL 规则完全内置，不再依赖任何外部模块（Monitor 包已删除）
+        const builtInScenario = setupScenario({
             sumRoomDays: () => makeSumResult({}),
             summarizeWindow: () => ({ danmakuValue: 10, incomeYc: 5, activeUv: 2 }),
         });
-        const noMonitorPanel = await openPanel(noMonitorScenario);
-        noMonitorPanel.querySelector('[data-field="assistant-link"]').click();
+        const builtInPanel = await openPanel(builtInScenario);
+        builtInPanel.querySelector('[data-field="assistant-link"]').click();
         await wait(20);
-        assert.strictEqual(noMonitorScenario.openedPages.length, 1, "缺少 Monitor 模块时仍必须能打开");
-        assert.strictEqual(noMonitorScenario.openedPages[0].url, "https://www.douyuex.com/9263298",
-            "Monitor_onlineAssistantUrl 缺失时必须自己拼 https://www.douyuex.com/<rid> 兜底");
-        ok("⑨-4b Monitor 模块缺失时入口自己拼 URL 兜底，链接照常可用");
+        assert.strictEqual(builtInScenario.openedPages.length, 1, "内置规则下入口必须能打开");
+        assert.strictEqual(builtInScenario.openedPages[0].url, "https://www.douyuex.com/9263298",
+            "URL 由数据档案自己拼：https://www.douyuex.com/<rid>");
+        ok("⑨-4b 入口 URL 规则内置在数据档案里（无外部模块依赖），链接照常可用");
     }
 
     // ---------- ⑨-5 房间号缺失：入口禁用，不导航到 undefined ----------

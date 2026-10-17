@@ -1151,8 +1151,8 @@ function archiveUi_renderOverview(panel, data) {
  * 「在线弹幕助手」入口：只是一个链接，不是可展开区块
  * --------------------------------------------------------------------------
  * 房间号（真 rid）缺失时**禁用**这一行：既不渲染死链，也绝不导航到
- * douyuex.com/undefined。URL 优先由 Monitor.js 的 Monitor_onlineAssistantUrl 生成，
- * 该模块缺失时自己拼同一套规则兜底。
+ * douyuex.com/undefined。URL 规则直接内置在本包里（2026-10-17 起 Monitor 包已删除，
+ * 「在线弹幕助手」不再有自己的胶囊图标与三级面板，只作为数据档案面板里的一项功能存在）。
  */
 function archiveUi_assistantUrl() {
   var roomId = "";
@@ -1162,13 +1162,6 @@ function archiveUi_assistantUrl() {
     roomId = "";
   }
   if (!roomId || !/^\d{2,12}$/.test(roomId)) return "";
-
-  try {
-    if (typeof Monitor_onlineAssistantUrl === "function") {
-      var fromModule = Monitor_onlineAssistantUrl(roomId);
-      if (fromModule && String(fromModule).indexOf("undefined") === -1) return String(fromModule);
-    }
-  } catch (e2) { }
   return "https://www.douyuex.com/" + roomId;
 }
 
