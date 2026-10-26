@@ -18,20 +18,45 @@ function Refresh_Barrage_insertIcon() {
 	if (b) b.insertBefore(a, b.childNodes[0]);
 }
 
+/** 两态外观：文案跟着状态走（关=「前缀」/ 开=「恢复前缀」） */
+function Refresh_Barrage_applyUI(active) {
+    const btn = document.getElementById("refresh-barrage");
+    if (btn) btn.classList[active ? "add" : "remove"]("ex-active");
+    const text = document.getElementById("refresh-barrage__text");
+    if (text) {
+        text.style.color = active ? "#fff" : "";
+        text.innerText = active ? "恢复前缀" : "前缀";
+    }
+    const svg = document.getElementById("refresh-barrage__svg");
+    if (svg) {
+        const p = svg.getElementsByTagName("path")[0];
+        if (p) p.setAttribute("fill", active ? "#ffffff" : "#AFAFAF");
+    }
+}
+
 function initPkg_Refresh_Barrage_Func() {
 	let btn = document.getElementById("refresh-barrage");
 	if (btn) {
 		btn.addEventListener("click", function() {
         if (current_barrage_status == 0) {
+            const doApply = function () {
+                setRefreshBarrage();
+                saveData_Refresh();
+            };
+            // 弹窗库是全局依赖：没带上时不能让按钮变成"点了没反应"
+            if (typeof PostbirdAlertBox === "undefined") {
+                if (typeof showMessage === "function") {
+                    showMessage("【简洁模式】缺少确认弹窗组件，已直接屏蔽弹幕前缀", "warning");
+                }
+                doApply();
+                return;
+            }
             PostbirdAlertBox.confirm({
                 'title': '提示',
                 'content': '是否屏蔽弹幕前缀（如粉丝牌、钻粉、贵族等标志）',
                 'okBtn': '确定',
                 'cancelBtn': '取消',
-                'onConfirm': function () {
-                    setRefreshBarrage();
-                    saveData_Refresh();
-                },
+                'onConfirm': doApply,
                 'onCancel': function () {
                 }
             });
@@ -40,6 +65,9 @@ function initPkg_Refresh_Barrage_Func() {
 	            saveData_Refresh();
 	        }
 	    });
+	} else {
+		// 弹幕工具条还没渲染：按钮没插进去，这里没有可绑的东西
+		if (typeof ExGuard_warn === "function") ExGuard_warn("简洁模式", "「前缀」按钮不存在，本次不绑定");
 	}
 }
 
@@ -55,16 +83,11 @@ function refresh_Barrage_getStatus() {
 }
 
 function initPkg_Refresh_Barrage_Set() {
-    let ret = localStorage.getItem("ExSave_Refresh");
-    if (ret != null) {
-        let retJson = JSON.parse(ret);
-        if ("barrage" in retJson == false) {
-            retJson.barrage = {status: false};
-        }
-        if (retJson.barrage.status == true) {
-            setRefreshBarrage();
-        }
-    }
+    const saved = Refresh_readSave();
+    const cfg = saved.barrage;
+    if (!cfg || cfg.status != true) return;
+    // 存储里开着就真的恢复（样式与状态都恢复），不依赖按钮是否已经插进 DOM
+    setRefreshBarrage();
 }
  
 function setRefreshBarrage() {
@@ -76,25 +99,13 @@ function setRefreshBarrage() {
     `;
     StyleHook_set("Ex_Style_RefreshBarrage", cssText);
     current_barrage_status = 1;
-    document.getElementById("refresh-barrage").classList.add("ex-active");
-    document.getElementById("refresh-barrage__text").style.color = "#fff";
-    document.getElementById("refresh-barrage__text").innerText = "前缀";
-    let svg = document.getElementById("refresh-barrage__svg");
-    if (svg) {
-        let p = svg.getElementsByTagName("path")[0];
-        if (p) p.setAttribute("fill", "#ffffff");
-    }
+    // 外观全部判空：.Barrage-toolbar 不在时按钮根本没插进去，
+    // 旧实现这里裸取 .classList / .style → 恢复路径（Set 调用）当场抛（W6）
+    Refresh_Barrage_applyUI(true);
 }
 
 function cancelRefreshBarrage() {
     StyleHook_remove("Ex_Style_RefreshBarrage");
     current_barrage_status = 0;
-    document.getElementById("refresh-barrage").classList.remove("ex-active");
-    document.getElementById("refresh-barrage__text").style.color = "";
-    document.getElementById("refresh-barrage__text").innerText = "前缀";
-    let svg = document.getElementById("refresh-barrage__svg");
-    if (svg) {
-        let p = svg.getElementsByTagName("path")[0];
-        if (p) p.setAttribute("fill", "#AFAFAF");
-    }
+    Refresh_Barrage_applyUI(false);
 }

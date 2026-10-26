@@ -1633,6 +1633,185 @@ function testFansBadgeLateMount() {
 }
 
 /* ------------------------------------------------------------------ */
+/* 场景 25-27: Refresh 包（P1 批：保存阶段裸解引用 / 恢复路径 / DomHook） */
+/* ------------------------------------------------------------------ */
+
+const REFRESH_SRC = read("src/packages/Refresh/Refresh.js");
+const REFRESH_BARRAGE_SRC = read("src/packages/Refresh/Refresh_Barrage.js");
+const REFRESH_FRAME_SRC = read("src/packages/Refresh/Refresh_BarrageFrame.js");
+const REFRESH_VIDEO_SRC = read("src/packages/Refresh/Refresh_Video.js");
+
+function getValidDomImpl(queryList) {
+    for (const query of queryList) {
+        const el = document.querySelector(query);
+        if (el) return el;
+    }
+    return null;
+}
+
+function loadRefresh(opts) {
+    const options = opts || {};
+    const dom = makeDom(options.html || "<!DOCTYPE html><html><body></body></html>");
+    const win = dom.window;
+    const log = collectConsole();
+    const clock = options.clock || makeClock();
+    const messages = [];
+    const styles = { set: [], removed: [] };
+    const hooks = [];
+    class FakeDomHook {
+        constructor(selector, subtree, cb) { hooks.push({ selector: selector, subtree: subtree, cb: cb }); }
+    }
+    const factory = new Function(
+        "document", "window", "localStorage", "console",
+        "setTimeout", "clearTimeout", "setInterval", "clearInterval",
+        "StyleHook_set", "StyleHook_remove", "DomHook", "showMessage", "getValidDom", "resizeWindow", "PostbirdAlertBox",
+        EXGUARD_SRC + "\n" + GETVALIDDOM_SRC + "\n" +
+        REFRESH_SRC + "\n" + REFRESH_BARRAGE_SRC + "\n" + REFRESH_FRAME_SRC + "\n" + REFRESH_VIDEO_SRC +
+        "\nreturn { initPkg: initPkg_Refresh, save: saveData_Refresh, readSave: Refresh_readSave, " +
+        "initFrame: initPkg_Refresh_BarrageFrame, initVideo: initPkg_Refresh_Video, initBarrage: initPkg_Refresh_Barrage, " +
+        "initVideoSet: initPkg_Refresh_Video_Set, " +
+        "frameStatus: refresh_BarrageFrame_getStatus, barrageStatus: refresh_Barrage_getStatus, videoStatus: refresh_Video_getStatus, " +
+        "frameApply: Refresh_BarrageFrame_apply, setBarrage: setRefreshBarrage, cancelBarrage: cancelRefreshBarrage };"
+    );
+    const api = factory(
+        win.document, win, win.localStorage, log.console,
+        clock.setTimeout, clock.clearTimeout, clock.setInterval, clock.clearInterval,
+        function (id, css) { styles.set.push({ id: id, css: css }); },
+        function (id) { styles.removed.push(id); },
+        FakeDomHook,
+        function (text, type) { messages.push({ text: String(text), type: type }); },
+        getValidDomImpl, function () {},
+        options.noAlertBox ? undefined : { confirm: function (cfg) { if (cfg && cfg.onConfirm) cfg.onConfirm(); } }
+    );
+    return { dom: dom, win: win, api: api, log: log, clock: clock, messages: messages, styles: styles, hooks: hooks };
+}
+
+function testRefreshSaveAndClickWithoutNodes() {
+    // ① 非直播间（没有 .layout-Player-rank）：旧实现 saveData_Refresh → getStatus 裸取 .style 抛，
+    //    于是「拉高 / 前缀 / 隐藏礼物栏」三处操作全部在**保存阶段**炸掉。
+    const noRank = loadRefresh();
+    assert.doesNotThrow(function () { noRank.api.save(); }, "没有日榜节点时保存不得抛错");
+    const saved = JSON.parse(noRank.win.localStorage.getItem("ExSave_Refresh"));
+    assert.strictEqual(saved.barrageFrame.status, false, "节点不在时按「没拉高」落盘");
+    assert.strictEqual(noRank.api.frameStatus(), false, "getStatus 必须安全返回 false");
+
+    // ② 点「拉高」但页面没有 .Barrage（新版版式）：旧实现在回调里裸取 dom_rank.style / dom_topBarrage.className
+    const clickNoNode = loadRefresh({ html: "<!DOCTYPE html><html><body><div class='Barrage-toolbar'></div></body></html>" });
+    clickNoNode.api.initFrame();
+    const btn = clickNoNode.win.document.getElementById("refresh-barrage-frame");
+    assert.ok(btn, "「拉高」按钮必须插进 .Barrage-toolbar");
+    assert.doesNotThrow(function () { btn.dispatchEvent(new clickNoNode.win.Event("click")); }, "节点缺失时点击不得抛错");
+    assert.ok(clickNoNode.log.warns.some(function (s) { return s.indexOf("拉高") !== -1; }), "必须留痕");
+    const saved2 = JSON.parse(clickNoNode.win.localStorage.getItem("ExSave_Refresh") || "{}");
+    assert.strictEqual(saved2.barrageFrame ? saved2.barrageFrame.status : false, false, "没执行成功就不该写成已拉高");
+
+    // ③ 正常房间（有日榜 + 弹幕区，但没有活动区）：必须真的拉高，且不因缺 #js-room-activity 而抛
+    const okHtml = "<!DOCTYPE html><html><body><div class='Barrage-toolbar'></div>" +
+        "<div class='layout-Player-rank'></div><div class='Barrage'></div></body></html>";
+    const ok = loadRefresh({ html: okHtml });
+    ok.api.initFrame();
+    const okBtn = ok.win.document.getElementById("refresh-barrage-frame");
+    assert.doesNotThrow(function () { okBtn.dispatchEvent(new ok.win.Event("click")); }, "缺活动区不得抛错");
+    assert.strictEqual(ok.win.document.querySelector(".layout-Player-rank").style.display, "none", "日榜必须被隐藏");
+    assert.strictEqual(ok.win.document.querySelector(".Barrage").className, "Barrage top-0-important", "弹幕区必须拉高");
+    assert.strictEqual(JSON.parse(ok.win.localStorage.getItem("ExSave_Refresh")).barrageFrame.status, true, "状态必须落盘");
+    // W10：两态文案必须不同
+    const text = ok.win.document.getElementById("refresh-barrage-frame__text");
+    assert.strictEqual(text.innerText, "恢复高度", "开启态文案必须是反向的，实际 " + text.innerText);
+    okBtn.dispatchEvent(new ok.win.Event("click"));
+    assert.strictEqual(ok.win.document.querySelector(".layout-Player-rank").style.display, "block", "再点一次必须恢复");
+    assert.strictEqual(text.innerText, "拉高", "关闭态文案必须回到「拉高」");
+
+    console.log("✓ 场景 25 通过: 非直播间保存不抛、缺活动区照样拉高、两态文案相反");
+}
+
+function testRefreshRestorePaths() {
+    // ① 存储里开着「拉高」，但页面没有日榜节点：必须跳过 + 留痕，且**不**把状态回写成 false
+    const frameMissing = loadRefresh({ html: "<!DOCTYPE html><html><body><div class='Barrage-toolbar'></div></body></html>" });
+    frameMissing.win.localStorage.setItem("ExSave_Refresh", JSON.stringify({ barrageFrame: { status: true } }));
+    assert.doesNotThrow(function () { frameMissing.api.initFrame(); }, "恢复路径缺节点不得抛错");
+    assert.ok(frameMissing.log.warns.some(function (s) { return s.indexOf("恢复") !== -1 && s.indexOf("拉高") !== -1; }),
+        "必须留痕，实际 " + JSON.stringify(frameMissing.log.warns));
+    assert.strictEqual(JSON.parse(frameMissing.win.localStorage.getItem("ExSave_Refresh")).barrageFrame.status, true,
+        "存储里开着就必须保持开着（下次进房还要自动恢复）");
+
+    // ② 存储里开着且节点齐全：必须真的恢复
+    const frameOk = loadRefresh({
+        html: "<!DOCTYPE html><html><body><div class='Barrage-toolbar'></div>" +
+            "<div class='layout-Player-rank'></div><div class='Barrage'></div></body></html>",
+    });
+    frameOk.win.localStorage.setItem("ExSave_Refresh", JSON.stringify({ barrageFrame: { status: true } }));
+    frameOk.api.initFrame();
+    assert.strictEqual(frameOk.win.document.querySelector(".layout-Player-rank").style.display, "none", "存储里开着就必须真的恢复");
+    assert.strictEqual(frameOk.win.document.getElementById("refresh-barrage-frame__text").innerText, "恢复高度", "恢复后文案要对");
+
+    // ③ 隐藏礼物栏：旧实现恢复路径四个节点全裸 → 刷新即抛、Refresh 包初始化中断
+    const videoMissing = loadRefresh({ html: "<!DOCTYPE html><html><body></body></html>" });
+    videoMissing.win.localStorage.setItem("ExSave_Refresh", JSON.stringify({ video: { status: true } }));
+    assert.doesNotThrow(function () { videoMissing.api.initVideoSet(); }, "缺节点时恢复不得抛错");
+    assert.ok(videoMissing.log.warns.some(function (s) { return s.indexOf("隐藏礼物栏") !== -1; }), "缺节点恢复必须留痕");
+    assert.strictEqual(videoMissing.api.videoStatus(), false, "节点不在时状态如实为 false");
+
+    const videoOk = loadRefresh({
+        html: "<!DOCTYPE html><html><body><div class='right-e7ea5d'></div>" +
+            "<div class='PlayerToolbar-ContentRow'></div><div class='layout-Player-video'></div>" +
+            "<div id='js-player-dialog'></div></body></html>",
+    });
+    videoOk.win.localStorage.setItem("ExSave_Refresh", JSON.stringify({ video: { status: true } }));
+    videoOk.win.localStorage.setItem("ExSave_FullScreen", JSON.stringify({ isFullScreen: true }));
+    videoOk.api.initVideo();
+    videoOk.clock.advance(1600);
+    assert.strictEqual(videoOk.win.document.querySelector(".PlayerToolbar-ContentRow").style.visibility, "hidden",
+        "存储里开着就必须真的隐藏礼物栏");
+    assert.strictEqual(videoOk.api.videoStatus(), true, "恢复后状态必须为 true");
+
+    // ④ 前缀：按钮没插进去（无 .Barrage-toolbar）时恢复路径不得抛（W6）
+    const barrageNoBtn = loadRefresh({ html: "<!DOCTYPE html><html><body></body></html>" });
+    barrageNoBtn.win.localStorage.setItem("ExSave_Refresh", JSON.stringify({ barrage: { status: true } }));
+    assert.doesNotThrow(function () { barrageNoBtn.api.initBarrage(); }, "按钮不在时恢复不得抛错");
+    assert.strictEqual(barrageNoBtn.api.barrageStatus(), true, "样式与状态必须照常恢复");
+    assert.strictEqual(barrageNoBtn.styles.set.length, 1, "样式必须真的注入");
+
+    // ⑤ 脏存储（手工改成非 JSON）：旧实现四处裸 JSON.parse → 整个包初始化中断
+    const broken = loadRefresh({ html: "<!DOCTYPE html><html><body></body></html>" });
+    broken.win.localStorage.setItem("ExSave_Refresh", "oops");
+    assert.doesNotThrow(function () { broken.api.initPkg(); }, "存储损坏时初始化不得抛错");
+    assert.ok(broken.log.warns.some(function (s) { return s.indexOf("已损坏") !== -1; }),
+        "存储损坏必须留痕，实际 " + JSON.stringify(broken.log.warns));
+
+    console.log("✓ 场景 26 通过: 三条恢复路径都「开着就恢复、缺节点只跳过并留痕」，脏存储不炸");
+}
+
+function testRefreshZIndexHooks() {
+    // W4：changeToolBarZIndex 挂在三个 DomHook 上，节点短暂消失就会在回调里抛
+    const page = loadRefresh({
+        html: "<!DOCTYPE html><html><body><div class='right-e7ea5d'></div><div class='layout-Player-video'></div><div id='js-player-dialog'></div></body></html>",
+    });
+    page.api.initVideo();
+    page.clock.advance(1600);
+    assert.ok(page.hooks.length >= 3, "三个 DomHook 必须都挂上，实际 " + page.hooks.length);
+    assert.doesNotThrow(function () {
+        page.hooks.forEach(function (h) { h.cb([{ target: { className: "toggle__P8TKM" } }]); });
+    }, "没有播放器工具条时回调不得抛错");
+    assert.ok(page.log.warns.some(function (s) { return s.indexOf("播放器工具条") !== -1; }), "必须留痕");
+
+    // 有工具条 + 新版布局：z-index 要真的写
+    const withToolbar = loadRefresh({
+        html: "<!DOCTYPE html><html><body><div class='right-e7ea5d'></div><div class='layout-Player-video'></div>" +
+            "<div id='js-player-dialog'><div id='js-player-toolbar'></div></div>" +
+            "<div class='live-next-body'></div></body></html>",
+    });
+    withToolbar.api.initVideo();
+    withToolbar.clock.advance(1600);
+    assert.doesNotThrow(function () { withToolbar.hooks.forEach(function (h) { h.cb([{ target: { className: "toggle__P8TKM" } }]); }); });
+    const toolbar = withToolbar.win.document.getElementById("js-player-toolbar");
+    assert.ok(String(toolbar.getAttribute("style") || "").indexOf("z-index") !== -1,
+        "工具条必须被写上 z-index，实际 " + toolbar.getAttribute("style"));
+
+    console.log("✓ 场景 27 通过: changeToolBarZIndex 缺节点只留痕，节点齐全照常写 z-index");
+}
+
+/* ------------------------------------------------------------------ */
 /* 场景 9: 源码级守卫（本轮所有判空与上限都在位）                       */
 /* ------------------------------------------------------------------ */
 
@@ -1718,6 +1897,23 @@ function testStaticGuardRails() {
     assert.ok(FANSBADGE_SRC.indexOf("ExGuard_pollFor") !== -1, "粉丝牌页必须等表格渲染（有上限）");
     assert.ok(FANSBADGE_SRC.indexOf("exFansAnnotated") !== -1, "粉丝牌页必须幂等（同一行不注释两遍）");
 
+    // ⑨ task-27：Refresh 的保存/恢复/DomHook 三条路径
+    assert.ok(REFRESH_SRC.indexOf("Refresh_readSave") !== -1, "Refresh 必须有统一的存储读取口");
+    assert.ok(REFRESH_SRC.indexOf("Refresh_tryInit") !== -1, "Refresh 三个子模块必须逐项隔离");
+    assert.ok(REFRESH_SRC.indexOf("Refresh_readFullScreen") !== -1, "跨包只读键必须有带注释的封装");
+    [["Refresh_Barrage", REFRESH_BARRAGE_SRC], ["Refresh_BarrageFrame", REFRESH_FRAME_SRC], ["Refresh_Video", REFRESH_VIDEO_SRC]].forEach(function (pair) {
+        assert.ok(stripComments(pair[1]).indexOf("JSON.parse") === -1, pair[0] + " 不得再自己裸 JSON.parse（统一走 Refresh_readSave）");
+    });
+    assert.ok(REFRESH_FRAME_SRC.indexOf("Refresh_BarrageFrame_apply(") !== -1, "「拉高」必须有统一的判空执行口");
+    assert.ok(REFRESH_FRAME_SRC.indexOf("if (!dom_rank || !dom_topBarrage)") !== -1, "「拉高」必须判日榜/弹幕区节点");
+    assert.ok(REFRESH_FRAME_SRC.indexOf("恢复高度") !== -1, "「拉高」开启态文案必须反向");
+    assert.ok(REFRESH_VIDEO_SRC.indexOf("Refresh_readFullScreen") !== -1, "隐藏礼物栏必须走封装的跨包读取");
+    assert.ok(REFRESH_VIDEO_SRC.indexOf("if (isBeta && dom_player_toolbar && dom_player_toolbar.parentElement)") !== -1,
+        "changeToolBarZIndex 的 parentElement 必须判空");
+    assert.ok(REFRESH_BARRAGE_SRC.indexOf("Refresh_Barrage_applyUI") !== -1, "「前缀」外观更新必须判空");
+    assert.ok(REFRESH_BARRAGE_SRC.indexOf("typeof PostbirdAlertBox === \"undefined\"") !== -1, "弹窗库缺失必须有兜底");
+    assert.ok(REFRESH_FRAME_SRC.indexOf("typeof PostbirdAlertBox === \"undefined\"") !== -1, "弹窗库缺失必须有兜底（拉高）");
+
     // ④ LastLiveTime 在没有目标节点的页面上不得抛错
     const dom = makeDom("<!DOCTYPE html><html><body><div>普通页面</div></body></html>");
     const log = collectConsole();
@@ -1760,7 +1956,10 @@ function testStaticGuardRails() {
     await testFixedAnchorFallback();
     testLastLiveTimeCheapProbe();
     testFansBadgeLateMount();
-    console.log("=== task-17/19/22/24/25 回归（死代码 + 面板死路 + 各级隔离 + 锚点/探针/挂载）24 组场景全部通过 ===");
+    testRefreshSaveAndClickWithoutNodes();
+    testRefreshRestorePaths();
+    testRefreshZIndexHooks();
+    console.log("=== task-17/19/22/24/25/27 回归（死代码 + 面板死路 + 各级隔离 + 锚点/探针/挂载 + Refresh）27 组场景全部通过 ===");
 })().catch(function (e) {
     console.error("测试失败:", e && e.stack ? e.stack : e);
     process.exit(1);

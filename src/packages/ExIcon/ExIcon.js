@@ -45,8 +45,10 @@ function initPkg_ExIcon_Func() {
 	}
 }
 
+// 目前没有调用点（历史遗留），保留但不要埋雷：图标被页面重绘时会取不到点。
 function ExIcon_showTip(a) {
 	let d = document.getElementById("ex-icon__tip");
+	if (!d) return;
 	if (a == true) {
 		d.style.display = "block";
 	} else {

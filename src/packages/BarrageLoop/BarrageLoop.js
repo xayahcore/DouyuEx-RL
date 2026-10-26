@@ -11,9 +11,23 @@ let bloopStopTimer;
 let barrageOptions = [];
 
 function initPkg_BarrageLoop() {
-	initPkg_BarrageLoop_Dom();
-	initPkg_BarrageLoop_Func();
-	initPkg_BarrageLoop_Set();
+	// 逐项隔离（audit-wave4 A5）：面板容器缺失、ensureMiuixPanelHeader 中途抛错等
+	// 都不许把后面的步骤一起带走 —— 旧实现是三步裸调，Dom 一抛 Func/Set 就全不执行。
+	BarrageLoop_tryInit("Dom", initPkg_BarrageLoop_Dom);
+	BarrageLoop_tryInit("Func", initPkg_BarrageLoop_Func);
+	BarrageLoop_tryInit("Set", initPkg_BarrageLoop_Set);
+}
+
+function BarrageLoop_tryInit(name, fn) {
+	try {
+		if (typeof fn === "function") fn();
+	} catch (e) {
+		if (typeof ExGuard_warn === "function") {
+			ExGuard_warn("弹幕小助手", "初始化失败：" + name, e);
+		} else {
+			console.error("[DouyuEx] 弹幕小助手初始化失败：" + name, e);
+		}
+	}
 }
 
 function BarrageLoop_insertModal() {

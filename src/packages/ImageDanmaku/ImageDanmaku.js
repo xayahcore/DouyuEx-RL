@@ -57,8 +57,11 @@ function initPkg_ImageDanmaku_Func() {
 
   document.addEventListener("paste", (event) => {
     try {
-      if (!chatDom) return;
-      if (document.activeElement !== chatDom) return;
+      // 不能把 init 时抓到的 chatDom 关进闭包：进房瞬间聊天框往往还没渲染，
+      // 那样这一整场「粘贴图片」都会失效（audit-wave4 ID1）。每次按键时现取。
+      const inputDom = ImageDanmaku_getChatInput();
+      if (!inputDom) return;
+      if (document.activeElement !== inputDom) return;
       const clipboard = event.clipboardData || (event.originalEvent && event.originalEvent.clipboardData);
       if (!clipboard || !clipboard.items) return;
       const items = clipboard.items;
@@ -68,7 +71,7 @@ function initPkg_ImageDanmaku_Func() {
         if (item.kind === "file" && typeof item.type === "string" && item.type.indexOf("image/") === 0) {
           const file = item.getAsFile ? item.getAsFile() : null;
           if (!file) continue;
-          ImageDanmaku_uploadAndInsert(file, chatDom);
+          ImageDanmaku_uploadAndInsert(file, inputDom);
           break;
         }
       }

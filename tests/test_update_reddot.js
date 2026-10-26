@@ -75,6 +75,7 @@ function makeEnv(opts) {
         "  refresh: (typeof Update_refreshTip === \"function\") ? Update_refreshTip : function () {},",
         "  isNeedUpdate: function () { return isNeedUpdate; },",
         "  latest: function () { return lastestVersion; },",
+        "  buildCards: buildExUpdateCardsHtml,",
         "  keys: {",
         "    seen: (typeof UPDATE_SEEN_KEY !== \"undefined\") ? UPDATE_SEEN_KEY : \"Ex_LastSeenRemoteVersion\",",
         "    known: (typeof UPDATE_KNOWN_KEY !== \"undefined\") ? UPDATE_KNOWN_KEY : \"Ex_LastKnownRemoteVersion\",",
@@ -86,6 +87,7 @@ function makeEnv(opts) {
         "window", "document", "console", "setTimeout", "clearTimeout",
         "GM_info", "GM_getValue", "GM_setValue", "GM_xmlhttpRequest", "fetch", "showMessage",
         "ensureMiuixPanelHeader", "openMiuixPanelCentered", "updateDockActiveIndicator",
+        "GM_deleteValue", "EX_UPDATE_LOG", "EX_UPDATE_LOG_SECTIONS",
         EXGUARD_SRC + "\n" + UPDATE_SRC + "\n" + expose
     );
     const api = factory(
@@ -103,7 +105,10 @@ function makeEnv(opts) {
         function () {},
         function () {},
         function () {},
-        function () {}
+        function () {},
+        function (k) { delete store[k]; },
+        conf.log || {},
+        ["新增功能", "改进与修复", "其它"]
     );
     function flushTimers() {
         let guard = 0;
@@ -212,11 +217,58 @@ async function testCheckWindow() {
     console.log("✓ ② 通过: 失败不占窗口、成功才推进");
 }
 
-// 只在复现红灯时用：UPDGUARD_ONLY=红点 / 窗口
+/* ============ ③ 更新日志渲染层（回退标注 / 转义 / 旧键清理） ============ */
+
+async function testLogRender() {
+    console.log("=== ③ 日志渲染：回退要标注、文本要转义、旧键要清理 ===");
+
+    // 9) 当前版本没有独立条目 → 明确标注回退，且条目文本完整转义
+    const env = makeEnv({
+        store: { Ex_LastNotifiedVersion: "2020.01.01.01" },
+        log: {
+            "2020.01.01.01": {
+                "新增功能": ['【新增】带 "引号" 与 <标签> 和 & 符号'],
+                "改进与修复": ["【修复】示例"],
+                "其它": ["【其它】示例"]
+            }
+        }
+    });
+    env.api.init();
+    const html = env.api.buildCards();
+    assert.ok(html.indexOf("暂无独立日志条目") !== -1, "回退到最近一条时必须如实标注，实际 " + html.slice(0, 120));
+    assert.ok(html.indexOf("&quot;") !== -1, "引号必须转义");
+    assert.ok(html.indexOf("&lt;标签&gt;") !== -1, "尖括号必须转义");
+    assert.ok(html.indexOf("&amp;") !== -1, "& 必须转义");
+    assert.strictEqual(html.indexOf("<标签>"), -1, "不得原样输出标签");
+
+    // 10) 旧红点键被清理
+    assert.strictEqual(env.store.Ex_LastNotifiedVersion, undefined, "旧的 Ex_LastNotifiedVersion 必须被清掉");
+    env.dom.window.close();
+
+    // 11) 当前版本有条目时不加回退说明
+    const env2 = makeEnv({
+        store: {},
+        log: {
+            [CUR]: {
+                "新增功能": ["【新增】本版本条目"],
+                "改进与修复": ["【修复】本版本条目"],
+                "其它": ["【其它】本版本条目"]
+            }
+        }
+    });
+    const html2 = env2.api.buildCards();
+    assert.strictEqual(html2.indexOf("暂无独立日志条目"), -1, "当前版本有条目时不该出现回退说明");
+    assert.ok(html2.indexOf("本版本条目") !== -1, "必须渲染当前版本条目");
+    env2.dom.window.close();
+
+    console.log("✓ ③ 通过: 回退标注 + 转义 + 旧键清理");
+}
+// 只在复现红灯时用：UPDGUARD_ONLY=红点 / 窗口 / 日志
 const ONLY = process.env.UPDGUARD_ONLY || "";
 const SCENARIOS = [
     ["红点", testRedDotSemantics],
-    ["窗口", testCheckWindow]
+    ["窗口", testCheckWindow],
+    ["日志", testLogRender]
 ];
 
 (async function main() {

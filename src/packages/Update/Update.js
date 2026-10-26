@@ -259,7 +259,8 @@ function getExUpdateLogSections() {
 }
 
 function escapeUpdateLogText(str) {
-  return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }
 
 // 依据数据源渲染三大板块卡片，条目统一为 "• 【分类】说明" 格式
@@ -268,7 +269,14 @@ function buildExUpdateCardsHtml() {
   var sections = getExUpdateLogSections();
   if (!entry) return "";
 
-  return sections.map(function (name) {
+  // 当前版本没有独立条目时会回退到「最新一条」：必须如实标注，不能冒充本版本日志（audit-wave3 W11）
+  var log = (typeof EX_UPDATE_LOG !== "undefined" && EX_UPDATE_LOG) ? EX_UPDATE_LOG : null;
+  var isFallback = !(log && log[curVersion]);
+  var note = isFallback
+    ? '<div class="exupdate-panel__note">当前版本 ' + escapeUpdateLogText(curVersion) + ' 暂无独立日志条目，以下为最近一条更新日志。</div>'
+    : "";
+
+  return note + sections.map(function (name) {
     var items = Array.isArray(entry[name]) ? entry[name] : [];
     var lis = items.map(function (text) {
       return "<li>• " + escapeUpdateLogText(text) + "</li>";
@@ -382,8 +390,13 @@ function createExUpdatePanel() {
 }
 
 function initVersionLifecycleNotice() {
-  // 说明：Ex_LastNotifiedVersion 是旧红点语义留下的键（「有没有点过我已收到」），
-  // 现在已经没有读取方；保留旧值不影响判断，也不再写它，等后续版本清理。
+  // Ex_LastNotifiedVersion 是旧红点语义留下的键（「有没有点过我已收到」），现在没有任何读取方。
+  // 老用户存储里会残留一条无用记录，这里顺手清掉（audit-wave3 W14）；GM 不支持时静默跳过。
+  try {
+    if (typeof GM_deleteValue === "function" && GM_getValue("Ex_LastNotifiedVersion") !== undefined) {
+      GM_deleteValue("Ex_LastNotifiedVersion");
+    }
+  } catch (e) {}
 
   // 12 小时限频在线探测
   var lastCheckTime = Number(GM_getValue(UPDATE_CHECK_TIME_KEY) || 0);

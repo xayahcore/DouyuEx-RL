@@ -70,13 +70,22 @@ function initPkg_Refresh_Video_Func() {
             chatPanel_isHidden = true;
         }
         const dom_player_toolbar = document.getElementById("js-player-toolbar");
-        dom_player_toolbar.style = video_fullPage? "z-index:20" : "z-index:30";
+        // 这个函数挂在三个 DomHook 上：全屏切换 / 切房 / 切小窗时节点会短暂消失，
+        // 裸取 .style 就会在回调里抛（DomHook 只记一条 warn，用户侧毫无提示）。
+        // 注意：工具条缺失只跳过工具条这两步，下面的 casebar 调整照旧执行。
+        if (dom_player_toolbar) {
+            dom_player_toolbar.style = video_fullPage? "z-index:20" : "z-index:30";
+        } else if (typeof ExGuard_warn === "function") {
+            ExGuard_warn("简洁模式", "播放器工具条不存在，本次跳过 z-index 调整");
+        }
         const dom_casebar = document.getElementsByClassName("case__f4yex")[0];
         if(dom_casebar){
             dom_casebar.style = (video_fullScreen || (video_fullPage && chatPanel_isHidden)) && refresh_Video_getStatus() ? "bottom: -84px;" : "bottom: 0;";
         }
         const isBeta = !!document.getElementsByClassName("live-next-body")[0];
-        if (isBeta) dom_player_toolbar.parentElement.style = "z-index:20";
+        if (isBeta && dom_player_toolbar && dom_player_toolbar.parentElement) {
+            dom_player_toolbar.parentElement.style = "z-index:20";
+        }
     }
 
     let dom = getValidDom([".layout-Player-video", ".stream__T55I3"]);
@@ -229,44 +238,48 @@ function refresh_Video_getStatus() {
 }
 // FullPageFollowGuide
 function initPkg_Refresh_Video_Set() {
-    let ret = localStorage.getItem("ExSave_Refresh");
-    if (ret != null) {
-        let retJson = JSON.parse(ret);
-        if ("video" in retJson == false) {
-            retJson.video = {status: false};
-        }
-        if (retJson.video.status == true) {
-            let dom_toolbar = document.getElementsByClassName("PlayerToolbar-ContentRow")[0];
-            let dom_video = getValidDom([".layout-Player-video", ".stream__T55I3"]);
-            let dom_refresh = document.getElementById("refresh-video");
-            let dom_refresh3 = document.getElementById("refresh-video3");
-            let dom_player_toolbar = document.getElementById("js-player-toolbar");
-            dom_toolbar.style.visibility = "hidden";
-            dom_video.style = "bottom:0;z-index:25";
-            dom_player_toolbar.style = "z-index:30";
-            let ret = localStorage.getItem("ExSave_FullScreen");
-            if (ret != null) {
-                let retJson = JSON.parse(ret);
-                if (retJson.isFullScreen) {
-                    dom_player_toolbar.style = "z-index:20";
-                }
-            }
-            const isBeta = !!document.getElementsByClassName("live-next-body")[0];
-            if (isBeta) dom_player_toolbar.parentElement.style = "z-index:20";
-            if (dom_refresh3) {
-                dom_refresh3.style.opacity = "0";
-                dom_refresh3.style.transform = "scale(.9)";
-                dom_refresh3.style.pointerEvents = "none";
-                dom_refresh3.title = "点击显示礼物栏";
-            }
-            dom_refresh.innerText = "✓ 隐藏礼物栏";
-            refresh_Video_setStyle();
-            resizeWindow();
-            setTimeout(() => {
-                updateRefreshSwitchUI(true);
-            }, 500);
+    const saved = Refresh_readSave();
+    const cfg = saved.video;
+    if (!cfg || cfg.status != true) return;
+
+    // 存储里开着就真的恢复：样式与状态一路恢复，只是**节点缺失时跳过对应那几步并留痕**，
+    // 绝不裸解引用（旧实现四处全裸 → 刷新即抛，Refresh 包初始化就在这里中断，
+    // 排在后面的「前缀」按钮也跟着不出现）。
+    const dom_toolbar = document.getElementsByClassName("PlayerToolbar-ContentRow")[0];
+    const dom_video = getValidDom([".layout-Player-video", ".stream__T55I3"]);
+    const dom_refresh = document.getElementById("refresh-video");
+    const dom_refresh3 = document.getElementById("refresh-video3");
+    const dom_player_toolbar = document.getElementById("js-player-toolbar");
+
+    const missing = [];
+    if (!dom_toolbar) missing.push(".PlayerToolbar-ContentRow");
+    if (!dom_video) missing.push(".layout-Player-video");
+    if (missing.length && typeof ExGuard_warn === "function") {
+        ExGuard_warn("简洁模式", "「隐藏礼物栏」恢复时缺少节点：" + missing.join(" / ") + "，这几步跳过（样式与状态照常恢复）");
+    }
+
+    if (dom_toolbar) dom_toolbar.style.visibility = "hidden";
+    if (dom_video) dom_video.style = "bottom:0;z-index:25";
+    if (dom_player_toolbar) {
+        // 跨包只读键：ExSave_FullScreen 由 ExpandTool_FullScreen 写入（见 Refresh_readFullScreen 注释）
+        dom_player_toolbar.style = Refresh_readFullScreen() ? "z-index:20" : "z-index:30";
+        const isBeta = !!document.getElementsByClassName("live-next-body")[0];
+        if (isBeta && dom_player_toolbar.parentElement) {
+            dom_player_toolbar.parentElement.style = "z-index:20";
         }
     }
+    if (dom_refresh3) {
+        dom_refresh3.style.opacity = "0";
+        dom_refresh3.style.transform = "scale(.9)";
+        dom_refresh3.style.pointerEvents = "none";
+        dom_refresh3.title = "点击显示礼物栏";
+    }
+    if (dom_refresh) dom_refresh.innerText = "✓ 隐藏礼物栏";
+    refresh_Video_setStyle();
+    resizeWindow();
+    setTimeout(() => {
+        updateRefreshSwitchUI(true);
+    }, 500);
 }
 
 function refresh_Video_setStyle() {

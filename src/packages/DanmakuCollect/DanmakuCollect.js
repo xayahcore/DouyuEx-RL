@@ -124,6 +124,24 @@ function searchCollectDanmaku(e) {
   }
 }
 
+/* 本地收藏的条数上限（audit-wave4 A3）：
+ * 这段写盘发生在 responseHook 的回调里 —— localStorage 满额时 setItem 抛 QuotaExceededError，
+ * 异常会顺着 hook 冒回去，把这条"收藏"请求的响应直接弄坏。
+ * 所以：①滚动淘汰只留最近 N 条；②写盘自身兜底，失败只留痕不抛。 */
+const DANMAKU_COLLECT_LIMIT = 500;
+
+function saveLocalDanmakuCollect(list) {
+  try {
+    localStorage.setItem("ExSave_DanmakuCollect", JSON.stringify(list));
+    return true;
+  } catch (e) {
+    if (typeof ExGuard_warn === "function") {
+      ExGuard_warn("弹幕收藏", "本地收藏写入失败（可能已超出 localStorage 配额），本条未保存", e);
+    }
+    return false;
+  }
+}
+
 function getLocalDanmakuCollect() {
   let ret = localStorage.getItem("ExSave_DanmakuCollect");
   try {
@@ -136,14 +154,22 @@ function getLocalDanmakuCollect() {
 
 function addLocalDanmakuCollect(content) {
   let ret = getLocalDanmakuCollect();
+  // id 必须唯一：同一毫秒里连收两条会撞 id，随后删除会把两条一起删掉（audit-wave4 顺带修的 P3）
+  let id = new Date().getTime();
+  while (ret.some(function (item) { return Number(item.id) === id; })) id++;
   ret.unshift({
     content,
-    id: new Date().getTime()
+    id: id
   });
-  localStorage.setItem("ExSave_DanmakuCollect", JSON.stringify(ret));
+  // 滚动淘汰：只保留最近 DANMAKU_COLLECT_LIMIT 条，永不让本地存储无限长
+  if (ret.length > DANMAKU_COLLECT_LIMIT) ret = ret.slice(0, DANMAKU_COLLECT_LIMIT);
+  return saveLocalDanmakuCollect(ret);
 }
 
 function delLocalDanmakuCollect(id) {
   let ret = getLocalDanmakuCollect();
-  localStorage.setItem("ExSave_DanmakuCollect", JSON.stringify(ret.filter(item => item.id !== id)));
+  // id 来自响应体（可能是字符串），本地存的是时间戳数字：严格不等会让删除永远不生效
+  // （audit-wave4 DC2：云收藏删掉了、本地那条还留在列表里）。统一按字符串比。
+  let key = String(id);
+  return saveLocalDanmakuCollect(ret.filter(item => String(item.id) !== key));
 }
