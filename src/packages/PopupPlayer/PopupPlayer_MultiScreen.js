@@ -1075,6 +1075,19 @@ function MultiScreen_normalizeMainFirst(list) {
   return [main].concat(rest);
 }
 
+/* 回到单屏时把「位置归属」也归位。
+   ⚠ 真机 2026-10-26 复现（两次）：换位后主画面格坐在位置 1，退出同屏（或把外房全删掉回到单屏）
+   之后 msPosOwner 仍是换位后的排列，于是 renderAll 认为"位置 0 上的格子（其实是外房格）应该显示主房间"，
+   renderSlot 的主房护栏只挡"格子身份 0"，挡不住这个 → 会在 0×0 的隐藏格里给主房间再建一份流，
+   一直播到下次刷新（白耗带宽、后台多一份连接）。
+   解法：先把**当前映射**下的每个位置都清干净（记录、flv、外房格内容），再把格子身份复位成 [0,1,2,3,4]，
+   这样位置 0 重新是主画面格，主房护栏生效，隐藏格里不会再长出第二份流。 */
+function MultiScreen_settleSingleScreen() {
+  if (MultiScreen_visiblePositions().length > 1) return;
+  for (let i = 0; i < MS_SLOT_COUNT; i++) MultiScreen_clearSlot(i);
+  MultiScreen_resetPosOwner();
+}
+
 // action: "fresh" | "add" | "delete" | "close"
 function MultiScreen_apply(action, payload) {
   if (action === "close") {
@@ -1099,6 +1112,10 @@ function MultiScreen_apply(action, payload) {
     msActiveList = MultiScreen_normalize(payload);
   }
   MultiScreen_renderAll();
+  /* 只剩一间房（退出同屏 / 删到只剩主房）= 回到单屏：必须在 renderAll 之后把位置归属复位，
+     否则 0×0 的隐藏格里会长出主房间的第二份流（见 settleSingleScreen 的说明）。 */
+  MultiScreen_settleSingleScreen();
+  MultiScreen_applyLayout();
   return MultiScreen_after();
 }
 
