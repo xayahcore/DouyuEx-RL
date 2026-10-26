@@ -35,6 +35,9 @@ function makeEnv() {
         { url: "https://www.douyu.com/9999" }
     );
     const win = dom.window;
+    // jsdom 的 visibilityState 默认是 prerender（document.hidden === true）。
+    // 自愈只在"前台可见"时巡检（后台页签跳过 DOM 搬家），所以这里先摆成可见。
+    Object.defineProperty(win.document, "hidden", { value: false, configurable: true });
     // 定时器收归测试驱动：自愈是靠 setInterval 跑的，用真定时器测不了也测不快
     const timers = new Map();
     let seq = 1;

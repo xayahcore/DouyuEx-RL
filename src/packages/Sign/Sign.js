@@ -186,10 +186,12 @@ function createSignPanel() {
       }
 
       try {
-        await executeSignEngine(currentCfg, appendLog);
+        // executeSignEngine 现在会等每个子任务真的结束，并返回 { ok, fail, results }
+        var summary = await executeSignEngine(currentCfg, appendLog);
+        var failedCount = (summary && summary.fail) ? summary.fail : 0;
         if (statusTag) {
-          statusTag.textContent = "已完成";
-          statusTag.style.color = "#10b981";
+          statusTag.textContent = failedCount > 0 ? "部分失败" : "已完成";
+          statusTag.style.color = failedCount > 0 ? "#ef4444" : "#10b981";
         }
       } catch (err) {
         appendLog("签到执行异常: " + (err.message || "未知错误"), false);
@@ -214,16 +216,31 @@ async function executeSignEngine(options, onLog) {
 
   onLog("正在准备签到环境...", true);
 
+  // 每个子任务把真实结果记在这里，末尾按计数汇报（不再无条件宣布「已完成」）
+  var results = [];
+  function pushResult(name, ok, fail) {
+    results.push({ name: name, ok: Number(ok) || 0, fail: Number(fail) || 0 });
+  }
+
   // 1. 鱼吧签到
   if (opts.yuba) {
     try {
       onLog("正在执行【鱼吧签到】...");
-      // 极速签到由 signYubaList 内部在拿到鱼吧列表后触发一次；这里再调就会每次点签到都打两条 fastSign
-      if (typeof signYubaList === "function") {
-        signYubaList();
+      // signYubaList 返回的是**批次结果**（会等到这一批全部落地或放弃）；
+      // 极速签到由它内部在拿到鱼吧列表后触发一次，这里不再重复调用。
+      var yubaRes = (typeof signYubaList === "function") ? await signYubaList() : null;
+      if (!yubaRes) {
+        pushResult("鱼吧签到", 0, 1);
+        onLog("【鱼吧签到】模块未加载，已跳过", false);
+      } else if (yubaRes.listFailed) {
+        pushResult("鱼吧签到", 0, 1);
+      } else {
+        pushResult("鱼吧签到", yubaRes.signed, yubaRes.failed);
+        onLog("【鱼吧签到】成功 " + yubaRes.signed + " 个，已签到 " + yubaRes.already + " 个" +
+          (yubaRes.failed > 0 ? "，失败 " + yubaRes.failed + " 个" : ""), yubaRes.failed === 0);
       }
-      onLog("【鱼吧签到】已发送打卡请求", true);
     } catch (err) {
+      pushResult("鱼吧签到", 0, 1);
       onLog("【鱼吧签到】异常: " + (err.message || "未知错误"), false);
     }
   }
@@ -246,16 +263,21 @@ async function executeSignEngine(options, onLog) {
         tag: "客户端签到"
       }, 15000), 16000, "客户端签到");
       if (!signRes) {
+        pushResult("客户端签到", 0, 1);
         onLog("【客户端签到】请求失败或超时（已跳过，不影响其它签到项）", false);
       } else if (signRes.data && signRes.data.sign_pl && signRes.data.sign_pl.length > 0) {
         var items = signRes.data.sign_pl.map(function (it) { return it.cnt + "个" + it.name; }).join(", ");
+        pushResult("客户端签到", 1, 0);
         onLog("【客户端签到】获得: " + items, true);
       } else if (signRes.data && signRes.data.length === 0) {
+        pushResult("客户端签到", 1, 0);
         onLog("【客户端签到】今日已签到", true);
       } else {
+        pushResult("客户端签到", 1, 0);
         onLog("【客户端签到】打卡成功", true);
       }
     } catch (err) {
+      pushResult("客户端签到", 0, 1);
       onLog("【客户端签到】执行异常", false);
     }
   }
@@ -265,10 +287,16 @@ async function executeSignEngine(options, onLog) {
     try {
       onLog("正在获取关注房间列表执行签到...");
       if (typeof signAllRoom === "function") {
-        signAllRoom(true);
-        onLog("【房间签到】已分发房间签到任务", true);
+        // signAllRoom 返回的 Promise 会等所有 checkIn 响应落地，summary 给的是真实成败
+        var roomRes = await signAllRoom(true);
+        var roomFail = (roomRes.fail || 0) + (roomRes.listFailed ? 1 : 0);
+        pushResult("房间签到", roomRes.ok, roomFail);
+      } else {
+        pushResult("房间签到", 0, 1);
+        onLog("【房间签到】模块未加载，已跳过", false);
       }
     } catch (err) {
+      pushResult("房间签到", 0, 1);
       onLog("【房间签到】执行异常: " + (err.message || "未知错误"), false);
     }
   }
@@ -277,9 +305,14 @@ async function executeSignEngine(options, onLog) {
   if (opts.stardiscover) {
     try {
       if (typeof executeStarDiscoverSign === "function") {
-        await executeStarDiscoverSign(onLog);
+        var sdRes = await executeStarDiscoverSign(onLog);
+        pushResult("星推任务", sdRes && sdRes.ok, sdRes && sdRes.fail);
+      } else {
+        pushResult("星推任务", 0, 1);
+        onLog("【星推任务】模块未加载，已跳过", false);
       }
     } catch (err) {
+      pushResult("星推任务", 0, 1);
       onLog("【星推任务】执行异常: " + (err.message || "未知错误"), false);
     }
   }
@@ -287,14 +320,22 @@ async function executeSignEngine(options, onLog) {
   // 5. 粉丝家园打卡
   if (opts.fanshome) {
     try {
+      var fansOk = 0;
+      var fansFail = 0;
       if (typeof initPkg_Sign_FansTree === "function") {
-        initPkg_Sign_FansTree();
+        var treeRes = await initPkg_Sign_FansTree();
+        fansOk += (treeRes && treeRes.ok) || 0;
+        fansFail += (treeRes && treeRes.fail) || 0;
       }
       if (typeof initPkg_Sign_SuperFans === "function") {
-        initPkg_Sign_SuperFans();
+        var supRes2 = await initPkg_Sign_SuperFans();
+        fansOk += (supRes2 && supRes2.ok) || 0;
+        fansFail += (supRes2 && supRes2.fail) || 0;
       }
-      onLog("【粉丝家园】打卡流程已触发", true);
+      pushResult("粉丝家园", fansOk, fansFail);
+      onLog("【粉丝家园】成功 " + fansOk + " 个" + (fansFail > 0 ? "，失败 " + fansFail + " 个" : ""), fansFail === 0);
     } catch (err) {
+      pushResult("粉丝家园", 0, 1);
       onLog("【粉丝家园】执行异常", false);
     }
   }
@@ -303,11 +344,14 @@ async function executeSignEngine(options, onLog) {
   if (opts.points) {
     try {
       if (typeof executeSignPoints === "function") {
-        await executeSignPoints(onLog);
+        var pointsOk = await executeSignPoints(onLog);
+        pushResult("积分签到", pointsOk ? 1 : 0, pointsOk ? 0 : 1);
       } else {
+        pushResult("积分签到", 0, 1);
         onLog("【积分签到】模块未加载，已跳过", false);
       }
     } catch (err) {
+      pushResult("积分签到", 0, 1);
       onLog("【积分签到】执行异常: " + (err.message || "未知错误"), false);
     }
   }
@@ -329,7 +373,19 @@ async function executeSignEngine(options, onLog) {
     onLog("【看播积分】启动异常: " + (err.message || "未知错误"), false);
   }
 
-  onLog("所有已选签到任务执行完毕！", true);
+  var totalOk = 0;
+  var totalFail = 0;
+  for (var ri = 0; ri < results.length; ri++) {
+    totalOk += results[ri].ok;
+    totalFail += results[ri].fail;
+  }
+  var failedNames = results.filter(function (x) { return x.fail > 0; }).map(function (x) { return x.name; });
+  if (totalFail > 0) {
+    onLog("签到结束：成功 " + totalOk + " 项，失败 " + totalFail + " 项（" + failedNames.join("、") + "）", false);
+  } else {
+    onLog("所有已选签到任务执行完毕！", true);
+  }
+  return { ok: totalOk, fail: totalFail, results: results };
 }
 
 window.createSignPanel = createSignPanel;

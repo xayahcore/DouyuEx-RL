@@ -18,7 +18,22 @@ const SIGN_YUBA_PAGE_LIMIT = 30;     // 关注鱼吧列表分页大小
 let signYubaRun = null; // 当前批次（调试用；结束后置 null）
 
 function Sign_Yuba_createRun(total) {
-    return { total: total, done: 0, signed: 0, already: 0, failed: 0, finished: false, countMap: {} };
+    const run = { total: total, done: 0, signed: 0, already: 0, failed: 0, finished: false, countMap: {} };
+    // 批次完成信号：executeSignEngine 要能真的 await 到「这一批鱼吧签完」，
+    // 而不是发完请求就宣布「已完成」（audit-wave2 P1-1）
+    run.finishedPromise = new Promise(function (resolve) { run.resolve = resolve; });
+    return run;
+}
+
+/** 批次结果（给 executeSignEngine 汇总用） */
+function Sign_Yuba_summary(run, listFailed) {
+    return {
+        total: run ? run.total : 0,
+        signed: run ? run.signed : 0,
+        already: run ? run.already : 0,
+        failed: listFailed ? 1 : (run ? run.failed : 0),
+        listFailed: !!listFailed
+    };
 }
 
 /**
@@ -40,6 +55,7 @@ function Sign_Yuba_finishRun(run) {
     } else {
         showMessage("【鱼吧】" + run.total + "个鱼吧今日均已签到", "warning");
     }
+    if (typeof run.resolve === "function") run.resolve(Sign_Yuba_summary(run, false));
 }
 
 /** 网络层失败（onerror / ontimeout）：本批次记为失败并推进收尾，绝不静默悬挂 */
@@ -145,7 +161,7 @@ async function signYubaList() {
     const first = await getYubaPage(1);
     if (!first) {
         showMessage("【鱼吧】获取关注鱼吧列表失败（登录态失效或网络异常），本次跳过", "error");
-        return yubaList;
+        return Sign_Yuba_summary(null, true);
     }
     yubaList = yubaList.concat(Array.isArray(first.list) ? first.list : []);
     const pageNum = Number(first.count_page) - 1;
@@ -162,7 +178,7 @@ async function signYubaList() {
     }
     if (!yubaList.length) {
         showMessage("【鱼吧】没有可签到的鱼吧（需 7 级以上鱼吧关注）", "warning");
-        return yubaList;
+        return Sign_Yuba_summary(null, false);
     }
     // 每次批量都开一个新批次：收尾不会再靠「把计数置 null」来表达结束
     const run = Sign_Yuba_createRun(yubaList.length);
@@ -172,7 +188,8 @@ async function signYubaList() {
         const item = yubaList[i] || {};
         signYuba(item.group_id, dyToken, run);
     }
-    return yubaList;
+    // 等这一批全部落地（或放弃）再返回：调用方拿到的才是真实结果，而不是「请求已发出」
+    return run.finishedPromise;
 }
 
 /** 关注鱼吧列表分页。失败/超时一律 resolve(null)，调用处判空 —— 不再有永远挂着的 await */

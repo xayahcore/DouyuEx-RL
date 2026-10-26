@@ -59,15 +59,88 @@ function initPkg_ExPanel() {
 let ExPanel_dockNode = null;
 let ExPanel_healTimer = 0;
 
+/* 巡检节奏：健康时逐次降档，一旦真的搬回就立刻回到快速档。
+ * —— 旧实现是 setInterval(…, 3000) 永不停止、也不判可见性：整场直播每 3 秒摸一次 DOM，
+ *    后台页签照跑。现在改成 setTimeout 链（换档不需要重开定时器）+ 两档节流 + 后台跳过；
+ *    降档只降"没事可做"的巡检频率，页面真重绘时它仍会在一分钟内发现并搬回。 */
+const EXPANEL_HEAL_FAST_MS = 3000;
+const EXPANEL_HEAL_SLOW_MS = 30000;
+const EXPANEL_HEAL_QUIET_TICKS = 20; // 连续 20 次（≈60 秒）都无事 → 降到 30 秒一档
+let ExPanel_healCadence = EXPANEL_HEAL_FAST_MS;
+let ExPanel_healQuietTicks = 0;
+
 function ExPanel_startSelfHeal() {
   if (ExPanel_healTimer) return;
-  ExPanel_healTimer = setInterval(ExPanel_ensureAttached, 3000);
+  ExPanel_healCadence = EXPANEL_HEAL_FAST_MS;
+  ExPanel_healQuietTicks = 0;
+  ExPanel_healTimer = setInterval(ExPanel_healTick, ExPanel_healCadence);
 }
 
-function ExPanel_ensureAttached() {
+/** 停表（页面切走 / 测试收尾用） */
+function ExPanel_stopSelfHeal() {
+  if (!ExPanel_healTimer) return;
+  clearInterval(ExPanel_healTimer);
+  ExPanel_healTimer = 0;
+}
+
+/** 换档：只有档位真的变了才重开定时器（每个 tick 都重建会把定时器句柄抖没） */
+function ExPanel_applyHealCadence(ms) {
+  ExPanel_healCadence = ms;
+  if (!ExPanel_healTimer) return;
+  clearInterval(ExPanel_healTimer);
+  ExPanel_healTimer = setInterval(ExPanel_healTick, ExPanel_healCadence);
+}
+
+function ExPanel_healTick() {
+  // 后台页签不巡检：用户看不见，浏览器本来就在节流定时器，搬回去也没有意义。
+  // 定时器本身留着（回到前台立刻恢复巡检），只是这一跳不摸 DOM。
+  if (document.hidden) return;
+  let healed = false;
+  try {
+    healed = ExPanel_healDock();
+  } catch (e) {
+    if (typeof ExGuard_warn === "function") ExGuard_warn("工具条", "自愈巡检抛错（本次跳过，下轮继续）", e);
+  }
+  if (healed) {
+    ExPanel_healQuietTicks = 0;
+    if (ExPanel_healCadence !== EXPANEL_HEAL_FAST_MS) ExPanel_applyHealCadence(EXPANEL_HEAL_FAST_MS);
+    return;
+  }
+  if (ExPanel_healQuietTicks < EXPANEL_HEAL_QUIET_TICKS) {
+    ExPanel_healQuietTicks++;
+    if (ExPanel_healQuietTicks >= EXPANEL_HEAL_QUIET_TICKS) ExPanel_applyHealCadence(EXPANEL_HEAL_SLOW_MS);
+  }
+}
+
+/**
+ * 巡检一次：真的动过 DOM（搬回 / 归位 / 采纳新节点）返回 true。
+ * 定时器换档用它判断"这一跳有没有干活"，对外契约仍由下面的 ExPanel_ensureAttached() 保持。
+ */
+function ExPanel_healDock() {
+  // 切房 / 框架重绘可能连 Dock 本体一起换掉：页面里已经有一个"不是我们记的那个" .ex-panel 时，
+  // 以页面里那个为准 —— 否则我们会把旧节点再插进新页面，变成两套工具条
+  //（旧那套的按钮事件还都绑在上面，用户点了会得到莫名其妙的结果）。
+  const liveDock = document.querySelector(".ex-panel");
+  if (liveDock && liveDock !== ExPanel_dockNode) {
+    ExPanel_dockNode = liveDock;
+    ExPanel_saveAnchor(liveDock);
+  }
   const node = ExPanel_dockNode;
   if (!node) return false;
-  if (document.contains(node)) return true;
+  if (document.contains(node)) {
+    // 归位巡检：上一次是被搬进"浮动宿主"的（当时礼物流水条不可用），
+    // 现在锚点回来了就搬回原位 —— 旧实现只看 document.contains，浮动状态会一直挂到用户刷新。
+    if (node.classList.contains("ex-panel--floating")) {
+      const anchorNow = ExPanel_getGiftBarAnchor();
+      if (anchorNow && !ExPanel_isGiftBarHidden()) {
+        ExPanel_restoreToGiftBar();
+        if (typeof ensureDockIndicators === "function") ensureDockIndicators();
+        console.warn("[DouyuEx] 工具条已从浮动状态归位到礼物流水条");
+        return true;
+      }
+    }
+    return false;
+  }
 
   // 已经脱离文档：按当前页面状态挑宿主挂回去（礼物流水条优先，否则回浮动态）
   const anchor = ExPanel_getGiftBarAnchor();
@@ -87,6 +160,12 @@ function ExPanel_ensureAttached() {
   }
   console.warn("[DouyuEx] 工具条被页面重绘移除，已重新挂回（按钮与事件原样保留）");
   return true;
+}
+
+/** 对外契约不变：Dock 现在是否挂在文档里（老调用方与既有测试都按这个语义用） */
+function ExPanel_ensureAttached() {
+  ExPanel_healDock();
+  return !!(ExPanel_dockNode && document.contains(ExPanel_dockNode));
 }
 
 function ExPanel_getGiftBarAnchor() {

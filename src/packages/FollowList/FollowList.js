@@ -78,7 +78,15 @@ async function setNewFollowList(panel) {
             break;
         }
     }
-    panel.innerHTML += html;
+    // 覆盖式渲染：DomHook 每次回调（切 tab、面板重绘）都会走到这里，
+    // 旧实现 panel.innerHTML += html 是**追加** —— 切几次 tab 同一批主播就出现几份，
+    // 长按/点击监听也跟着叠层（长按会一次弹出多个同屏播放窗）。
+    // 另外 innerHTML += 会把整个容器重新解析一遍，连页面自己的监听器一起丢掉；
+    // 这里改成"只删我们自己插的节点 + insertAdjacentHTML 追加"，页面原有节点一动不动。
+    panel.querySelectorAll("#refreshFollowList, .ExFollowListItem").forEach(function (node) {
+        node.remove();
+    });
+    panel.insertAdjacentHTML("beforeend", html);
 
     const loadInCurrentPageCheckbox = panel.querySelector('#loadInCurrentPageCheckbox');
     if (loadInCurrentPageCheckbox) {
@@ -89,7 +97,8 @@ async function setNewFollowList(panel) {
         });
     }
 
-    let followListItems = document.getElementsByClassName("ExFollowListItem");
+    // 只给本次渲染出来的条目绑事件（旧实现按全文档取，会把别的容器里的旧条目也一起重绑）
+    let followListItems = panel.querySelectorAll(".ExFollowListItem");
     for (let i = 0; i < followListItems.length; i++) {
         let cclick = new CClick(followListItems[i]);
         cclick.click(async (event) => {

@@ -619,7 +619,7 @@ function loadChatMemory(opts) {
         "document", "window", "console", "setInterval", "clearInterval", "setTimeout", "clearTimeout",
         EXGUARD_SRC + "\n" + TEXTAREA_POS_SRC + "\n" + CHATMEMORY_SRC +
         "\nreturn { init: initPkg_ChatMemory, push: chatMemory_pushBarrage, mem: function () { return barrageMemoryArr; }, " +
-        "bound: function () { return chatMemoryBound; } };"
+        "bound: function () { return chatMemory_isBound(); } };"
     );
     const api = factory(
         win.document, win, log.console,
@@ -1207,6 +1207,200 @@ async function testTreasureDelayAndCatch() {
 }
 
 /* ------------------------------------------------------------------ */
+/* 场景 18: ChatMemory 切房后重新绑定（P1-10）                          */
+/* ------------------------------------------------------------------ */
+
+function testChatMemoryRebindAfterRoomSwitch() {
+    const page = loadChatMemory({ withInput: true });
+    page.api.init();
+    assert.strictEqual(page.api.bound(), true, "首次初始化必须绑上");
+    assert.strictEqual(page.clock.pending(), 0, "输入框已在场时不该再挂轮询");
+
+    const oldInput = page.win.document.querySelector(".ChatSend-txt");
+    oldInput.value = "第一句";
+    dispatchKey(oldInput, 13);
+    assert.strictEqual(page.api.mem().length, 1, "先记一句");
+
+    // 红：切房把整个聊天区换掉 —— 旧实现 chatMemoryBound 置 true 后永不复位，
+    //     新节点上没有 keydown，按 ↑ 永远没反应。
+    const newInput = page.win.document.createElement("textarea");
+    newInput.className = "ChatSend-txt";
+    oldInput.parentNode.replaceChild(newInput, oldInput);
+    assert.strictEqual(page.api.bound(), false, "节点被替换后绑定应判定失效");
+
+    newInput.value = "";
+    dispatchKey(newInput, 38);
+    assert.strictEqual(newInput.value, "第一句", "切房后按 ↑ 必须回忆上一条（补绑要在同一次按键内生效）");
+
+    // 多次切房不得叠事件（一次按键只回忆一次）
+    const third = page.win.document.createElement("textarea");
+    third.className = "ChatSend-txt";
+    newInput.parentNode.replaceChild(third, newInput);
+    third.value = "第二句";
+    dispatchKey(third, 13);
+    assert.strictEqual(page.api.mem().length, 2, "换节点后回车仍然只记一条，实际 " + JSON.stringify(page.api.mem()));
+    third.value = "";
+    dispatchKey(third, 38);
+    assert.strictEqual(third.value, "第二句", "第三次换节点后 ↑ 仍然可用");
+
+    console.log("✓ 场景 18 通过: 聊天区被替换后自动补绑，↑ 回忆在切房后仍然可用");
+}
+
+/* ------------------------------------------------------------------ */
+/* 场景 19: ExPanel 自愈巡检的节流与归位（P1-9）                        */
+/* ------------------------------------------------------------------ */
+
+const EXPANEL_SRC = read("src/packages/ExPanel/ExPanel.js");
+
+function loadExPanel() {
+    const dom = makeDom("<!DOCTYPE html><html><body>" +
+        "<div class='room-Player'><div class='PlayerToolbar'>" +
+        "<div class='PlayerToolbar-ContentRow'><div class='PlayerToolbar-ContentCell'><div class='PlayerToolbar-Wealth'></div></div></div>" +
+        "</div></div><div id='js-player-dialog'></div></body></html>");
+    const win = dom.window;
+    const log = collectConsole();
+    const clock = makeClock();
+    const factory = new Function(
+        "document", "window", "console", "setTimeout", "clearTimeout", "setInterval", "clearInterval",
+        EXGUARD_SRC + "\n" + EXPANEL_SRC +
+        "\nreturn { insertDom: initPkg_ExPanel_insertDom, start: ExPanel_startSelfHeal, stop: ExPanel_stopSelfHeal, " +
+        "ensure: ExPanel_ensureAttached, heal: ExPanel_healDock, chip: function () { return ExPanel_healCadence; }, " +
+        "dock: function () { return ExPanel_dockNode; }, timer: function () { return ExPanel_healTimer; } };"
+    );
+    const api = factory(
+        win.document, win, log.console,
+        clock.setTimeout, clock.clearTimeout, clock.setInterval, clock.clearInterval
+    );
+    return { dom: dom, win: win, api: api, log: log, clock: clock };
+}
+
+function testExPanelSelfHealBackoff() {
+    const page = loadExPanel();
+    page.api.insertDom();
+    const dock = page.api.dock();
+    assert.ok(dock, "Dock 必须建出来");
+    assert.strictEqual(dock.parentNode.className.indexOf("PlayerToolbar-Wealth") !== -1, true, "首次应插进礼物流水条");
+
+    // jsdom 默认 visibilityState=prerender（document.hidden = true），先摆成"前台可见"
+    Object.defineProperty(page.win.document, "hidden", { value: false, configurable: true });
+
+    page.api.start();
+    assert.strictEqual(page.clock.pending(), 1, "自愈必须只挂一个定时器（旧实现是 setInterval 也只有一个，但永不换档）");
+
+    // ① 健康巡检：逐次降档到 30 秒——不是每 3 秒摸一次 DOM 摸到关页面
+    page.clock.advance(3000 * 20 + 100);
+    assert.strictEqual(page.api.chip(), 30000, "连续健康 20 次后必须降到 30 秒一档，实际 " + page.api.chip());
+    assert.strictEqual(page.clock.pending(), 1, "任何时候都只允许有一个待执行的巡检");
+
+    // ② 后台页签跳过：document.hidden 时搬不搬都不该动 DOM
+    Object.defineProperty(page.win.document, "hidden", { value: true, configurable: true });
+    dock.remove();
+    page.clock.advance(30000);
+    assert.strictEqual(dock.isConnected, false, "后台页签不得做 DOM 搬家");
+    Object.defineProperty(page.win.document, "hidden", { value: false, configurable: true });
+
+    // ③ 页面重绘把 Dock 摘掉：下一次巡检必须原样挂回，并立刻回到快速档
+    page.clock.advance(30000);
+    assert.strictEqual(dock.isConnected, true, "重绘后必须自动挂回（自愈语义不变）");
+    assert.strictEqual(page.api.chip(), 3000, "刚搬回就回到快速档");
+    assert.ok(page.log.warns.some(function (s) { return s.indexOf("已重新挂回") !== -1; }), "搬回要留痕");
+
+    // ④ 浮动态归位：曾经被搬进浮动宿主，礼物流水条回来后必须搬回去
+    //   （旧实现只看 document.contains，"浮着"会一直挂到刷新）
+    page.win.document.getElementById("js-player-dialog").appendChild(dock);
+    dock.classList.add("ex-panel--floating");
+    assert.strictEqual(page.api.heal(), true, "锚点回来后应执行一次归位（这次巡检确实动过 DOM）");
+    assert.strictEqual(page.api.ensure(), true, "对外契约不变：ensureAttached 仍返回\"Dock 现在挂在文档里\"");
+    assert.strictEqual(dock.classList.contains("ex-panel--floating"), false, "必须摘掉浮动标记");
+    assert.ok(dock.parentNode && String(dock.parentNode.className).indexOf("PlayerToolbar-Wealth") !== -1,
+        "必须搬回礼物流水条");
+
+    page.api.stop();
+    assert.strictEqual(page.clock.pending(), 0, "stopSelfHeal 之后不得再留定时器");
+
+    console.log("✓ 场景 19 通过: 自愈改有判据的节流巡检（后台跳过 / 降档 / 搬回复位 / 浮动归位）");
+}
+
+/* ------------------------------------------------------------------ */
+/* 场景 20: FollowList 覆盖式渲染（P1-8）                              */
+/* ------------------------------------------------------------------ */
+
+const FOLLOWLIST_SRC = read("src/packages/FollowList/FollowList.js");
+
+function loadFollowList() {
+    const dom = makeDom("<!DOCTYPE html><html><body>" +
+        "<div class='Header-follow-tab is-active'>全部</div>" +
+        "<div class='Header-follow-listWrap'><li class='DropPaneList page-own'>页面自带条目</li></div>" +
+        "</body></html>");
+    const win = dom.window;
+    const log = collectConsole();
+    const messages = [];
+    const cclicks = [];
+    class FakeCClick {
+        constructor(el) { this.el = el; this.handlers = []; cclicks.push(this); }
+        click(fn) { this.handlers.push(fn); }
+    }
+    const fetchImpl = function () {
+        return Promise.resolve({
+            json: function () {
+                return Promise.resolve({
+                    error: "0",
+                    data: {
+                        list: [
+                            { show_status: "1", videoLoop: "0", room_id: "111", nickname: "A", room_name: "A的房", online: 1, avatar_small: "a_big.jpg", show_time: 1000 },
+                            { show_status: "1", videoLoop: "0", room_id: "222", nickname: "B", room_name: "B的房", online: 2, avatar_small: "b_big.jpg", show_time: 1000 },
+                            { show_status: "0", videoLoop: "0", room_id: "333", nickname: "C", room_name: "C的房", online: 0 }
+                        ],
+                    },
+                });
+            },
+        });
+    };
+    const factory = new Function(
+        "document", "window", "console", "fetch", "showMessage", "GM_getValue", "GM_setValue",
+        "formatSeconds", "CClick", "openPage",
+        EXGUARD_SRC + "\n" + FOLLOWLIST_SRC +
+        "\nreturn { render: setNewFollowList };"
+    );
+    const api = factory(
+        win.document, win, log.console, fetchImpl,
+        function (text, type) { messages.push({ text: String(text), type: type }); },
+        function () { return Promise.resolve(false); },
+        function () { return Promise.resolve(); },
+        function (s) { return s + "秒"; },
+        FakeCClick, function () {}
+    );
+    return { dom: dom, win: win, api: api, log: log, messages: messages, cclicks: cclicks };
+}
+
+async function testFollowListNoDuplicate() {
+    const page = loadFollowList();
+    const panel = page.win.document.getElementsByClassName("Header-follow-listWrap")[0];
+    const pageOwnNode = panel.querySelector(".page-own");
+
+    await page.api.render(panel);
+    assert.strictEqual(panel.querySelectorAll(".ExFollowListItem").length, 2, "只有 2 个在播房间应渲染 2 条");
+    assert.strictEqual(panel.querySelectorAll("#refreshFollowList").length, 1, "刷新条只该有一条");
+
+    // 红：DomHook 每次回调（切 tab）都会再走一遍，旧实现 innerHTML += 会追加
+    await page.api.render(panel);
+    await page.api.render(panel);
+    assert.strictEqual(panel.querySelectorAll(".ExFollowListItem").length, 2,
+        "重复渲染不得追加，实际 " + panel.querySelectorAll(".ExFollowListItem").length);
+    assert.strictEqual(panel.querySelectorAll("#refreshFollowList").length, 1,
+        "刷新条不得叠成多条，实际 " + panel.querySelectorAll("#refreshFollowList").length);
+
+    // innerHTML += 会把整个容器重解析，页面自己的节点被克隆替换 → 页面监听器全丢
+    assert.strictEqual(panel.querySelector(".page-own"), pageOwnNode, "页面自带节点必须还是同一个对象（不得被重解析）");
+    assert.strictEqual(panel.firstElementChild, pageOwnNode, "页面自带节点必须仍在原位");
+
+    // 每个条目只应有一份事件绑定
+    assert.strictEqual(page.cclicks.length, 2 * 3, "三次渲染各绑一次新节点（旧节点已移除），实际 " + page.cclicks.length);
+
+    console.log("✓ 场景 20 通过: 关注列表改覆盖式渲染，切 tab 不再翻倍、页面自带节点不被重解析");
+}
+
+/* ------------------------------------------------------------------ */
 /* 场景 9: 源码级守卫（本轮所有判空与上限都在位）                       */
 /* ------------------------------------------------------------------ */
 
@@ -1264,6 +1458,20 @@ function testStaticGuardRails() {
     assert.ok(TREASURE_SRC.indexOf("TREASURE_DELAY_MIN") !== -1, "宝箱延迟必须归一化（不得为 0/负数）");
     assert.ok(TREASURE_SRC.indexOf("ExpandTool_Treasure_reset") !== -1, "宝箱校验失败必须复位开关");
 
+    // ⑦ task-24：ExPanel 自愈节流 / FollowList 覆盖式渲染 / ChatMemory 切房补绑
+    assert.ok(EXPANEL_SRC.indexOf("setInterval(ExPanel_ensureAttached") === -1,
+        "ExPanel 自愈不得再用 3 秒一次的 setInterval（必须可换档）");
+    assert.ok(EXPANEL_SRC.indexOf("EXPANEL_HEAL_SLOW_MS") !== -1, "ExPanel 自愈必须有降档档位");
+    assert.ok(EXPANEL_SRC.indexOf("document.hidden") !== -1, "ExPanel 自愈必须跳过后台页签");
+    assert.ok(EXPANEL_SRC.indexOf("ex-panel--floating") !== -1 && EXPANEL_SRC.indexOf("ExPanel_restoreToGiftBar") !== -1,
+        "ExPanel 自愈必须能处理浮动态归位");
+    assert.ok(stripComments(FOLLOWLIST_SRC).indexOf("panel.innerHTML +=") === -1,
+        "FollowList 不得再用 innerHTML += 追加（会翻倍；注释里保留来龙去脉不算）");
+    assert.ok(FOLLOWLIST_SRC.indexOf("insertAdjacentHTML") !== -1, "FollowList 必须改成追加式渲染且不动页面原有节点");
+    assert.ok(CHATMEMORY_SRC.indexOf("chatMemory_bindInput") !== -1, "ChatMemory 必须有可换绑的绑定函数");
+    assert.ok(CHATMEMORY_SRC.indexOf("chatMemory_isBound") !== -1, "ChatMemory 必须能判断当前绑定是否失效");
+    assert.ok(CHATMEMORY_SRC.indexOf('classList.contains("ChatSend-txt")') !== -1, "ChatMemory 必须在按键时识别新聊天框");
+
     // ④ LastLiveTime 在没有目标节点的页面上不得抛错
     const dom = makeDom("<!DOCTYPE html><html><body><div>普通页面</div></body></html>");
     const log = collectConsole();
@@ -1299,7 +1507,10 @@ function testStaticGuardRails() {
     await testSendGiftRealCount();
     await testRedPacketCatchAndBounded();
     await testTreasureDelayAndCatch();
-    console.log("=== task-17/19/22 回归（common.js 死代码 + 面板死路 + init 隔离 + ExpandTool settle）17 组场景全部通过 ===");
+    testChatMemoryRebindAfterRoomSwitch();
+    testExPanelSelfHealBackoff();
+    await testFollowListNoDuplicate();
+    console.log("=== task-17/19/22/24 回归（死代码 + 面板死路 + init 隔离 + ExpandTool settle + 自愈/渲染/切房）20 组场景全部通过 ===");
 })().catch(function (e) {
     console.error("测试失败:", e && e.stack ? e.stack : e);
     process.exit(1);
