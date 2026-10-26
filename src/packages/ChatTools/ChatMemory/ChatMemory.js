@@ -1,5 +1,13 @@
 let barrageMemoryArr = [];
-let barrageMemoryIndex = 0; // 当前 指向索引
+/*
+ * 游标语义（audit-wave2 P2-8）：
+ *   0 .. len-1 指向历史条目；len 表示「停在末尾之后（人已经走出历史）」。
+ * 旧实现把 push() 的返回长度直接当索引，靠「按 ↑ 先减一」碰巧对齐：
+ *   · 从最后一条继续按 ↓ 时 index 卡在 len-1，永远回不到「清空」，输入框会一直留着那条历史；
+ *   · limit 触发 shift 后 index 仍指向旧位置，整体错一格。
+ * 现在语义写死，并且有 tests/test_chatmemory_cursor.js 专门钉住。
+ */
+let barrageMemoryIndex = 0;
 let prevTextareaPosition = 0;
 const BARRAGE_MEMORY_LIMIT = 200;
 function initPkg_ChatMemory() {
@@ -23,17 +31,18 @@ function chatMemory_handleKeydown(e) {
     let dom = e.target;
     const isTextarea = dom.tagName === "TEXTAREA";
     if (e.keyCode == 38) {
-        // ↑
-        if (getTextareaPosition(dom) == 0) {
-            barrageMemoryIndex = barrageMemoryIndex > 0 ? barrageMemoryIndex - 1 : barrageMemoryIndex;
-            chatMemory_setBarrage();
+        // ↑：从「末尾之后」进入历史时落在最后一条，其余情况往前一格；到 0 就停住
+        if (getTextareaPosition(dom) == 0 && barrageMemoryArr.length > 0) {
+            const next = barrageMemoryIndex >= barrageMemoryArr.length
+                ? barrageMemoryArr.length - 1
+                : Math.max(0, barrageMemoryIndex - 1);
+            ChatMemory_applyCursor(next);
         }
     } else if (e.keyCode == 40) {
-        // ↓
+        // ↓：往后一格；越过最后一条（回到 len）就清空输入框，交还给用户原本要打的内容
         const length = isTextarea ? dom.value.length : String(dom.innerText || "").length;
-        if (getTextareaPosition(dom) == length) {
-            barrageMemoryIndex = barrageMemoryIndex < barrageMemoryArr.length - 1 ? barrageMemoryIndex + 1 : barrageMemoryIndex;
-            chatMemory_setBarrage();
+        if (getTextareaPosition(dom) == length && barrageMemoryIndex < barrageMemoryArr.length) {
+            ChatMemory_applyCursor(barrageMemoryIndex + 1);
         }
     } else if (e.keyCode == 13) {
         // enter
@@ -103,16 +112,31 @@ function chatMemory_pushBarrage(txt) {
     if (txt == null || String(txt).trim() === "") return;
     if (barrageMemoryArr.length >= BARRAGE_MEMORY_LIMIT) {
         barrageMemoryArr.shift();
-        barrageMemoryIndex = Math.min(barrageMemoryIndex, barrageMemoryArr.length);
+        // 丢掉了最旧的一条：游标跟着前移一格，才不会指到邻居身上
+        if (barrageMemoryIndex > 0) barrageMemoryIndex--;
     }
-    barrageMemoryIndex = barrageMemoryArr.push(txt);
+    barrageMemoryArr.push(txt);
+    barrageMemoryIndex = barrageMemoryArr.length; // 显式：停在末尾之后
 }
 
-function chatMemory_setBarrage() {
-    if (barrageMemoryArr[barrageMemoryIndex] == undefined) {
+/** 把游标落到指定位置并同步输入框；越界自动夹紧，len = 清空（人已经走出历史） */
+function ChatMemory_applyCursor(next) {
+    const len = barrageMemoryArr.length;
+    let pos = Number(next);
+    if (!Number.isFinite(pos)) pos = len;
+    if (pos < 0) pos = 0;
+    if (pos > len) pos = len;
+    barrageMemoryIndex = pos;
+    if (pos >= len) {
+        setBarrageValue("");
         return;
     }
-    setBarrageValue(barrageMemoryArr[barrageMemoryIndex] || "");
+    setBarrageValue(barrageMemoryArr[pos] || "");
+}
+
+/** 兼容旧调用：按当前游标同步输入框 */
+function chatMemory_setBarrage() {
+    ChatMemory_applyCursor(barrageMemoryIndex);
 }
 
 function getBarrageValue() {

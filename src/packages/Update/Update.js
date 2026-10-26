@@ -2,6 +2,56 @@ var curVersion = (typeof GM_info !== "undefined" && GM_info.script && GM_info.sc
 var isNeedUpdate = false;
 var lastestVersion = "";
 
+/*
+ * 红点语义（audit-wave2 P2-5）：
+ *   旧实现的条件是 Ex_LastNotifiedVersion !== curVersion —— 那是「有没有点过『我已收到』」，
+ *   于是升级后只要没点面板红点就恒亮，而真正探测到新版本时也只是亮同一个点。
+ * 现在：红点 = 「确实有新版本（remote > cur）且这个版本还没被看过」。
+ *   Ex_LastKnownRemoteVersion —— 上次探测到的最新版本（用来在本 tab 刷新后立刻恢复红点）
+ *   Ex_LastSeenRemoteVersion  —— 用户已经看过/处理过的远端版本（看过即熄灭）
+ */
+const UPDATE_SEEN_KEY = "Ex_LastSeenRemoteVersion";
+const UPDATE_KNOWN_KEY = "Ex_LastKnownRemoteVersion";
+const UPDATE_CHECK_TIME_KEY = "Ex_LastUpdateCheckTime";
+const UPDATE_CHECK_INTERVAL_MS = 12 * 3600 * 1000;
+
+/** 记录一次探测结果，并据此刷新红点（只有真的更新才亮） */
+function Update_noteRemoteVersion(remoteVer) {
+  var remote = String(remoteVer || "");
+  var newer = isNewerVersion(remote, curVersion);
+  isNeedUpdate = newer;
+  lastestVersion = newer ? remote : "";
+  if (newer) {
+    GM_setValue(UPDATE_KNOWN_KEY, remote);
+  }
+  Update_refreshTip();
+  return newer;
+}
+
+/** 按「有新版本 + 该版本还没看过」刷新底栏红点 */
+function Update_refreshTip() {
+  var tip = document.getElementById("ex-update__tip");
+  if (!tip) return;
+  var seen = String(GM_getValue(UPDATE_SEEN_KEY) || "");
+  var show = !!(isNeedUpdate && lastestVersion && lastestVersion !== seen);
+  tip.style.display = show ? "block" : "none";
+}
+
+/** 用户已经看过这个远端版本：熄灭红点，且之后同一版本不再亮 */
+function Update_markRemoteSeen() {
+  if (lastestVersion) {
+    GM_setValue(UPDATE_SEEN_KEY, lastestVersion);
+  }
+  Update_refreshTip();
+}
+
+/** 探测成功才推进 12 小时窗口（P2-6）：失败不占用窗口，下次启动会重试 */
+function Update_stampCheckTime() {
+  try {
+    GM_setValue(UPDATE_CHECK_TIME_KEY, String(Date.now()));
+  } catch (e) {}
+}
+
 function isNewerVersion(remote, local) {
   if (!remote || !local) return false;
   var rParts = String(remote).split(".").map(Number);
@@ -20,11 +70,10 @@ function initPkg_Update() {
   initPkg_Update_Func();
   initVersionLifecycleNotice();
 
-  // 若存在新版本发布，点亮底栏【版本更新】小红点
-  var lastNotifiedVer = GM_getValue("Ex_LastNotifiedVersion");
-  if (lastNotifiedVer !== curVersion) {
-    var tip = document.getElementById("ex-update__tip");
-    if (tip) tip.style.display = "block";
+  // 上次页面里已经探到过新版本：刷新后直接把红点恢复出来，不必等 12 小时窗口
+  var knownRemote = String(GM_getValue(UPDATE_KNOWN_KEY) || "");
+  if (knownRemote && isNewerVersion(knownRemote, curVersion)) {
+    Update_noteRemoteVersion(knownRemote);
   }
 }
 
@@ -63,6 +112,8 @@ function initPkg_Update_Func() {
           } else {
             panel.style.display = "block";
           }
+          // 「已读后熄灭」：用户已经打开面板看到这条更新，红点就该灭（面板里的「前往更新」仍在）
+          if (isNeedUpdate) Update_markRemoteSeen();
         }
       }
     });
@@ -285,9 +336,9 @@ function createExUpdatePanel() {
     }
   }
 
-  var lastNotified = GM_getValue("Ex_LastNotifiedVersion");
-  if (lastNotified !== curVersion) {
-    setBtnState("ack", "我已收到");
+  // 面板打开时的初始态跟着真实探测结果走：有更新就直接给「前往更新」
+  if (isNeedUpdate && lastestVersion) {
+    setBtnState("upgrade", "前往更新 (v" + lastestVersion + ")");
   } else {
     setBtnState("check", "检查更新");
   }
@@ -295,12 +346,7 @@ function createExUpdatePanel() {
   btn.onclick = function (e) {
     e.stopPropagation();
     var st = btn.dataset.state;
-    if (st === "ack") {
-      GM_setValue("Ex_LastNotifiedVersion", curVersion);
-      var tip = document.getElementById("ex-update__tip");
-      if (tip) tip.style.display = "none";
-      setBtnState("check", "检查更新");
-    } else if (st === "check" || st === "latest" || st === "error") {
+    if (st === "check" || st === "latest" || st === "error") {
       setBtnState("checking", "正在检查更新...");
       fetchLatestVersion(function (remoteVer) {
         if (!remoteVer) {
@@ -312,8 +358,7 @@ function createExUpdatePanel() {
         }
         if (isNewerVersion(remoteVer, curVersion)) {
           setBtnState("upgrade", "前往更新 (v" + remoteVer + ")");
-          var tip = document.getElementById("ex-update__tip");
-          if (tip) tip.style.display = "block";
+          Update_noteRemoteVersion(remoteVer);
           if (typeof showMessage === "function") {
             showMessage("【版本更新】检测到新版本 v" + remoteVer + "，点击前往更新", "info");
           }
@@ -325,6 +370,8 @@ function createExUpdatePanel() {
         }
       });
     } else if (st === "upgrade") {
+      // 已经走到「前往更新」= 这条通知被处理过，熄灭红点
+      Update_markRemoteSeen();
       if (typeof GM_openInTab === "function") {
         GM_openInTab("https://greasyfork.org/zh-CN/scripts/595575-douyuex-rl-%E6%96%97%E9%B1%BC%E7%9B%B4%E6%92%AD%E9%97%B4%E5%A2%9E%E5%BC%BA%E6%8F%92%E4%BB%B6-reborn-lite", { active: true });
       } else {
@@ -335,22 +382,23 @@ function createExUpdatePanel() {
 }
 
 function initVersionLifecycleNotice() {
-  var lastNotifiedVer = GM_getValue("Ex_LastNotifiedVersion");
-  if (!lastNotifiedVer) {
-    GM_setValue("Ex_LastNotifiedVersion", curVersion);
-  }
+  // 说明：Ex_LastNotifiedVersion 是旧红点语义留下的键（「有没有点过我已收到」），
+  // 现在已经没有读取方；保留旧值不影响判断，也不再写它，等后续版本清理。
 
-  // 12小时限频在线探测
-  var lastCheckTime = Number(GM_getValue("Ex_LastUpdateCheckTime") || 0);
+  // 12 小时限频在线探测
+  var lastCheckTime = Number(GM_getValue(UPDATE_CHECK_TIME_KEY) || 0);
   var now = Date.now();
-  if (now - lastCheckTime > 12 * 3600 * 1000) {
-    GM_setValue("Ex_LastUpdateCheckTime", String(now));
+  if (now - lastCheckTime > UPDATE_CHECK_INTERVAL_MS) {
+    // 注意：时间戳**成功后才写**（P2-6）。旧实现在探测之前就写，
+    // 一次离线/被墙就把 12 小时窗口占掉，期间既不再试、也不提示失败。
     setTimeout(() => {
       fetchLatestVersion(function (remoteVer) {
-        if (remoteVer && isNewerVersion(remoteVer, curVersion)) {
-          var tip = document.getElementById("ex-update__tip");
-          if (tip) tip.style.display = "block";
+        if (!remoteVer) {
+          ExGuard_warn("版本更新", "例行探测失败（可能是网络或更新源不可达），下次启动会重试");
+          return;
         }
+        Update_stampCheckTime();
+        Update_noteRemoteVersion(remoteVer);
       });
     }, 5000);
   }

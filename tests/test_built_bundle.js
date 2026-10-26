@@ -355,14 +355,13 @@ async function testBuiltBundle() {
     console.log(`✓ 测试场景 9 通过: 版本号 ${SRC_VERSION}、三大板块 新增功能/改进与修复/其它 与 ${logItems.length} 条 "• 【分类】" 格式日志校验通过`);
 
     // === 测试 10: 检查更新按钮状态机流转与多源容灾 ===
-    console.log("--> 测试场景 10: 验证检查更新按钮状态流转 (ack -> check -> checking -> latest/upgrade/error)...");
+    console.log("--> 测试场景 10: 验证检查更新按钮状态流转 (check -> checking -> latest/upgrade/error)...");
     const updateBtn = updateModal.querySelector("#exupdate-action-btn");
     assert.ok(updateBtn, "#exupdate-action-btn 按钮必须存在");
 
-    // 1. 点击“我已收到”进入“检查更新”
-    updateBtn.dataset.state = "ack";
-    updateBtn.click();
-    assert.strictEqual(updateBtn.dataset.state, "check", "确认后状态必须流转为 check");
+    // 1. 面板初始态：没有已知新版本时是「检查更新」
+    //    （旧的「我已收到」ack 态已随红点语义改造下线 —— 红点现在只表示「有新版本且没看过」）
+    assert.strictEqual(updateBtn.dataset.state, "check", "无已知新版本时面板初始态必须是 check");
     assert.strictEqual(updateBtn.textContent, "检查更新");
 
     // 2. 模拟点击“检查更新”，此时远程返回与当前相同版本

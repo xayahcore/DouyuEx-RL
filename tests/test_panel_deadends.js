@@ -373,16 +373,19 @@ function testDanmakuTailDeadEnds() {
 /* 场景 5: FansBadgeList 缺列 / 缺时间                                */
 /* ------------------------------------------------------------------ */
 
-function loadFansBadgeList(html) {
+function loadFansBadgeList(html, opts) {
+    const options = opts || {};
     const dom = makeDom(html);
     const win = dom.window;
     const log = collectConsole();
+    const clock = options.clock || makeClock();
     const factory = new Function(
-        "document", "window", "console",
-        EXGUARD_SRC + "\n" + DATEFORMAT_SRC + "\n" + FANSBADGE_SRC + "\nreturn { init: initPkg_FansBadgeList };"
+        "document", "window", "console", "setInterval", "clearInterval", "setTimeout", "clearTimeout",
+        EXGUARD_SRC + "\n" + DATEFORMAT_SRC + "\n" + FANSBADGE_SRC + "\nreturn { init: initPkg_FansBadgeList, annotate: FansBadgeList_annotateRows };"
     );
-    const api = factory(win.document, win, log.console);
-    return { dom: dom, win: win, api: api, log: log };
+    const api = factory(win.document, win, log.console,
+        clock.setInterval, clock.clearInterval, clock.setTimeout, clock.clearTimeout);
+    return { dom: dom, win: win, api: api, log: log, clock: clock };
 }
 
 function testFansBadgeListRows() {
@@ -421,13 +424,17 @@ function loadRoomVip(opts) {
     const win = dom.window;
     const log = collectConsole();
     let fetchImpl = options.fetch || function () { return Promise.resolve({ text: function () { return Promise.resolve(""); } }); };
+    const clock = options.clock || makeClock();
     const factory = new Function(
         "document", "window", "console", "fetch", "DOMParser", "rid",
+        "setTimeout", "clearTimeout", "setInterval", "clearInterval",
         EXGUARD_SRC + "\n" + GETVALIDDOM_SRC + "\n" + ROOMVIP_SRC +
-        "\nreturn { run: setRoomVipExpireDays, insert: initPkg_RoomVip_Dom };"
+        "\nreturn { run: setRoomVipExpireDays, insert: initPkg_RoomVip_Dom, show: RoomVip_showDays, " +
+        "findAnchor: RoomVip_findAnchor, writeDays: RoomVip_writeDays };"
     );
-    const api = factory(win.document, win, log.console, function (u) { return fetchImpl(u); }, win.DOMParser, options.rid || "9999");
-    return { dom: dom, win: win, api: api, log: log };
+    const api = factory(win.document, win, log.console, function (u) { return fetchImpl(u); }, win.DOMParser, options.rid || "9999",
+        clock.setTimeout, clock.clearTimeout, clock.setInterval, clock.clearInterval);
+    return { dom: dom, win: win, api: api, log: log, clock: clock };
 }
 
 function effectListHtml(entries) {
@@ -464,8 +471,11 @@ async function testRoomVipDeadEnds() {
     assert.doesNotThrow(function () { noDock.api.run(); }, "没有背包入口时不得抛错");
     await wait(30);
     assert.strictEqual(noDock.log.errors.length, 0, "没有背包入口时不得留下未处理异常");
-    assert.ok(noDock.log.warns.some(function (s) { return s.indexOf("背包入口") !== -1; }),
-        "插不进去必须留痕，实际 " + JSON.stringify(noDock.log.warns));
+    assert.strictEqual(noDock.win.document.querySelector(".room-vip"), null, "锚点不在时不得凭空插节点");
+    // 新版：锚点不在会走有上限等待（5 秒 = 10 次 × 500ms），等不到才留痕
+    noDock.clock.advance(500 * 25);
+    assert.ok(noDock.log.warns.some(function (s) { return s.indexOf("已放弃") !== -1; }),
+        "等不到锚点必须留痕，实际 " + JSON.stringify(noDock.log.warns));
 
     // ③ 正常路径：仍然要把天数真的写进节点（功能不能被判空吃掉）
     const expire = Math.floor((Date.now() + 5 * 86400000) / 1000);
@@ -509,16 +519,19 @@ function loadMonthCost(opts) {
         EXGUARD_SRC + "\n" + GETVALIDDOM_SRC + "\n" + MONTHCOST_SRC +
         "\nreturn { init: initPkg_MonthCost, refresh: MonthCost_refreshCost, getCost: getMonthCost, " +
         "update: MonthCost_updateCost, money: MonthCost_getMoneyDom, isStale: MonthCost_isStale, " +
+        "insertIcon: MonthCost_insertIcon, waitAnchor: MonthCost_waitAnchor, findAnchor: MonthCost_findAnchor, " +
         "total: function () { return totalMonthCost; }, " +
         "detail: function () { return typeDetail; }, setSee: function (v) { seeStatus = v; } };"
     );
+    const clock = options.clock || null;
     const api = factory(
         win.document, win, win.localStorage, options.uid || "12345",
         function (url) { calls.push(url); return fetchImpl(url); },
         log.console, options.nowMs ? makeFakeDate(options.nowMs) : Date,
-        fastTimeout, function () {}, function () {}, function () {}
+        fastTimeout, function () {},
+        clock ? clock.setInterval : function () {}, clock ? clock.clearInterval : function () {}
     );
-    return { dom: dom, win: win, api: api, log: log, calls: calls };
+    return { dom: dom, win: win, api: api, log: log, calls: calls, clock: clock };
 }
 
 /** 固定"现在"的 Date：new Date() / new Date(ts) / Date.now() 都按约定工作 */
@@ -1401,6 +1414,225 @@ async function testFollowListNoDuplicate() {
 }
 
 /* ------------------------------------------------------------------ */
+/* 场景 21: ExpandTool 初始化链逐项隔离（P2-1）                        */
+/* ------------------------------------------------------------------ */
+
+const EXPANDTOOL_SRC = read("src/packages/ExpandTool/ExpandTool.js");
+
+function loadExpandToolInit() {
+    const start = EXPANDTOOL_SRC.indexOf("function initPkg_ExpandTool() {");
+    assert.ok(start !== -1, "ExpandTool.js 里找不到 initPkg_ExpandTool，测试需同步");
+    const end = EXPANDTOOL_SRC.indexOf("function initPkg_ExpandTool_Dom() {", start);
+    assert.ok(end !== -1, "ExpandTool.js 结构变化（找不到 Dom 初始化），测试需同步");
+    const INIT_SRC = EXPANDTOOL_SRC.slice(start, end);
+    const tops = ["initPkg_ExpandTool_Dom", "initPkg_ExpandTool_Func"];
+    const mods = [
+        "initPkg_ExpandTool_Treasure", "initPkg_ExpandTool_RedPacket_Room", "initPkg_ExpandTool_AutoFish",
+        "initPkg_ExpandTool_ClearBag", "initPkg_ExpandTool_SendGift", "initPkg_ExpandTool_TabSwitch",
+        "initPkg_ExpandTool_P2P", "initPkg_ExpandTool_FullScreen", "initPkg_ExpandTool_AutoBarrageColor"
+    ];
+    const names = tops.concat(mods);
+    const factory = new Function(names.join(", ") + ", console",
+        EXGUARD_SRC + "\n" + INIT_SRC + "\nreturn { init: initPkg_ExpandTool };");
+    return {
+        names: names,
+        build: function (log, throwOn) {
+            const order = [];
+            const handlers = names.map(function (n) {
+                return function () {
+                    order.push(n);
+                    if (n === throwOn) throw new Error(n + " boom");
+                };
+            });
+            const api = factory.apply(null, handlers.concat([log.console]));
+            return { api: api, order: order };
+        },
+    };
+}
+
+function testExpandToolInitIsolation() {
+    const page = loadExpandToolInit();
+
+    // 绿：12 个入口按原顺序全部执行（面板 → 交互 → 9 个模块）
+    const clean = page.build(collectConsole());
+    clean.api.init();
+    assert.deepStrictEqual(clean.order, page.names, "ExpandTool 必须按原顺序初始化全部入口");
+
+    // 红：旧实现任一模块抛错就中断在它自己 —— 排在后面的模块（打榜送礼 / Tab / P2P / 全屏 / 颜色）全都没了，
+    //     外层 initPkg_Safe 只兜一次，日志里只有一行。
+    const log = collectConsole();
+    const broken = page.build(log, "initPkg_ExpandTool_Treasure");
+    assert.doesNotThrow(function () { broken.api.init(); }, "单模块抛错不得冲出 initPkg_ExpandTool");
+    assert.deepStrictEqual(broken.order, page.names,
+        "一个模块失败后其余模块必须照常执行，实际 " + JSON.stringify(broken.order));
+    assert.ok(log.warns.some(function (s) { return s.indexOf("自动宝箱") !== -1 && s.indexOf("初始化失败") !== -1; }),
+        "失败必须报出模块名，实际 " + JSON.stringify(log.warns));
+
+    // 面板本身抛错：交互与九个模块也不能连坐
+    const log2 = collectConsole();
+    const noPanel = page.build(log2, "initPkg_ExpandTool_Dom");
+    noPanel.api.init();
+    assert.deepStrictEqual(noPanel.order, page.names, "面板初始化失败时后续步骤仍要全跑");
+
+    console.log("✓ 场景 21 通过: ExpandTool 12 个初始化入口逐项隔离，单点失败不再连坐");
+}
+
+/* ------------------------------------------------------------------ */
+/* 场景 22: 固定锚点失效（MonthCost / RoomVip，P2-7 同族）             */
+/* ------------------------------------------------------------------ */
+
+async function testFixedAnchorFallback() {
+    const wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+
+    // ① MonthCost：没有 #js-backpack-enter，但页面给了 .BackpackButton
+    const mc = loadMonthCost({ html: "<!DOCTYPE html><html><body><div class='PlayerToolbar'><div class='BackpackButton'></div></div></body></html>" });
+    assert.ok(mc.api.findAnchor(), "必须认到 .BackpackButton 这个兜底锚点");
+    assert.strictEqual(mc.api.insertIcon(), true, "兜底锚点命中时必须真的插进去");
+    assert.ok(mc.win.document.querySelector(".month-cost"), "本月消费入口必须插出来（旧实现整块静默消失）");
+    mc.api.insertIcon();
+    assert.strictEqual(mc.win.document.querySelectorAll(".month-cost").length, 1, "重复调用不得插出第二个");
+
+    // ② 三个锚点都没有：起有上限轮询，锚点晚到也能补插
+    const clock = makeClock();
+    const late = loadMonthCost({ html: "<!DOCTYPE html><html><body><div id='later'></div></body></html>", clock: clock });
+    late.api.init();
+    assert.ok(clock.pending() >= 1, "锚点不在时必须起有上限轮询");
+    assert.strictEqual(late.win.document.querySelector(".month-cost"), null, "锚点不在时不能凭空插");
+    late.win.document.body.insertAdjacentHTML("beforeend", "<div class='BackpackButton'></div>");
+    clock.advance(600);
+    assert.ok(late.win.document.querySelector(".month-cost"), "锚点出现后必须补插");
+
+    // ③ 一直等不到：必须留痕（旧实现静默消失）
+    const give = loadMonthCost({ html: "<!DOCTYPE html><html><body></body></html>", clock: makeClock() });
+    give.api.init();
+    give.clock.advance(500 * 25);
+    assert.ok(give.log.warns.some(function (s) { return s.indexOf("已放弃") !== -1; }),
+        "等不到锚点必须留痕，实际 " + JSON.stringify(give.log.warns));
+    assert.strictEqual(give.win.document.querySelector(".month-cost"), null);
+
+    // ④ RoomVip：同样走多选择器 + 有上限等待
+    const expireSec = Math.floor((Date.now() + 5 * 86400000) / 1000);
+    const vipFetch = function () {
+        return Promise.resolve({
+            text: function () {
+                return Promise.resolve(effectListHtml([
+                    '{"property_id":"1646","show_id_list":"9999","expire_time":"' + expireSec + '"}',
+                ]));
+            },
+        });
+    };
+    const vip = loadRoomVip({ html: "<!DOCTYPE html><html><body><div class='BackpackButton'></div></body></html>", fetch: vipFetch });
+    vip.api.run();
+    await wait(30);
+    assert.ok(vip.win.document.querySelector(".room-vip"), "兜底锚点命中时也要显示 VIP 到期天数");
+
+    const vipClock = makeClock();
+    const lateVip = loadRoomVip({ html: "<!DOCTYPE html><html><body><div id='late'></div></body></html>", clock: vipClock, fetch: vipFetch });
+    lateVip.api.run();
+    await wait(30);
+    assert.strictEqual(lateVip.win.document.querySelector(".room-vip"), null, "锚点不在时先不插");
+    assert.ok(vipClock.pending() >= 1, "必须有有上限的等待");
+    lateVip.win.document.body.insertAdjacentHTML("beforeend", "<div class='BackpackButton'></div>");
+    vipClock.advance(600);
+    const lateBadge = lateVip.win.document.querySelector(".room-vip");
+    assert.ok(lateBadge, "锚点出现后必须补插 VIP 节点");
+    // jsdom 不实现 innerText（写进去只是个属性），所以读属性本身，不读 textContent
+    const lateDay = lateBadge.querySelector("#room-vip-expire-days");
+    assert.strictEqual(String(lateDay.innerText), "4", "补插后仍要写上天数，实际 " + String(lateDay.innerText));
+
+    console.log("✓ 场景 22 通过: 背包入口多选择器兜底 + 有上限等待 + 找不到留痕");
+}
+
+/* ------------------------------------------------------------------ */
+/* 场景 23: LastLiveTime 不再串化整个 body（P2/成本）                  */
+/* ------------------------------------------------------------------ */
+
+const LASTLIVE_SRC = read("src/packages/LastLiveTime/LastLiveTime.js");
+
+function loadLastLive(opts) {
+    const options = opts || {};
+    const dom = makeDom(options.html || "<!DOCTYPE html><html><body></body></html>");
+    const win = dom.window;
+    const log = collectConsole();
+    const clock = makeClock();
+    const TIMEAGO_SRC = sliceSource(COMMON_SRC, "function timeago(old) {", "function getRandom(min, max) {", "timeago");
+    const factory = new Function(
+        "document", "window", "unsafeWindow", "console", "setInterval", "clearInterval", "setTimeout", "clearTimeout",
+        EXGUARD_SRC + "\n" + DATEFORMAT_SRC + "\n" + TIMEAGO_SRC + "\n" + LASTLIVE_SRC +
+        "\nreturn { read: LastLiveTime_readPageRoom, init: initPkg_LastLiveTime };"
+    );
+    const api = factory(
+        win.document, win, options.unsafeWindow || win, log.console,
+        clock.setInterval, clock.clearInterval, clock.setTimeout, clock.clearTimeout
+    );
+    return { dom: dom, win: win, api: api, log: log, clock: clock };
+}
+
+function testLastLiveTimeCheapProbe() {
+    // ① 页面全局 $ROOM：最便宜的判据，直接拿到状态
+    const byGlobal = loadLastLive({
+        unsafeWindow: { $ROOM: { show_status: "0", show_time: 1700000000 } },
+        html: "<!DOCTYPE html><html><body></body></html>",
+    });
+    const g = byGlobal.api.read();
+    assert.strictEqual(g.isLive, false, "下播状态要判对");
+    assert.strictEqual(g.showTime, 1700000000, "必须直接取到 show_time");
+    assert.ok(String(g.from).indexOf("$ROOM") !== -1, "应走页面全局这条快路径，实际 " + g.from);
+
+    // ② 没有全局变量时只扫内联脚本（不再把整棵 DOM 串成字符串）
+    const byScript = loadLastLive({
+        unsafeWindow: {},
+        html: "<!DOCTYPE html><html><body><script>var cfg = {\"show_status\":0,\"show_time\":1700000000};</script></body></html>",
+    });
+    const s = byScript.api.read();
+    assert.strictEqual(s.isLive, false);
+    assert.strictEqual(s.showTime, 1700000000, "内联脚本兜底必须仍能取到 show_time");
+
+    // ③ 在播：直接返回，不折腾 DOM
+    const live = loadLastLive({ unsafeWindow: { $ROOM: { show_status: "1" } } });
+    assert.strictEqual(live.api.read().isLive, true, "在播状态要判对");
+
+    // ④ 完全没有线索：返回空，不抛错
+    const none = loadLastLive({ unsafeWindow: {} });
+    const n = none.api.read();
+    assert.strictEqual(n.showTime, null);
+    assert.strictEqual(n.isLive, false);
+
+    // ⑤ 源码级：不许再出现整份 body 串化
+    assert.ok(stripComments(LASTLIVE_SRC).indexOf("document.body.innerHTML") === -1,
+        "LastLiveTime 不得再把 document.body.innerHTML 整份串化（注释里保留来龙去脉不算）");
+    assert.ok(LASTLIVE_SRC.indexOf("document.scripts") !== -1, "兜底必须只扫内联脚本");
+
+    console.log("✓ 场景 23 通过: 上次开播时间改走 $ROOM 快路径 + 内联脚本兜底，不再串化整个 body");
+}
+
+/* ------------------------------------------------------------------ */
+/* 场景 24: FansBadgeList 房间内嵌形态 + 幂等（P2）                     */
+/* ------------------------------------------------------------------ */
+
+function testFansBadgeLateMount() {
+    // ① 房间内嵌形态：表格是异步渲染的 —— 旧实现取一次就 return，永远是 0 行
+    const late = loadFansBadgeList("<!DOCTYPE html><html><body><div id='later'></div></body></html>");
+    late.api.init();
+    assert.ok(late.clock.pending() >= 1, "表格不在时必须有有上限的等待");
+    late.win.document.body.insertAdjacentHTML("beforeend",
+        "<table class='fans-badge-list'><tr><th>房间</th><th>牌子</th></tr>" +
+        "<tr data-fans-gbdgts='1700000000'><td>a</td><td>b</td></tr></table>");
+    late.clock.advance(600);
+    const rows = late.win.document.querySelectorAll(".fans-badge-list tr");
+    assert.ok(rows[1].innerHTML.indexOf("已获取") !== -1, "表格晚渲染也必须补上注释");
+
+    // ② 幂等：独立页与房间浮层两个入口先后都调到这里，同一行不能被注释两遍
+    late.api.init();
+    late.api.annotate();
+    const again = late.win.document.querySelectorAll(".fans-badge-list tr");
+    const count = (again[1].innerHTML.match(/已获取/g) || []).length;
+    assert.strictEqual(count, 1, "同一行只允许注释一次，实际 " + count);
+
+    console.log("✓ 场景 24 通过: 粉丝牌表格晚渲染也能挂上，且重复入口不会注释两遍");
+}
+
+/* ------------------------------------------------------------------ */
 /* 场景 9: 源码级守卫（本轮所有判空与上限都在位）                       */
 /* ------------------------------------------------------------------ */
 
@@ -1472,6 +1704,20 @@ function testStaticGuardRails() {
     assert.ok(CHATMEMORY_SRC.indexOf("chatMemory_isBound") !== -1, "ChatMemory 必须能判断当前绑定是否失效");
     assert.ok(CHATMEMORY_SRC.indexOf('classList.contains("ChatSend-txt")') !== -1, "ChatMemory 必须在按键时识别新聊天框");
 
+    // ⑧ task-25：ExpandTool 逐项隔离 / 固定锚点兜底 / 字符串探针 / 挂载形态
+    assert.ok(EXPANDTOOL_SRC.indexOf("ExpandTool_tryInit") !== -1, "ExpandTool 必须逐项隔离初始化");
+    assert.ok(EXPANDTOOL_SRC.indexOf("ExpandTool_tryInit(modules[i][0]") !== -1, "ExpandTool 的九个模块必须逐个兜底");
+    assert.ok(MONTHCOST_SRC.indexOf("MONTH_COST_ANCHOR_SELECTORS") !== -1, "本月消费必须用多选择器锚点");
+    assert.ok(MONTHCOST_SRC.indexOf("MonthCost_waitAnchor") !== -1, "本月消费锚点缺失必须有有上限等待");
+    assert.ok(MONTHCOST_SRC.indexOf('getValidDom(["#js-backpack-enter"])') === -1, "本月消费不得再只认单个固定锚点");
+    assert.ok(ROOMVIP_SRC.indexOf("ROOM_VIP_ANCHOR_SELECTORS") !== -1, "房间VIP 必须用多选择器锚点");
+    assert.ok(ROOMVIP_SRC.indexOf("RoomVip_showDays") !== -1, "房间VIP 必须走可等待的展示入口");
+    assert.ok(ROOMVIP_SRC.indexOf('getValidDom(["#js-backpack-enter"])') === -1, "房间VIP 不得再只认单个固定锚点");
+    assert.ok(stripComments(LASTLIVE_SRC).indexOf("document.body.innerHTML") === -1, "LastLiveTime 不得再串化整个 body");
+    assert.ok(LASTLIVE_SRC.indexOf("document.scripts") !== -1, "LastLiveTime 兜底必须只扫内联脚本");
+    assert.ok(FANSBADGE_SRC.indexOf("ExGuard_pollFor") !== -1, "粉丝牌页必须等表格渲染（有上限）");
+    assert.ok(FANSBADGE_SRC.indexOf("exFansAnnotated") !== -1, "粉丝牌页必须幂等（同一行不注释两遍）");
+
     // ④ LastLiveTime 在没有目标节点的页面上不得抛错
     const dom = makeDom("<!DOCTYPE html><html><body><div>普通页面</div></body></html>");
     const log = collectConsole();
@@ -1510,7 +1756,11 @@ function testStaticGuardRails() {
     testChatMemoryRebindAfterRoomSwitch();
     testExPanelSelfHealBackoff();
     await testFollowListNoDuplicate();
-    console.log("=== task-17/19/22/24 回归（死代码 + 面板死路 + init 隔离 + ExpandTool settle + 自愈/渲染/切房）20 组场景全部通过 ===");
+    testExpandToolInitIsolation();
+    await testFixedAnchorFallback();
+    testLastLiveTimeCheapProbe();
+    testFansBadgeLateMount();
+    console.log("=== task-17/19/22/24/25 回归（死代码 + 面板死路 + 各级隔离 + 锚点/探针/挂载）24 组场景全部通过 ===");
 })().catch(function (e) {
     console.error("测试失败:", e && e.stack ? e.stack : e);
     process.exit(1);

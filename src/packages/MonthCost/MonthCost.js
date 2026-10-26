@@ -47,11 +47,32 @@ function initPkg_MonthCost() {
 	}
 }
 
-function initPkg_MonthCost_Dom() {
-	MonthCost_insertIcon();
+/*
+ * 插入锚点：背包入口在不同版式里有三种写法；三种都没有时退到工具栏单元格。
+ * 旧实现只认 #js-backpack-enter 一个固定锚点 —— 页面版式一变（或者用户装了清理类扩展），
+ * 「本月消费」整块静默消失、连一条日志都没有，用户根本无从自证。
+ */
+const MONTH_COST_ANCHOR_SELECTORS = [
+	"#js-backpack-enter",
+	".BackpackButton",
+	".PlayerToolbar-ContentRow .PlayerToolbar-ContentCell"
+];
+let monthCostAnchorWaiting = false;
+
+function MonthCost_findAnchor() {
+	return getValidDom(MONTH_COST_ANCHOR_SELECTORS);
 }
 
+function initPkg_MonthCost_Dom() {
+	if (!MonthCost_insertIcon()) MonthCost_waitAnchor();
+}
+
+/** 插一次入口图标（幂等）。返回 true = 图标已在位 */
 function MonthCost_insertIcon() {
+	if (document.querySelector(".month-cost")) {
+		MonthCost_bindIconClick();
+		return true;
+	}
 	let a = document.createElement("span");
 	a.className = "month-cost";
 	a.innerHTML = `
@@ -59,27 +80,50 @@ function MonthCost_insertIcon() {
 	<span class="monthcost__icon"></span>
 	`;
 	a.title = "数据每日更新，根据个人中心消费数据统计"
-	let b = getValidDom(["#js-backpack-enter"]);
-	let parent = b ? b.parentElement : null;
-	if (!parent) {
-		// 背包入口没渲染：入口图标就插不进去，用户侧表现为「这个功能整个没有」。
-		// 旧实现是静默的，现场完全无痕；这里留一条可定位的线索。
-		if (typeof ExGuard_warn === "function") ExGuard_warn("本月消费", "没找到背包入口，本月消费入口本次不显示");
-		return false;
-	}
+	const anchor = MonthCost_findAnchor();
+	const parent = anchor ? anchor.parentElement : null;
+	if (!parent) return false;
 	parent.insertBefore(a, parent.childNodes[0]);
+	MonthCost_bindIconClick();
 	return true;
 }
 
-function initPkg_MonthCost_Func() {
+/**
+ * 锚点还没渲染出来时的有上限等待（版式变化 / 工具栏晚渲染）：
+ * 等到了就把图标插上并绑定点击；等不到由 ExGuard 留一条「等了多少秒、已放弃」。
+ */
+function MonthCost_waitAnchor() {
+	if (monthCostAnchorWaiting) return true;
+	if (typeof ExGuard_pollFor !== "function") {
+		if (typeof ExGuard_warn === "function") {
+			ExGuard_warn("本月消费", "没找到背包入口（" + MONTH_COST_ANCHOR_SELECTORS.join(" / ") + "），本月消费入口本次不显示");
+		}
+		return false;
+	}
+	monthCostAnchorWaiting = true;
+	ExGuard_pollFor(MonthCost_findAnchor, function () {
+		monthCostAnchorWaiting = false;
+		MonthCost_insertIcon();
+	}, { intervalMs: 500, maxTries: 20, tag: "本月消费" });
+	return true;
+}
+
+/** 点击绑定（幂等）：图标可能晚到，绑定不能只在初始化那一次做 */
+function MonthCost_bindIconClick() {
 	const iconDom = MonthCost_getIconDom();
-	if (!iconDom) return;
+	if (!iconDom || iconDom.dataset.exClickBound === "1") return false;
+	iconDom.dataset.exClickBound = "1";
 	iconDom.addEventListener("click", () => {
 		seeStatus = seeStatus === 1 ? 0 : 1;
 		MonthCost_saveSeeStatus();
 		MonthCost_renderSeeStatus();
 		if (seeStatus === 1) MonthCost_updateCost();
 	});
+	return true;
+}
+
+function initPkg_MonthCost_Func() {
+	MonthCost_bindIconClick();
 }
 
 

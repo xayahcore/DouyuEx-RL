@@ -1,19 +1,43 @@
 function initPkg_ExpandTool() {
-  initPkg_ExpandTool_Dom();
-  initPkg_ExpandTool_Func();
-  initPkg_ExpandTool_Module();
+  // 逐步兜底（与 LiveTool_tryInit / main.js 的 initPkg_Safe 同一口径）：
+  // 历史上任一步 DOM 缺失（页面少一个容器类名、面板被裁剪）都会抛错并中断后面的初始化，
+  // 而外层 initPkg_Safe 只兜一次 —— 用户看到的是"扩展功能整块没了"，日志里只有一行。
+  ExpandTool_tryInit("面板", initPkg_ExpandTool_Dom);
+  ExpandTool_tryInit("交互", initPkg_ExpandTool_Func);
+  ExpandTool_tryInit("模块", initPkg_ExpandTool_Module);
+}
+
+/** 单步隔离：失败报出模块名后继续，不影响同一批里的其它模块 */
+function ExpandTool_tryInit(name, fn) {
+  try {
+    if (typeof fn === "function") fn();
+    return true;
+  } catch (e) {
+    if (typeof ExGuard_warn === "function") {
+      ExGuard_warn("扩展功能", name + " 初始化失败（其余模块照常）", e);
+    } else {
+      console.error("[DouyuEx] 扩展功能初始化失败：" + name + " —— " + ((e && e.message) || e));
+    }
+    return false;
+  }
 }
 
 function initPkg_ExpandTool_Module() {
-  initPkg_ExpandTool_Treasure();
-  initPkg_ExpandTool_RedPacket_Room();
-  initPkg_ExpandTool_AutoFish();
-  initPkg_ExpandTool_ClearBag();
-  initPkg_ExpandTool_SendGift();
-  initPkg_ExpandTool_TabSwitch();
-  initPkg_ExpandTool_P2P();
-  initPkg_ExpandTool_FullScreen();
-  initPkg_ExpandTool_AutoBarrageColor();
+  // 逐个兜底：某个模块的开关元素缺失 / 结构变更只影响它自己，不连坐后面的模块
+  const modules = [
+    ["自动宝箱", initPkg_ExpandTool_Treasure],
+    ["礼物红包", initPkg_ExpandTool_RedPacket_Room],
+    ["自动钓鱼", initPkg_ExpandTool_AutoFish],
+    ["清理背包", initPkg_ExpandTool_ClearBag],
+    ["打榜送礼", initPkg_ExpandTool_SendGift],
+    ["Tab 切换", initPkg_ExpandTool_TabSwitch],
+    ["P2P", initPkg_ExpandTool_P2P],
+    ["网页全屏", initPkg_ExpandTool_FullScreen],
+    ["弹幕颜色", initPkg_ExpandTool_AutoBarrageColor]
+  ];
+  for (let i = 0; i < modules.length; i++) {
+    ExpandTool_tryInit(modules[i][0], modules[i][1]);
+  }
 }
 
 function initPkg_ExpandTool_Dom() {

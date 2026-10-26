@@ -121,6 +121,10 @@ function initPkg() {
   initPkg_Safe("ChangeDanmakuLengthLimit", initPkg_ChangeDanmakuLengthLimit);
   initPkg_Safe("CheckAnchorPocket", initPkg_CheckAnchorPocket);
   initPkg_Safe("LastLiveTime", initPkg_LastLiveTime);
+  /* 粉丝牌表格有两种形态：独立页（router 里直接调）与房间内的粉丝牌浮层（异步渲染、点开才出现）。
+     以前只在独立页接线，房间浮层里这功能等于不存在。包侧已改成「先试一次 → 没命中就有上限轮询等它，
+     行级幂等标记」，这里补上房间侧的入口即可；等不到只留一条日志，不会刷屏。 */
+  initPkg_Safe("FansBadgeList", initPkg_FansBadgeList);
   initPkg_Safe("VolumeMouseScrolling", initPkg_VolumeMouseScrolling);
 }
 function initPkg_Safe(name, fn) {
