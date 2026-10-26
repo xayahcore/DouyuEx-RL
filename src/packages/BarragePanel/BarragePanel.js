@@ -1,22 +1,39 @@
 function initPkg_BarragePanel() {
-	let timer = setInterval(() => {
-        if (document.getElementsByClassName("danmuTips-1ee820").length > 0) {
-            clearInterval(timer);
-            document.getElementsByClassName("danmuTips-1ee820")[0].parentElement.id = "Ex_BarragePanel";
-            setBarragePanelCallBack();
-        }
-    }, 1500);
+    // 旧实现是 1.5 秒一次的裸 setInterval：提示节点始终不出现就永久空转，且没有线索。
+    ExGuard_pollFor(
+        function () {
+            return document.getElementsByClassName("danmuTips-1ee820")[0];
+        },
+        function (tipsDom) {
+            try {
+                const parent = tipsDom.parentElement;
+                if (!parent) {
+                    ExGuard_warn("弹幕面板", "提示节点没有父节点，无法挂面板钩子");
+                    return;
+                }
+                parent.id = "Ex_BarragePanel";
+                setBarragePanelCallBack();
+            } catch (e) {
+                ExGuard_warn("弹幕面板", "挂载面板钩子失败", e);
+            }
+        },
+        Object.assign({ intervalMs: 1500, maxTries: 40, tag: "弹幕面板" }, barragePanel_pollOpts)
+    );
 
     initPkg_BarragePanel_Tip();
 }
 
 let barragePanel__isUpdating = false;
+// 轮询参数：默认 1.5 秒 × 40 次（1 分钟）；测试会改这份配置来验证上限
+let barragePanel_pollOpts = { intervalMs: 1500, maxTries: 40, tag: "弹幕面板" };
 
 function barragePanel__withGuard(fn) {
     if (barragePanel__isUpdating) return;
     barragePanel__isUpdating = true;
     try {
         fn();
+    } catch (e) {
+        ExGuard_warn("弹幕面板", "面板状态更新失败（本次跳过，observer 继续工作）", e);
     } finally {
         setTimeout(() => {
             barragePanel__isUpdating = false;
@@ -167,6 +184,10 @@ function setUserFansMedal(dom, userName) {
 }
 
 function setBarragePanelButtonSplit(dom) {
+    if (!dom) {
+        ExGuard_warn("弹幕面板", "按钮容器不存在，本次跳过 setBarragePanelButtonSplit");
+        return;
+    }
     if (document.getElementById("barragePanel__split") != null) {
         return;
     }
@@ -176,6 +197,10 @@ function setBarragePanelButtonSplit(dom) {
 }
 
 function setMuteButton(dom) {
+    if (!dom) {
+        ExGuard_warn("弹幕面板", "按钮容器不存在，本次跳过 setMuteButton");
+        return;
+    }
     if (document.getElementById("barragePanel__mute") != null) {
         return;
     }
@@ -206,6 +231,10 @@ function setMuteButton(dom) {
 }
 
 function setSearchBarrageButton(dom) {
+    if (!dom) {
+        ExGuard_warn("弹幕面板", "按钮容器不存在，本次跳过 setSearchBarrageButton");
+        return;
+    }
     if (document.getElementById("barragePanel__search") != null) {
         return;
     }
@@ -218,6 +247,10 @@ function setSearchBarrageButton(dom) {
 }
 
 function setReplyBarrageButton(dom) {
+    if (!dom) {
+        ExGuard_warn("弹幕面板", "按钮容器不存在，本次跳过 setReplyBarrageButton");
+        return;
+    }
     if (document.getElementById("barragePanel__reply") != null) {
         return;
     }
@@ -230,29 +263,56 @@ function setReplyBarrageButton(dom) {
 }
 
 function setBarrgePanelFunc(parentDom, id) {
-    document.getElementById("barragePanel__reply").onclick = () => {
-        let txt = document.getElementsByClassName("danmuContent-25f266")[0].innerText;
-        const chatDom = document.getElementsByClassName("ChatSend-txt")[0];
-        const value = `@${ id }：${ txt }`;
-        if (chatDom.tagName == "TEXTAREA") {
-            chatDom.value = value;
-        } else {
-            chatDom.innerText = value;
+    const replyBtn = document.getElementById("barragePanel__reply");
+    const muteBtn = document.getElementById("barragePanel__mute");
+    const searchBtn = document.getElementById("barragePanel__search");
+    if (!replyBtn || !muteBtn || !searchBtn) {
+        ExGuard_warn("弹幕面板", "回复/禁言/查弹幕按钮没有全部注入成功，本次跳过绑定");
+        return;
+    }
+
+    replyBtn.onclick = () => {
+        try {
+            const contentDom = document.getElementsByClassName("danmuContent-25f266")[0];
+            const chatDom = document.getElementsByClassName("ChatSend-txt")[0];
+            if (!contentDom || !chatDom) {
+                ExGuard_warn("弹幕面板", "回复失败：弹幕内容或聊天输入框不存在");
+                return;
+            }
+            let txt = contentDom.innerText;
+            const value = `@${ id }：${ txt }`;
+            if (chatDom.tagName == "TEXTAREA") {
+                chatDom.value = value;
+            } else {
+                chatDom.innerText = value;
+            }
+            chatDom.focus();
+        } catch (e) {
+            ExGuard_warn("弹幕面板", "回复操作失败", e);
         }
-        chatDom.focus();
     };
 
-    document.getElementById("barragePanel__mute").onclick = async () => {
-        let value = document.getElementById("barragePanel__muteSelect").value || "1";
-        let ret = await addMuteUser(rid, id, value);
-        if (ret.msg == "添加成功") {
-            showMessage(`【禁言】${id}已被禁言${value}分钟`, "success");
-        } else {
-            showMessage(ret.msg, "error");
+    muteBtn.onclick = async () => {
+        try {
+            const selectDom = document.getElementById("barragePanel__muteSelect");
+            let value = (selectDom && selectDom.value) || "1";
+            let ret = await addMuteUser(rid, id, value);
+            if (!ret) {
+                showMessage("【禁言】操作失败：接口没有返回结果", "error");
+                return;
+            }
+            if (ret.msg == "添加成功") {
+                showMessage(`【禁言】${id}已被禁言${value}分钟`, "success");
+            } else {
+                showMessage(ret.msg || "【禁言】操作失败", "error");
+            }
+        } catch (e) {
+            ExGuard_warn("弹幕面板", "禁言操作失败", e);
+            showMessage("【禁言】操作失败：" + ((e && e.message) || e), "error");
         }
     };
-    
-    document.getElementById("barragePanel__search").onclick = async () => {
+
+    searchBtn.onclick = async () => {
         // 接口失败时 getUserUid 会给出空串：必须显式提示，不能点了没反应
         let uid = await getUserUid(id);
         if (uid !== "") {
@@ -265,6 +325,10 @@ function setBarrgePanelFunc(parentDom, id) {
 }
 
 function insertBarragePanel_SearchBarrage_Dom(parentDom) {
+    if (!parentDom) {
+        ExGuard_warn("弹幕面板", "面板按钮容器不存在，本次不插入查弹幕面板");
+        return;
+    }
     let pMarginLeft = parseInt(parentDom.style.marginLeft);
     let newMarginLeft = "-237px";
     if (pMarginLeft > 237) {
@@ -287,20 +351,16 @@ function insertBarragePanel_SearchBarrage_Dom(parentDom) {
 
 
 function getUserRecentBarrage(name) {
-    return new Promise(resolve => {
-        GM_xmlhttpRequest({
-            method: "GET",
-            url: "http://dyapi.fz996.com/api/Wx/GetDataBarrage?keyword=" + name,
-            responseType: "json",
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            onload: function(response) {
-                let ret = response.response;
-                resolve(ret);
-            }
-        });
-    });
+    // 旧实现只有 onload：请求被拦 / 超时后 Promise 永不 settle（点了没反应）
+    return ExGuard_xhr({
+        method: "GET",
+        url: "http://dyapi.fz996.com/api/Wx/GetDataBarrage?keyword=" + encodeURIComponent(name || ""),
+        responseType: "json",
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        tag: "弹幕面板",
+    }, 15000);
 }
 
 /**

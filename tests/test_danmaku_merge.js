@@ -724,7 +724,7 @@ async function run() {
   assert.strictEqual(rateWarns.length, 1, "5s 内超限只提示一次");
   assert.ok(rateWarns[0].indexOf("累计 1 条") !== -1, "提示必须带累计 dropped，实际 " + rateWarns[0]);
   srcRate.api.rateWarnAt = Date.now() - 5001;
-  srcRate.api.rate.count = 12;
+  srcRate.api.rate.hits = new Array(12).fill(Date.now() - 100);   // 窗口里塞满 12 条（真滑动窗口）
   srcRate.ctx.MergeDanmaku_push({ text: "t13", packet: "p13", uid: "1", srcRid: "1", srcName: "房" });
   assert.strictEqual(srcRate.logs.warn.filter((w) => w.indexOf("超过 12 条/秒") !== -1).length, 2, "5s 窗口过后必须再次提示");
 
@@ -790,6 +790,64 @@ async function run() {
   assert.strictEqual(srcConn.api.conns.length, 1, "只保留 want 列表里的连接");
   assert.strictEqual(closers.pub, 1, "关连接必须优先走公开 close()");
   assert.strictEqual(closers.raw, 0, "有公开 close() 时不得直接动内部 ws");
+
+  // 10.8 M13：限流必须是**真滑动窗口**（固定窗口在边界两侧各放 12 条 → 同一秒内瞬发 24 条）
+  const srcSlide = loadMergeSource();
+  srcSlide.win.socketProxy = { socketStream: makeSourceBus() };
+  const tSlide = Date.now();
+  srcSlide.api.rate.hits = [];
+  for (let i = 0; i < 12; i++) srcSlide.api.rate.hits.push(tSlide - 500 + i);   // 12 条都还在 1s 窗口内
+  assert.strictEqual(
+    srcSlide.ctx.MergeDanmaku_push({ text: "s1", packet: "sp1", uid: "1", srcRid: "1", srcName: "房" }),
+    false,
+    "窗口里已有 12 条时第 13 条必须被丢（固定窗口会在这时放行 → 边界瞬发 24 条）"
+  );
+  assert.strictEqual(srcSlide.api.stats.dropped, 1, "被丢掉必须计数");
+  srcSlide.api.rate.hits = [];
+  for (let i = 0; i < 12; i++) srcSlide.api.rate.hits.push(tSlide - 1200 - i);  // 全部超过 1s
+  assert.strictEqual(
+    srcSlide.ctx.MergeDanmaku_push({ text: "s2", packet: "sp2", uid: "1", srcRid: "1", srcName: "房" }),
+    true,
+    "窗口外的旧记录必须过期，不能把连接一直卡在限速上"
+  );
+
+  // 10.9 M14：死连接必须重建 —— 只按 rid 去重会把"已经不会再收报文"的连接一直留着
+  const srcDead = loadMergeSource();
+  srcDead.ctx.MultiScreen_getMainRid = () => "9999";
+  srcDead.ctx.MultiScreen_getList = () => [{ rid: "9999" }, { rid: "111", nn: "房一" }];
+  const builtDead = [];
+  srcDead.ctx.Ex_WebSocket_UnLogin = function FakeWs(rid) { this.rid = rid; this.closed = false; this.ws = null; builtDead.push(rid); };
+  let closedDead = 0;
+  // 真机上"静默死掉"的形态：重连次数用尽后本类不再重连（closed 仍是 false、ws 已是 null）
+  srcDead.api.conns = [{ rid: "111", nn: "房一", ws: { closed: false, reconnectCount: 10, maxReconnect: 10, ws: null, close() { closedDead++; } } }];
+  srcDead.ctx.MergeDanmaku_syncConnections();
+  assert.deepStrictEqual(builtDead, ["111"], "重连已用尽的连接必须被摘掉并重建（实际重建 " + JSON.stringify(builtDead) + "）");
+  assert.strictEqual(srcDead.api.conns.length, 1, "重建后列表里只留一条");
+  assert.strictEqual(closedDead, 1, "摘掉死连接时仍要尽力 close 一次");
+
+  const srcAlive = loadMergeSource();
+  srcAlive.ctx.MultiScreen_getMainRid = () => "9999";
+  srcAlive.ctx.MultiScreen_getList = () => [{ rid: "9999" }, { rid: "111", nn: "房一" }];
+  let builtAlive = 0;
+  srcAlive.ctx.Ex_WebSocket_UnLogin = function FakeWs() { builtAlive++; };
+  srcAlive.api.conns = [{ rid: "111", nn: "房一", ws: { closed: false, reconnectCount: 2, maxReconnect: 10, ws: null } }];
+  srcAlive.ctx.MergeDanmaku_syncConnections();
+  assert.strictEqual(builtAlive, 0, "还在重连窗口里的连接不得被误杀重建");
+  assert.strictEqual(srcAlive.api.conns.length, 1, "活连接必须原地保留");
+
+  const srcClosed = loadMergeSource();
+  srcClosed.ctx.MultiScreen_getMainRid = () => "9999";
+  srcClosed.ctx.MultiScreen_getList = () => [{ rid: "9999" }, { rid: "111", nn: "房一" }];
+  let builtClosed = 0;
+  srcClosed.ctx.Ex_WebSocket_UnLogin = function FakeWs(rid) { this.rid = rid; builtClosed++; };
+  srcClosed.api.conns = [{ rid: "111", nn: "房一", ws: { closed: true, ws: null } }];
+  srcClosed.ctx.MergeDanmaku_syncConnections();
+  assert.deepStrictEqual([builtClosed], [1], "已 close 的连接同样必须重建");
+
+  // 10.10 M15：诊断文案红线 —— console 里不得再出现「外房」
+  const mergeSrc = fs.readFileSync(path.join(__dirname, "../src/packages/PopupPlayer/PopupPlayer_MergeDanmaku.js"), "utf8");
+  const mergeCode = mergeSrc.replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/.*$/gm, "$1");
+  assert.ok(!/外房/.test(mergeCode), "合并侧诊断文案不得再用「外房」，统一改「其它房间」");
 
   dom.window.close();
   win3.close();

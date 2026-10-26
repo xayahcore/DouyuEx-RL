@@ -226,14 +226,61 @@ function switchAccount(uid, callback) {
     });
 };
 
+/* ==================== passport 侧（passport.douyu.com 的 iframe） ====================
+ * ⚠ TODO（真机拆包前不动的两件事，本轮只修"静态能确定会破坏数据"的那一半）：
+ *   ① 调用顺序：src/routers/router.js:116-118 在 switch 之前先调 addAccountPassport(uid)。
+ *      两种读法都讲得通：
+ *        a) 抓的是"当前会话快照" —— 那此刻罐子里多半还是旧账号，记到目标 uid 名下就是写坏；
+ *        b) 父页已经先把目标账号的 cookie 写回来了，这里只是"重新同步一遍"。
+ *      静态无法判定（取决于父页 restore 与 iframe 加载谁先到），所以**不改顺序**，
+ *      只在 addAccountPassport 里加"有证据表明不是这个账号就不写"的守卫（保守方向：
+ *      宁可少刷新一次，也不把别人存好的那份冲掉）。
+ *      真机要验：A → B → 再切回 A，A 的号还在不在？期间 GM_cookie("list") 在
+ *      passport iframe 里能不能看到 .douyu.com 作用域的 acf_uid / acf_nickname / LTP0（含
+ *      domain、path、hostOnly 三个字段的原始值）。
+ *   ② 全局 cookie 合并：原注释 `Array(list.global).concat(list[uid])` 想复原"全局 + 私有"，
+ *      但 `Array(数组)` 会套成一层嵌套数组。要不要合并，取决于 global 里到底有没有身份类
+ *      cookie —— 同样等上面那份拆包结果。本轮只保证"写进去的一定是 cookie 形状"。
+ */
+/* 只有 name 非空的普通对象才算 cookie：账本被写坏 / 别处塞了嵌套数组进来时，
+   直接 set 会写出一条 undefined 名字的外来 cookie。 */
+function AccountList_cookieList(arr) {
+    if (!Array.isArray(arr)) return [];
+    return arr.filter(function (c) {
+        return c && typeof c === "object" && c["name"];
+    });
+}
+
+/* 两份 cookie 列表是否等价（忽略顺序与 update_time 这类时间戳）：
+   用于"内容没变就别再写一遍存储"的幂等判断。 */
+function AccountList_sameCookies(a, b) {
+    let x = AccountList_cookieList(a);
+    let y = AccountList_cookieList(b);
+    if (x.length !== y.length) return false;
+    let key = function (c) {
+        return [c.name, c.domain || "", c.path || "", c.value].join("|");
+    };
+    let sx = x.map(key).sort();
+    let sy = y.map(key).sort();
+    for (let i = 0; i < sx.length; i++) {
+        if (sx[i] !== sy[i]) return false;
+    }
+    return true;
+}
+
 function switchAccountPassport(uid, callback) {
     let done = typeof callback === "function" ? callback : function () {};
+    let key = String(uid == "" || uid == null ? "null" : uid);
     let list = AccountList_readStore("Ex_accountListPassport");
-    /* ⚠ 这行注释（`Array(list.global).concat(list[uid])`）是原作者"全局 cookie + 该账号私有
-       cookie 一起写回"的意图，但 `Array(数组)` 会套成嵌套数组，照抄会写进 undefined 名字的
-       cookie。本轮的 P0 只做「空列表也要走完回调」，列表口径保持现状（只写回该账号那一份），
-       全局 cookie 的归属需要真机核对后再定，已记在汇报里。 */
-    let l = Array.isArray(list[uid]) ? list[uid] : [];
+    let l = AccountList_cookieList(list[key]);
+    /* 没有可恢复的私有 cookie 时**不要先删**：删完就只剩"未登录"，切号等于把人踢下线。
+       和 parent 侧 switchAccount 同一口径（宁可这次切换不生效，也不毁现场），
+       但仍要回调 —— 父页在等 switchOver，不回就永远干等。 */
+    if (!l.length) {
+        console.warn("[DouyuEx] passport 侧没有该账号的 cookie 记录，本次不清理、直接收尾:", key);
+        done();
+        return;
+    }
     cleanCookie(function () {
         AccountList_restoreCookies(l, done);
     });
@@ -272,7 +319,8 @@ function switchAccountPassport(uid, callback) {
 // };
 
 function addAccount() {
-    let accountListData = JSON.parse(GM_getValue("Ex_accountList") || "{}");
+    // 与两处 switch 同一口径：账本被写坏时按空账本继续，不要让整个列表渲染不出来
+    let accountListData = AccountList_readStore("Ex_accountList");
     let item = {};
     let uid = "";
     GM_cookie("list", { path: "/" }, function(cookies) {
@@ -309,29 +357,53 @@ function addAccount() {
 };
 
 
+/* 采集当前 passport 会话的快照（拆成"该账号私有 LTP0" + "其余全局"）。
+   三道guard，都是"能静态确定会破坏数据"的情况，其余一律照旧写：
+   ① 证据优先：抓到的 cookie 里若带着 acf_uid，且它不等于本次的 uid，说明罐子里是**别人**
+      的会话（router.js:116-118 在 switch 之前调这里，正是这种情形）—— 一条都不写。
+   ② 不许清空：已有非空记录时，若这次没抓到 LTP0（说明此刻根本没登录在目标账号上），
+      不拿空的去覆盖好数据。
+   ③ 幂等：私有与全局两侧内容都没变就不写（每次进直播间这个 iframe 都会跑一次，
+      没必要每次都刷一遍 localStorage/GM 存储）。 */
 function addAccountPassport(uid) {
-    let accountListData = JSON.parse(GM_getValue("Ex_accountListPassport") || "{}");
-    let private_arr = [];
-    let global_arr = [];
+    let store = AccountList_readStore("Ex_accountListPassport");
+    let key = String(uid == "" || uid == null ? "null" : uid);
     GM_cookie("list", { path: "/" }, function(cookies) {
         if (cookies == undefined) {
             return;
         }
-        for(let i = 0; i < cookies.length; i++) {
-            if (cookies[i]["name"] == "LTP0") {
+        let private_arr = [];
+        let global_arr = [];
+        let sessionUid = "";
+        for (let i = 0; i < cookies.length; i++) {
+            let name = cookies[i]["name"];
+            if (name == "LTP0") {
                 private_arr.push(cookies[i]);
             } else {
                 global_arr.push(cookies[i]);
             }
+            if (name == "acf_uid") {
+                sessionUid = String(cookies[i]["value"] == null ? "" : cookies[i]["value"]);
+            }
         }
-        if (uid == "") {
-            uid = "null";
+        if (key !== "null" && sessionUid !== "" && sessionUid !== key) {
+            console.warn("[DouyuEx] 当前 passport 会话属于 " + sessionUid + "，与目标账号 " + key + " 不符，保留已有记录不覆盖");
+            return;
         }
-        accountListData.global = null;
-        accountListData.global = global_arr;
-        accountListData[uid] = private_arr;
-        accountListData.update_time = String(new Date().getTime());
-        GM_setValue("Ex_accountListPassport", JSON.stringify(accountListData));
+        let exists = AccountList_cookieList(store[key]).length > 0;
+        if (exists && private_arr.length === 0) {
+            console.warn("[DouyuEx] 目标账号 " + key + " 的记录非空，但本次没抓到登录态（LTP0），保留原记录");
+            return;
+        }
+        if (exists
+            && AccountList_sameCookies(store[key], private_arr)
+            && AccountList_sameCookies(store.global, global_arr)) {
+            return;
+        }
+        store[key] = private_arr;
+        store.global = global_arr;
+        store.update_time = String(new Date().getTime());
+        GM_setValue("Ex_accountListPassport", JSON.stringify(store));
     });
 };
 

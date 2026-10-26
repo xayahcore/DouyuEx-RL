@@ -63,7 +63,10 @@ let msMergeHost = null;              // 播放器自己的弹幕组件实例（c
 let msMergeHostVia = null;           // 拿到它的方式："hook"（脚本钩子）/ "fiber"（运行时爬 React fiber）
 let msMergeInstalled = false;
 let msMergeConns = [];               // { rid, nn, ws }
-let msMergeRate = { at: 0, count: 0 };
+/* 限流：**真滑动窗口**（最近 1 秒内被放行的时刻，升序）。
+   早先是"固定窗口"（记 at/count，满 1 秒整体清零）：窗口边界两侧各放 12 条就能在同一秒里瞬发 24 条，
+   与常量名和注释承诺的"12 条/秒"不符。窗口最多只有 12 个数字，直接存时间戳最省事。 */
+let msMergeRate = { hits: [] };
 let msRateWarnAt = 0;               // 上次"超出限速"提示的时间（节流用）
 let msMergeStats = { pushed: 0, dropped: 0, noTrack: 0, viaBus: 0, viaHost: 0, held: 0, expired: 0, pushError: 0 };
 
@@ -252,14 +255,14 @@ function MergeDanmaku_startBootstrap() {
       // 引擎接上了、播放器自己的管线没接上：留一条线索，别让它静默降级
       if (engineReady && !hostReady) {
         console.warn("[DouyuEx] 未能接入播放器自己的弹幕管线（React fiber 上溯失败），" +
-          "外房弹幕暂按自建数据上屏：颜色与来源横条正常，粉丝牌/等级/贵族底不显示。");
+          "其它房间的弹幕暂按自建数据上屏：颜色与来源横条正常，粉丝牌/等级/贵族底不显示。");
       } else if (!engineReady) {
         /* 引擎没抓到也必须留痕：否则"整场没有来源横条"只会被当成功能没生效，
            而且没人知道已经放弃了 60 秒。 */
         msBootExpired = true;
         console.warn("[DouyuEx] 多屏弹幕合并自举到期：" + msBootTries + " 次仍未抓到原生弹幕引擎" +
-          "（弹幕层关着或没有飘屏都算），来源横条暂不可用；外房弹幕仍会经 socketProxy.socketStream 合入。" +
-          "下一次外房报文到来时会自动再试一次。ready=" +
+          "（弹幕层关着或没有飘屏都算），来源横条暂不可用；其它房间的弹幕仍会经 socketProxy.socketStream 合入。" +
+          "下一次其它房间的报文到来时会自动再试一次。ready=" +
           (msMergeSpace && msMergeCtors.scroll ? "true" : "false") +
           " streamVia=" + (msBusVia || "null"));
       }
@@ -455,6 +458,27 @@ function MergeDanmaku_badgeText(name) {
 
 /* ---------- ③ N 路免登录弹幕连接 ---------- */
 
+/* 连接还活着吗？判据全部取自 Ex_WebSocket_UnLogin 的公开字段（见 src/require/WebSocket/WebSocket_UnLogin.js）：
+   · closed === true：已 close，绝不再收；
+   · reconnectCount >= maxReconnect：内部已放弃重连（静默死掉的那种，最坑）；
+   · 不是本类、但手上那条 socket 已经是 CLOSING/CLOSED：也算死。
+   重连等待中的（reconnectCount < maxReconnect、ws 暂时为 null）必须判活，否则会重复建连接。 */
+function MergeDanmaku_connAlive(c) {
+  if (!c || !c.ws) return false;
+  const w = c.ws;
+  try {
+    if (w.closed === true) return false;
+    if (typeof w.reconnectCount === "number" && typeof w.maxReconnect === "number" && w.reconnectCount >= w.maxReconnect) return false;
+    const raw = w.ws;
+    if (!raw) return true;
+    const rs = raw.readyState;
+    if (typeof rs === "number" && (rs === 2 || rs === 3) && typeof w.reconnectCount !== "number") return false;
+  } catch (e) {
+    return false;
+  }
+  return true;
+}
+
 function MergeDanmaku_syncConnections() {
   const list = MultiScreen_getList();
   const mainRid = MultiScreen_getMainRid();
@@ -468,9 +492,16 @@ function MergeDanmaku_syncConnections() {
     wantMap[String(r.rid)] = r;
   });
 
-  // 关掉不再需要的
+  /* 关掉不再需要的；**顺手把已经死掉的连接也摘掉**。
+     只按 rid 去重会留下"不会再收报文"的连接：本类的重连次数（maxReconnect）用尽后，
+     closed 仍是 false、ws 已是 null，之后这个房间的弹幕永远收不到，界面上也看不出任何异常。
+     摘掉后回落到下面的"新增缺的连接"重建一条。 */
   msMergeConns = msMergeConns.filter(function (c) {
-    if (wantMap[c.rid]) return true;
+    if (wantMap[c.rid]) {
+      if (MergeDanmaku_connAlive(c)) return true;
+      try { if (c.ws && typeof c.ws.close === "function") c.ws.close(); } catch (e) {}
+      return false;
+    }
     try {
       /* 优先走公开 close()：它内部会停心跳、抑制重连（直接改 closed/ws 依赖内部字段，
          斗鱼或本类一改版就会"关了还在收"，表现为关掉某房弹幕后仍在合入）。 */
@@ -706,7 +737,7 @@ function MergeDanmaku_warnNoStream() {
   if (msWarnedNoStream) return;
   msWarnedNoStream = true;
   console.warn("[DouyuEx] 一直没等到 socketProxy.socketStream（斗鱼自己的报文入口），" +
-    "这段时间的外房弹幕只在飘屏显示、聊天区没有对应条目；等它出现会自动恢复正常。");
+    "这段时间其它房间的弹幕只在飘屏显示、聊天区没有对应条目；等它出现会自动恢复正常。");
 }
 
 /* ---------- ③c 给"原生渲染出来的"聊天条目补来源横条 ---------- */
@@ -837,7 +868,7 @@ function MergeDanmaku_push(item) {
     const now = Date.now();
     if (now - msRateWarnAt >= MS_MERGE_RATE_WARN_MS) {
       msRateWarnAt = now;
-      console.warn("[DouyuEx] 外房弹幕超过 " + MS_MERGE_RATE_MAX + " 条/秒，超出的已丢弃（累计 " +
+      console.warn("[DouyuEx] 其它房间的弹幕超过 " + MS_MERGE_RATE_MAX + " 条/秒，超出的已丢弃（累计 " +
         msMergeStats.dropped + " 条）；比例与入口状态看 MergeDanmaku_getStats() 的 pushed / viaBus / streamVia。");
     }
     return false;
@@ -856,15 +887,14 @@ function MergeDanmaku_push(item) {
   return false;
 }
 
-// 限流：滑动窗口。超过窗口上限直接丢（并计数），避免把原生轨道池打爆导致整屏弹幕被拖慢
+/* 限流：真滑动窗口。超过窗口上限直接丢（并计数），避免把原生轨道池打爆导致整屏弹幕被拖慢。
+   每次先把"已经滑出 1 秒"的时刻丢掉再判断窗口内条数 —— 跨窗口边界也不会瞬发。 */
 function MergeDanmaku_allowRate() {
   const now = Date.now();
-  if (now - msMergeRate.at >= MS_MERGE_RATE_WINDOW_MS) {
-    msMergeRate.at = now;
-    msMergeRate.count = 0;
-  }
-  if (msMergeRate.count >= MS_MERGE_RATE_MAX) return false;
-  msMergeRate.count++;
+  const hits = msMergeRate.hits;
+  while (hits.length && now - hits[0] >= MS_MERGE_RATE_WINDOW_MS) hits.shift();
+  if (hits.length >= MS_MERGE_RATE_MAX) return false;
+  hits.push(now);
   return true;
 }
 

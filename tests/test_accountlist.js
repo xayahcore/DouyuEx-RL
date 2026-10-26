@@ -67,7 +67,7 @@ function loadAccountModule(opts) {
 
   const factory = new Function(
     "GM_cookie", "GM_getValue", "GM_setValue", "console", "document", "window",
-    ACC_SRC + "\nreturn { cleanCookie, switchAccount, switchAccountPassport, AccountList_readStore };"
+    ACC_SRC + "\nreturn { cleanCookie, switchAccount, switchAccountPassport, addAccountPassport, AccountList_readStore, AccountList_cookieList, AccountList_sameCookies };"
   );
   const api = factory(
     GM_cookie, GM_getValue, GM_setValue,
@@ -174,12 +174,108 @@ async function run() {
     await sleep(40);
     assert.strictEqual(called, 1, "该账号没有存 cookie 时也必须回调（父页在等 switchOver）");
     assert.strictEqual(m.calls.set.length, 0, "没有私有 cookie 时不写任何东西");
+    assert.strictEqual(m.calls.del.length, 0, "没有可恢复的数据时不许先清空（清完就只剩未登录）");
+    assert.ok(m.warnings.some((w) => w.indexOf("没有该账号的 cookie 记录") !== -1), "必须留一条 warn 便于排障");
 
     const m2 = loadAccountModule({ cookies: [], values: { Ex_accountListPassport: "{}" } });
     let called2 = 0;
     m2.api.switchAccountPassport("nobody", () => { called2++; });
     await sleep(30);
     assert.strictEqual(called2, 1, "账本里没有该 uid 时也必须回调");
+  }
+
+  // ---------- 6.1 addAccountPassport：会话不是这个账号时不许写（router 先调 add 再 switch 的坑） ----------
+  console.log("--> 6.1 addAccountPassport：acf_uid 与目标不符时一条都不写");
+  {
+    const storeBefore = JSON.stringify({
+      global: [cookie("dy_auth", "old-global")],
+      "B2": [cookie("LTP0", "ltp-B")]
+    });
+    const m = loadAccountModule({
+      cookies: [cookie("acf_uid", "A1"), cookie("LTP0", "ltp-A"), cookie("dy_auth", "ga")],
+      values: { Ex_accountListPassport: storeBefore }
+    });
+    m.api.addAccountPassport("B2");
+    await sleep(40);
+    assert.strictEqual(m.values.Ex_accountListPassport, storeBefore,
+      "会话属于 A1 时，不得把 A1 的快照写进 B2（也不得顺手刷新 global）");
+    assert.ok(m.warnings.some((w) => w.indexOf("与目标账号") !== -1), "必须留一条 warn 说明为何没写");
+    const storeAfter = JSON.parse(m.values.Ex_accountListPassport);
+    assert.strictEqual(storeAfter.B2[0].value, "ltp-B", "B2 原来那份必须原样留着");
+  }
+
+  // ---------- 6.2 addAccountPassport：已有非空记录时，抓不到登录态不许覆盖 ----------
+  console.log("--> 6.2 addAccountPassport：本次没抓到 LTP0 时保留原记录");
+  {
+    const storeBefore = JSON.stringify({ global: [cookie("dy_auth", "g")], "A1": [cookie("LTP0", "ltp-A")] });
+    const m = loadAccountModule({
+      cookies: [cookie("dy_auth", "g")],          // 只有全局，没有 LTP0（此刻没登录在目标账号上）
+      values: { Ex_accountListPassport: storeBefore }
+    });
+    m.api.addAccountPassport("A1");
+    await sleep(40);
+    assert.strictEqual(m.values.Ex_accountListPassport, storeBefore, "空快照不得把已有记录抹成空");
+    assert.ok(m.warnings.some((w) => w.indexOf("没抓到登录态") !== -1), "必须留一条 warn");
+  }
+
+  // ---------- 6.3 addAccountPassport：内容没变就不写（幂等） ----------
+  console.log("--> 6.3 addAccountPassport：内容未变时幂等，不重写存储");
+  {
+    const ltp = cookie("LTP0", "ltp-A");
+    const ga = cookie("dy_auth", "g");
+    const uidCookie = cookie("acf_uid", "A1");
+    const storeBefore = JSON.stringify({ global: [ga, uidCookie], "A1": [ltp] });
+    const m = loadAccountModule({
+      cookies: [ltp, uidCookie, ga],              // 与存储内容一致（顺序不同也算一致）
+      values: { Ex_accountListPassport: storeBefore }
+    });
+    m.api.addAccountPassport("A1");
+    await sleep(40);
+    assert.strictEqual(m.values.Ex_accountListPassport, storeBefore, "内容一致时不该再写一遍（update_time 也不该被刷新）");
+  }
+
+  // ---------- 6.4 addAccountPassport：首次采集 / 本人会话允许改写 ----------
+  console.log("--> 6.4 addAccountPassport：首次采集与本账号刷新必须照常写入");
+  {
+    const m = loadAccountModule({
+      cookies: [cookie("LTP0", "ltp-first"), cookie("dy_auth", "g1")],
+      values: {}
+    });
+    m.api.addAccountPassport("A1");
+    await sleep(40);
+    const store = JSON.parse(m.values.Ex_accountListPassport || "{}");
+    assert.ok(Array.isArray(store["A1"]) && store["A1"][0].value === "ltp-first", "首次采集必须写进该 uid");
+    assert.ok(Array.isArray(store.global) && store.global.length === 1, "全局侧必须一起存");
+    assert.ok(store.update_time, "写入时必须带 update_time");
+
+    const m2 = loadAccountModule({
+      cookies: [cookie("acf_uid", "A1"), cookie("LTP0", "ltp-new")],
+      values: { Ex_accountListPassport: JSON.stringify({ global: [], "A1": [cookie("LTP0", "ltp-old")] }) }
+    });
+    m2.api.addAccountPassport("A1");
+    await sleep(40);
+    const store2 = JSON.parse(m2.values.Ex_accountListPassport);
+    assert.strictEqual(store2["A1"][0].value, "ltp-new", "acf_uid 证明是本人会话时必须刷新为最新快照");
+  }
+
+  // ---------- 6.5 switchAccountPassport：只写 cookie 形状的数据 ----------
+  console.log("--> 6.5 switchAccountPassport：账本里的垃圾条目不得变成 cookie");
+  {
+    const m = loadAccountModule({
+      cookies: [cookie("LTP0", "old")],
+      values: {
+        Ex_accountListPassport: JSON.stringify({
+          "2001": [{ name: "LTP0", value: "x" }, null, { value: "no-name" }]
+        })
+      }
+    });
+    let called = 0;
+    m.api.switchAccountPassport("2001", () => { called++; });
+    await sleep(50);
+    assert.strictEqual(called, 1, "必须回调");
+    assert.deepStrictEqual(m.calls.del, ["LTP0"], "当前那条 LTP0 先删掉");
+    assert.strictEqual(m.calls.set.length, 1, "只有一条合法 cookie 会被写回，实际 " + m.calls.set.length);
+    assert.strictEqual(m.calls.set[0].name, "LTP0", "写回的名字必须是 LTP0，不能是 undefined");
   }
 
   // ---------- 7. 源码级护栏：四个包的关键守卫不许被改回去 ----------
@@ -192,6 +288,12 @@ async function run() {
   assert.ok(/account\["data"\]/.test(ACC_CODE), "必须真的读 list[uid].data 写回");
   assert.ok(/cookies\.length === 0/.test(ACC_CODE), "cleanCookie 必须有 0 cookie 的早退兜底");
   assert.ok(/Array\.isArray\(cookies\)/.test(ACC_CODE), "恢复逻辑必须对非数组入参兜底");
+  assert.ok(/sessionUid !== "" && sessionUid !== key/.test(ACC_CODE), "addAccountPassport 必须有「会话不是这个账号就不写」的守卫");
+  assert.ok(/private_arr\.length === 0/.test(ACC_CODE), "addAccountPassport 必须挡住空快照覆盖");
+  assert.ok(/AccountList_sameCookies\(store\[key\]/.test(ACC_CODE), "addAccountPassport 必须有幂等判断");
+  assert.ok(/AccountList_cookieList/.test(ACC_CODE), "写回前必须过滤成 cookie 形状");
+  assert.ok(/TODO（真机拆包/.test(ACC_SRC), "不确定的 passport 顺序/合并意图必须留 TODO");
+  assert.ok(/routers\/router\.js:116-118/.test(ACC_SRC), "TODO 必须指名调用顺序那处 file:line");
 
   assert.ok(!/querySelector\("\.ChatBarrageCollect-tip"\)\.click\(\)/.test(DC_CODE), "收藏提示的 .click() 必须判空后再点");
   assert.ok(/tries > 120/.test(DC_CODE), "1 秒轮询必须有上限");
@@ -205,7 +307,7 @@ async function run() {
   assert.ok(!/innerHTML = expiry - 1/.test(BAG_CODE), "不得再直接渲染裸时间戳");
   assert.ok(/if \(!chunk \|\| !expiryText\) continue/.test(BAG_CODE), "DOM 格子缺失时必须跳过而不是 insertBefore 抛错");
 
-  console.log("=== 账号管理回归测试 7 组场景全部通过 ===");
+  console.log("=== 账号管理回归测试 11 个场景全部通过（含 passport 守卫） ===");
 }
 
 run().catch((e) => {

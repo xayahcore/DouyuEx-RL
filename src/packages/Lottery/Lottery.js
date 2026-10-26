@@ -4,11 +4,23 @@ let lotteryHasNoticed = {};
 let lotteryHTML = "";
 let isLotteryNotice = false;
 let timer_lottery = 0;
+// 一次刷新最多取多少个在播抽奖详情（每个房间一次请求，必须有上限）
+const LOTTERY_MAX_ROOMS = 24;
 
 function initPkg_Lottery() {
-    setFansBadgeList();
-	initPkg_Lottery_Dom();
-	initPkg_Lottery_Func();
+    setFansBadgeList().catch(function (e) {
+        ExGuard_warn("抽奖", "粉丝牌列表加载失败（只影响「能否参与」的判断）", e);
+    });
+    try {
+        initPkg_Lottery_Dom();
+    } catch (e) {
+        ExGuard_warn("抽奖", "面板或入口图标插入失败", e);
+    }
+    try {
+        initPkg_Lottery_Func();
+    } catch (e) {
+        ExGuard_warn("抽奖", "交互绑定失败（抽奖面板可能打不开）", e);
+    }
     Lottery_Set();
 }
 
@@ -21,8 +33,13 @@ function Lottery_insertIcon() {
 	a.className = "ex-lottery";
 	a.innerHTML = '<a class="ex-panel__icon" title="全站抽奖信息"><svg style="display:block;" t="1636332741708" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="19181" width="32" height="32"><path d="M508.858182 986.042182c-261.748364 0-473.925818-212.177455-473.925818-473.925818S247.109818 38.190545 508.858182 38.190545s473.925818 212.177455 473.925818 473.925819-212.200727 473.925818-473.925818 473.925818m0-981.690182C228.421818 4.352 1.093818 231.703273 1.093818 512.116364s227.351273 507.764364 507.764364 507.764363c280.413091 0 507.787636-227.351273 507.787636-507.764363S789.271273 4.352 508.858182 4.352" fill="#FF4517" p-id="19182"></path><path d="M322.536727 512.302545l0.023273-1.326545-313.064727-1.931636c0 1.093818-0.093091 2.164364-0.093091 3.281454 0 90.88 24.785455 175.918545 67.84 248.925091l270.173091-155.997091a185.274182 185.274182 0 0 1-24.878546-92.951273zM416.791273 350.440727L264.029091 82.013091A492.986182 492.986182 0 0 0 77.498182 262.981818l270.173091 155.997091a186.717091 186.717091 0 0 1 69.12-68.538182zM602.856727 351.697455l151.831273-259.211637A488.261818 488.261818 0 0 0 508.718545 21.690182l0.023273 304.453818c34.350545 0 66.513455 9.355636 94.114909 25.553455zM258.536727 939.450182a488.471273 488.471273 0 0 0 241.710546 63.674182c2.839273 0 5.632-0.139636 8.448-0.186182V698.507636a185.064727 185.064727 0 0 1-94.068364-25.553454l-156.090182 266.496zM927.325091 270.452364l-257.466182 148.666181a185.204364 185.204364 0 0 1 25.041455 93.207273l-0.046546 1.070546 296.168727 1.838545c0.023273-0.977455 0.069818-1.931636 0.069819-2.909091 0-87.994182-23.249455-170.496-63.767273-241.873454zM600.855273 674.094545l148.573091 261.073455a492.776727 492.776727 0 0 0 178.106181-181.387636l-257.466181-148.642909a187.042909 187.042909 0 0 1-69.213091 68.95709z" fill="#FF4517" p-id="19183"></path><path d="M644.142545 512.302545a135.400727 135.400727 0 0 0-135.424-135.400727l-84.619636-160.791273 20.642909 173.824c-42.658909 22.784-71.400727 70.609455-71.400727 122.368a135.447273 135.447273 0 0 0 270.801454 0z m-133.492363 70.097455a68.491636 68.491636 0 1 1 0.023273-136.96 68.491636 68.491636 0 0 1-0.023273 136.96z" fill="#FF4517" p-id="19184"></path></svg><i id="lottery__tip" class="ex-panel__tip"></i></a>';
 	
-	let b = document.getElementsByClassName("ex-panel__wrap")[0];
+	const b = document.getElementsByClassName("ex-panel__wrap")[0];
+	if (!b) {
+		ExGuard_warn("抽奖", "胶囊条容器还没渲染，本次不插入入口图标");
+		return false;
+	}
 	b.insertBefore(a, b.childNodes[0]);
+	return true;
 	
 }
 
@@ -73,20 +90,35 @@ function Lottery_insertModal() {
 
 function initPkg_Lottery_Func() {
     let dom_notice = document.getElementById("lottery-notice");
-    document.getElementsByClassName("ex-lottery")[0].addEventListener("click", function() {
-        showExRightPanel("全站抽奖信息", this);
-        let dom = document.getElementsByClassName("lottery__wrap")[0];
-        if (dom) {
-            dom.innerHTML = lotteryHTML;
-        }
-        if (!lotteryHTML) {
-            initPkg_Lottery_Timer();
-        }
-    });
+    const iconDom = document.getElementsByClassName("ex-lottery")[0];
+    if (!iconDom) {
+        ExGuard_warn("抽奖", "入口图标不存在，抽奖面板无法打开");
+    } else {
+        iconDom.addEventListener("click", function() {
+            try {
+                showExRightPanel("全站抽奖信息", this);
+                let dom = document.getElementsByClassName("lottery__wrap")[0];
+                if (dom) {
+                    dom.innerHTML = lotteryHTML;
+                }
+                if (!lotteryHTML) {
+                    initPkg_Lottery_Timer();
+                }
+            } catch (e) {
+                ExGuard_warn("抽奖", "打开抽奖面板失败", e);
+            }
+        });
+    }
 
-    document.getElementById("lottery-refresh").addEventListener("click", debounce(() => {
-        initPkg_Lottery_Timer();
-    }, 3000));
+    const refreshDom = document.getElementById("lottery-refresh");
+    if (!refreshDom) {
+        ExGuard_warn("抽奖", "刷新按钮不存在，面板刷新不可用");
+    } else {
+        const refreshHandler = function () {
+            initPkg_Lottery_Timer();
+        };
+        refreshDom.addEventListener("click", typeof debounce === "function" ? debounce(refreshHandler, 3000) : refreshHandler);
+    }
 
     function startLotteryTimer() {
         stopLotteryTimer();
@@ -107,6 +139,10 @@ function initPkg_Lottery_Func() {
         }
     }
 
+    if (!dom_notice) {
+        ExGuard_warn("抽奖", "提醒开关不存在，抽奖提醒本次不可用");
+        return;
+    }
     dom_notice.addEventListener("click", () => {
         let ischecked = dom_notice.checked;
         if (ischecked == true) {
@@ -126,28 +162,44 @@ async function initPkg_Lottery_Timer() {
         lotteryHasNoticed = {};
     }
     let html = "";
-    let lotteryList = await getExLotteryList();
-    if (!lotteryList.data.list) return;
-    for (let i = 0; i < lotteryList.data.list.length; i++) {
-        let item = lotteryList.data.list[i];
+    const hall = await ExGuard_withTimeout(getExLotteryList(), 15000, "抽奖");
+    const list = hall && hall.data ? hall.data.list : null;
+    if (!Array.isArray(list)) {
+        ExGuard_warn("抽奖", "抽奖大厅接口没有返回 list，本次不更新列表");
+        lotteryHTML = "";
+        lotteryRenderNodata();
+        return;
+    }
+    const maxRooms = list.length > LOTTERY_MAX_ROOMS ? LOTTERY_MAX_ROOMS : list.length;
+    if (maxRooms < list.length) {
+        ExGuard_warn("抽奖", "在播抽奖过多（" + list.length + " 个），本次只取前 " + LOTTERY_MAX_ROOMS + " 个");
+    }
+    for (let i = 0; i < maxRooms; i++) {
+        const item = list[i];
+        try {
         if (item.status !== 0) {
             // status不为0说明已经开奖
             continue;
         }
-        let lotteryInfo = await getExLotteryInfo(item.room_id);
-        let condition = lotteryInfo.data.join_condition;
+        const lotteryInfo = await ExGuard_withTimeout(getExLotteryInfo(item.room_id), 12000, "抽奖");
+        const data = lotteryInfo && lotteryInfo.data ? lotteryInfo.data : null;
+        if (!data || !data.join_condition) {
+            ExGuard_warn("抽奖", "房间 " + item.room_id + " 的抽奖详情不完整，跳过");
+            continue;
+        }
+        let condition = data.join_condition;
         let joinText = "command_content" in condition ? `发送弹幕` : `赠送 ${condition.gift_name}（${condition.gift_price}）x${condition.gift_num}`;
-        let expireTime = Number(lotteryInfo.data.start_at) + Number(lotteryInfo.data.join_condition.expire_time);
+        let expireTime = Number(data.start_at) + Number(data.join_condition.expire_time);
         let expireText = getTimeDiff(expireTime * 1000, new Date().getTime());
         expireText = expireText == -1 ? "已结束" : "距结束：" + expireText;
         // 有这个房间的牌子或者不需要成为粉丝的 就都能参加
         let canJoin = myFansBadgeList.indexOf(String(item.room_id)) !== -1 || condition.lottery_range <= 1;
 
         if (canJoin && isLotteryNotice) {
-            let keyName = `${lotteryInfo.data.prize_name}|${lotteryInfo.data.start_at}`;
+            let keyName = `${data.prize_name}|${data.start_at}`;
             if (!(keyName in lotteryHasNoticed)) {
                 lotteryHasNoticed[keyName] = 1;
-                showMessage(`<a style="font-size:14px;border:none;" target="_blank" href="https://www.douyu.com/${item.room_id}">【${lotteryInfo.data.prize_name}x${lotteryInfo.data.prize_num}】${joinText}</a>`, "special", {
+                showMessage(`<a style="font-size:14px;border:none;" target="_blank" href="https://www.douyu.com/${item.room_id}">【${data.prize_name}x${data.prize_num}】${joinText}</a>`, "special", {
                     timeout: 100,
                 });
             }
@@ -162,26 +214,31 @@ async function initPkg_Lottery_Timer() {
                         <div class="lottery__expireTime">${expireText}</div>
                     </div>
                     <div class="lottery__info">
-                        <div class="lottery__prize">${lotteryInfo.data.prize_name}x${lotteryInfo.data.prize_num}</div>
+                        <div class="lottery__prize">${data.prize_name}x${data.prize_num}</div>
                         <div class="lottery__jointext">${joinText}</div>
                         <div style="color:${canJoin ? "#64ce83" : "#e74c3c"}" class="lottery__condition">${getJoinCondition(condition)}</div>
                     </div>
                 </div>
             </a>
         `;
+        } catch (e) {
+            ExGuard_warn("抽奖", "房间 " + item.room_id + " 的抽奖信息获取失败，跳过", e);
+        }
     }
 
-    let domNodata = document.getElementsByClassName("lottery__nodata")[0];
-    if (html.trim() !== "") {
-        domNodata.style.display = "none";
-    } else {
-        domNodata.style.display = "block";
-    }
     lotteryHTML = html;
-    let dom = document.getElementsByClassName("lottery__wrap")[0];
+    lotteryRenderNodata();
+    const dom = document.getElementsByClassName("lottery__wrap")[0];
     if (dom) {
         dom.innerHTML = lotteryHTML;
     }
+}
+
+/** 列表为空 / 请求失败时统一把「暂无数据」显示出来（节点缺失则什么都不做） */
+function lotteryRenderNodata() {
+    const domNodata = document.getElementsByClassName("lottery__nodata")[0];
+    if (!domNodata) return;
+    domNodata.style.display = lotteryHTML.trim() !== "" ? "none" : "block";
 }
 
 function getJoinCondition(condition) {
@@ -206,20 +263,12 @@ function getJoinCondition(condition) {
 }
 
 function getExLotteryList() {
-    return new Promise((resolve, reject) => {
-        GM_xmlhttpRequest({
-            method: "GET",
-            url: "https://www.douyu.com/lapi/interact/lottery/getHallList",
-            responseType: "json",
-            onload: response => {
-                let ret = response.response;
-                resolve(ret);
-            },
-            onerror: err => {
-                reject(err);
-            }
-        });
-    })
+    return ExGuard_xhr({
+        method: "GET",
+        url: "https://www.douyu.com/lapi/interact/lottery/getHallList",
+        responseType: "json",
+        tag: "抽奖",
+    }, 15000);
 }
 
 function getExLotteryInfo(room_id) {
@@ -240,25 +289,34 @@ function getExLotteryInfo(room_id) {
 }
 
 async function setFansBadgeList() {
-	let ret = [];
-	let doc = await fetch('https://www.douyu.com/member/cp/getFansBadgeList',{
-		method: 'GET',
-		mode: 'no-cors',
-		cache: 'default',
-		credentials: 'include',
-	}).then(res => {
-		return res.text();
-	}).catch(err => {
-		console.log("请求失败!", err);
-	})
-	doc = (new DOMParser()).parseFromString(doc, 'text/html');
-	let a = doc.getElementsByClassName("fans-badge-list")[0].lastElementChild;
-	let n = a.children.length;
-	for (let i = 0; i < n; i++) {
-		let rid = a.children[i].getAttribute("data-fans-room");
-		ret.push(rid);
-	}
-	myFansBadgeList = ret;
+    let ret = [];
+    try {
+        const doc = await fetch("https://www.douyu.com/member/cp/getFansBadgeList", {
+            method: "GET",
+            mode: "no-cors",
+            cache: "default",
+            credentials: "include",
+        }).then((res) => {
+            return res.text();
+        }).then((text) => {
+            return new DOMParser().parseFromString(String(text || ""), "text/html");
+        });
+        const list = doc ? doc.getElementsByClassName("fans-badge-list")[0] : null;
+        if (!list || !list.lastElementChild) {
+            ExGuard_warn("抽奖", "粉丝牌列表结构不符合预期（未登录或页面改版），按「没有粉丝牌」处理");
+            myFansBadgeList = [];
+            return;
+        }
+        const last = list.lastElementChild;
+        for (let i = 0; i < last.children.length; i++) {
+            const roomId = last.children[i].getAttribute("data-fans-room");
+            if (roomId) ret.push(roomId);
+        }
+        myFansBadgeList = ret;
+    } catch (e) {
+        ExGuard_warn("抽奖", "粉丝牌列表请求失败，按「没有粉丝牌」处理", e);
+        myFansBadgeList = [];
+    }
 }
 
 
@@ -270,12 +328,21 @@ function saveData_Lottery() {
 }
 
 function Lottery_Set() {
-	// 设置初始化
-    let ret = localStorage.getItem("ExSave_Lottery");
-	if (ret != null) {
-        let retJson = JSON.parse(ret);
-        if (retJson.isNotice == true) {
-            document.getElementById("lottery-notice").click();
+    const saved = localStorage.getItem("ExSave_Lottery");
+    if (saved == null) return;
+    let parsed = null;
+    try {
+        parsed = JSON.parse(saved);
+    } catch (e) {
+        ExGuard_warn("抽奖", "本地存储的抽奖设置已损坏，按未开启处理", e);
+        return;
+    }
+    if (parsed && parsed.isNotice == true) {
+        const checkbox = document.getElementById("lottery-notice");
+        if (checkbox) {
+            checkbox.click();
+        } else {
+            ExGuard_warn("抽奖", "提醒开关不存在，无法恢复上次的开启状态");
         }
     }
 }

@@ -14,10 +14,22 @@ let repeatedDanmakuOriginalFontSizeMap = new WeakMap();
 let repeatedDanmakuCleanupTimer = null;
 let repeatedDanmakuDomHook = null;
 
-if (isRemoveRepeatedDanmaku) removeRepeatedDanmaku();
+// 轮询参数：默认 1 秒 × 60 次（1 分钟）；测试会改这份配置来验证上限
+let RemoveRepeatedDanmaku_pollOpts = { intervalMs: 1000, maxTries: 60, tag: "屏蔽重复弹幕" };
+
+try {
+  if (isRemoveRepeatedDanmaku) removeRepeatedDanmaku();
+} catch (e) {
+  ExGuard_warn("屏蔽重复弹幕", "启动时挂载失败，稍后随面板重绘再试", e);
+}
 
 function initPkg_Shield_RemoveRepeatedDanmaku() {
   const shieldTool = document.getElementsByClassName("FilterKeywords")[0];
+  if (!shieldTool) {
+    ExGuard_warn("屏蔽重复弹幕", "屏蔽设置面板不存在，本次不注入开关");
+    return;
+  }
+  if (document.getElementById("ex-removeRepeatedDanmaku")) return;
   shieldTool.insertAdjacentHTML(
     "afterbegin",
     `<div class="FilterSwitchStatus" id="ex-removeRepeatedDanmaku">
@@ -42,10 +54,13 @@ function initPkg_Shield_RemoveRepeatedDanmaku() {
   );
 
   const dom = document.getElementById("ex-removeRepeatedDanmaku");
+  if (!dom) return;
   const statusSpan = dom.querySelector(".FilterSwitchStatus-status");
   const switchSpan = dom.querySelector(".FilterSwitchStatus-switch");
+  if (!statusSpan || !switchSpan) return;
   const secondsInput = document.getElementById("ex-repeatedDanmakuSeconds");
   const enlargeCheckbox = document.getElementById("ex-enlargeDanmaku");
+  if (!secondsInput || !enlargeCheckbox) return;
 
   // 阻止输入框和checkbox点击事件冒泡
   secondsInput.addEventListener("click", (e) => {
@@ -173,20 +188,22 @@ function removeRepeatedDanmaku() {
     `
   );
 
-  let timer = setInterval(() => {
-    const dom = document.querySelector(".danmu-fbb2a3");
-    if (dom) {
-      clearInterval(timer);
+  ExGuard_pollFor(
+    ".danmu-fbb2a3",
+    function () {
       // 开启定期清理定时器
       startRepeatedDanmakuCleanupTimer();
 
       repeatedDanmakuDomHook = new DomHook(".danmu-fbb2a3", false, (m) => {
-        if (m.length <= 0) return;
+        try {
+        if (!m || m.length <= 0) return;
         if (!isRemoveRepeatedDanmaku) return;
         if (m[0].addedNodes.length <= 0 && m[0].removedNodes.length > 0) {
           const removedDom = m[0].removedNodes[0];
-          const uuid = removedDom.comment.uuid;
-          const endTime = removedDom.comment.startTime + removedDom.comment.duration;
+          const removedComment = removedDom && removedDom.comment;
+          if (!removedComment) return;
+          const uuid = removedComment.uuid;
+          const endTime = removedComment.startTime + removedComment.duration;
           const now = Date.now();
           if (now > endTime) return;
           // 存储过期时间戳
@@ -206,7 +223,7 @@ function removeRepeatedDanmaku() {
 
         if (m[0].addedNodes.length <= 0) return;
         const dom = m[0].addedNodes[0];
-        if (!dom) return;
+        if (!dom || !dom.comment) return;
         const now = Date.now();
         const uuid = dom.comment.uuid;
         // 检查 UUID 是否存在且未过期
@@ -260,9 +277,13 @@ function removeRepeatedDanmaku() {
           repeatedDanmakuDomMap[danmakuText] = dom;
           repeatedDanmakuCountMap[danmakuText] = 1;
         }
+        } catch (e) {
+          ExGuard_warn("屏蔽重复弹幕", "处理弹幕节点失败（多半是页面结构变化），跳过这一条", e);
+        }
       });
-    }
-  }, 1000);
+    },
+    Object.assign({ tag: "屏蔽重复弹幕" }, RemoveRepeatedDanmaku_pollOpts)
+  );
 }
 
 // 定期清理过期的弹幕记录

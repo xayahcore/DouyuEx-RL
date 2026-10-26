@@ -1,7 +1,16 @@
 let isRemoveDanmakuBackground = getLocalIsRemoveDanmakuBackground();
-if (isRemoveDanmakuBackground) removeDanmakuBackground();
+try {
+  if (isRemoveDanmakuBackground) removeDanmakuBackground();
+} catch (e) {
+  ExGuard_warn("屏蔽弹幕背景", "启动时应用样式失败，稍后随面板重绘再试", e);
+}
 function initPkg_Shield_RemoveDanmakuBackground() {
   const shieldTool = document.getElementsByClassName("FilterKeywords")[0];
+  if (!shieldTool) {
+    ExGuard_warn("屏蔽弹幕背景", "屏蔽设置面板不存在，本次不注入开关");
+    return;
+  }
+  if (document.getElementById("ex-removeDanmakuBackground")) return;
   shieldTool.insertAdjacentHTML(
     "afterbegin",
     `<div class="FilterSwitchStatus" id="ex-removeDanmakuBackground">
@@ -16,8 +25,10 @@ function initPkg_Shield_RemoveDanmakuBackground() {
   );
   
   const dom = document.getElementById("ex-removeDanmakuBackground");
+  if (!dom) return;
   const statusSpan = dom.querySelector(".FilterSwitchStatus-status");
   const switchSpan = dom.querySelector(".FilterSwitchStatus-switch");
+  if (!statusSpan || !switchSpan) return;
   dom.addEventListener("click", () => {
     isRemoveDanmakuBackground = !isRemoveDanmakuBackground;
     if (isRemoveDanmakuBackground) {

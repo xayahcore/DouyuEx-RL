@@ -1,6 +1,11 @@
 let isRemoveDanmakuImage = getLocalIsRemoveDanmakuImage();
 function initPkg_Shield_RemoveDanmakuImage() {
   const shieldTool = document.getElementsByClassName("ShieldTool-list")[0];
+  if (!shieldTool) {
+    ExGuard_warn("屏蔽弹幕图片", "弹幕屏蔽工具条不存在，本次不注入开关");
+    return;
+  }
+  if (document.getElementById("ex-RemoveDanmakuImage")) return;
   shieldTool.insertAdjacentHTML(
     "beforeend",
     `
@@ -11,6 +16,7 @@ function initPkg_Shield_RemoveDanmakuImage() {
   );
   if (isRemoveDanmakuImage) removeDanmakuImage();
   const dom = document.getElementById("ex-RemoveDanmakuImage");
+  if (!dom) return;
   dom.addEventListener("click", () => {
     isRemoveDanmakuImage = !isRemoveDanmakuImage;
     if (isRemoveDanmakuImage) {
