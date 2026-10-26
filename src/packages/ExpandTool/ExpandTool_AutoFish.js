@@ -4,6 +4,63 @@ let nextFishEndTime = 0;
 let isFishing = false;
 let timerAutoFish = 0;
 
+// 活动接口单次请求的上限：超过就按失败处理（不设上限时，黑洞连接会让 await 永远挂着）
+const AUTOFISH_REQUEST_TIMEOUT = 15000;
+// 连续失败多少次就停手（1.5 秒一轮，失败不能无限重试刷屏）
+const AUTOFISH_MAX_FAIL = 3;
+let autoFishFailCount = 0;
+
+/**
+ * 活动接口的统一请求：**一定会 settle**。
+ *
+ * 旧实现四个包装器的 .catch 只 console.log 不 resolve —— 请求失败 / 被拦截 / 响应不是 JSON 时
+ * await 就永远挂着：勾选框已选中、两种模式单选被 AutoFish_lockMode(true) 锁死、界面零提示，
+ * 用户只能刷新页面。现在：成功给解析后的 JSON，失败 / 超时 / 解析异常一律 resolve(null)，
+ * 由调用方判空后把界面复位并给出提示。
+ */
+function AutoFish_requestJson(url, options, tag) {
+  return new Promise((resolve) => {
+    let settled = false;
+    const finish = (value) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      resolve(value);
+    };
+    const timer = setTimeout(() => {
+      if (typeof ExGuard_warn === "function") {
+        ExGuard_warn("自动钓鱼", (tag || url) + " 超过 " + AUTOFISH_REQUEST_TIMEOUT + "ms 未返回，按失败处理");
+      }
+      finish(null);
+    }, AUTOFISH_REQUEST_TIMEOUT);
+    let request;
+    try {
+      request = fetch(url, options);
+    } catch (e) {
+      if (typeof ExGuard_warn === "function") ExGuard_warn("自动钓鱼", (tag || url) + " 请求无法发起", e);
+      finish(null);
+      return;
+    }
+    Promise.resolve(request)
+      .then((res) => res.json())
+      .then((ret) => finish(ret))
+      .catch((err) => {
+        if (typeof ExGuard_warn === "function") ExGuard_warn("自动钓鱼", (tag || url) + " 请求失败", err);
+        finish(null);
+      });
+  });
+}
+
+/** 放弃本次自动钓鱼并复位界面：取消勾选 + 解锁模式 + 落盘，保证"界面状态 = 存储状态" */
+function AutoFish_abort(message) {
+  const checkbox = document.getElementById("extool__autofish_start");
+  if (checkbox) checkbox.checked = false;
+  AutoFish_lockMode(false);
+  saveData_AutoFish();
+  if (message) showMessage(message, "error");
+  return null;
+}
+
 function initPkg_ExpandTool_AutoFish() {
   ExpandTool_AutoFish_insertFunc();
   ExpandTool_AutoFish_Set();
@@ -26,25 +83,25 @@ function ExpandTool_AutoFish_insertFunc() {
     showMessage("【自动钓鱼】开始自动钓鱼", "info");
     autoFishInfo = await AutoFish_getFishInfo();
     const homepageRes = await AutoFish_getHomepageData();
+    // 两个请求任一失败（断网 / 接口被拦 / 超时）都会拿到 null：
+    // 旧实现这里 await 永不返回，界面就停在"勾选着 + 模式被锁死"的状态。
+    if (!Array.isArray(autoFishInfo) || !homepageRes) {
+      autoFishInfo = [];
+      return AutoFish_abort("【自动钓鱼】活动信息获取失败，请稍后重试");
+    }
     if (homepageRes.data) {
-      let baitData = homepageRes.data.baits.find((item) => item.inUse);
+      let baitData = (homepageRes.data.baits || []).find((item) => item.inUse);
       if (!baitData) {
-        document.getElementById("extool__autofish_start").checked = false;
-        AutoFish_lockMode(false);
-        return showMessage("【自动钓鱼】请设置鱼饵", "error");
+        return AutoFish_abort("【自动钓鱼】请设置鱼饵");
       }
       baitId = baitData.id;
 
       const myCh = homepageRes.data.myCh;
       if (!myCh) {
-        document.getElementById("extool__autofish_start").checked = false;
-        AutoFish_lockMode(false);
-        return showMessage("【自动钓鱼】请设置形象", "error");
+        return AutoFish_abort("【自动钓鱼】请设置形象");
       }
     } else {
-      document.getElementById("extool__autofish_start").checked = false;
-      AutoFish_lockMode(false);
-      return showMessage("【自动钓鱼】未能获取活动信息", "error");
+      return AutoFish_abort("【自动钓鱼】未能获取活动信息");
     }
     saveData_AutoFish();
 
@@ -79,22 +136,33 @@ function ExpandTool_AutoFish_insertFunc() {
             }
           } else {
             const fishRes = await AutoFish_startFish();
-            if (fishRes.error !== 0) {
-              showMessage(`【自动钓鱼】${fishRes.msg}`, "error");
-              console.log(fishRes, "钓鱼失败");
-              if (fishRes.error == 1001007) {
-                // 操作失败
-                await endFish();
-              } else if (fishRes.error == 1005003) {
-                // 鱼饵不足
-                document.getElementById("extool__autofish_start").checked = false;
-                AutoFish_lockMode(false);
-                saveData_AutoFish();
+            if (!fishRes) {
+              // 请求层失败（断网 / 超时 / 响应不是 JSON）：既不能拿 null 当响应继续解引用，
+              // 也不该每 1.5 秒无脑重试 —— 连续 3 次就停手并复位界面。
+              autoFishFailCount++;
+              if (typeof ExGuard_warn === "function") {
+                ExGuard_warn("自动钓鱼", "下杆请求失败（连续 " + autoFishFailCount + " 次）");
+              }
+              if (autoFishFailCount >= AUTOFISH_MAX_FAIL) {
+                AutoFish_abort("【自动钓鱼】连续 " + AUTOFISH_MAX_FAIL + " 次请求失败，已停止");
                 return;
               }
-            } else if (fishRes.data && fishRes.data.fishing) {
-              isFishing = true;
-              nextFishEndTime = fishRes.data.fishing.fishEtMs;
+            } else {
+              autoFishFailCount = 0;
+              if (fishRes.error !== 0) {
+                showMessage(`【自动钓鱼】${fishRes.msg}`, "error");
+                console.log(fishRes, "钓鱼失败");
+                if (fishRes.error == 1001007) {
+                  // 操作失败
+                  await endFish();
+                } else if (fishRes.error == 1005003) {
+                  // 鱼饵不足
+                  return AutoFish_abort(null);
+                }
+              } else if (fishRes.data && fishRes.data.fishing) {
+                isFishing = true;
+                nextFishEndTime = fishRes.data.fishing.fishEtMs;
+              }
             }
           }
         }
@@ -113,10 +181,22 @@ function ExpandTool_AutoFish_insertFunc() {
 
 async function endFish() {
   const fishRes = await AutoFish_endFish();
+  if (!fishRes) {
+    // 收杆请求失败：旧实现这里直接解引用 null 抛 TypeError（在 fishLoop 里被吞成一条 console.error）
+    autoFishFailCount++;
+    if (typeof ExGuard_warn === "function") {
+      ExGuard_warn("自动钓鱼", "收杆请求失败（连续 " + autoFishFailCount + " 次）");
+    }
+    if (autoFishFailCount >= AUTOFISH_MAX_FAIL) {
+      AutoFish_abort("【自动钓鱼】连续 " + AUTOFISH_MAX_FAIL + " 次请求失败，已停止");
+    }
+    return;
+  }
+  autoFishFailCount = 0;
   if (fishRes.error !== 0) {
     console.log(fishRes, "收杆失败");
     const homepageRes = await AutoFish_getHomepageData();
-    if (homepageRes.data.fishing.stat == 0) {
+    if (homepageRes && homepageRes.data && homepageRes.data.fishing && homepageRes.data.fishing.stat == 0) {
       // 钓鱼已完成
       isFishing = false;
       nextFishEndTime = 0;
@@ -124,13 +204,16 @@ async function endFish() {
     return;
   }
   let str = `【自动钓鱼】`;
-  let fishData = autoFishInfo.find((item) => item.fishId == fishRes.data.fish.id);
-  if (fishData) {
-    str += `获得${fishData.name}${fishRes.data.fish.wei}斤`;
+  const fish = fishRes.data && fishRes.data.fish ? fishRes.data.fish : null;
+  const fishList = Array.isArray(autoFishInfo) ? autoFishInfo : [];
+  let fishData = fish ? fishList.find((item) => item.fishId == fish.id) : null;
+  if (fishData && fish) {
+    str += `获得${fishData.name}${fish.wei}斤`;
   }
-  if (fishRes.data.awards && fishRes.data.awards.length > 0) {
-    for (let i = 0; i < fishRes.data.awards.length; i++) {
-      let award = fishRes.data.awards[i];
+  const awards = fishRes.data && Array.isArray(fishRes.data.awards) ? fishRes.data.awards : [];
+  if (awards.length > 0) {
+    for (let i = 0; i < awards.length; i++) {
+      let award = awards[i];
       str += `${fishData ? "，" : ""}获得${award.awardName}x${award.awardNum}`;
     }
   }
@@ -182,98 +265,64 @@ function AutoFish_getRids() {
 function ExpandTool_AutoFish_Set() {
   let data = AutoFish_getSave();
   if (!data.rids.includes(rid)) return;
-  
+
   // 设置模式（兼容旧版本，默认全天）
+  // 旧实现在这里裸取 .checked / .click()：存储里的 mode 值一旦不在选项里
+  //（改版删过模式 / 手改过 localStorage），整个 initPkg_ExpandTool 就停在 TypeError，
+  // 后面所有扩展功能一起消失。
   let mode = data.modes && data.modes[rid] ? data.modes[rid] : "all";
-  document.querySelector(`input[name="autofish_mode"][value="${mode}"]`).checked = true;
-  
-  document.getElementById("extool__autofish_start").click();
+  const modeRadio = document.querySelector(`input[name="autofish_mode"][value="${mode}"]`);
+  if (!modeRadio) {
+    if (typeof ExGuard_warn === "function") ExGuard_warn("自动钓鱼", "存储里的模式值非法（" + mode + "），本次不自动开启");
+    return;
+  }
+  modeRadio.checked = true;
+
+  const checkbox = document.getElementById("extool__autofish_start");
+  if (!checkbox) {
+    if (typeof ExGuard_warn === "function") ExGuard_warn("自动钓鱼", "面板里的开关不存在，本次不自动开启");
+    return;
+  }
+  checkbox.click();
 }
 
 function AutoFish_getFishInfo() {
-  return new Promise((resolve) => {
-    fetch(`https://www.douyu.com/japi/revenuenc/web/actfans/achieve/accList?rid=${rid}&type=1&period=1`, {
-      method: "GET",
-      mode: "no-cors",
-      cache: "default",
-      credentials: "include"
-    })
-      .then((res) => {
-        return res.json();
-      })
-      .then((ret) => {
-        if (ret.data) {
-          resolve(ret.data.accList);
-        } else {
-          resolve([]);
-        }
-      })
-      .catch((err) => {
-        console.log("请求失败!", err);
-      });
+  return AutoFish_requestJson(
+    `https://www.douyu.com/japi/revenuenc/web/actfans/achieve/accList?rid=${rid}&type=1&period=1`,
+    { method: "GET", mode: "no-cors", cache: "default", credentials: "include" },
+    "成就列表"
+  ).then((ret) => {
+    if (!ret) return null; // 请求层失败：调用方必须判空
+    return ret.data && Array.isArray(ret.data.accList) ? ret.data.accList : [];
   });
 }
 
 function AutoFish_getHomepageData() {
-  return new Promise((resolve) => {
-    fetch(`https://www.douyu.com/japi/revenuenc/web/actfans/fishing/homePage?rid=${rid}&opt=1`, {
-      method: "GET",
-      mode: "no-cors",
-      cache: "default",
-      credentials: "include"
-    })
-      .then((res) => {
-        return res.json();
-      })
-      .then((ret) => {
-        resolve(ret);
-      })
-      .catch((err) => {
-        console.log("请求失败!", err);
-      });
-  });
+  return AutoFish_requestJson(
+    `https://www.douyu.com/japi/revenuenc/web/actfans/fishing/homePage?rid=${rid}&opt=1`,
+    { method: "GET", mode: "no-cors", cache: "default", credentials: "include" },
+    "活动首页"
+  );
 }
 
 function AutoFish_startFish() {
-  return new Promise((resolve) => {
-    fetch("https://www.douyu.com/japi/revenuenc/web/actfans/fishing/fishing", {
-      method: "POST",
-      mode: "no-cors",
-      credentials: "include",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: `ctn=${getCCN()}&rid=${rid}&baitId=${baitId}&ver=1.1`
-    })
-      .then((res) => {
-        return res.json();
-      })
-      .then((ret) => {
-        resolve(ret);
-      })
-      .catch((err) => {
-        console.log("请求失败!", err);
-      });
-  });
+  return AutoFish_requestJson("https://www.douyu.com/japi/revenuenc/web/actfans/fishing/fishing", {
+    method: "POST",
+    mode: "no-cors",
+    credentials: "include",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: `ctn=${getCCN()}&rid=${rid}&baitId=${baitId}&ver=1.1`
+  }, "下杆");
 }
 
 function AutoFish_endFish() {
-  return new Promise((resolve) => {
-    fetch("https://www.douyu.com/japi/revenuenc/web/actfans/fishing/reelIn", {
-      method: "POST",
-      mode: "no-cors",
-      credentials: "include",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: `ctn=${getCCN()}&rid=${rid}`
-    })
-      .then((res) => {
-        return res.json();
-      })
-      .then((ret) => {
-        resolve(ret);
-      })
-      .catch((err) => {
-        console.log("请求失败!", err);
-      });
-  });
+  return AutoFish_requestJson("https://www.douyu.com/japi/revenuenc/web/actfans/fishing/reelIn", {
+    method: "POST",
+    mode: "no-cors",
+    credentials: "include",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: `ctn=${getCCN()}&rid=${rid}`
+  }, "收杆");
 }
 
 function isInFishingTime() {

@@ -894,6 +894,319 @@ function testDanmakuTailEnterGuard() {
 }
 
 /* ------------------------------------------------------------------ */
+/* 场景 14: 自动钓鱼四个包装器必须 settle（P0-4）                      */
+/* ------------------------------------------------------------------ */
+
+const AUTOFISH_SRC = read("src/packages/ExpandTool/ExpandTool_AutoFish.js");
+const SENDGIFT_SRC = read("src/packages/ExpandTool/ExpandTool_SendGift.js");
+const REDPACKET_SRC = read("src/packages/ExpandTool/ExpandTool_RedPacket_Room.js");
+const TREASURE_SRC = read("src/packages/ExpandTool/ExpandTool_Treasure.js");
+
+function loadAutoFish(opts) {
+    const options = opts || {};
+    const dom = makeDom(options.html || "<!DOCTYPE html><html><body>" +
+        "<input type='checkbox' id='extool__autofish_start'>" +
+        "<input type='radio' name='autofish_mode' value='all' checked>" +
+        "<input type='radio' name='autofish_mode' value='contest'>" +
+        "</body></html>");
+    const win = dom.window;
+    const log = collectConsole();
+    const clock = makeClock();
+    const messages = [];
+    let fetchImpl = options.fetch || function () { return Promise.reject(new Error("blocked")); };
+    const factory = new Function(
+        "document", "window", "localStorage", "console", "fetch", "showMessage", "rid", "getCCN", "sleep",
+        "setTimeout", "clearTimeout", "setInterval", "clearInterval",
+        EXGUARD_SRC + "\n" + AUTOFISH_SRC +
+        "\nreturn { init: initPkg_ExpandTool_AutoFish, getFishInfo: AutoFish_getFishInfo, " +
+        "getHomepageData: AutoFish_getHomepageData, startFish: AutoFish_startFish, endFish: AutoFish_endFish, " +
+        "lockMode: AutoFish_lockMode };"
+    );
+    const api = factory(
+        win.document, win, win.localStorage, log.console,
+        function (u, o) { return fetchImpl(u, o); },
+        function (text, type) { messages.push({ text: String(text), type: type }); },
+        "9999", function () { return "ctn"; },
+        function (ms) { return new Promise(function (r) { clock.setTimeout(r, ms || 0); }); },
+        clock.setTimeout, clock.clearTimeout, clock.setInterval, clock.clearInterval
+    );
+    return { dom: dom, win: win, api: api, log: log, clock: clock, messages: messages, setFetch: function (fn) { fetchImpl = fn; } };
+}
+
+async function testAutoFishAlwaysSettles() {
+    const wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+    const race = function (promise, label) {
+        return Promise.race([promise, new Promise(function (_, rej) {
+            setTimeout(function () { rej(new Error(label + " 超时：Promise 永不 settle")); }, 1000);
+        })]);
+    };
+
+    // ① 四个包装器在 fetch 失败时必须 resolve(null)（旧实现 .catch 只 console.log → 永远 pending）
+    const failing = loadAutoFish({ fetch: function () { return Promise.reject(new Error("ERR_BLOCKED_BY_CLIENT")); } });
+    assert.strictEqual(await race(failing.api.getFishInfo(), "getFishInfo"), null, "成就列表失败必须 resolve(null)");
+    assert.strictEqual(await race(failing.api.getHomepageData(), "getHomepageData"), null, "活动首页失败必须 resolve(null)");
+    assert.strictEqual(await race(failing.api.startFish(), "startFish"), null, "下杆失败必须 resolve(null)");
+    assert.strictEqual(await race(failing.api.endFish(), "endFish"), null, "收杆失败必须 resolve(null)");
+    assert.ok(failing.log.warns.some(function (s) { return s.indexOf("自动钓鱼") !== -1; }), "失败必须留痕");
+
+    // ② 连接黑洞（fetch 永不返回）：到超时点也必须 resolve(null)
+    const hanging = loadAutoFish({ fetch: function () { return new Promise(function () {}); } });
+    const pending = hanging.api.startFish();
+    hanging.clock.advance(15000);
+    assert.strictEqual(await race(pending, "startFish(超时)"), null, "超过 15s 未返回必须按失败处理");
+    assert.ok(hanging.log.warns.some(function (s) { return s.indexOf("未返回") !== -1; }), "超时必须留痕");
+
+    // ③ 成功路径不能被吃：正常响应仍要原样返回
+    const ok = loadAutoFish({
+        fetch: function (u) {
+            if (u.indexOf("accList") !== -1) return Promise.resolve({ json: function () { return Promise.resolve({ data: { accList: [{ fishId: 1, name: "鲫鱼" }] } }); } });
+            if (u.indexOf("homePage") !== -1) return Promise.resolve({ json: function () { return Promise.resolve({ data: { bait: 1 } }); } });
+            return Promise.resolve({ json: function () { return Promise.resolve({ error: 0, data: { fish: { id: 1, wei: 2 } } }); } });
+        },
+    });
+    assert.deepStrictEqual(await ok.api.getFishInfo(), [{ fishId: 1, name: "鲫鱼" }], "成功时必须返回成就列表");
+    assert.deepStrictEqual((await ok.api.getHomepageData()).data, { bait: 1 }, "成功时必须返回首页数据");
+    assert.strictEqual((await ok.api.endFish()).error, 0, "成功时必须返回响应体");
+
+    // ④ 点开关后拿不到活动信息：旧实现卡在 await —— 勾选保持选中、模式单选被锁死、零提示
+    const clickFail = loadAutoFish({ fetch: function () { return Promise.reject(new Error("blocked")); } });
+    clickFail.api.init(); // 必须先绑定 click，否则测的是空点击
+    const box = clickFail.win.document.getElementById("extool__autofish_start");
+    box.checked = true;
+    box.dispatchEvent(new clickFail.win.Event("click"));
+    await wait(60);
+    assert.strictEqual(box.checked, false, "拿不到活动信息时必须取消勾选");
+    const radios = clickFail.win.document.querySelectorAll('input[name="autofish_mode"]');
+    assert.strictEqual(radios[0].disabled, false, "必须解锁模式单选（旧实现锁死到刷新）");
+    assert.ok(clickFail.messages.some(function (m) { return m.text.indexOf("活动信息获取失败") !== -1; }),
+        "必须明确提示，实际 " + JSON.stringify(clickFail.messages));
+    assert.strictEqual(JSON.parse(clickFail.win.localStorage.getItem("ExSave_AutoFish") || "{}").rids.length || 0, 0,
+        "存储必须与界面一致（不再记录这个房间）");
+
+    console.log("✓ 场景 14 通过: 自动钓鱼四个包装器失败/超时全部 settle，界面复位并提示");
+}
+
+/* ------------------------------------------------------------------ */
+/* 场景 15: 送礼完成判定按真实计数（P0-5）                             */
+/* ------------------------------------------------------------------ */
+
+function loadSendGift(opts) {
+    const options = opts || {};
+    const dom = makeDom("<!DOCTYPE html><html><body><div class='extool'></div></body></html>");
+    const win = dom.window;
+    const log = collectConsole();
+    const messages = [];
+    const calls = [];
+    let fetchImpl = options.fetch || function () { return Promise.resolve({ json: function () { return Promise.resolve({ msg: "ok", data: { priceType: 1 } }); } }); };
+    const factory = new Function(
+        "document", "window", "localStorage", "console", "fetch", "showMessage", "rid", "sleep", "confirm", "Event",
+        EXGUARD_SRC + "\n" + SENDGIFT_SRC +
+        "\nreturn { insertDom: ExpandTool_SendGift_insertDom, insertFunc: ExpandTool_SendGift_insertFunc, " +
+        "save: saveData_ExpandTool_SendGift };"
+    );
+    const api = factory(
+        win.document, win, win.localStorage, log.console,
+        function (u, o) { calls.push(u); return fetchImpl(u, o); },
+        function (text, type) { messages.push({ text: String(text), type: type }); },
+        "9999", function () { return Promise.resolve(); },
+        function () { return options.confirm === undefined ? true : options.confirm; },
+        win.Event
+    );
+    return { dom: dom, win: win, api: api, log: log, messages: messages, calls: calls };
+}
+
+async function testSendGiftRealCount() {
+    const wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+    let call = 0;
+    const page = loadSendGift({
+        fetch: function () {
+            call++;
+            if (call === 2) return Promise.reject(new Error("network down"));
+            return Promise.resolve({ json: function () { return Promise.resolve({ msg: "ok", data: { priceType: 2 } }); } });
+        },
+    });
+    page.api.insertDom();
+    page.api.insertFunc();
+    const doc = page.win.document;
+    doc.getElementById("extool__sendgift_cnt").value = "3";
+    doc.getElementById("extool__sendgift_delay").value = "0";
+
+    doc.getElementById("extool__sendgift_btn").dispatchEvent(new page.win.Event("click"));
+    await wait(80);
+
+    assert.strictEqual(page.calls.length, 3, "数量 3 必须真的发 3 次，实际 " + page.calls.length);
+    // 红：旧实现把「完毕」判定写在异步回调里（i 恒为末值），第一个回调回来就宣布完毕，
+    //     而「执行中」写在循环之后 → 顺序颠倒。现在第一条必须是"执行中"。
+    assert.ok(page.messages.length >= 2, "必须至少有「执行中」和「完成」两条提示，实际 " + JSON.stringify(page.messages));
+    assert.ok(page.messages[0].text.indexOf("执行中") !== -1,
+        "第一条提示必须是「执行中」，实际 " + JSON.stringify(page.messages[0]));
+    const last = page.messages[page.messages.length - 1];
+    assert.ok(last.text.indexOf("成功 2/3") !== -1, "完成提示必须是真实计数，实际 " + JSON.stringify(last.text));
+    assert.ok(last.text.indexOf("失败 1") !== -1, "失败数必须体现，实际 " + JSON.stringify(last.text));
+
+    // 全失败：必须是 error 类型且 0/2
+    const bad = loadSendGift({ fetch: function () { return Promise.reject(new Error("boom")); } });
+    bad.api.insertDom();
+    bad.api.insertFunc();
+    bad.win.document.getElementById("extool__sendgift_cnt").value = "2";
+    bad.win.document.getElementById("extool__sendgift_btn").dispatchEvent(new bad.win.Event("click"));
+    await wait(80);
+    const badLast = bad.messages[bad.messages.length - 1];
+    assert.ok(badLast.text.indexOf("全部失败") !== -1, "全失败必须明确说全部失败，实际 " + JSON.stringify(badLast.text));
+    assert.strictEqual(badLast.type, "error", "全失败必须用 error 类型");
+
+    console.log("✓ 场景 15 通过: 送礼按真实回调计数判断完成，「执行中」先于发送，失败数如实汇总");
+}
+
+/* ------------------------------------------------------------------ */
+/* 场景 16: 红包 verifyFans 的 catch 与轮询失败上限（P0-6 / P1-11）     */
+/* ------------------------------------------------------------------ */
+
+function loadRedPacket(opts) {
+    const options = opts || {};
+    const dom = makeDom("<!DOCTYPE html><html><body><input type='checkbox' id='extool__redpacekt_room_start'></body></html>");
+    const win = dom.window;
+    const log = collectConsole();
+    const clock = makeClock();
+    const messages = [];
+    let verifyImpl = options.verify || function () { return Promise.resolve(false); };
+    let fetchImpl = options.fetch || function () { return Promise.resolve({ json: function () { return Promise.resolve({ data: { list: [] } }); } }); };
+    const factory = new Function(
+        "document", "window", "localStorage", "console", "fetch", "verifyFans", "showMessage", "rid", "getCCN",
+        "setTimeout", "clearTimeout", "setInterval", "clearInterval",
+        EXGUARD_SRC + "\n" + REDPACKET_SRC +
+        "\nreturn { init: initPkg_ExpandTool_RedPacket_Room, list: getRoomRedPacketsList, grab: getRoomRedPacket, " +
+        "stop: ExpandTool_RedPacket_Room_stop };"
+    );
+    const api = factory(
+        win.document, win, win.localStorage, log.console,
+        function (u, o) { return fetchImpl(u, o); },
+        function (room, level) { return verifyImpl(room, level); },
+        function (text, type) { messages.push({ text: String(text), type: type }); },
+        "9999", function () { return "ctn"; },
+        clock.setTimeout, clock.clearTimeout, clock.setInterval, clock.clearInterval
+    );
+    return {
+        dom: dom, win: win, api: api, log: log, clock: clock, messages: messages,
+        setVerify: function (fn) { verifyImpl = fn; },
+        setFetch: function (fn) { fetchImpl = fn; },
+    };
+}
+
+async function testRedPacketCatchAndBounded() {
+    const wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+
+    // ① verifyFans 失败（断网 / 未登录 / 页面改版）：旧实现无 catch → unhandled rejection，
+    //    勾选保持选中、定时器没起、存储没写、零提示。
+    const fail = loadRedPacket({ verify: function () { return Promise.reject(new Error("network down")); } });
+    fail.api.init();
+    const box = fail.win.document.getElementById("extool__redpacekt_room_start");
+    box.checked = true;
+    box.dispatchEvent(new fail.win.Event("click"));
+    await wait(60);
+    assert.strictEqual(box.checked, false, "校验失败必须取消勾选");
+    assert.strictEqual(fail.clock.pending(), 0, "校验失败不得留下轮询定时器");
+    assert.ok(fail.messages.some(function (m) { return m.text.indexOf("网络异常") !== -1; }),
+        "必须提示网络异常，实际 " + JSON.stringify(fail.messages));
+    assert.strictEqual(JSON.parse(fail.win.localStorage.getItem("ExSave_RedPacket_Room") || "{}").isGetRedPacket, false,
+        "存储必须与界面一致");
+
+    // ② 拉取列表连续失败 3 次：必须自动关闭（旧实现定时器一直转、每 tick 一条 unhandled rejection）
+    const broken = loadRedPacket({
+        verify: function () { return Promise.resolve(true); },
+        fetch: function () { return Promise.resolve({ json: function () { return Promise.resolve({ data: {} }); } }); },
+    });
+    broken.api.init();
+    const box2 = broken.win.document.getElementById("extool__redpacekt_room_start");
+    box2.checked = true;
+    box2.dispatchEvent(new broken.win.Event("click"));
+    await wait(20);
+    assert.strictEqual(broken.clock.pending(), 1, "校验通过后必须真的起了 60 秒轮询");
+    await broken.api.list("9999");
+    await broken.api.list("9999");
+    assert.strictEqual(box2.checked, true, "失败 2 次还不该关闭");
+    await broken.api.list("9999");
+    await wait(20);
+    assert.strictEqual(box2.checked, false, "连续 3 次失败必须自动关闭");
+    assert.strictEqual(broken.clock.pending(), 0, "自动关闭后不得留下定时器");
+    assert.ok(broken.messages.some(function (m) { return m.text.indexOf("连续 3 次") !== -1; }),
+        "必须提示已自动关闭，实际 " + JSON.stringify(broken.messages));
+
+    // ③ 补抢递归必须有上限：接口恒返回 isSuc=2 时旧实现会无限打接口
+    let grabs = 0;
+    const grabPage = loadRedPacket({ fetch: function () { grabs++; return Promise.resolve({ json: function () { return Promise.resolve({ data: { isSuc: 2 } }); } }); } });
+    grabPage.api.grab("rpid-1");
+    await wait(80);
+    assert.ok(grabs <= 5, "补抢次数必须有上限（5），实际 " + grabs);
+    assert.ok(grabs >= 2, "至少补抢一次，实际 " + grabs);
+
+    console.log("✓ 场景 16 通过: 红包校验有 catch、连续失败自动关闭、补抢有上限");
+}
+
+/* ------------------------------------------------------------------ */
+/* 场景 17: 宝箱延迟校验与 catch（P0-6 / P1-12）                       */
+/* ------------------------------------------------------------------ */
+
+function loadTreasure(opts) {
+    const options = opts || {};
+    const dom = makeDom("<!DOCTYPE html><html><body>" +
+        "<input type='checkbox' id='extool__treasure_start'>" +
+        "<input id='extool__treasure_delay' value='3200'>" +
+        "</body></html>");
+    const win = dom.window;
+    const log = collectConsole();
+    const messages = [];
+    let verifyImpl = options.verify || function () { return Promise.resolve(false); };
+    const factory = new Function(
+        "document", "window", "localStorage", "console", "verifyFans", "showMessage", "getCookieValue", "getTreasure", "treasureNum",
+        "unsafeWindow", "setTimeout", "clearTimeout", "setInterval", "clearInterval",
+        EXGUARD_SRC + "\n" + TREASURE_SRC +
+        "\nreturn { init: initPkg_ExpandTool_Treasure, delay: getTreasureDelay, set: ExpandTool_Treasure_Set, " +
+        "save: saveData_Treasure, isOn: function () { return isGetTreasure; } };"
+    );
+    const api = factory(
+        win.document, win, win.localStorage, log.console,
+        function (room, level) { return verifyImpl(room, level); },
+        function (text, type) { messages.push({ text: String(text), type: type }); },
+        function () { return "did"; }, function () {}, 0,
+        win, win.setTimeout, win.clearTimeout, win.setInterval, win.clearInterval
+    );
+    return { dom: dom, win: win, api: api, log: log, messages: messages, setVerify: function (fn) { verifyImpl = fn; } };
+}
+
+async function testTreasureDelayAndCatch() {
+    const wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+    const page = loadTreasure();
+
+    // ① 延迟校验：0 / 负数 / 乱码 / 空 都不得让 setTimeout 立刻触发
+    const input = page.win.document.getElementById("extool__treasure_delay");
+    const cases = [["0", 3200], ["-100", 3200], ["abc", 3200], ["", 3200], ["100", 500], ["3000", 3000]];
+    cases.forEach(function (pair) {
+        input.value = pair[0];
+        assert.strictEqual(page.api.delay(), pair[1], "延迟 " + JSON.stringify(pair[0]) + " 应归一成 " + pair[1]);
+    });
+
+    // ② 本地设置损坏：不得中断整个 ExpandTool 初始化
+    page.win.localStorage.setItem("ExSave_Treasure", "{broken");
+    assert.doesNotThrow(function () { page.api.set(); }, "损坏的宝箱设置不得抛错");
+    assert.ok(page.log.warns.some(function (s) { return s.indexOf("已损坏") !== -1; }), "必须留痕");
+
+    // ③ verifyFans 失败：旧实现无 catch → unhandled rejection + 勾选与 isGetTreasure 不一致
+    page.setVerify(function () { return Promise.reject(new Error("network down")); });
+    page.api.init();
+    const box = page.win.document.getElementById("extool__treasure_start");
+    box.checked = true;
+    box.dispatchEvent(new page.win.Event("click"));
+    await wait(60);
+    assert.strictEqual(box.checked, false, "校验失败必须取消勾选");
+    assert.strictEqual(page.api.isOn(), false, "isGetTreasure 必须同步为 false");
+    assert.ok(page.messages.some(function (m) { return m.text.indexOf("网络异常") !== -1; }),
+        "必须提示网络异常，实际 " + JSON.stringify(page.messages));
+
+    console.log("✓ 场景 17 通过: 宝箱延迟归一化、坏设置不炸、校验失败复位并提示");
+}
+
+/* ------------------------------------------------------------------ */
 /* 场景 9: 源码级守卫（本轮所有判空与上限都在位）                       */
 /* ------------------------------------------------------------------ */
 
@@ -937,6 +1250,20 @@ function testStaticGuardRails() {
     assert.ok(ROOMVIP_SRC.indexOf("VIP 已过期") !== -1, "房间VIP 过期必须说「已过期」");
     assert.ok(DANMAKUTAIL_SRC.indexOf("button.disabled") !== -1, "小尾巴回车必须判发送按钮是否可用");
 
+    // ⑥ task-22 的 ExpandTool 四条（场景 14-17 的行为断言之外，钉住"不得回退"的源码特征）
+    assert.ok(AUTOFISH_SRC.indexOf("AutoFish_requestJson") !== -1, "自动钓鱼四个包装器必须走统一的可 settle 请求");
+    assert.ok(AUTOFISH_SRC.indexOf("AUTOFISH_REQUEST_TIMEOUT") !== -1, "自动钓鱼请求必须有超时上限");
+    assert.ok(AUTOFISH_SRC.indexOf('console.log("请求失败!", err)') === -1,
+        "自动钓鱼的 .catch 不得再只打日志不 resolve（那正是 await 卡死的原因）");
+    assert.ok(AUTOFISH_SRC.indexOf("AutoFish_abort") !== -1, "自动钓鱼失败必须复位界面");
+    assert.ok(SENDGIFT_SRC.indexOf("okCount") !== -1, "送礼完成判定必须按真实回调计数");
+    assert.ok(SENDGIFT_SRC.indexOf("i == Number(gcnt)") === -1, "送礼不得再用循环变量 i 判定完成");
+    assert.ok(REDPACKET_SRC.indexOf("REDPACKET_ROOM_MAX_FAIL") !== -1, "红包轮询必须有连续失败上限");
+    assert.ok(REDPACKET_SRC.indexOf("REDPACKET_ROOM_MAX_GRAB") !== -1, "红包补抢递归必须有上限");
+    assert.ok(REDPACKET_SRC.indexOf("ExpandTool_RedPacket_Room_stop") !== -1, "红包校验失败必须复位开关");
+    assert.ok(TREASURE_SRC.indexOf("TREASURE_DELAY_MIN") !== -1, "宝箱延迟必须归一化（不得为 0/负数）");
+    assert.ok(TREASURE_SRC.indexOf("ExpandTool_Treasure_reset") !== -1, "宝箱校验失败必须复位开关");
+
     // ④ LastLiveTime 在没有目标节点的页面上不得抛错
     const dom = makeDom("<!DOCTYPE html><html><body><div>普通页面</div></body></html>");
     const log = collectConsole();
@@ -968,7 +1295,11 @@ function testStaticGuardRails() {
     await testMonthCostStaleness();
     await testRoomVipExpiredWording();
     testDanmakuTailEnterGuard();
-    console.log("=== task-17/19 回归（common.js 死代码 + 面板死路 + init 隔离）13 组场景全部通过 ===");
+    await testAutoFishAlwaysSettles();
+    await testSendGiftRealCount();
+    await testRedPacketCatchAndBounded();
+    await testTreasureDelayAndCatch();
+    console.log("=== task-17/19/22 回归（common.js 死代码 + 面板死路 + init 隔离 + ExpandTool settle）17 组场景全部通过 ===");
 })().catch(function (e) {
     console.error("测试失败:", e && e.stack ? e.stack : e);
     process.exit(1);

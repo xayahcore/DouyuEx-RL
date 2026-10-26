@@ -55,8 +55,14 @@ function ExpandTool_SendGift_insertDom() {
     let a = document.createElement("div");
     a.className = "extool__sendgift";
     a.innerHTML = html;
+    // 与 LiveTool 同族的裸解引用：容器不在时不得直接 insertBefore（否则整个扩展面板初始化中断）
     let b = document.getElementsByClassName("extool")[0];
+    if (!b) {
+        if (typeof ExGuard_warn === "function") ExGuard_warn("送礼", "未找到 .extool 容器，打榜送礼面板本次不插入");
+        return false;
+    }
     b.insertBefore(a, b.childNodes[0]);
+    return true;
 }
 
 function ExpandTool_SendGift_insertFunc() {
@@ -94,35 +100,49 @@ function ExpandTool_SendGift_insertFunc() {
         if (confirm("确认送出？") != true) {
             return;
         }
-        let gid = document.getElementById("extool__sendgift_id").value;
-        let gcnt = document.getElementById("extool__sendgift_cnt").value;
-        let delay = Number(document.getElementById("extool__sendgift_delay").value);
-        let t_num = 0;
+        let gidEl = document.getElementById("extool__sendgift_id");
+        let gcntEl = document.getElementById("extool__sendgift_cnt");
+        let delayEl = document.getElementById("extool__sendgift_delay");
+        if (!gidEl || !gcntEl) {
+            return showMessage("【送礼】面板节点丢失，请刷新页面", "error");
+        }
+        let gid = gidEl.value;
+        let total = Math.max(1, Number(gcntEl.value) || 1);
+        // 间隔必须是有限非负数：填 0 / 负数 / 乱码都不能变成"立刻连发"
+        let delay = Math.max(0, Number(delayEl ? delayEl.value : 0) || 0);
+
+        let okCount = 0;
+        let failCount = 0;
         let t_price = 0;
-        for (let i = 0; i < Number(gcnt); i++) {
-            sendGift_any(gid, 1, rid).then(ret => {
-                if (ret.data != null) {
-                    if (ret.msg != "鱼翅不足") {
-                        t_num = t_num + 1;
-                        t_price = t_price + Number(ret.data.priceType);
-                    } else {
-                        console.log("【送礼】" + gid + ret.msg);
-                    }
+        // 先提示"执行中"，再真的开始发（旧实现把这句写在循环之后 →
+        // 用户先看到"赠送完毕"、再看到"执行中"，顺序完全颠倒）
+        showMessage("【送礼】执行中... 共 " + total + " 个", "info");
+        for (let i = 0; i < total; i++) {
+            try {
+                const ret = await sendGift_any(gid, 1, rid);
+                if (ret && ret.data != null && ret.msg != "鱼翅不足") {
+                    okCount++;
+                    t_price += Number(ret.data.priceType) || 0;
                 } else {
-                    console.log("【送礼】" + gid + ret.msg);
+                    failCount++;
+                    console.log("【送礼】" + gid + " 失败：" + (ret && ret.msg));
                 }
-                if (i == Number(gcnt) - 1) {
-                    showMessage("【送礼】赠送完毕！详细信息可以在F12控制台查看", "success");
-                    console.log("【送礼】赠送完毕！详细信息可以在F12控制台查看");
-                }
-            }).catch(err => {
-                console.log("请求失败!", err);
-            })
-            if (delay > 0) {
+            } catch (err) {
+                failCount++;
+                console.log("【送礼】" + gid + " 请求失败!", err);
+            }
+            if (delay > 0 && i < total - 1) {
                 await sleep(delay);
             }
         }
-        showMessage("【送礼】执行中...", "info");
+        // 完成判定按**真实回调计数**，而不是看循环变量 i —— 旧实现把
+        // if (i == gcnt - 1) 写在异步回调里，回调执行时循环早已结束、i 恒为末值，
+        // 于是随便哪一个请求回来（哪怕被 catch）就弹「赠送完毕！」。
+        const summary = okCount > 0
+            ? "【送礼】完成：成功 " + okCount + "/" + total + (failCount > 0 ? "，失败 " + failCount : "") + "，详情可在 F12 控制台查看"
+            : "【送礼】全部失败（0/" + total + "），详情可在 F12 控制台查看";
+        showMessage(summary, okCount > 0 ? "success" : "error");
+        console.log("【送礼】完成：成功 " + okCount + "，失败 " + failCount + "，总价值 " + t_price);
         });
     }
 }

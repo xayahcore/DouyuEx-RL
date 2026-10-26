@@ -218,9 +218,7 @@ async function executeSignEngine(options, onLog) {
   if (opts.yuba) {
     try {
       onLog("正在执行【鱼吧签到】...");
-      if (typeof signYubaFast === "function") {
-        signYubaFast();
-      }
+      // 极速签到由 signYubaList 内部在拿到鱼吧列表后触发一次；这里再调就会每次点签到都打两条 fastSign
       if (typeof signYubaList === "function") {
         signYubaList();
       }
@@ -234,31 +232,29 @@ async function executeSignEngine(options, onLog) {
   if (opts.client) {
     try {
       onLog("正在执行【客户端模拟签到】...");
-      await new Promise(function (resolve) {
-        GM_xmlhttpRequest({
-          method: "POST",
-          url: "https://apiv2.douyucdn.cn/h5nc/sign/sendSign",
-          data: "token=" + (typeof dyToken !== "undefined" ? dyToken : getToken()),
-          responseType: "json",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          onload: function (res) {
-            var o = res.response || {};
-            if (o.data && o.data.sign_pl && o.data.sign_pl.length > 0) {
-              var items = o.data.sign_pl.map(function (it) { return it.cnt + "个" + it.name; }).join(", ");
-              onLog("【客户端签到】获得: " + items, true);
-            } else if (o.data && o.data.length === 0) {
-              onLog("【客户端签到】今日已签到", true);
-            } else {
-              onLog("【客户端签到】打卡成功", true);
-            }
-            resolve();
-          },
-          onerror: function () {
-            onLog("【客户端签到】请求失败", false);
-            resolve();
-          }
-        });
-      });
+      // 旧实现：手写 Promise + 只有 onload/onerror，没有 timeout。
+      // 连接被黑洞（代理断流、网关静默丢包）时 GM 一个回调都不给 → await 永挂 →
+      // 下面 finally 里的按钮复位永远执行不到，用户只能刷新页面。
+      // 现在：ExGuard_xhr 负责 onerror/ontimeout/同步抛错（并带 GM 自己的 timeout），
+      // ExGuard_withTimeout 再补一层本地硬上限，双保险保证一定会走到 finally。
+      var signRes = await ExGuard_withTimeout(ExGuard_xhr({
+        method: "POST",
+        url: "https://apiv2.douyucdn.cn/h5nc/sign/sendSign",
+        data: "token=" + (typeof dyToken !== "undefined" ? dyToken : getToken()),
+        responseType: "json",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        tag: "客户端签到"
+      }, 15000), 16000, "客户端签到");
+      if (!signRes) {
+        onLog("【客户端签到】请求失败或超时（已跳过，不影响其它签到项）", false);
+      } else if (signRes.data && signRes.data.sign_pl && signRes.data.sign_pl.length > 0) {
+        var items = signRes.data.sign_pl.map(function (it) { return it.cnt + "个" + it.name; }).join(", ");
+        onLog("【客户端签到】获得: " + items, true);
+      } else if (signRes.data && signRes.data.length === 0) {
+        onLog("【客户端签到】今日已签到", true);
+      } else {
+        onLog("【客户端签到】打卡成功", true);
+      }
     } catch (err) {
       onLog("【客户端签到】执行异常", false);
     }
