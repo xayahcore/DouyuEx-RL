@@ -30,6 +30,23 @@ const LiveTool_DRAWER_PAIRS = [
 	["vote", "vote__panel"]
 ];
 
+/**
+ * 收起除 exceptPanelClass 之外的抽屉面板。
+ *
+ * 五个标题的点击回调原本各自抄了一份「把另外四个面板设成 none」的裸解引用块
+ * （document.getElementsByClassName("xxx__panel")[0].style…），页面里只要少一个面板类名，
+ * 整段就抛 TypeError。这里统一按 LiveTool_DRAWER_PAIRS 走一遍：节点不在只是「没渲染」，
+ * 跳过即可，不需要也不应该丢异常。
+ */
+function LiveTool_hideDrawerPanelsExcept(exceptPanelClass) {
+	for (let i = 0; i < LiveTool_DRAWER_PAIRS.length; i++) {
+		let panelClass = LiveTool_DRAWER_PAIRS[i][1];
+		if (panelClass === exceptPanelClass) continue;
+		let panel = document.getElementsByClassName(panelClass)[0];
+		if (panel) panel.style.display = "none";
+	}
+}
+
 function LiveTool_syncDrawerChevrons() {
 	LiveTool_DRAWER_PAIRS.forEach(function (pair) {
 		let title = document.getElementById(pair[0] + "__title");
@@ -98,6 +115,8 @@ a.innerHTML = '<a class="ex-panel__icon" title="直播间工具"><svg t="1590294
 let b = document.getElementsByClassName("ex-panel__wrap")[0];
 if (b) {
 	b.insertBefore(a, b.childNodes[0]);
+} else {
+	ExGuard_warn("直播间工具", "未找到 .ex-panel__wrap 容器，图标未插入（面板入口不显示）");
 }
 
 }

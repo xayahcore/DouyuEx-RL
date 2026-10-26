@@ -150,10 +150,25 @@ async function RestoreYuba_changeDom(oldId, newId) {
     const avatar = info.avatar;
     const nickname = info.nick_name;
 
+    // 鱼吧是页面自己的 SPA：头像/群名/群简介随时可能被重绘掉，
+    // 原来的 [0].src / [0].innerText 一旦取不到就把整个恢复流程抛断（DomHook 每次重绘还会再抛一遍）。
+    // 现在逐个判空：缺哪个就少改哪块，document.title 仍然能落地。
     function changeTitle() {
-      document.querySelector(".groupavatar__9mD1S .image__GNnZC").src = avatar;
-      document.getElementsByClassName("groupname__BUzOM")[0].innerText = nickname;
-      document.getElementsByClassName("groupdesc__b8-53")[0].innerText = `${nickname}的鱼吧`;
+      const avatarNode = document.querySelector(".groupavatar__9mD1S .image__GNnZC");
+      if (avatarNode) {
+        avatarNode.src = avatar;
+      }
+      const nameNode = document.getElementsByClassName("groupname__BUzOM")[0];
+      if (nameNode) {
+        nameNode.innerText = nickname;
+      }
+      const descNode = document.getElementsByClassName("groupdesc__b8-53")[0];
+      if (descNode) {
+        descNode.innerText = `${nickname}的鱼吧`;
+      }
+      if (!avatarNode && !nameNode && !descNode) {
+        ExGuard_warn("鱼吧恢复", "群头像/群名/群简介节点都不在，本次只改标题");
+      }
       document.title = `${nickname}的鱼吧`;
     }
 

@@ -115,12 +115,19 @@ function renderAccountList(obj) {
             setPassportCmd("switch", uid);
             setYubaAndMsgAndVideoClean();
         })
-        item.getElementsByClassName("ex-accountList-item__btn")[0].addEventListener("click", (e) => {
-            e.stopPropagation();
-            showMessage("【账号管理】正在删除...", "info");
-            deleteAccount(uid, () => {});
-            setPassportCmd("delete", uid);
-        })
+        // 条目模板里已经带了删除按钮；万一渲染结构变了（缺 .ex-accountList-item__btn），
+        // 这里只跳过删除绑定，不能让整张列表因为一个 [0] 空引用渲染不出来
+        let delBtn = item.getElementsByClassName("ex-accountList-item__btn")[0];
+        if (delBtn) {
+            delBtn.addEventListener("click", (e) => {
+                e.stopPropagation();
+                showMessage("【账号管理】正在删除...", "info");
+                deleteAccount(uid, () => {});
+                setPassportCmd("delete", uid);
+            })
+        } else {
+            ExGuard_warn("账号管理", "账号条目缺少删除按钮（ex-accountList-item__btn），该项未绑定删除");
+        }
     }
 
     document.getElementById("ex-accountList-item-add").addEventListener("click", () => {

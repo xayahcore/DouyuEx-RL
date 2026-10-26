@@ -231,10 +231,20 @@ function formatSeconds2(value) {
 	return result;
 }
 
+/**
+ * 【历史死代码 · 门禁常开】第一行就 return true（2020年12月22日18:28:18 起）：
+ * 斗鱼在这之后不再返回可解析的粉丝牌页面，这项「是否本房间 X 级粉丝」的自证只能永久放行。
+ * 保留整段实现而不删掉，是因为 ExpandTool 的红包 / 宝箱仍会 then 到这个返回值；
+ * 真去校验，没点亮粉丝牌的用户当场失去这两个功能。
+ *
+ * 下面的代码运行时不会执行（uglify 的 dead_code 也会整段剪掉），但只要有人哪天去掉
+ * return true 它就会立刻上线 —— 所以这里补齐三层判空，不留「请求失败 → 文档为空 →
+ * .lastElementChild 抛 TypeError」的雷（同一处结构参考 Lottery 的 setFansBadgeList）。
+ */
 async function verifyFans(room_id, level) {
 	return true; // 2020年12月22日18:28:18
 	let ret = false;
-	let doc = await fetch('https://www.douyu.com/member/cp/getFansBadgeList',{
+	let text = await fetch('https://www.douyu.com/member/cp/getFansBadgeList',{
 		method: 'GET',
 		mode: 'no-cors',
 		cache: 'default',
@@ -243,9 +253,19 @@ async function verifyFans(room_id, level) {
 		return res.text();
 	}).catch(err => {
 		console.log("请求失败!", err);
+		return ""; // 失败时给空串：否则下面会拿 undefined 去 parseFromString
 	})
-	doc = (new DOMParser()).parseFromString(doc, 'text/html');
-	let a = doc.getElementsByClassName("fans-badge-list")[0].lastElementChild;
+	let doc = null;
+	try {
+		doc = (new DOMParser()).parseFromString(String(text || ""), 'text/html');
+	} catch (e) {
+		console.log("粉丝牌页面解析失败", e);
+		return false;
+	}
+	// 未登录 / 页面改版时结构本来就是空的：按「不是粉丝」处理，绝不抛错
+	let list = doc ? doc.getElementsByClassName("fans-badge-list")[0] : null;
+	let a = list ? list.lastElementChild : null;
+	if (!a || !a.children) return false;
 	let n = a.children.length;
 	for (let i = 0; i < n; i++) {
 		let rid = a.children[i].getAttribute("data-fans-room");
@@ -473,20 +493,51 @@ function showMessageWindow(title, content, callback){
     }   
 }
 
+/**
+ * 【历史死代码 · 目前无调用方】BarrageSendCheck 已改用同源可读的写法补昵称
+ * （见该文件的注释：no-cors 下的响应不可读），这里保留定义只为不打断旧的调用点。
+ *
+ * 但它绝不能再是「永不 settle」的 Promise —— 旧实现里
+ * txt.getElementsByClassName("uname_con")[0].title 一旦取空（未登录 / 页面改版）
+ * 就抛 TypeError，catch 只打一行日志、Promise 永远挂在 pending，
+ * 调用方的 .then 再也不会执行。现在：任何一条失败路径都 resolve 成空串。
+ */
 function getUserName() {
-	return new Promise(resovle => {
-		fetch('https://www.douyu.com/member/cp',{
-			method: 'GET',
-			mode: 'no-cors',
-			credentials: 'include',
-		}).then(res => {
+	return new Promise((resolve) => {
+		let settled = false;
+		const finish = (value) => {
+			if (settled) return;
+			settled = true;
+			resolve(value == null ? "" : String(value));
+		};
+		let request;
+		try {
+			request = fetch('https://www.douyu.com/member/cp',{
+				method: 'GET',
+				mode: 'no-cors',
+				credentials: 'include',
+			});
+		} catch (e) {
+			console.error('请求无法发起', e);
+			finish("");
+			return;
+		}
+		request.then(res => {
 			return res.text();
 		}).then(txt => {
-			txt = (new DOMParser()).parseFromString(txt, 'text/html');
-			let ret = txt.getElementsByClassName("uname_con")[0].title;
-			resovle(ret);
+			let doc = null;
+			try {
+				doc = (new DOMParser()).parseFromString(String(txt || ""), 'text/html');
+			} catch (e) {
+				console.error('个人中心页面解析失败', e);
+			}
+			// 兜底解析：先取 .uname_con 的 title，再退到它的文本内容，最后给空串
+			const node = doc ? doc.getElementsByClassName("uname_con")[0] : null;
+			const name = node ? String(node.getAttribute("title") || node.textContent || "").trim() : "";
+			finish(name);
 		}).catch(err => {
 			console.error('请求失败', err);
+			finish("");
 		})
 	})
 }

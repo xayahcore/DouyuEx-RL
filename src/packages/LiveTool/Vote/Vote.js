@@ -42,7 +42,11 @@ function LiveTool_Vote_insertDom() {
     a.innerHTML = cell + panel;
     
     let b = document.getElementsByClassName("livetool")[0];
-    b.insertBefore(a, b.childNodes[0]);
+    if (b) {
+        b.insertBefore(a, b.childNodes[0]);
+    } else {
+        ExGuard_warn("弹幕投票", "未找到 .livetool 容器，面板未插入（该模块不启用）");
+    }
 }
 
 
@@ -77,7 +81,12 @@ function LiveTool_Vote_insertFunc() {
                 document.getElementById("vote__switch").checked = false;
             }, time * 1000);
 
-            document.getElementsByClassName("vote__result")[0].style.display = "block";
+            let resultPanel = document.getElementsByClassName("vote__result")[0];
+            if (resultPanel) {
+                resultPanel.style.display = "block";
+            } else {
+                ExGuard_warn("弹幕投票", "投票结果面板缺失，本轮的展开已跳过");
+            }
 		} else{
             // 关闭关键词禁言
             clearTimeout(timer_Vote);
@@ -89,23 +98,17 @@ function LiveTool_Vote_insertFunc() {
     });
     document.getElementById("vote__title").addEventListener("click", () => {
         let a = document.getElementsByClassName("vote__panel")[0];
-		if (a.style.display != "block") {
+        if (!a) {
+            ExGuard_warn("弹幕投票", "面板节点缺失，忽略本次展开");
+            return;
+        }
+        if (a.style.display != "block") {
             a.style.display = "block";
-            if (document.getElementsByClassName("mute__panel")[0].style.display == "block") {
-                document.getElementsByClassName("mute__panel")[0].style.display = "none";
-            }
-            if (document.getElementsByClassName("enter__panel")[0].style.display == "block") {
-				document.getElementsByClassName("enter__panel")[0].style.display = "none";
-            }
-            if (document.getElementsByClassName("gift__panel")[0].style.display == "block") {
-				document.getElementsByClassName("gift__panel")[0].style.display = "none";
-            }
-            if (document.getElementsByClassName("reply__panel")[0].style.display == "block") {
-				document.getElementsByClassName("reply__panel")[0].style.display = "none";
-            }
-		} else {
-			a.style.display = "none";
-		}
+            // 其余抽屉统一收起：节点不在就跳过，不再逐个裸解引用
+            LiveTool_hideDrawerPanelsExcept("vote__panel");
+        } else {
+            a.style.display = "none";
+        }
     });
     
     document.getElementById("vote__select").onclick = function() {
@@ -251,7 +254,8 @@ function LiveTool_Vote_insertDom_VotePanel() {
     }
 
     document.getElementById("vote__result-close").addEventListener("click", () => {
-        document.getElementsByClassName("vote__result")[0].style.display = "none";
+        let resultPanel = document.getElementsByClassName("vote__result")[0];
+        if (resultPanel) resultPanel.style.display = "none";
     })
 }
 

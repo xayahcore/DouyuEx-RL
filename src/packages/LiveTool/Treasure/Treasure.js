@@ -8,7 +8,11 @@ function LiveTool_Treasure_insertModal() {
 	a.className = "livetool__Treasure";
 	a.id = "Ex_Geetest";
 	let b = document.getElementsByClassName("Barrage-main")[0];
-	b.insertBefore(a, b.childNodes[0]);
+	if (b) {
+		b.insertBefore(a, b.childNodes[0]);
+	} else {
+		ExGuard_warn("自动抢宝箱", "未找到 .Barrage-main 容器，宝箱挂载点未插入（自动抢宝箱不启用）");
+	}
 }
 
 function initPkg_LiveTool_Treasure_Handle(text) {
@@ -22,12 +26,17 @@ function initPkg_LiveTool_Treasure_Handle(text) {
         let did = getCookieValue("dy_did");
         let timeout = Number(ot) - Math.floor(Date.now()/1000);
         timeout = timeout * 1000 + getTreasureDelay();
-        treasureNum++;
 
+        // 挂载点没插进来（页面缺 .Barrage-main）时直接跳过本轮，别在 b.appendChild 上抛
+        let b = document.getElementById("Ex_Geetest");
+        if (!b) {
+            ExGuard_warn("自动抢宝箱", "宝箱挂载点不存在，跳过本次抢宝箱（不影响其它功能）");
+            return;
+        }
+        treasureNum++;
         let a = document.createElement("div");
         let idName = "Ex_Geetest_no" + String(treasureNum);
         a.id = idName;
-        let b = document.getElementById("Ex_Geetest");
         b.appendChild(a);
 
         setTimeout(() => {

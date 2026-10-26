@@ -4,6 +4,12 @@ function initPkg_LastLiveTime() {
 
 function initPkg_LastLiveTime_Dom() {
   const OVERLAY_ID = "ex-LastLiveTime-overlay";
+  // document-start 阶段 body 可能还没建出来：旧实现直接读 innerHTML 会抛，
+  // 被 initPkg_Safe 接住后只剩一行"初始化失败"，用户侧就是"这个功能没有"。
+  if (!document.body) {
+    if (typeof ExGuard_warn === "function") ExGuard_warn("上次开播时间", "页面还没有 body，本次不显示上次开播时间");
+    return;
+  }
   const html = document.body.innerHTML;
   const statusMatch = html.match(/show_status\\":(\d+)/) || html.match(/"show_status":(\d+)/);
   const isLive = statusMatch && statusMatch[1] === "1";
@@ -28,6 +34,10 @@ function initPkg_LastLiveTime_Dom() {
     pollCount++;
     if (pollCount > maxPolls) {
       clearInterval(timer);
+      // 放弃时要留痕：否则用户看到的是"下播页什么提示都没有"，而现场一片空白
+      if (typeof ExGuard_warn === "function") {
+        ExGuard_warn("上次开播时间", "等待 .room-Player / .LastLiveTime 超过 " + maxPolls + " 秒，本次不显示");
+      }
       return;
     }
 
@@ -150,7 +160,7 @@ function initPkg_LastLiveTime_Dom() {
 				`;
 
       const closeBtn = timeCard.querySelector(".ex-llt-close");
-      closeBtn.addEventListener("click", (e) => {
+      if (closeBtn) closeBtn.addEventListener("click", (e) => {
         e.stopPropagation();
         overlay.style.opacity = "0";
         overlay.style.transition = "opacity 0.3s ease";

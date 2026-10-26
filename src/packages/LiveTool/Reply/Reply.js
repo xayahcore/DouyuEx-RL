@@ -39,7 +39,11 @@ function LiveTool_Reply_insertDom() {
     a.innerHTML = cell + panel;
     
     let b = document.getElementsByClassName("livetool")[0];
-    b.insertBefore(a, b.childNodes[0]);
+    if (b) {
+        b.insertBefore(a, b.childNodes[0]);
+    } else {
+        ExGuard_warn("关键词回复", "未找到 .livetool 容器，面板未插入（该模块不启用）");
+    }
 }
 
 
@@ -88,23 +92,17 @@ function LiveTool_Reply_insertFunc() {
     });
     document.getElementById("reply__title").addEventListener("click", () => {
         let a = document.getElementsByClassName("reply__panel")[0];
-		if (a.style.display != "block") {
+        if (!a) {
+            ExGuard_warn("关键词回复", "面板节点缺失，忽略本次展开");
+            return;
+        }
+        if (a.style.display != "block") {
             a.style.display = "block";
-            if (document.getElementsByClassName("mute__panel")[0].style.display == "block") {
-                document.getElementsByClassName("mute__panel")[0].style.display = "none";
-            }
-            if (document.getElementsByClassName("enter__panel")[0].style.display == "block") {
-				document.getElementsByClassName("enter__panel")[0].style.display = "none";
-            }
-            if (document.getElementsByClassName("gift__panel")[0].style.display == "block") {
-				document.getElementsByClassName("gift__panel")[0].style.display = "none";
-            }
-            if (document.getElementsByClassName("vote__panel")[0].style.display == "block") {
-				document.getElementsByClassName("vote__panel")[0].style.display = "none";
-			}
-		} else {
-			a.style.display = "none";
-		}
+            // 其余抽屉统一收起：节点不在就跳过，不再逐个裸解引用
+            LiveTool_hideDrawerPanelsExcept("reply__panel");
+        } else {
+            a.style.display = "none";
+        }
     });
     
     document.getElementById("reply__select").onclick = function() {

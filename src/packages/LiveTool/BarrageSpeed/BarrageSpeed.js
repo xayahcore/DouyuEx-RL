@@ -22,7 +22,11 @@ function LiveTool_BarrageSpeed_Dom() {
     a.innerHTML = html;
     
     let b = document.getElementsByClassName("Chat")[0];
-    b.insertBefore(a, b.childNodes[0]);
+    if (b) {
+        b.insertBefore(a, b.childNodes[0]);
+    } else {
+        ExGuard_warn("弹幕时速", "未找到 .Chat 容器，时速条未插入（该功能不启用）");
+    }
 }
 
 function initPkg_LiveTool_BarrageSpeed_Handle(text) {
