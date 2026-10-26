@@ -22,6 +22,7 @@ const ROOMVIP_SRC = read("src/packages/RoomVip/RoomVip.js");
 const LASTLIVETIME_SRC = read("src/packages/LastLiveTime/LastLiveTime.js");
 const MONTHCOST_SRC = read("src/packages/MonthCost/MonthCost.js");
 const CHATMEMORY_SRC = read("src/packages/ChatTools/ChatMemory/ChatMemory.js");
+const MAIN_SRC = read("src/main.js");
 
 /**
  * task-17 的统一回归：
@@ -292,11 +293,20 @@ function testMenuCheckUpdate() {
 
 function loadDanmakuTail(opts) {
     const options = opts || {};
-    const dom = makeDom("<!DOCTYPE html><html><body></body></html>");
+    const dom = makeDom(options.html || "<!DOCTYPE html><html><body></body></html>");
     const win = dom.window;
     const log = collectConsole();
     const clock = makeClock();
     const messages = [];
+    // 记录真实注册进去的监听器：jsdom 的 isTrusted 是事件对象上的不可配置自有属性，
+    // 造不出"可信事件"，所以回车的用例直接把真 handler 拿来用假事件调用
+    //（被测的是包里的实现，不是镜像实现）。
+    const listeners = [];
+    const rawAdd = win.EventTarget.prototype.addEventListener;
+    win.EventTarget.prototype.addEventListener = function (type, fn, opts2) {
+        listeners.push({ target: this, type: type, fn: fn });
+        return rawAdd.call(this, type, fn, opts2);
+    };
     if (options.stored !== undefined) {
         win.localStorage.setItem("ExSave_DanmakuTail", options.stored);
     }
@@ -312,7 +322,7 @@ function loadDanmakuTail(opts) {
         log.console, win.Event,
         clock.setInterval, clock.clearInterval, clock.setTimeout, clock.clearTimeout
     );
-    return { dom: dom, win: win, api: api, log: log, clock: clock, messages: messages };
+    return { dom: dom, win: win, api: api, log: log, clock: clock, messages: messages, listeners: listeners };
 }
 
 function testDanmakuTailDeadEnds() {
@@ -494,19 +504,35 @@ function loadMonthCost(opts) {
     // 重试等待不必真的等 2 秒
     const fastTimeout = function (fn) { Promise.resolve().then(fn); return 0; };
     const factory = new Function(
-        "document", "window", "localStorage", "my_uid", "fetch", "console",
+        "document", "window", "localStorage", "my_uid", "fetch", "console", "Date",
         "setTimeout", "clearTimeout", "setInterval", "clearInterval",
         EXGUARD_SRC + "\n" + GETVALIDDOM_SRC + "\n" + MONTHCOST_SRC +
         "\nreturn { init: initPkg_MonthCost, refresh: MonthCost_refreshCost, getCost: getMonthCost, " +
-        "update: MonthCost_updateCost, money: MonthCost_getMoneyDom, total: function () { return totalMonthCost; }, " +
+        "update: MonthCost_updateCost, money: MonthCost_getMoneyDom, isStale: MonthCost_isStale, " +
+        "total: function () { return totalMonthCost; }, " +
         "detail: function () { return typeDetail; }, setSee: function (v) { seeStatus = v; } };"
     );
     const api = factory(
         win.document, win, win.localStorage, options.uid || "12345",
         function (url) { calls.push(url); return fetchImpl(url); },
-        log.console, fastTimeout, function () {}, function () {}, function () {}
+        log.console, options.nowMs ? makeFakeDate(options.nowMs) : Date,
+        fastTimeout, function () {}, function () {}, function () {}
     );
     return { dom: dom, win: win, api: api, log: log, calls: calls };
+}
+
+/** 固定"现在"的 Date：new Date() / new Date(ts) / Date.now() 都按约定工作 */
+function makeFakeDate(nowMs) {
+    const Real = Date;
+    function Fake(value) {
+        if (!(this instanceof Fake)) return new Real(nowMs).toString();
+        if (arguments.length === 0) return new Real(nowMs);
+        return new Real(value);
+    }
+    Fake.now = function () { return nowMs; };
+    Fake.parse = Real.parse;
+    Fake.UTC = Real.UTC;
+    return Fake;
 }
 
 async function testMonthCostDeadEnds() {
@@ -639,6 +665,235 @@ function testChatMemoryDeadEnds() {
 }
 
 /* ------------------------------------------------------------------ */
+/* 场景 10: main.js init() 逐项隔离                                    */
+/* ------------------------------------------------------------------ */
+
+function loadInit() {
+    const names = [
+        "initPkg_PopupPlayer_MergeDanmaku_ScriptHook",
+        "initPkg_Shield_RemoveRepeatedDanmaku_ScriptHook",
+        "initPkg_ShowDanmaku_ScriptHook",
+        "initScriptHook",
+        "initResponseHook",
+        "initPkg_ShowDanmaku",
+        "Update_checkVersion",
+        "initKillP2P",
+        "initFullScreen",
+        "initHighestVideoQuality",
+        "initPkg_NoLogin",
+        "removeAD",
+        "initPkg_Console",
+        "initPkg_Menu",
+        "initPkg_Reset",
+        "initPkg_FollowList"
+    ];
+    const start = MAIN_SRC.indexOf("function init() {");
+    assert.ok(start !== -1, "src/main.js 里找不到 init()，测试需同步更新");
+    const end = MAIN_SRC.indexOf("function initPkg() {", start);
+    assert.ok(end !== -1, "src/main.js 里找不到 initPkg()（切分标记），测试需同步更新");
+    const INIT_SRC = MAIN_SRC.slice(start, end);
+
+    const safeStart = MAIN_SRC.indexOf("function initPkg_Safe(name, fn) {");
+    assert.ok(safeStart !== -1, "src/main.js 里找不到 initPkg_Safe，测试需同步更新");
+    const safeEnd = MAIN_SRC.indexOf("function initPkg_Timer() {", safeStart);
+    assert.ok(safeEnd !== -1, "src/main.js 里找不到 initPkg_Timer()（切分标记），测试需同步更新");
+    const SAFE_SRC = MAIN_SRC.slice(safeStart, safeEnd);
+
+    const factory = new Function(names.join(", ") + ", console",
+        SAFE_SRC + "\n" + INIT_SRC + "\nreturn { init: init };");
+
+    return {
+        names: names,
+        INIT_SRC: INIT_SRC,
+        build: function (log, throwOn) {
+            const order = [];
+            const handlers = names.map(function (n) {
+                return function () {
+                    order.push(n);
+                    if (n === throwOn) throw new Error(n + " boom");
+                };
+            });
+            const api = factory.apply(null, handlers.concat([log.console]));
+            return { api: api, order: order };
+        },
+    };
+}
+
+function testInitIsolation() {
+    const page = loadInit();
+
+    // 绿：16 步全跑，顺序与改造前逐行一致
+    const clean = page.build(collectConsole());
+    clean.api.init();
+    assert.deepStrictEqual(clean.order, page.names, "init() 必须按原顺序调用全部 16 步");
+
+    // 红：旧实现是 16 句裸平铺直调 —— 第 6 句一抛，后面的 Console/Menu/Reset/FollowList
+    //     全部不再执行（用户侧就是「某几个功能没了」）。现在必须照常往下走。
+    const log = collectConsole();
+    const broken = page.build(log, "initPkg_ShowDanmaku");
+    assert.doesNotThrow(function () { broken.api.init(); }, "单步抛错不得冲出 init()");
+    assert.deepStrictEqual(broken.order, page.names,
+        "一步失败后其余步骤必须照常执行且顺序不变，实际 " + JSON.stringify(broken.order));
+    assert.ok(log.errors.some(function (s) { return s.indexOf("ShowDanmaku") !== -1; }),
+        "失败必须报出包名，实际 " + JSON.stringify(log.errors));
+
+    // 静态：不得再回到裸平铺
+    assert.ok(!/^\s*(?:initPkg_[A-Za-z0-9_]+|init[A-Z][A-Za-z0-9_]*|removeAD|Update_checkVersion)\(\);\s*$/m.test(page.INIT_SRC),
+        "init() 不得再有裸平铺直调");
+
+    console.log("✓ 场景 10 通过: init() 16 步按原顺序逐项隔离，单步抛错不再连坐");
+}
+
+/* ------------------------------------------------------------------ */
+/* 场景 11: MonthCost 跨日判断改按自然日边界                          */
+/* ------------------------------------------------------------------ */
+
+async function testMonthCostStaleness() {
+    const wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+    const nowMs = new Date(2026, 10, 5, 10, 0, 0).getTime(); // 2026-11-05 10:00（本地时区）
+    const uid = "12345";
+    const okFetch = function () {
+        return Promise.resolve({ json: function () { return Promise.resolve({ error: -1, data: [] }); } });
+    };
+    const page = function (entry) {
+        const p = loadMonthCost({ nowMs: nowMs, fetch: okFetch });
+        p.win.localStorage.setItem("ExSave_MonthCost_SeeStatus", "1");
+        p.win.localStorage.setItem("ExSave_MonthCost", JSON.stringify({ "12345": entry }));
+        return p;
+    };
+    assert.strictEqual(uid, "12345");
+
+    // ① 缓存就是今天：显示缓存值，一次请求都不发
+    const today = page({ monthCost: 1234, updateTime: new Date(2026, 10, 5, 9, 0, 0).getTime(), typeDetail: [] });
+    today.api.init();
+    await wait(20);
+    assert.strictEqual(today.calls.length, 0, "当天缓存不得触发刷新，实际 " + JSON.stringify(today.calls));
+    assert.strictEqual(String(today.api.money().innerText), "12.34", "必须显示缓存金额");
+
+    // ② 红：10-05 的缓存 —— 旧实现 |5-5| = 0 永不刷新（月初到现在都不更新）
+    const crossMonth = page({ monthCost: 1234, updateTime: new Date(2026, 9, 5, 9, 0, 0).getTime(), typeDetail: [] });
+    crossMonth.api.init();
+    await wait(30);
+    assert.ok(crossMonth.calls.length > 0, "跨月同一号必须判为过期并刷新（旧实现差 0 = 永不刷新）");
+
+    // ③ 昨天：必须刷新
+    const yesterday = page({ monthCost: 1234, updateTime: new Date(2026, 10, 4, 23, 0, 0).getTime(), typeDetail: [] });
+    yesterday.api.init();
+    await wait(30);
+    assert.ok(yesterday.calls.length > 0, "昨天的缓存必须刷新");
+
+    // ④ 没有/坏掉的时间戳：必须刷新
+    const noStamp = page({ monthCost: 500, typeDetail: [] });
+    noStamp.api.init();
+    await wait(30);
+    assert.ok(noStamp.calls.length > 0, "缺少缓存时间戳时必须刷新");
+
+    // ⑤ 直接验 isStale：只有「同一天」才算新鲜
+    const probe = loadMonthCost({ nowMs: nowMs });
+    assert.strictEqual(probe.api.isStale(new Date(2026, 10, 5, 0, 0, 0).getTime()), false, "同一天不得判过期");
+    assert.strictEqual(probe.api.isStale(new Date(2026, 10, 4, 23, 59, 59).getTime()), true, "前一天必须判过期");
+    assert.strictEqual(probe.api.isStale(new Date(2026, 9, 5, 10, 0, 0).getTime()), true, "上个月同一号必须判过期");
+    assert.strictEqual(probe.api.isStale(undefined), true, "没有时间戳必须判过期");
+
+    console.log("✓ 场景 11 通过: 跨日判断改按自然日边界，跨月同号不再「永不刷新」也不会误刷");
+}
+
+/* ------------------------------------------------------------------ */
+/* 场景 12: RoomVip 过期不再显示「距VIP到期 -12 天」                   */
+/* ------------------------------------------------------------------ */
+
+async function testRoomVipExpiredWording() {
+    const wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+    // 过期 12.5 天：Math.floor 之后是 -13，绝对值 13
+    const expireSec = Math.floor((Date.now() - 12.5 * 86400000) / 1000);
+    const page = loadRoomVip({
+        html: "<!DOCTYPE html><html><body><div id='js-backpack-enter'></div></body></html>",
+        fetch: function () {
+            return Promise.resolve({
+                text: function () {
+                    return Promise.resolve(effectListHtml([
+                        '{"property_id":"1646","show_id_list":"9999","expire_time":"' + expireSec + '"}',
+                    ]));
+                },
+            });
+        },
+    });
+    page.api.run();
+    await wait(30);
+    const badge = page.win.document.querySelector(".room-vip");
+    assert.ok(badge, "过期的 VIP 记录仍要插出节点（days <= 5 的既有口径不变）");
+    const text = String(badge.textContent || "");
+    assert.ok(text.indexOf("已过期") !== -1, "负数必须说「已过期」，实际 " + JSON.stringify(text));
+    assert.ok(text.indexOf("距VIP到期") === -1, "过期时不得再拼「距VIP到期 … 天」，实际 " + JSON.stringify(text));
+    assert.ok(text.indexOf("-") === -1 && text.indexOf("−") === -1, "不得再出现负号天数，实际 " + JSON.stringify(text));
+    assert.strictEqual(page.log.errors.length, 0, "过期分支不得抛错");
+
+    console.log("✓ 场景 12 通过: VIP 过期显示「VIP 已过期 N 天」，不再出现负号天数");
+}
+
+/* ------------------------------------------------------------------ */
+/* 场景 13: DanmakuTail 只在发送按钮可用时拦截回车                     */
+/* ------------------------------------------------------------------ */
+
+function testDanmakuTailEnterGuard() {
+    const page = loadDanmakuTail({
+        html: "<!DOCTYPE html><html><body><textarea class='ChatSend-txt'></textarea><button class='ChatSend-button'></button></body></html>",
+        stored: JSON.stringify({ isTailEnabled: true, tailContent: "尾巴", type: "2" }),
+    });
+    page.api.init();
+    const textarea = page.win.document.querySelector(".ChatSend-txt");
+    const button = page.win.document.querySelector(".ChatSend-button");
+    const keydown = page.listeners.filter(function (l) {
+        return l.type === "keydown" && l.target === textarea;
+    }).pop();
+    assert.ok(keydown, "小尾巴必须在输入框上真的挂了 keydown");
+
+    let clicks = 0;
+    button.click = function () { clicks++; };
+    const fire = function (extra) {
+        const ev = {
+            isTrusted: true,
+            key: (extra && extra.key) || "Enter",
+            shiftKey: !!(extra && extra.shiftKey),
+            prevented: false,
+            stopped: false,
+            preventDefault: function () { this.prevented = true; },
+            stopPropagation: function () { this.stopped = true; },
+        };
+        keydown.fn.call(textarea, ev);
+        return ev;
+    };
+
+    // 按钮可用：拦截回车并代点一次（保持既有行为）
+    let ev = fire({});
+    assert.strictEqual(ev.prevented, true, "按钮可用时必须拦截回车");
+    assert.strictEqual(clicks, 1, "必须代点一次发送按钮");
+    assert.strictEqual(ev.stopped, true, "拦截时必须 stopPropagation，避免页面再发一次");
+
+    // 红：按钮 disabled 时旧实现照样 preventDefault —— 回车被吞，弹幕根本发不出去
+    button.disabled = true;
+    ev = fire({});
+    assert.strictEqual(ev.prevented, false, "按钮 disabled 时不得吞回车");
+    assert.strictEqual(clicks, 1, "按钮 disabled 时不得代点");
+    button.disabled = false;
+
+    // 按钮已不在文档里（聊天区被重绘）：同样放行
+    button.remove();
+    ev = fire({});
+    assert.strictEqual(ev.prevented, false, "按钮脱离文档时不得吞回车");
+
+    // Shift+Enter 是换行，本来就不该拦截
+    const back = page.win.document.createElement("button");
+    back.className = "ChatSend-button";
+    page.win.document.body.appendChild(back);
+    ev = fire({ shiftKey: true });
+    assert.strictEqual(ev.prevented, false, "Shift+Enter 不得拦截");
+
+    assert.strictEqual(page.log.errors.length, 0, "回车分支不得抛错");
+    console.log("✓ 场景 13 通过: 回车只在发送按钮可用时被拦截，disabled / 脱文档都放行");
+}
+
+/* ------------------------------------------------------------------ */
 /* 场景 9: 源码级守卫（本轮所有判空与上限都在位）                       */
 /* ------------------------------------------------------------------ */
 
@@ -672,6 +927,16 @@ function testStaticGuardRails() {
     assert.ok(MONTHCOST_SRC.indexOf("MonthCost_refreshCost") !== -1, "MonthCost 必须有统一的可 catch 刷新出口");
     assert.ok(NOLOGIN_SRC.indexOf("Array.isArray(data)") !== -1, "未登录优化必须排除数组型脏数据");
 
+    // ⑤ task-19 的四条（本文件场景 10-13 的行为断言之外的源码级保险）
+    assert.ok(MAIN_SRC.indexOf('initPkg_Safe("Menu"') !== -1, "init() 必须逐项隔离（Menu 走 initPkg_Safe）");
+    assert.ok(MONTHCOST_SRC.indexOf("MonthCost_isStale") !== -1, "本月消费必须用自然日边界判断缓存是否过期");
+    assert.ok(MONTHCOST_SRC.indexOf("Math.abs(now - new Date(item.updateTime).getDate())") === -1,
+        "不得再用「日期号相减」判断跨日");
+    assert.ok(MONTHCOST_SRC.indexOf("cached.getFullYear() === today.getFullYear()") !== -1,
+        "跨日判断必须按年月日三元组比较");
+    assert.ok(ROOMVIP_SRC.indexOf("VIP 已过期") !== -1, "房间VIP 过期必须说「已过期」");
+    assert.ok(DANMAKUTAIL_SRC.indexOf("button.disabled") !== -1, "小尾巴回车必须判发送按钮是否可用");
+
     // ④ LastLiveTime 在没有目标节点的页面上不得抛错
     const dom = makeDom("<!DOCTYPE html><html><body><div>普通页面</div></body></html>");
     const log = collectConsole();
@@ -699,7 +964,11 @@ function testStaticGuardRails() {
     await testMonthCostDeadEnds();
     testChatMemoryDeadEnds();
     testStaticGuardRails();
-    console.log("=== task-17 回归（common.js 死代码 + 面板死路）9 组场景全部通过 ===");
+    testInitIsolation();
+    await testMonthCostStaleness();
+    await testRoomVipExpiredWording();
+    testDanmakuTailEnterGuard();
+    console.log("=== task-17/19 回归（common.js 死代码 + 面板死路 + init 隔离）13 组场景全部通过 ===");
 })().catch(function (e) {
     console.error("测试失败:", e && e.stack ? e.stack : e);
     process.exit(1);

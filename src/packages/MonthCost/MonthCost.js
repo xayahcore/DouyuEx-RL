@@ -317,19 +317,35 @@ function MonthCost_getData() {
 	return storage;
 }
 
+/**
+ * 缓存是否已经过期（跨过自然日边界）。
+ *
+ * 旧实现用「日期号相减」判断：Math.abs(new Date().getDate() - new Date(updateTime).getDate())，
+ * 于是 10-05 → 11-05 差 0（**永不刷新**，月初到现在都不更新），
+ * 10-31 → 11-01 差 30（每次进房都重刷一遍）。
+ * 现在按年月日三元组比较：只有「就是今天」才算新鲜，其余一律刷新。
+ */
+function MonthCost_isStale(updateTime, now) {
+	const cached = updateTime ? new Date(updateTime) : null;
+	if (!cached || isNaN(cached.getTime())) return true; // 没有/坏掉的缓存时间戳 = 必须刷新
+	const today = now || new Date();
+	return !(cached.getFullYear() === today.getFullYear()
+		&& cached.getMonth() === today.getMonth()
+		&& cached.getDate() === today.getDate());
+}
+
 function MonthCost_updateCost() {
 	if (seeStatus !== 1) return;
 	let timeDiff = 1;
 	let tmpCost = 0;
 	let tmpTypeDetail = [];
-	let now = new Date().getDate();
 
 	let storage = MonthCost_getData();
 	if (my_uid in storage) {
-		let item = storage[my_uid];
-		timeDiff = Math.abs(now - new Date(item.updateTime).getDate());
-		tmpCost = item.monthCost;
-		tmpTypeDetail = item.typeDetail || [];
+		let item = storage[my_uid] || {};
+		timeDiff = MonthCost_isStale(item.updateTime) ? 1 : 0;
+		tmpCost = Number(item.monthCost) || 0;
+		tmpTypeDetail = Array.isArray(item.typeDetail) ? item.typeDetail : [];
 		let moneyDom = MonthCost_getMoneyDom();
 		if (moneyDom) moneyDom.innerText = String(tmpCost / 100);
 		typeDetail = tmpTypeDetail;

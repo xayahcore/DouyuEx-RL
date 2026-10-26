@@ -69,8 +69,16 @@ function setRoomVipExpireDays() {
         if (days <= roomVipExpireDayLimit) {
           const tipsDom = initPkg_RoomVip_Dom();
           if (!tipsDom) continue; // 节点没插进去就不要再按 id 点名（旧实现这里直接 TypeError）
-          const dayDom = tipsDom.querySelector("#room-vip-expire-days") || document.getElementById("room-vip-expire-days");
-          if (dayDom) dayDom.innerText = days;
+          if (days < 0) {
+            // 过期了还说「距VIP到期 -12 天」读不通：整句改成「VIP 已过期 N 天」。
+            // 外层模板是「距VIP到期 <span id="room-vip-expire-days">**</span> 天」，
+            // 只改 span 会剩下「距VIP到期 已过期 天」，所以这里重写容器文本。
+            // 拼进去的只有 Math.abs(days) 这个数字，不含任何外部输入。
+            tipsDom.innerHTML = "VIP 已过期 " + Math.abs(days) + " 天";
+          } else {
+            const dayDom = tipsDom.querySelector("#room-vip-expire-days") || document.getElementById("room-vip-expire-days");
+            if (dayDom) dayDom.innerText = days;
+          }
         }
       }
     })

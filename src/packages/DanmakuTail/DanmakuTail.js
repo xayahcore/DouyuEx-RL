@@ -209,11 +209,16 @@ function initPkg_DanmakuTail_HandleFunc(checkboxSelector, inputSelector) {
 
         keydownHandler = function (e) {
             if (!e.isTrusted) return;
-            if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                e.stopPropagation();
-                button.click();
-            }
+            if (e.key !== "Enter" || e.shiftKey) return;
+            // 只在发送按钮**真的能用**时拦截回车。
+            // 旧实现无条件 preventDefault + stopPropagation 再去 click：
+            // 按钮 disabled（未登录 / 字数超限 / 冷却中）时这一击等于把回车吞掉，
+            // 用户看到的是「敲回车完全没反应」—— 比原生行为更糟。
+            // 同理按钮已经不在文档里（聊天区被重绘）也不得吞输入，交回页面处理。
+            if (button.disabled || button.getAttribute("aria-disabled") === "true" || !button.isConnected) return;
+            e.preventDefault();
+            e.stopPropagation();
+            button.click();
         };
 
         clickHandler = function (e) {

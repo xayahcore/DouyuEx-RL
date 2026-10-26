@@ -61,22 +61,28 @@
 // 核心层标记 勿删
 
 function init() {
-  initPkg_PopupPlayer_MergeDanmaku_ScriptHook();
-  initPkg_Shield_RemoveRepeatedDanmaku_ScriptHook();
-  initPkg_ShowDanmaku_ScriptHook();
-  initScriptHook();
-  initResponseHook();
-  initPkg_ShowDanmaku();
-  Update_checkVersion();
-  initKillP2P();
-  initFullScreen();
-  initHighestVideoQuality();
-  initPkg_NoLogin();
-  removeAD();
-  initPkg_Console();
-  initPkg_Menu();
-  initPkg_Reset();
-  initPkg_FollowList();
+  // 与 initPkg() 同一口径的逐项隔离。
+  // 这 16 步此前是裸平铺直调：任何一处抛异常，它**后面**的初始化就全部不再执行 ——
+  // 而失联的恰好是排在末尾的 Console / Menu / Reset / FollowList，
+  // 用户侧只看到「某几个功能没了，刷新一次可能又好了」（抛不抛取决于当时的 DOM 时机），
+  // 且日志里没有任何线索。现在每一句都过 initPkg_Safe：失败报出包名后继续往下走。
+  // ⚠ 调用顺序与本行语义必须与改造前逐行一致，不要在这里顺手重排。
+  initPkg_Safe("PopupPlayer_MergeDanmaku_ScriptHook", initPkg_PopupPlayer_MergeDanmaku_ScriptHook);
+  initPkg_Safe("Shield_RemoveRepeatedDanmaku_ScriptHook", initPkg_Shield_RemoveRepeatedDanmaku_ScriptHook);
+  initPkg_Safe("ShowDanmaku_ScriptHook", initPkg_ShowDanmaku_ScriptHook);
+  initPkg_Safe("ScriptHook", initScriptHook);
+  initPkg_Safe("ResponseHook", initResponseHook);
+  initPkg_Safe("ShowDanmaku", initPkg_ShowDanmaku);
+  initPkg_Safe("Update_checkVersion", Update_checkVersion);
+  initPkg_Safe("KillP2P", initKillP2P);
+  initPkg_Safe("FullScreen", initFullScreen);
+  initPkg_Safe("HighestVideoQuality", initHighestVideoQuality);
+  initPkg_Safe("NoLogin", initPkg_NoLogin);
+  initPkg_Safe("RemoveAD", removeAD);
+  initPkg_Safe("Console", initPkg_Console);
+  initPkg_Safe("Menu", initPkg_Menu);
+  initPkg_Safe("Reset", initPkg_Reset);
+  initPkg_Safe("FollowList", initPkg_FollowList);
 }
 function initPkg() {
   // 单个包初始化失败不得拖垮其余包。
