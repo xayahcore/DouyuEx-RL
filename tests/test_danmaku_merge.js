@@ -744,6 +744,15 @@ async function run() {
   assert.strictEqual(srcBus.api.stats.pushError, 1, "push 抛错必须计入 pushError");
   assert.strictEqual(srcBus.api.busCache, null, "push 抛错后必须清掉总线缓存");
 
+  // 10.7 M6b：整扇门消失（SPA 换房把 socketProxy 摘掉）后不得继续往旧对象里 push
+  const srcGone = loadMergeSource();
+  const goneBus = makeSourceBus();
+  srcGone.win.socketProxy = { socketStream: goneBus };
+  assert.strictEqual(srcGone.ctx.MergeDanmaku_getStream(), goneBus, "前置：这扇门已被缓存");
+  srcGone.win.socketProxy = undefined;
+  assert.strictEqual(srcGone.ctx.MergeDanmaku_getStream(), null, "门整个消失后必须重新发现（返回 null 去挂起），不能复用旧缓存");
+  assert.strictEqual(srcGone.api.busCache, null, "门消失后必须清掉总线缓存");
+
   // 10.5 M8：补交限速 4 条/500ms，且实时报文排在挂起之后
   const srcHold = loadMergeSource();
   const holdBus = makeSourceBus();

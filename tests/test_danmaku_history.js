@@ -383,7 +383,7 @@ async function run() {
         ok("日期切换：请求日期随之改变，跨日期状态正确");
     }
 
-    // ---------- 7. 未登录与各类失败路径 ----------
+    // ---------- 7. 停服数据源的失败路径 ----------
     {
         const m = loadModule({
             plan: () => ({ finalUrl: "https://www.doseeing.com/login?redirect=%2Fdata%2Fapi%2Fuser_feed", list: [] }),
@@ -391,38 +391,45 @@ async function run() {
         m.api.scan();
         m.api.buttons()[0].click();
         await wait(60);
-        assert.ok(m.api.status().indexOf("登录") !== -1, "未登录应如实提示需登录");
-        assert.strictEqual(m.api.statusClickable(), true, "未登录提示应可点击前往登录");
+        // 数据站自 2026-09-30 停服后，/login 也只剩一张公告页：
+        // 这条路径的真实语义是「数据源没了」，不是「你没登录」。
+        assert.ok(m.api.status().indexOf("停止服务") !== -1,
+            `应如实提示数据源已停服，实际：${m.api.status()}`);
+        assert.strictEqual(m.api.statusClickable(), false, "不得再给「去登录 / 重试」这类误导动作");
         assert.strictEqual(m.api.moreVisible(), false, "失败时不得显示加载更多");
-        ok("未登录（finalUrl 跳登录页）如实提示且可一键前往登录");
-
-        m.api.panel().querySelector(".danmaku-history-panel__status-text").onclick();
-        assert.ok(m.opened.length === 1 && m.opened[0].indexOf("doseeing.com/login") !== -1,
-            "点击提示应打开 doseeing 登录页");
-        ok("未登录提示点击后跳转登录页");
+        assert.strictEqual(m.opened.length, 0, "不得再打开 doseeing 登录页（那是死链）");
+        ok("数据源停服：如实提示「第三方数据源已停止服务」，无登录引导、无死链");
     }
 
-    // finalUrl 缺失时的兜底：返回登录页 HTML 也必须判定为「需登录」而非「数据源异常」
+    // finalUrl 缺失 + 响应形似登录页：停服后它同样是「数据源没了」
     {
         const m = loadModule({ plan: () => ({ reason: "loginHtml" }) });
         m.api.scan();
         m.api.buttons()[0].click();
         await wait(60);
-        assert.ok(m.api.status().indexOf("登录") !== -1,
-            `finalUrl 缺失时应靠响应内容兜底判定为需登录，实际：${m.api.status()}`);
-        ok("finalUrl 缺失时按响应内容兜底判定为「需登录」（不误报为数据源异常）");
+        assert.ok(m.api.status().indexOf("停止服务") !== -1,
+            `finalUrl 缺失时应同样如实提示停服，实际：${m.api.status()}`);
+        ok("finalUrl 缺失时同样提示「数据源已停止服务」（不再误报为需登录）");
     }
 
     {
-        for (const [reason, expectWord] of [["timeout", "超时"], ["network", "失败"], ["http", "失败"], ["parse", "异常"]]) {
+        // 停服后 http / parse 都归并为「数据源已停止服务」：再给"重试"只是让用户空点。
+        // 只有真正可能是临时故障的 timeout / network 才保留重试入口。
+        for (const [reason, expectWord, clickable] of [
+            ["timeout", "超时", true],
+            ["network", "停止服务", false],
+            ["http", "停止服务", false],
+            ["parse", "停止服务", false],
+        ]) {
             const m = loadModule({ plan: () => ({ reason }) });
             m.api.scan();
             m.api.buttons()[0].click();
             await wait(60);
             assert.ok(m.api.status().indexOf(expectWord) !== -1,
                 `${reason} 应给出含「${expectWord}」的提示，实际：${m.api.status()}`);
-            assert.strictEqual(m.api.statusClickable(), true, `${reason} 应可点击重试`);
-            ok(`失败路径 ${reason}：如实提示且加载状态已复位（可重试）`);
+            assert.strictEqual(m.api.statusClickable(), clickable,
+                `${reason} 的可点击状态不符合预期（停服类失败不再给重试暗示）`);
+            ok(`失败路径 ${reason}：提示「${expectWord}」（可重试=${clickable}）`);
         }
     }
 

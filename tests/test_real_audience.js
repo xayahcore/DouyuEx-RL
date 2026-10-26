@@ -52,9 +52,10 @@ function loadRealAudience(opts) {
         warn: (...args) => warnings.push(args.join(" "))
     };
 
-    // doseeing 的可控桩：用例可以在中途把接口打挂，验证"接口不可达时统计条还剩什么"。
-    // payload.data 直接喂给 getRealViewer 的返回值（真实实现取的是 response.response）。
+    // 第三方数据站（doseeing）已于 2026-09-30 全线停服，RealAudience 不再向它发请求。
+    // 这个桩现在只剩"计数"职责：calls 必须恒为 0，用例会断言（死源依赖是否真的摘干净）。
     const gmState = {
+        calls: 0,
         fail: !!opts.gmFail,
         payload: opts.gmPayload || { error: 0, data: {} }
     };
@@ -74,7 +75,8 @@ function loadRealAudience(opts) {
             initDom: initPkg_RealAudience_Dom,
             ensure: realAudienceEnsure,
             switchWatch: switchRealAndTodayWatch,
-            setViewer: setRealViewer
+            setViewer: setRealViewer,
+            handleNoble: initPkg_RealAudience_Handle
         };
         `
     );
@@ -85,6 +87,7 @@ function loadRealAudience(opts) {
         () => Promise.resolve({ json: async () => ({ error: 0, data: { todayWatch: 0 } }) }),
         (req) => {
             if (!req) return;
+            gmState.calls++;
             if (gmState.fail) {
                 if (typeof req.onerror === "function") req.onerror(new Error("blocked"));
                 return;
@@ -92,7 +95,11 @@ function loadRealAudience(opts) {
             if (typeof req.onload === "function") req.onload({ response: gmState.payload });
         },
         () => {},
-        () => "unknown",
+        // getType：按 sendBarrage 报文的真实形态取 type@=xxx，供「贵宾数」用例驱动
+        (str) => {
+            const m = String(str).match(/type@=([^\/]*)/);
+            return m ? m[1] : "unknown";
+        },
         () => {},
         quietConsole
     );
@@ -105,7 +112,9 @@ function wait(ms) {
 }
 
 function statsBarEl(win) {
-    return win.document.getElementById("real-audience__total");
+    // 存活性探针改看「已播」节点：#real-audience__total 属于死源三项，
+    // 2026-10-26 起连同节点一起撤掉了（数据站停服）。
+    return win.document.getElementById("real-audience__time");
 }
 
 function countBars(win) {
@@ -276,47 +285,56 @@ async function testStatsBarSustain() {
         dom.window.close();
     }
 
-    // === 场景 9: doseeing 不可达时，本地就能算出来的项（已播）仍必须写进去 ===
+    // === 场景 9: 死源已停服 → 零请求、死块不渲染、本机项照写 ===
     {
-        console.log("--> 场景 9: doseeing 全程失败 → 已播仍要写、已有数字不得被清成 0...");
-        // ① 从一开始就挂掉：旧实现是 try 两个请求、一挂就 return，
-        //    于是"已播"（只用本地 showtime）也永远不写 —— 这一条是分水岭。
-        const {
-            dom: domFail,
-            win: winFail,
-            api: apiFail,
-            warnings: warnFail
-        } = loadRealAudience({ url: "https://www.douyu.com/74751", gmFail: true });
-        apiFail.initDom();
-        await apiFail.setViewer();
-        const timeVal = statValue(winFail, "real-audience__time");
-        assert.ok(
-            timeVal !== null && timeVal.indexOf("****") === -1,
-            "doseeing 不可达时【已播】仍必须写进去（它只用本地 showtime），实际 " + JSON.stringify(timeVal)
-        );
-        assert.ok(
-            warnFail.some((w) => w.indexOf("真实人数") !== -1),
-            "接口失败必须留下 warn 线索，不能静默"
-        );
-        domFail.window.close();
-
-        // ② 先正常取到数据、再挂掉：已知的真实人数不得被覆盖成占位符或 0
-        const gmPayload = { error: 0, data: { "active.uv": 12345, "chat.uv": 678, "gift.all.uv": 90, "gift.paid.price": 123456, "gift.all.price": 234567 } };
-        const { dom, win, api, gmState } = loadRealAudience({ url: "https://www.douyu.com/74751", gmPayload: gmPayload });
+        console.log("--> 场景 9: 数据站已停服 → 零请求、死块不渲染、已播/贵宾照写...");
+        const { dom, win, api, warnings, gmState } = loadRealAudience({ url: "https://www.douyu.com/74751" });
         api.initDom();
         await api.setViewer();
-        assert.strictEqual(statValue(win, "real-audience__total"), "12345", "接口正常时今日累计观看必须写进去");
-        assert.strictEqual(api.info().view, 12345, "接口正常时 real_info.view 必须更新");
 
-        gmState.fail = true;
+        // ① 一条请求都不许发：对方站点对所有路径只返回「停止服务公告」页
+        assert.strictEqual(
+            gmState.calls,
+            0,
+            "数据源停服后不得再向 doseeing 发任何请求，实际发了 " + gmState.calls + " 次"
+        );
+        assert.ok(
+            !warnings.some((w) => w.indexOf("真实人数") !== -1),
+            "既然不再请求，就不得再产生「真实人数请求失败」噪声告警：" + JSON.stringify(warnings)
+        );
+
+        // ② 死源三项：节点必须干脆不存在，而不是留着永远显示 **** / 0
+        ["real-audience__total", "real-audience__barrage", "real-audience__money_yc", "real-audience__t"].forEach((id) => {
+            assert.strictEqual(
+                win.document.getElementById(id),
+                null,
+                "死源节点 #" + id + " 不得存在（留着只会永远显示 **** 或 0，等于骗人）"
+            );
+        });
+
+        // ③ 本机算得出来的项照旧有值：已播（h5room showtime）
+        const timeVal = statValue(win, "real-audience__time");
+        assert.ok(
+            timeVal !== null && timeVal.indexOf("已播:") === 0 && timeVal.indexOf("****") === -1,
+            "「已播」只用本地 showtime，必须照写，实际 " + JSON.stringify(timeVal)
+        );
+
+        // ④ 贵宾数：来自长连接 oni.vn，与死源无关，同样照写（12345 → 1.2万）
+        api.handleNoble("type@=oni/rid@=74751/vn@=12345/");
         await api.setViewer();
         assert.strictEqual(
-            statValue(win, "real-audience__total"),
-            "12345",
-            "doseeing 失败时不得把已知的真实人数覆盖成占位符或 0"
+            statValue(win, "real-audience__noble"),
+            "1.2万",
+            "「贵宾数」来自长连接，必须照写，实际 " + JSON.stringify(statValue(win, "real-audience__noble"))
         );
-        assert.strictEqual(api.info().view, 12345, "doseeing 失败时 real_info.view 必须保持上一次的值");
-        console.log("✓ 场景 9 通过: 接口不可达时本地项照写、已知数字不被清 0、失败有线索");
+
+        // ⑤ 整条带停服说明：用户悬停能知道为什么少了三项
+        const bar = win.document.getElementsByClassName("real-audience")[0];
+        assert.ok(
+            String(bar.getAttribute("title")).indexOf("停止服务") !== -1,
+            "统计条必须带「数据源已停止服务」的悬停说明，实际 " + JSON.stringify(bar.getAttribute("title"))
+        );
+        console.log("✓ 场景 9 通过: 零请求 + 死块不渲染 + 已播/贵宾照写 + 停服说明在位");
         dom.window.close();
     }
 

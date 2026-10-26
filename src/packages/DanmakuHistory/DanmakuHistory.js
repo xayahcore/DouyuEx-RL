@@ -1,7 +1,11 @@
 /* ==================== 历史弹幕查询（用户卡片入口 + 页内弹窗） ==================== */
 /*
- * 数据源：doseeing.com（在看排行）—— 斗鱼第三方数据站，@connect 已在 main.js 声明。
- * 接口契约（2026-09-22 实机实测）：
+ * 数据源：doseeing.com（在看排行）—— 斗鱼第三方数据站。
+ * ⚠ 2026-10-26 现状：该站自 2026-09-30 起全线停止服务，对所有路径（含本接口与 /login）
+ *   只返回同一张「停止服务公告」页（HTTP 200、非 JSON）。main.js 里的 @connect doseeing.com
+ *   已随之摘除，登录引导也已删除 —— 再引导用户去登录是死链，且会把"数据源没了"
+ *   误报成"你没登录"。本模块暂留（待本地弹幕档案替代），失败时如实说"数据源已停止服务"。
+ * 历史接口契约（2026-09-22 实机实测，停服前）：
  *   GET /data/api/user_feed?uid=&dt=<YYYY-MM-DD>&offset=<n>&order=<chat|gift>
  *   · 必须登录，匿名一律 302 跳 /login（用 finalUrl 判定）
  *   · 单页固定 50 条，offset 递增翻页，返回不足 50 即无更多
@@ -353,10 +357,9 @@ function DanmakuHistory_setStatus(text, kind, action) {
   box.onclick = null;
   box.title = "";
 
-  if (action === "login") {
-    box.title = "点击前往 doseeing 登录";
-    box.onclick = function () { openPage("https://www.doseeing.com/login", true); };
-  } else if (action === "retry") {
+  // 曾经这里还有一条 action === "login" → openPage("https://www.doseeing.com/login")。
+  // 数据站停服后那是一个死链，只有 retry 还有意义。
+  if (action === "retry") {
     box.title = "点击重试";
     box.onclick = function () {
       DanmakuHistory_loadPage(danmakuHistoryOffset, danmakuHistoryOffset === 0);
@@ -373,9 +376,13 @@ function DanmakuHistory_setMoreVisible(visible) {
 function DanmakuHistory_renderError(reason) {
   let msg = "加载失败，请稍后重试";
   let action = "retry";
-  if (reason === "login") {
-    msg = "需先登录 doseeing 才能查询历史弹幕";
-    action = "login";
+  if (reason === "login" || reason === "parse" || reason === "http" || reason === "network") {
+    // 停服前这四种分别是"未登录 / 结构变了 / 服务端 5xx / 网络不通"。
+    // 现在它们指向同一件事：数据站已停止服务（任何路径都返回公告页，登录页也只剩壳）；
+    // 而 main.js 里的 @connect doseeing.com 也已摘除，油猴会直接拦掉这个请求。
+    // 所以统一如实告知，并去掉"去登录""再试一次"这些只会让用户白点的动作。
+    msg = "第三方数据源已停止服务";
+    action = "";
   } else if (reason === "timeout") {
     msg = "请求超时，请重试";
   } else if (reason === "parse") {

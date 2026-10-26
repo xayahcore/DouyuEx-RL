@@ -57,8 +57,9 @@ var exTimer = 0; // 总时钟句柄
  * 靓号(vipId)直播间的 URL 数字只是展示短号（如 /15000），真实 room_id 是另一个号
  * （如 796449）。脚本是 @run-at document-start，顶层读 HTML 时页面尚未解析，
  * "$ROOM.room_id =" 与 "roomID:" 双双落空后只能兜底到 canonical 上的短号，
- * 而全局 rid 一旦定死便再也不会重算 —— 依赖真实 room_id 的 doseeing 统计接口
- * 于是整场返回 0（实测 rid=15000 四项全 0，rid=796449 有真实数据）。
+ * 而全局 rid 一旦定死便再也不会重算 —— 而按真实 room_id 取数的接口（h5room / fsjk /
+ * betard）全都拿不到数据（当年就是实测 rid=15000 四项全 0、rid=796449 才有真实值）。
+ * 注：当年暴露这个问题的第三方统计站 doseeing 已于 2026-09-30 停服，其余接口照旧。
  *
  * 因此改为可反复调用的解析器：候选按可靠度排序，并排除 pathname 上的短号。
  * 首选顺序与 src/core/rank_engine.js 的 getRid() 保持一致 —— 页面自己使用的真实

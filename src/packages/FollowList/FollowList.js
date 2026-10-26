@@ -1,15 +1,30 @@
 let followListHook;
 function initPkg_FollowList() {
+    let tries = 0;
     let intID = setInterval(() => {
+        /* ⚠ 关键：DomHook 在目标节点不存在时是**静默 return**（构造出一个没有 observer 的
+           "正常对象"）。原来这里只要两个兜底选择器命中就 clearInterval，于是"节点还没渲染出来"
+           的那一次会把轮询永久停掉，关注列表增强从此再也不出现 —— "时好时坏"就是这么来的。
+           现在必须确认 observer 真的挂上了才收工；挂不上就继续等，最多等 120 秒。 */
         if (getValidDom([".Header-follow-content", "#js-backpack-enter"])) {
             followListHook = new DomHook(".Header-follow-content", false, handleFollowList);
+            if (followListHook && followListHook.observer) {
+                clearInterval(intID);
+                return;
+            }
+            followListHook = null;
+        }
+        if (++tries > 120) {
             clearInterval(intID);
+            console.warn("[DouyuEx] 关注列表容器等不到，列表增强本次不启用");
         }
     }, 1000);
 }
 
 function handleFollowList(m) {
-    let active = document.getElementsByClassName("Header-follow-tab is-active")[0].innerText;
+    let activeDom = document.getElementsByClassName("Header-follow-tab is-active")[0];
+    if (!activeDom) return;
+    let active = activeDom.innerText;
     if (active === "特别关注" || active === "视频动态") {
         return;
     }
@@ -18,13 +33,25 @@ function handleFollowList(m) {
         return;
     }
     // panel[0].style.marginTop = "12px";
-    document.getElementsByClassName("Header-follow-listBox")[0].style.display = "none";
+    let listBox = document.getElementsByClassName("Header-follow-listBox")[0];
+    if (listBox) listBox.style.display = "none";
     setNewFollowList(panel[0]);
 }
 async function setNewFollowList(panel) {
+    if (!panel) return;
     let loadInCurrentPage = await GM_getValue("Ex_LoadInCurrentPage", false);
     let followList = await getFollowList();
+    /* getFollowList 现在失败会 resolve(null)（此前 Promise 永挂，面板就一直是空白）。
+       这里如实说一句，别让人以为"关注列表里就是没人开播"。 */
+    if (!followList) {
+        showMessage("【关注列表】读取失败 · 可能是登录态失效或网络问题，刷新页面再试", "error");
+        return;
+    }
     if (followList.error != "0") {
+        return;
+    }
+    if (!followList.data || !Array.isArray(followList.data.list)) {
+        showMessage("【关注列表】返回数据不完整，稍后再试", "error");
         return;
     }
     const FOLLOWLIST_LIMIT = 10; // 关注列表最多显示个数
@@ -95,6 +122,10 @@ function getFollowList() {
             return res.json();
         }).then(ret => {
             resolve(ret);
+        }).catch((e) => {
+            // 没有 .catch 时登录态失效（返回 HTML）会让这个 Promise 永远悬着，面板一片空白
+            console.warn("[DouyuEx] 关注列表读取失败:", e && e.message);
+            resolve(null);
         })
     })
 }

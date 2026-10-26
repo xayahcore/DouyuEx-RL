@@ -31,7 +31,7 @@ function LiveTool_Reply_insertDom() {
             <input style="width:40px;margin-left:10px;" type="button" id="reply__del" value="删除"/>
             <label style="margin-left:5px">CD：<input id="reply__time" type="text" placeholder="秒" /></label>
             <div class="reply__option">
-                <label>词：<input id="reply__word" type="text" placeholder="re(式)=结果"/></label>
+                <label>词：<input id="reply__word" type="text" placeholder="re(正则)=期望匹配" title="普通词：弹幕包含即命中；re(正则)=期望匹配：用正则匹配弹幕，且首个匹配必须与「期望匹配」完全相等才算命中，例 re(^\\d+$)=666"/></label>
                 <label>回复：<input id="reply__reply" type="text" placeholder="<id>用户名 <txt>弹幕"/></label>
             </div>
         </div>
@@ -237,50 +237,32 @@ function initPkg_LiveTool_Reply_Handle(text) {
         }
         let nn = getStrMiddle(text, "nn@=", "/");
         let txt = getStrMiddle(text, "txt@=", "/");
-        let isConform = false;
         for (let key in replyWordList) {
             if (key == "") {
                 continue;
             }
-            if (key.indexOf("re(") != -1) {
-                // 正则
-                let regStr = getStrMiddle(key, "re(", ")=");
-                let strArr = key.split("=")
-                if (strArr.length > 1) {
-                    let str = strArr[1];
-                    let regObj = new RegExp(regStr, "g");
-                    let result = regObj.exec(txt);
-                    if (result.length > 0) {
-                        if (result[0] == str) {
-                            isConform = true;
-                        } else {
-                            isConform = false;
-                        }
-                    }
-                }
-            } else {
-                if (String(txt).indexOf(key) != -1) {
-                    isConform = true;
-                } else {
-                    isConform = false
+            // 命中判定统一走 LiveTool_keywordRuleHit：正则不命中时 exec 返回 null，
+            // 旧代码直接取 result.length 会抛 TypeError，把整条弹幕派发链（贵宾数/回执/投票…）一起掐死。
+            if (LiveTool_keywordRuleHit(key, txt) != true) {
+                continue;
+            }
+            let item = replyWordList[key];
+            if (!item) {
+                continue;
+            }
+            let reply = String(item.reply).replace(/<id>/g, nn);
+            reply = String(reply).replace(/<txt>/g, txt);
+            if (isReplyCD == false) {
+                sendBarrage(reply);
+                // 设置CD
+                if (replyCd > 0) {
+                    isReplyCD = true;
+                    setTimeout(() => {
+                        isReplyCD = false;
+                    }, replyCd * 1000);
                 }
             }
-            if (isConform == true) {
-                let reply = replyWordList[key].reply;
-                reply = String(reply).replace(/<id>/g, nn);
-                reply = String(reply).replace(/<txt>/g, txt);
-                if (isReplyCD == false) {
-                    sendBarrage(reply);
-                    // 设置CD
-                    if (replyCd > 0) {
-                        isReplyCD = true;
-                        setTimeout(() => {
-                            isReplyCD = false;
-                        }, replyCd * 1000);
-                    }
-                }
-                break;
-            }
+            break;
         }
     }
     

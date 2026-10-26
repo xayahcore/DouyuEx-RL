@@ -253,10 +253,13 @@ function setBarrgePanelFunc(parentDom, id) {
     };
     
     document.getElementById("barragePanel__search").onclick = async () => {
+        // 接口失败时 getUserUid 会给出空串：必须显式提示，不能点了没反应
         let uid = await getUserUid(id);
         if (uid !== "") {
             // dt=0（“全部日期”模式）在数据源端已返回 502 Bad Gateway，必须传具体直播日
             openPage(`https://www.doseeing.com/data/fan/${uid}?type=chat&dt=${getLocalDateStr()}`, true);
+        } else {
+            showMessage("【查弹幕】未能解析该用户的 UID（接口异常或查无此人）", "warning");
         }
     };
 }
@@ -300,30 +303,55 @@ function getUserRecentBarrage(name) {
     });
 }
 
+/**
+ * 按昵称反查 doseeing 的 user_id（查弹幕用）。
+ *
+ * 历史问题：只有 onload 且没有异常兜底 ——
+ *  ① GM_xmlhttpRequest 失败/超时没有被监听的回调，Promise 永不 settle，按钮点了没反应；
+ *  ② onload 里 `if (!ret.suggest) success = false;` 之后又直接 `ret.suggest.fan`，
+ *     接口返回 null 或没有 suggest 字段时在 onload 里抛 TypeError，同样让 Promise 悬着。
+ * 现在任何异常路径都 resolve 成空串，调用方据此给出提示。
+ */
 function getUserUid(name) {
     return new Promise(resolve => {
-        GM_xmlhttpRequest({
-            method: "GET",
-            url: "https://www.doseeing.com/api/suggest_all?type=room&nickname=" + encodeURIComponent(name),
-            responseType: "json",
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            onload: function(response) {
-                let ret = response.response;
-                let success = true;
-                if (!ret.suggest) success = false;
-                if (!ret.suggest.fan) success = false;
-                if (ret.suggest.fan.length === 0) success = false;
-                if (ret.suggest.fan[0].nickname !== name) success = false;
-                if (success) {
-                    resolve(ret.suggest.fan[0].user_id);
-                } else {
-                    resolve("");
-                    return;
+        let settled = false;
+        const finish = (value) => {
+            if (settled) return;
+            settled = true;
+            resolve(value === undefined || value === null ? "" : value);
+        };
+        try {
+            GM_xmlhttpRequest({
+                method: "GET",
+                url: "https://www.doseeing.com/api/suggest_all?type=room&nickname=" + encodeURIComponent(name),
+                responseType: "json",
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                onload: function(response) {
+                    // 数据源可能返回 null / 缺 suggest / 缺 fan：逐层判空，取不到一律当未找到
+                    let ret = (response && response.response) || {};
+                    let suggest = ret.suggest || {};
+                    let fan = suggest.fan;
+                    if (!fan || fan.length === 0 || !fan[0] || fan[0].nickname !== name) {
+                        finish("");
+                        return;
+                    }
+                    finish(fan[0].user_id);
+                },
+                onerror: function(err) {
+                    console.warn("[DouyuEx] 查弹幕接口请求失败：" + ((err && err.message) || err));
+                    finish("");
+                },
+                ontimeout: function() {
+                    console.warn("[DouyuEx] 查弹幕接口超时");
+                    finish("");
                 }
-            }
-        });
+            });
+        } catch (e) {
+            console.warn("[DouyuEx] 查弹幕请求无法发起：" + ((e && e.message) || e));
+            finish("");
+        }
     });
 }
 

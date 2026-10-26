@@ -49,7 +49,6 @@
 // @connect      bilibili.com
 // @connect      huya.com
 // @connect      shadiao.app
-// @connect      doseeing.com
 // @connect      registry.npmmirror.com
 // @connect      fastly.jsdelivr.net
 // @connect      cdn.jsdelivr.net

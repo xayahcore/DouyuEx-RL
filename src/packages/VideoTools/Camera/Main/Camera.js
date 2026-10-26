@@ -1,27 +1,110 @@
+var camera_controller = null;
+
 function initPkg_VideoTools_Camera() {
-    let anchorEl = getValidDom([".Title-anchorName", ".anchorName__6NXv9"]);
-    camera_anchorName = anchorEl ? (anchorEl.innerText || "").trim() : "";
-    if (typeof liveVideoNode !== "undefined" && liveVideoNode) {
-        camera_width = (liveVideoNode.videoWidth || 640) * 0.25;
-        camera_height = (liveVideoNode.videoHeight || 360) * 0.25;
-        camera_canvas = document.createElement("canvas");
-        camera_canvas.width = camera_width;
-        camera_canvas.height = camera_height;
-
-        camera_canvas_img = document.createElement("canvas");
-        camera_canvas_img.width = liveVideoNode.videoWidth || 640;
-        camera_canvas_img.height = liveVideoNode.videoHeight || 360;
-
-        initPkg_VideoTools_Camera_Dom();
-        initPkg_VideoTools_Camera_Func();
-    }
+    let anchorEl = getValidDom([".Title-anchorName", ".anchorName__6NXv9", ".anchor-name"]);
+    // innerText 在某些上下文（隐藏元素 / 非渲染文档）里拿不到，退回 textContent。
+    camera_anchorName = anchorEl ? String(anchorEl.innerText || anchorEl.textContent || "").trim() : "";
+    initPkg_VideoTools_Camera_Dom();
+    initPkg_VideoTools_Camera_Func();
 }
 
 function initPkg_VideoTools_Camera_Dom() {
     Camera_insertIcon();
 }
 
+// 解析结果缓存：hover 命中测试每 60ms 会问一次，别每次都跑五个 querySelector。
+var camera_videoCacheNode = null;
+var camera_videoCacheAt = 0;
+var Camera_VIDEO_CACHE_MS = 500;
+
+function Camera_isUsableVideoNode(node) {
+    return !!(node && node.isConnected !== false && node.videoWidth > 0 && node.videoHeight > 0);
+}
+
+function Camera_isVisibleVideoNode(node) {
+    if (!Camera_isUsableVideoNode(node)) return false;
+    // 多屏格里的 video 一直有尺寸但不在当前视口，几何可见性用来把它们排到后面。
+    if (typeof node.getClientRects === "function" && node.getClientRects().length === 0) return false;
+    return true;
+}
+
+/**
+ * 视频节点解析。故意不写死单个选择器 —— issue #6 的直接成因就是旧代码把宿主写死成
+ * ".layout-Player-video" / ".room-Player-Box"，新版播放器这两个类名都已经不存在。
+ * 现役结构（2026-10 真机）：#js-player-main.main__a3F0Y > .player__jsy1T > .stream__T55I3
+ *                          > .video__VfhVg > #js-player-dialog.core__6FoUQ > video#__video2
+ */
+function Camera_resolveVideoNode() {
+    const cached = camera_videoCacheNode;
+    if (camera_videoCacheNode && Date.now() - camera_videoCacheAt < Camera_VIDEO_CACHE_MS && Camera_isUsableVideoNode(cached)) {
+        return cached;
+    }
+
+    const candidates = [];
+    const pushCandidate = function (node) {
+        if (node && candidates.indexOf(node) < 0) candidates.push(node);
+    };
+
+    // 现役单屏播放器优先；liveVideoNode 由 VideoTools.js 赋值，可能滞后或指向多屏格，只当候选之一。
+    pushCandidate(document.querySelector("#js-player-dialog video"));
+    if (typeof liveVideoNode !== "undefined") pushCandidate(liveVideoNode);
+
+    const selectors = [
+        ".layout-Player-videoEntity video",
+        ".layout-Player-video video",
+        "#js-player-main video",
+        "video#__video2"
+    ];
+    for (let i = 0; i < selectors.length; i++) {
+        pushCandidate(document.querySelector(selectors[i]));
+    }
+
+    // 视频页把 video 藏在 demand-video 的 shadowRoot 里，普通选择器够不到。
+    const embeddedFrame = document.getElementsByTagName("demand-video")[0];
+    if (embeddedFrame && embeddedFrame.shadowRoot) {
+        pushCandidate(embeddedFrame.shadowRoot.getElementById("__video"));
+    }
+
+    let resolved = null;
+    for (let i = 0; i < candidates.length && !resolved; i++) {
+        if (Camera_isVisibleVideoNode(candidates[i])) resolved = candidates[i];
+    }
+    for (let i = 0; i < candidates.length && !resolved; i++) {
+        if (Camera_isUsableVideoNode(candidates[i])) resolved = candidates[i];
+    }
+    if (!resolved && candidates.length > 0) resolved = candidates[0];
+
+    camera_videoCacheNode = resolved;
+    camera_videoCacheAt = Date.now();
+    return resolved;
+}
+
+// 全分辨率画布复用一份：每次截图前按当前视频尺寸对齐，避免反复创建大块内存。
+function Camera_getScreenshotCanvas(video) {
+    if (!camera_canvas_img) camera_canvas_img = document.createElement("canvas");
+    const width = (video && video.videoWidth) || 0;
+    const height = (video && video.videoHeight) || 0;
+    if (width > 0 && height > 0) {
+        camera_canvas_img.width = width;
+        camera_canvas_img.height = height;
+    }
+    return camera_canvas_img;
+}
+
+// gif 录制画布固定 1/4 分辨率：帧写入快、gif 体积也可控。
+function Camera_prepareRecordingCanvas(video) {
+    const width = Math.max(2, Math.round(((video && video.videoWidth) || 640) * 0.25));
+    const height = Math.max(2, Math.round(((video && video.videoHeight) || 360) * 0.25));
+    if (!camera_canvas) camera_canvas = document.createElement("canvas");
+    camera_canvas.width = width;
+    camera_canvas.height = height;
+    camera_width = width;
+    camera_height = height;
+    return { canvas: camera_canvas, width: width, height: height };
+}
+
 function Camera_insertIcon() {
+    if (document.getElementById("ex-camera")) return; // 幂等：重复初始化只保留一份
     let a = document.createElement("div");
     a.id = "ex-camera";
     a.title = "单击截图 长按录制gif";
@@ -29,8 +112,18 @@ function Camera_insertIcon() {
     <svg t="1620266708389" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2080" width="38" height="38"><path d="M512 337.371136c-119.543808 0-216.800256 97.255424-216.800256 216.798208 0 119.543808 97.256448 216.800256 216.800256 216.800256s216.800256-97.256448 216.800256-216.800256C728.800256 434.625536 631.543808 337.371136 512 337.371136zM680.479744 554.16832c0 92.911616-75.579392 168.501248-168.479744 168.501248-92.900352 0-168.480768-75.589632-168.480768-168.501248 0-92.923904 75.579392-168.521728 168.480768-168.521728C604.899328 385.646592 680.479744 461.24544 680.479744 554.16832z" p-id="2081" fill="#ffffff"></path><path d="M831.209472 337.349632l-47.167488 0c-13.647872 0-24.751104 11.083776-24.751104 24.707072 0 13.635584 11.103232 24.7296 24.751104 24.7296l47.167488 0c13.646848 0 24.75008-11.094016 24.75008-24.7296C855.959552 348.433408 844.85632 337.349632 831.209472 337.349632z" p-id="2082" fill="#ffffff"></path><path d="M700.505088 171.497472c4.235264 0 6.403072 0.405504 7.232512 0.612352 1.47968 1.514496 4.790272 6.218752 11.717632 20.685824 2.83648 5.910528 8.6272 18.86208 15.888384 35.533824l11.788288 27.063296 29.518848 0 96.535552 0c35.122176 0 63.695872 28.535808 63.695872 63.609856l0 469.933056c0 35.05152-28.573696 63.567872-63.695872 63.567872L150.811648 852.503552c-35.121152 0-63.694848-28.516352-63.694848-63.567872L87.1168 319.0016c0-35.062784 28.573696-63.589376 63.694848-63.589376l99.35872 0 29.110272 0 11.964416-26.537984c4.698112-10.421248 8.416256-19.063808 11.058176-25.70752 9.86112-24.829952 15.207424-30.125056 16.239616-30.974976 0.52736-0.161792 2.64192-0.695296 7.673856-0.695296L700.505088 171.496448M700.505088 126.441472 326.216704 126.441472c-32.519168 0-47.275008 13.479936-65.787904 60.096512-3.180544 7.999488-7.689216 18.122752-10.257408 23.819264l-99.35872 0c-59.96544 0-108.750848 48.738304-108.750848 108.645376l0 469.933056c0 59.894784 48.785408 108.623872 108.750848 108.623872l722.37568 0c59.96544 0 108.751872-48.729088 108.751872-108.623872L981.940224 319.0016c0-59.91936-48.786432-108.665856-108.751872-108.665856l-96.535552 0c-4.458496-10.236928-12.420096-28.372992-16.574464-37.031936C744.823808 141.448192 733.973504 126.441472 700.505088 126.441472L700.505088 126.441472z" p-id="2083" fill="#ffffff"></path></svg>
     <div id="ex-camera-close">×</div>
     `;
-    let b = document.getElementById("js-player-dialog") || document.querySelector(".layout-Player") || document.body;
-    if (b) b.insertBefore(a, b.childNodes[0]);
+    // 宿主节点：新播放器是 #js-player-dialog，多屏是 .layout-Player-videoEntity，
+    // 都没命中才退到 body —— 宁可位置偏一点，也不能因为宿主改名就不插按钮。
+    let host = getValidDom([
+        "#js-player-dialog",
+        ".layout-Player",
+        ".player__jsy1T",
+        "#js-player-main",
+        ".layout-Player-videoEntity"
+    ]) || document.body;
+    if (!host) return;
+    if (host.firstChild) host.insertBefore(a, host.firstChild);
+    else host.appendChild(a);
 }
 
 function Camera_isHidden() {
@@ -41,17 +134,19 @@ function Camera_isHidden() {
 }
 
 function initPkg_VideoTools_Camera_Func() {
-    let dom = getValidDom([".layout-Player-video", ".layout-Player-videoEntity"]);
-    let dom_video = document.getElementsByClassName("room-Player-Box")[0];
     let camera = document.getElementById("ex-camera");
     let closeBtn = document.getElementById("ex-camera-close");
-    // ⚠ 这个声明是必需的：下面三处循环都靠它提前退出。
-    // 它在某次"全量重制"里被漏掉过，导致摄像头画面分支一走到 if (isClosed || ...) 就抛
-    // ReferenceError（读未声明的标识符），该分支等于废掉。改动此处请连带跑
-    // tests/test_built_bundle.js 里那条作用域断言。
+    /**
+     * ⚠ 这个声明是必需的：下面三处循环都靠它提前退出。
+     * 它在某次"全量重制"里被漏掉过，导致摄像头画面分支一走到 if (isClosed || ...) 就抛
+     * ReferenceError（读未声明的标识符），该分支等于废掉。改动此处请连带跑
+     * tests/test_built_bundle.js 里那条作用域断言。
+     */
     let isClosed = false;
-    if (!camera || !closeBtn || !dom) return;
-    
+    // ⚠ 只校验按钮本身：宿主节点缺失绝不能再提前 return —— issue #6 的现场就是
+    // "dom 为 null → 整段事件绑定被跳过 → 按钮永远 display:none、点它没反应"。
+    if (!camera || !closeBtn) return;
+
     closeBtn.addEventListener("click", (e) => {
         e.stopPropagation();
         if (confirm("是否7天内不再显示？")) {
@@ -61,111 +156,31 @@ function initPkg_VideoTools_Camera_Func() {
         }
         camera.style.display = "none";
     });
-    
-    if (Camera_isHidden()) return;
-    
-    if (dom) {
-        dom.addEventListener("mouseenter", () => {
-            if (isClosed || Camera_isHidden()) return;
-            camera.style.display = "flex";
-            timer_timeout = setTimeout(() => {
-                camera.style.display = "none";
-            }, 2000);
-        });
-        dom.addEventListener("mouseleave", () => {
-            camera.style.display = "none";
-            clearTimeout(timer_timeout);
-        });
+
+    if (Camera_isHidden()) {
+        camera.style.display = "none";
+        return;
     }
 
-    if (dom_video) {
-        dom_video.addEventListener("mousemove", () => {
-            if (isClosed || Camera_isHidden()) return;
-            camera.style.display = "flex";
-            clearTimeout(timer_timeout);
-            timer_timeout = setTimeout(() => {
-                camera.style.display = "none";
-            }, 2000);
-        });
+    if (camera_controller) {
+        camera_controller.detach();
+        camera_controller = null;
     }
-    if (camera) {
-        camera.addEventListener("mouseenter", () => {
-            if (isClosed || Camera_isHidden()) return;
-            camera.style.display = "flex";
-            clearTimeout(timer_timeout);
-        });
-    }
-    if (dom) {
-        dom.addEventListener("mouseleave", () => {
-            camera.style.display = "none";
-            clearTimeout(timer_timeout);
-        });
-    }
-    if (dom_video) {
-        dom_video.addEventListener("mouseleave", () => {
-            camera.style.display = "none";
-            clearTimeout(timer_timeout);
-        });
-    }
-    camera.addEventListener("mousedown", (e) => {
-        if (e.target.id === "ex-camera-close") return;
-        clearInterval(timer);
-        if (gif && typeof gif.abort === "function") {
-            try { gif.abort(); } catch (err) {}
-        }
-        gif = null;
-        downTime = new Date().getTime();
-        // 动态获取当前视频的真实分辨率
-        camera_canvas_img.width = liveVideoNode.videoWidth;
-        camera_canvas_img.height = liveVideoNode.videoHeight;
-        camera_canvas_img.getContext('2d').drawImage(liveVideoNode, 0, 0, camera_canvas_img.width, camera_canvas_img.height);
-        imgBase64 = camera_canvas_img.toDataURL("image/png");
 
-        gif = new GIF({
-            workers: 5,
-            quality: 3,
-            width: camera_width,
-            height: camera_height,
-            workerScript: gifworkerBlob
-        });;
-        cameraAddFrame(liveVideoNode, camera_canvas, gif, camera_fps);
-        timer = setInterval(() => {cameraAddFrame(liveVideoNode, camera_canvas, gif, camera_fps)}, camera_fps);
-    })
-    camera.addEventListener("mouseup", (e) => {
-        if (e.target.id === "ex-camera-close") return;
-        let upTime = new Date().getTime();
-        clearInterval(timer);
-        if (upTime - downTime >= 800) {
-            showMessage("【录制】正在生成gif...", "info");
-            gif.on('finished', blob => {
-                let el = document.createElement('a');
-                const objectUrl = URL.createObjectURL(blob);
-                el.href = objectUrl;
-                el.download = `【${camera_anchorName}】${dateFormat("yyyy-MM-dd hh-mm-ss",new Date())}`;
-                document.body.appendChild(el);
-                let evt = document.createEvent("MouseEvents");
-                evt.initEvent("click", false, false);
-                el.dispatchEvent(evt);
-                document.body.removeChild(el);
-                setTimeout(function () {
-                    try { URL.revokeObjectURL(objectUrl); } catch (e) {}
-                }, 1500);
-            });
-            gif.render();
-        } else {
-            if (gif && typeof gif.abort === "function") {
-                try { gif.abort(); } catch (err) {}
-            }
-            gif = null;
-            let el = document.createElement("a");
-            el.download = `【${camera_anchorName}】${dateFormat("yyyy-MM-dd hh-mm-ss",new Date())}`;
-            el.href = imgBase64;
-            document.body.appendChild(el);
-            let evt = document.createEvent("MouseEvents");
-            evt.initEvent("click", false, false);
-            el.dispatchEvent(evt);
-            document.body.removeChild(el);
-        }
+    camera_controller = CameraControl_create({
+        cameraId: "ex-camera",
+        resolveVideo: Camera_resolveVideoNode,
+        getAnchorName: function () { return camera_anchorName; },
+        isHidden: function () { return isClosed || Camera_isHidden(); },
+        getScreenshotCanvas: Camera_getScreenshotCanvas,
+        prepareRecording: Camera_prepareRecordingCanvas,
+        addFrame: function (video, canvas, gif) { cameraAddFrame(video, canvas, gif, camera_fps); },
+        workerScript: gifworkerBlob,
+        fps: camera_fps
+    });
 
-    })
+    if (camera_controller.attach()) {
+        // 初始保持隐藏（CSS 默认 display:none），hover 到播放器再由控制器摆好落点。
+        camera_controller.hide();
+    }
 }

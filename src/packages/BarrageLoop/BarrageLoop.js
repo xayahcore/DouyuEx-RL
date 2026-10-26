@@ -237,8 +237,14 @@ async function doLoopBarrage() {
 	}
 	if (document.getElementById("bloop__checkbox_tiangou").checked == true) {
 		let tiangouBarrage = await getBarrageTxt_Tiangou();
-		tiangouBarrage = String(tiangouBarrage).replace(/他/g,"她");
-		sendBarrage(tiangouBarrage);
+		// 接口失败时拿到的是空串：跳过本条即可，绝不能让一次失败把循环停在原地
+		if (tiangouBarrage) {
+			try {
+				sendBarrage(String(tiangouBarrage).replace(/他/g, "她"));
+			} catch (e) {
+				console.warn("[DouyuEx] 舔狗弹幕发送失败，跳过本条（循环继续）：" + ((e && e.message) || e));
+			}
+		}
 	} else {
 		// 判断是否开启随机模式
 		if (document.getElementById("bloop__checkbox_random").checked == true) {
@@ -381,16 +387,50 @@ function initPkg_BarrageLoop_Set() {
 }
 
 
+/**
+ * 取一条「舔狗」弹幕。
+ *
+ * 历史问题：旧实现只有 onload，请求失败/超时/返回体没有 data.text 时 Promise 永远不 settle，
+ * doLoopBarrage 里的 await 卡死，`bloopTimer = setTimeout(...)` 再也执行不到 ——
+ * 一次网络抖动就把弹幕发送小助手永久停掉。
+ * 现在任何失败都 resolve 成空串，由调用方跳过本条并继续下一轮。
+ */
 function getBarrageTxt_Tiangou() {
 	return new Promise(resolve => {
-		GM_xmlhttpRequest({
-            method: "GET",
-            url: "https://api.shadiao.app/chp",
-            responseType: "json",
-            onload: function(response) {
-                let ret = response.response;
-                resolve(ret.data.text);
-            }
-        });
+		let settled = false;
+		const finish = (value) => {
+			if (settled) return;
+			settled = true;
+			resolve(value);
+		};
+		try {
+			GM_xmlhttpRequest({
+				method: "GET",
+				url: "https://api.shadiao.app/chp",
+				responseType: "json",
+				onload: function(response) {
+					// 接口形状随时可能变：response / response.response / data / text 每一层都判空，取不到就当失败
+					let ret = response && response.response;
+					let text = ret && ret.data && ret.data.text;
+					if (!text) {
+						console.warn("[DouyuEx] 舔狗弹幕接口返回异常，跳过本条（循环继续）");
+						finish("");
+						return;
+					}
+					finish(String(text));
+				},
+				onerror: function(err) {
+					console.warn("[DouyuEx] 舔狗弹幕接口请求失败，跳过本条（循环继续）：" + ((err && err.message) || err));
+					finish("");
+				},
+				ontimeout: function() {
+					console.warn("[DouyuEx] 舔狗弹幕接口超时，跳过本条（循环继续）");
+					finish("");
+				}
+			});
+		} catch (e) {
+			console.warn("[DouyuEx] 舔狗弹幕请求无法发起，跳过本条（循环继续）：" + ((e && e.message) || e));
+			finish("");
+		}
 	})
 }

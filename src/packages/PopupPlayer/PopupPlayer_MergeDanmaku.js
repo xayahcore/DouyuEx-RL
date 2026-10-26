@@ -551,7 +551,10 @@ function MergeDanmaku_getStream() {
   /* 缓存必须还是页面当前那扇门：斗鱼换房/重建播放器时 socketProxy 可能被整个替换，
      旧对象形状仍然像 SocketData，push 进去却不再扇出（viaBus 照涨、界面没弹幕、也不报错）。 */
   if (msBusCache) {
-    if (!sp || sp.socketStream === msBusCache) {
+    /* 只有"门还在、且换的就是这扇"才复用缓存。整扇门被摘掉（SPA 换房把 socketProxy 移除）时
+       必须重新发现：旧对象形状仍然像 SocketData，push 进去却不再扇出 —— 表现为 viaBus 一直涨、
+       界面没弹幕、也不报错，还永远不会退回"挂起等门"那条路。 */
+    if (sp && sp.socketStream === msBusCache) {
       if (MergeDanmaku_isSocketData(msBusCache)) return msBusCache;
     }
     msBusCache = null;

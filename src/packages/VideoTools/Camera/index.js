@@ -11,9 +11,26 @@ var camera_height;
 var camera_anchorName;
 const camera_fps = 83; // 12fps
 
-function cameraAddFrame(node, camera_canvas, gif, fps) {
-    camera_canvas.getContext('2d').drawImage(node, 0, 0, camera_canvas.width, camera_canvas.height);
-    gif.addFrame(camera_canvas, {
+/**
+ * 往 gif 里塞一帧。
+ * 三个防御点都是踩过的坑：
+ *  1. 视频还没出首帧（readyState < 2）时 drawImage 会抛 InvalidStateError，
+ *     旧实现没有 try/catch，一次异常就让整个录制 interval 变成刷错；
+ *  2. 拿到 2d 上下文可能失败（画布尺寸 0），必须判空；
+ *  3. 抓帧失败只跳过这一帧，不能让录制中断。
+ */
+function cameraAddFrame(node, canvas, gif, fps) {
+    if (!node || !canvas || !gif) return;
+    if (typeof node.readyState === "number" && node.readyState < CameraCapture_MIN_READY_STATE) return;
+    if (!canvas.width || !canvas.height) return;
+    try {
+        const context = canvas.getContext('2d');
+        if (!context) return;
+        context.drawImage(node, 0, 0, canvas.width, canvas.height);
+    } catch (err) {
+        return;
+    }
+    gif.addFrame(canvas, {
         copy: true,
         delay: fps
     });

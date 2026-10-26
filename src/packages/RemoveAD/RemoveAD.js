@@ -5,6 +5,17 @@ function initPkg_RemoveAD() {
     }
 }
 // .dy-ModalRadius-mask,dy-ModalRadius-wrap{display:none !important;}
+/*
+ * ⚠ 本函数里的 CSS 是**会注入到页面**的样式表，写进去的中文注释会跟着一起上线，
+ *   所以这里只留短提示，来龙去脉写在 JS 注释里。
+ *
+ * P0（2026-10-26 修）：这里曾有一条
+ *   #js-barrage-extend-container{display:none;display:var(--enter-display, none)!important}
+ * 而 --enter-display 只有「弹幕屏蔽设置面板被打开过」之后才会被写入，
+ * 于是新开页面时回退值 none 直接生效 —— 进场弹幕永久不显示，
+ * 弹幕屏蔽开关上却写着「未开启」（口径与真实状态相反）。
+ * 现在这个容器的显隐只由 Shield/RemoveEnter 用内联 display 控制，这里不写任何覆盖。
+ */
 function removeAD() {
     StyleHook_set("Ex_Style_RemoveAD", `
     .ScreenBannerAd,.XinghaiAd,.UserInfo-tryEnterHiddenLead,.AnchorPocketTips,.FishShopTip,.FollowGuide,.RoomText-icon-horn,.RoomText-list,.noHandlerAd-0566b9,.DropMenuList-ad,.DropPane-ad,.igl_bg-b0724a,.closure-ab91fb,.VideoAboveVivoAd,.watermark-442a18,.FollowGuide-FadeOut,.FansMedalDialog-normal,.recommendAD-54569e,.recommendApp-0e23eb,.Bottom-ad,.SignBarrage,.SignBaseComponent-sign-ad,.SuperFansBubble,.Frawdroom,.HeaderGif-right,.HeaderGif-left{display:none !important;}
@@ -45,11 +56,7 @@ function removeAD() {
     .room-top-banner-box {
         display: none!important;
     }
-    /*弹幕框底部进场弹幕信息*/
-    #js-barrage-extend-container {
-        display: none!important;
-        display: var(--enter-display, none) !important;
-    }
+    /*弹幕框底部进场弹幕信息：显隐由 Shield/RemoveEnter 控制，勿在此写 display 覆盖*/
     /*弹幕框顶部广告*/
     .aside-top-uspension-box {
         display: none!important;

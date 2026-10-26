@@ -24,10 +24,22 @@ const RECT = { left: 0, top: 0, width: 800, height: 450, right: 800, bottom: 450
 /* 夹具页（douyu.com/9999 里那几段内联脚本）自己会挂异步定时器/回包，某些回包在缺节点时会抛
    TypeError。它们与断言无关，但作为"未处理的 Promise 拒绝"会把整个进程带走，表现为"测试随机红"。
    这里只吞掉**来自夹具页**的这类错误；断言失败（同步抛出、由 run().catch 打印）照旧中断。 */
+function isFixtureNoise(err) {
+  return /www\.douyu\.com\/9999/.test(String((err && err.stack) || err));
+}
 process.on("unhandledRejection", (err) => {
-  const s = String((err && err.stack) || err);
-  if (/www\.douyu\.com\/9999/.test(s)) return;
+  if (isFixtureNoise(err)) return;
   throw err;
+});
+/* 同一批夹具回调也可能以"同步未捕获异常"的形式冒出来（MutationObserver 回调里读已销毁节点的父级）。
+   出现在断言全部结束之后，属于收尾噪声；同样只吞夹具来源的，其它异常照旧终止。 */
+process.on("uncaughtException", (err) => {
+  if (isFixtureNoise(err)) {
+    console.warn("[test] 忽略夹具页收尾噪声：" + String((err && err.message) || err).slice(0, 80));
+    return;
+  }
+  console.error(err);
+  process.exit(1);
 });
 
 function bundlePath() {
@@ -1416,6 +1428,115 @@ async function run() {
   assert.deepStrictEqual(fetched38, ["1001"], "自动档重算（缩放窗口走这条）换位后也必须打到外房 1001，实际 " + JSON.stringify(fetched38));
   win38.close();
 
+  console.log("--> 29.1 存储脏值容错（ExSave_MultiScreen / ExSave_MultiScreenVol 被写坏）");
+  /* 存储是用户可手动改、也会被旧版本写坏的地方：非法档位会被拿去取流，脏 rid 会变成
+     "[object Object]" 请求，脏音量会变成 NaN 直接套到 <video> 上。恢复时必须逐项校验。 */
+  const dirtyDom = makeDom();
+  dirtyDom.window.localStorage.setItem("ExSave_MultiScreen", JSON.stringify({
+    qn: "ULTRA256",
+    list: [
+      { rid: "1001", nn: { x: 1 }, avatar: 5 },
+      { rid: { bad: 1 } },
+      { rid: "" },
+      "junk",
+      null,
+      { rid: 1002, nn: "外房乙" },
+    ],
+  }));
+  dirtyDom.window.localStorage.setItem("ExSave_MultiScreenVol", JSON.stringify({ "1001": "loud", "1002": 2, "1003": 0.5 }));
+  const win42 = load(dirtyDom);
+  assert.strictEqual(win42.MultiScreen_getQuality(), "auto", "非法档位必须回落到自动，不能拿去取流");
+  win42.MultiScreen_enter();                       // 用持久化列表恢复
+  const list42 = win42.MultiScreen_getList();
+  assert.ok(list42.length >= 2, "合法房间仍必须恢复（实际 " + JSON.stringify(list42) + "）");
+  list42.forEach(function (r) {
+    assert.ok(/^\d+$/.test(String(r.rid)), "脏 rid 必须被丢掉，实际 " + JSON.stringify(r));
+    assert.strictEqual(typeof r.nn, "string", "nn 必须是字符串，实际 " + JSON.stringify(r.nn));
+    assert.strictEqual(typeof r.avatar, "string", "avatar 必须是字符串，实际 " + JSON.stringify(r.avatar));
+  });
+  assert.strictEqual(win42.MultiScreen_getVolume("1001", false), 0, "脏音量必须回落到默认静音");
+  assert.strictEqual(win42.MultiScreen_getVolume("1002", false), 0, "越界音量（2）必须丢弃");
+  assert.strictEqual(win42.MultiScreen_getVolume("1003", false), 0.5, "合法音量必须保留");
+  win42.close();
+
+  console.log("--> 29.2 退出同屏 / 删房必须清掉换档对比与定时器（不留 15 秒后自己弹出来的提示）");
+  const win43 = load(makeDom());
+  stubRect(win43.MultiScreen_getContainer(), RECT);
+  win43.getRealLive_Douyu = function () { /* 永不回包：换档对比会一直挂着 */ };
+  win43.flvjs = { isSupported: () => true, createPlayer: () => ({ attachMediaElement() {}, load() {}, play() {}, destroy() {} }) };
+  enterGrid(win43, 3);
+  win43.MultiScreen_setQuality("3");
+  let st43 = win43.MultiScreen_getInternalState();
+  assert.strictEqual(st43.qnCompare, true, "前置：换档对比已挂起");
+  assert.strictEqual(st43.qnCompareTotal, 2, "前置：两个外房都在对比里（实际 " + st43.qnCompareTotal + "）");
+  win43.MultiScreen_exit();
+  st43 = win43.MultiScreen_getInternalState();
+  assert.strictEqual(st43.qnCompare, false, "退出同屏必须清掉换档对比（否则 15s 后还会弹一次「清晰度切换…」）");
+  assert.strictEqual(st43.players, 0, "退出同屏不得留下播放记录");
+  assert.strictEqual(st43.stallTimers, 0, "退出同屏不得留下看门狗 interval");
+  win43.close();
+
+  const win44 = load(makeDom());
+  stubRect(win44.MultiScreen_getContainer(), RECT);
+  win44.getRealLive_Douyu = function () { /* 同上：保持挂起 */ };
+  win44.flvjs = { isSupported: () => true, createPlayer: () => ({ attachMediaElement() {}, load() {}, play() {}, destroy() {} }) };
+  enterGrid(win44, 3);
+  win44.MultiScreen_setQuality("3");
+  win44.MultiScreen_removeRoom("1002");
+  const st44 = win44.MultiScreen_getInternalState();
+  assert.strictEqual(st44.qnCompareTotal, 1, "删掉的房间必须从换档对比里剔除（否则 15s 后报「已确认 1/2」）");
+  win44.close();
+
+  console.log("--> 29.3 播放器被页面重建（SPA 切房）后必须整体收手：记录 / flv / 定时器 / 列表全清");
+  /* 斗鱼是 SPA：换房时整棵播放器 DOM 会被重建，旧容器变成游离节点。旧记录里的 <video> 随之
+     脱离文档，但 flv.js 仍然在拉流（用户看不到任何画面、带宽一直在烧），看门狗 interval 也还在跑。 */
+  const win45 = load(makeDom());
+  stubRect(win45.MultiScreen_getContainer(), RECT);
+  const flv45 = { created: 0, destroyed: 0 };
+  win45.getRealLive_Douyu = function (rid, v, https, qn, cb) { cb("https://example.com/m.flv"); };
+  win45.flvjs = {
+    isSupported: () => true,
+    createPlayer: () => {
+      flv45.created++;
+      return {
+        attachMediaElement() {}, load() {}, play() {},
+        destroy() { flv45.destroyed++; },
+      };
+    },
+  };
+  enterGrid(win45, 3);
+  assert.ok(flv45.created >= 2, "前置：外房都已建过播放器（实际 " + flv45.created + "）");
+  win45.MultiScreen_getContainer().remove();       // 页面切房：整个播放器被换掉
+  await sleep(1800);                               // 巡检 500ms × 连续 3 次（过滤 React 过渡态）
+  const st45 = win45.MultiScreen_getInternalState();
+  assert.strictEqual(st45.players, 0, "播放器重建后不得留下播放记录（flv 会继续偷偷拉流）");
+  assert.strictEqual(st45.stallTimers, 0, "看门狗 interval 必须一并清掉");
+  assert.strictEqual(st45.list, 1, "列表必须退回单屏（只留当前房间这一条），不能半死不活");
+  assert.strictEqual(flv45.created, flv45.destroyed, "已建的 flv 实例必须全部销毁（实际 created=" + flv45.created + " destroyed=" + flv45.destroyed + "）");
+  win45.close();
+
+  console.log("--> 29.4 换档进行中（交叉过渡）自动档不得再插一脚：不重复取流、不毁掉两条流");
+  /* 5 房/缩放抖动时 reapplyAutoQuality 会被反复调用；此刻某格正在交叉过渡（旧流 + --next 新流），
+     再对它 switchQuality 会走"旧流没画面"的兜底分支 → clearSlot 把两条流一起销毁重取。 */
+  const win46 = load(makeDom());
+  stubRect(win46.MultiScreen_getContainer(), RECT);
+  const fetched46 = [];
+  win46.getRealLive_Douyu = function (rid, v, https, qn, cb) { fetched46.push(String(rid)); cb("https://example.com/n.flv"); };
+  win46.flvjs = { isSupported: () => true, createPlayer: () => ({ attachMediaElement() {}, load() {}, play() {}, destroy() {} }) };
+  enterGrid(win46, 2);
+  const cell46 = cellPos(win46, 1);
+  Object.defineProperty(cell46.querySelector("video"), "readyState", { value: 4, configurable: true });
+  stubRect(cell46, { left: 0, top: 0, width: 400, height: 100, right: 400, bottom: 100 });   // 量到"流畅"档，与当前"最高档"不同
+  fetched46.length = 0;
+  win46.MultiScreen_reapplyAutoQuality();
+  assert.strictEqual(fetched46.length, 1, "前置：自动档已触发一次换档（实际 " + fetched46.length + "）");
+  assert.ok(cell46.querySelector("video.ms-slot__video--next"), "前置：交叉过渡已叠上新流");
+  stubRect(cell46, { left: 0, top: 0, width: 400, height: 400, right: 400, bottom: 400 });   // 窗口又抖回去
+  win46.MultiScreen_reapplyAutoQuality();
+  assert.strictEqual(fetched46.length, 1, "换档进行中不得再取一次流（实际 " + fetched46.length + "）");
+  assert.ok(cell46.querySelector("video.ms-slot__video--next"), "换档进行中不得把交叉过渡的两条流清掉重来");
+  win46.close();
+
   console.log("--> 28.8 源码级护栏（判空 / 看门狗 interval 必须清 / 退出时不假定位置 0 = 主画面）");
   const msSrcBatch1 = stripMsComments(fs.readFileSync(path.join(__dirname, "../src/packages/PopupPlayer/PopupPlayer_MultiScreen.js"), "utf8"));
   assert.ok(/if \(reloadEl\) reloadEl\.addEventListener/.test(msSrcBatch1), "「重新加载」绑定必须判空（AGENTS 红线：DOM 操作必须判空）");
@@ -1438,7 +1559,11 @@ async function run() {
   console.log("=== 多屏复刻单元测试 100% 通过 ===");
 }
 
-run().catch((e) => {
+run().then(() => {
+  /* 断言全过就立刻收工：夹具页会在 window.close() 之后继续丢出定时器/观察器回调，
+     留着 handle 会让 npm test 的链条卡在最后一步（表现为"测试跑完不返回"）。 */
+  process.exit(0);
+}).catch((e) => {
   console.error("✗ 多屏复刻单元测试失败:", e && e.message);
   console.error(e && e.stack);
   process.exit(1);

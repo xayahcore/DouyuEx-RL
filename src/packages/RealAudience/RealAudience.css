@@ -1,5 +1,6 @@
 .real-audience {
-    cursor: pointer;
+    /* 入口已撤（数据站停服），不再是可点击元素 —— 别给用户 pointer 手型暗示 */
+    cursor: default;
     display: flex;
     padding: 0 7px;
     line-height: 33px;
@@ -14,6 +15,7 @@
     display: none !important;
 }
 
-#real-audience__total, #real-audience__barrage, #real-audience__money_yc, #real-audience__noble {
+/* 只剩贵宾数这一个带图标的项；活跃/弹幕/礼物三个 id 已随停服的数据站一起撤下 */
+#real-audience__noble {
     margin-left: 2px;
 }

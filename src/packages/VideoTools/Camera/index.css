@@ -1,21 +1,36 @@
+/*
+ * 截图按钮落点（issue #6）。
+ * JS 每次显示时按「视频矩形」重算 left/top（CameraControl_positionCameraButton），
+ * 这里给的是同一套规则的静态兜底值：贴视频左边缘内缩 16px、垂直居中。
+ *
+ * 为什么不放右边（原实现 right:20px; bottom:240px）：
+ *   右上角 56x56 是 Firefox 画中画按钮 / Chrome 媒体控件带，鼠标移进视频就出现；
+ *   右边缘 48px 是 Edge 侧边栏与"网页全屏"下的悬浮滚动条；
+ *   底部 64px 是播放器控制条与弹幕输入框；
+ *   左上角 56px 是斗鱼房间标题 / 主播信息浮层。
+ * 左边缘垂直居中同时避开这四块，网页全屏（fullscreenElement）与非全屏都成立 ——
+ * 位置来自视频矩形，全屏时矩形等于视口，规则自动跟着走。
+ */
 #ex-camera {
     background: rgba(0,0,0,0.7);
     position: absolute;
-    right: 20px;
-    bottom: 240px;
-    z-index: 10;
+    left: 16px;
+    bottom: 200px;
+    z-index: 20;
     width: 60px;
     height: 60px;
     cursor: pointer;
     -webkit-border-radius: 50%;
     -moz-border-radius: 50%;
     border-radius: 50%;
-    cursor: pointer;
     display: none;
     justify-content: center;
     align-items: center;
     border: 2px solid #2d2c2c;
     box-sizing: border-box;
+    pointer-events: auto;
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 #ex-camera:hover > svg > path {
@@ -42,7 +57,7 @@
     font-size: 12px;
     line-height: 1;
     border: 1px solid rgba(255,255,255,0.3);
-    z-index: 11;
+    z-index: 21;
 }
 
 #ex-camera-close:hover {

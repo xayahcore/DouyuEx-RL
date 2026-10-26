@@ -36,7 +36,7 @@ function LiveTool_Mute_insertDom() {
             <input style="width:40px;margin-left:10px;" type="button" id="mute__del" value="删除"/>
             <input style="width:65px;margin-left:10px;" type="button" id="mute__delmute" value="一键解禁"/>
             <div class="mute__option">
-                <label>词：<input id="mute__word" type="text" placeholder="re(式)=结果"/></label>
+                <label>词：<input id="mute__word" type="text" placeholder="re(正则)=期望匹配" title="普通词：弹幕包含即命中；re(正则)=期望匹配：用正则匹配弹幕，且首个匹配必须与「期望匹配」完全相等才算命中，例 re(^\\d+$)=666"/></label>
                 <label>次数：<input id="mute__count" type="number" value="5"/></label>
                 <label>时间：
                     <select id='mute__time'>
@@ -283,79 +283,62 @@ async function initPkg_LiveTool_Mute_Handle(text) {
         }
         let nn = getStrMiddle(text, "nn@=", "/");
         let txt = getStrMiddle(text, "txt@=", "/");
-        let isConform = false;
         for (let key in muteWordList) {
             if (key == "") {
                 continue;
             }
-            if (key.indexOf("re(") != -1) {
-                // 正则
-                let regStr = getStrMiddle(key, "re(", ")=");
-                let strArr = key.split("=")
-                if (strArr.length > 1) {
-                    let str = strArr[1];
-                    let regObj = new RegExp(regStr, "g");
-                    let result = regObj.exec(txt);
-                    if (result.length > 0) {
-                        if (result[0] == str) {
-                            isConform = true;
-                        } else {
-                            isConform = false;
-                        }
-                    }
+            // 命中判定统一走 LiveTool_keywordRuleHit：正则不命中时 exec 返回 null，
+            // 旧代码直接取 result.length 会在 async 处理器里抛 TypeError（一条无人接的 rejection），
+            // 而处理器本身抛错又会把整条派发链上排在后面的关键词回复/回执/贵宾数一起带停。
+            if (LiveTool_keywordRuleHit(key, txt) != true) {
+                continue;
+            }
+            let muteItem = muteWordList[key];
+            if (!muteItem) {
+                continue;
+            }
+            let maxCount = muteItem.count;
+            let time = muteItem.time;
+            if (muteIdList.hasOwnProperty(nn)) {
+                let nextCount = Number(muteIdList[nn].count) + 1;
+                if (nextCount >= maxCount) {
+                    let tmp = await addMuteUser(rid, nn, time);
+                    showMessageWindow("禁言信息", "【" + nn + "】已被禁言" + time + "分钟" + "\n弹幕：" + txt, () => {});
+                    let obj = {
+                        id: nn,
+                        uid: uid,
+                        barrage: txt,
+                        time: time,
+                        count: 1,
+                        ts: String(dateFormat("yyyy年MM月dd日hh时mm分ss秒 ",new Date()))
+                    };
+                    muteIdListShow.push(obj);
+                    muteIdList[nn].count = 0;
+                } else {
+                    muteIdList[nn].count = String(nextCount);
                 }
             } else {
-                if (String(txt).indexOf(key) == -1) {
-                    // 没找到
-                    isConform = false;
+                let nextCount = 1;
+                if (nextCount >= maxCount) {
+                    let tmp = await addMuteUser(rid, nn, time);
+                    showMessageWindow("禁言信息", "【" + nn + "】已被禁言" + time + "分钟" + "\n弹幕：" + txt, () => {});
+                    let obj = {
+                        id: nn,
+                        uid: uid,
+                        barrage: txt,
+                        time: time,
+                        count: 1,
+                        ts: String(dateFormat("yyyy年MM月dd日hh时mm分ss秒 ",new Date()))
+                    };
+                    muteIdListShow.push(obj);
                 } else {
-                    isConform = true;
-                }
-            }
-            if (isConform == true) {
-                let maxCount = muteWordList[key].count;
-                let time = muteWordList[key].time;
-                if (muteIdList.hasOwnProperty(nn)) {
-                    let nextCount = Number(muteIdList[nn].count) + 1;
-                    if (nextCount >= maxCount) {
-                        let tmp = await addMuteUser(rid, nn, time);
-                        showMessageWindow("禁言信息", "【" + nn + "】已被禁言" + time + "分钟" + "\n弹幕：" + txt, () => {});
-                        let obj = {
-                            id: nn,
-                            uid: uid,
-                            barrage: txt,
-                            time: time,
-                            count: 1,
-                            ts: String(dateFormat("yyyy年MM月dd日hh时mm分ss秒 ",new Date()))
-                        };
-                        muteIdListShow.push(obj);
-                        muteIdList[nn].count = 0;
-                    } else {
-                        muteIdList[nn].count = String(nextCount);
-                    }
-                } else {
-                    let nextCount = 1;
-                    if (nextCount >= maxCount) {
-                        let tmp = await addMuteUser(rid, nn, time);
-                        showMessageWindow("禁言信息", "【" + nn + "】已被禁言" + time + "分钟" + "\n弹幕：" + txt, () => {});
-                        let obj = {
-                            id: nn,
-                            uid: uid,
-                            barrage: txt,
-                            time: time,
-                            count: 1,
-                            ts: String(dateFormat("yyyy年MM月dd日hh时mm分ss秒 ",new Date()))
-                        };
-                        muteIdListShow.push(obj);
-                    } else {
-                        muteIdList[nn] = {
-                            uid: uid,
-                            count: 1,
-                        }
+                    muteIdList[nn] = {
+                        uid: uid,
+                        count: 1,
                     }
                 }
-                break;
             }
+            break;
         }
     }
     

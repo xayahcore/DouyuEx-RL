@@ -18,54 +18,76 @@ function initPkg_DanmakuCollect() {
       collectButton.style.display = "";
     });
   }
+  /* ⚠ 三个 hook 都在改写别人的响应：任何一步抛出（报文不是 JSON、字段缺了、DOM 没渲染）
+     都会把异常冒回 ResponseHook，等于这条请求的响应直接坏掉。解析失败一律 return undefined
+     放行原响应，绝不因为"附加功能"把主流程弄挂。 */
   responseHook((url, text) => {
     if (url.includes(`bulletscreen/query`)) {
-      let obj = JSON.parse(text);
-      obj.data.list.unshift(...getLocalDanmakuCollect().map(item => {
-        return {
-          content: item.content,
-          type: 2,
-          id: item.id
-        }
-      }));
-      return JSON.stringify(obj);
+      try {
+        let obj = JSON.parse(text);
+        if (!obj || !obj.data || !Array.isArray(obj.data.list)) return;
+        obj.data.list.unshift(...getLocalDanmakuCollect().map(item => {
+          return {
+            content: item.content,
+            type: 2,
+            id: item.id
+          }
+        }));
+        return JSON.stringify(obj);
+      } catch (e) {
+        return;
+      }
     }
   });
 
   responseHook((url, text, body) => {
     if (url.includes(`bulletscreen/add`)) {
-      let obj = JSON.parse(text);
-      if (obj.error == 0) return text;
-      let { content } = JSON.parse(body);
+      let obj;
+      let content;
+      try {
+        obj = JSON.parse(text);
+        if (obj.error == 0) return text;
+        content = JSON.parse(body).content;
+      } catch (e) {
+        return;   // 云收藏接口回的不是预期 JSON：原样放行，别动响应
+      }
       addLocalDanmakuCollect(content);
       obj.msg = "收藏成功，云收藏已达上限，将收藏至本地（由DouyuEx插件实现无限收藏）";
 
-      // 关闭并重新打开弹幕收藏以更新新添加的弹幕
-      document.querySelector(".ChatBarrageCollect-tip").click();
-      document.querySelector(".ChatBarrageCollect-tip").click();
+      /* 关闭并重新打开弹幕收藏以更新新添加的弹幕。
+         面板没渲染（未登录 / 没有云收藏入口）时这里是 null —— 原来直接 .click() 会抛，
+         结果就是"提示说收藏到本地了，条目却没出现"。 */
+      let tip = document.querySelector(".ChatBarrageCollect-tip");
+      if (tip) {
+        tip.click();
+        tip.click();
+      }
       return JSON.stringify(obj);
     }
   });
 
   responseHook((url, text, body) => {
     if (url.includes(`bulletscreen/del`)) {
-      let { id } = JSON.parse(body);
-      delLocalDanmakuCollect(id);
+      try {
+        let { id } = JSON.parse(body);
+        delLocalDanmakuCollect(id);
+      } catch (e) {}
     }
   });
 }
 
 function initPkg_DanmakuCollect_Dom() {
+  /* 上游 1 秒一拍、没有上限：未登录 / 没有云收藏入口时这个定时器会一直空转到页面关掉。
+     给 120 拍（2 分钟）的耐心，到点就收工并留一条日志，避免长期白跑。 */
+  let tries = 0;
   let timer = setInterval(() => {
     if (typeof document.getElementsByClassName("ChatBarrageCollect")[0] != "undefined") {
       clearInterval(timer);
       new DomHook(".ChatBarrageCollect", false, (m) => {
         const titleDom = document.getElementsByClassName("ChatBarrageCollectPop-title");
-        if (!titleDom) {
-          document.getElementById("ex-danmaku-collect-search").removeEventListener("input", searchCollectDanmaku);
-          return;
-        }
         if (titleDom.length === 0) return;
+        // 已经插过就别重复插（弹窗每次重开都会回调一次）
+        if (document.getElementById("ex-danmaku-collect-search")) return;
         let inputDom = document.createElement("input");
         inputDom.id = "ex-danmaku-collect-search";
         inputDom.placeholder = "搜索弹幕";
@@ -74,13 +96,22 @@ function initPkg_DanmakuCollect_Dom() {
 
         inputDom.addEventListener("input", searchCollectDanmaku);
       });
+      return;
+    }
+    if (++tries > 120) {
+      clearInterval(timer);
+      console.warn("[DouyuEx] 等不到弹幕收藏按钮（可能未登录或页面改版），搜索框增强已停止等待");
     }
   }, 1000);
 }
 
 function searchCollectDanmaku(e) {
   const searchText = e.target.value;
-  let parentDom = document.getElementsByClassName("ChatBarrageCollectPop-barrageContent")[0].parentElement;
+  // 面板可能已被关掉重开（搜索框还在、列表节点已换掉）：任一环取不到就直接返回
+  let contentDom = document.getElementsByClassName("ChatBarrageCollectPop-barrageContent")[0];
+  if (!contentDom) return;
+  let parentDom = contentDom.parentElement;
+  if (!parentDom) return;
   let danmakuDoms = parentDom.getElementsByClassName("TagItem");
   // 找出所有doms里面包含searchText的dom，其他全部display为none，如果searchText为空，则全部显示
   for (let i = 0; i < danmakuDoms.length; i++) {

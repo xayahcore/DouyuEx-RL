@@ -227,6 +227,39 @@ function MultiScreen_isSupported() {
   return true;
 }
 
+/* ---------- 存储脏值容错 ----------
+   ExSave_MultiScreen* 是用户能手动改、也会被旧/坏版本写坏的地方（代码里已经见过 qn 被写成
+   "ULTRA256"、list 被写成对象数组这类情况）。恢复时必须逐项校验：脏档位拿去取流只会失败，
+   脏 rid 会变成 "[object Object]" 请求，脏文本会原样进 UI。 */
+const MS_RID_RE = /^\d{1,20}$/;
+function MultiScreen_saneRid(v) {
+  if (typeof v === "number" && isFinite(v) && v > 0) return String(Math.floor(v));
+  if (typeof v === "string") {
+    const s = v.trim();
+    if (MS_RID_RE.test(s) && s !== "0") return s;
+  }
+  return "";
+}
+function MultiScreen_saneText(v, max) {
+  return typeof v === "string" ? v.slice(0, max || 60) : "";
+}
+// 房间项：只认对象 + 合法 rid；nn/avatar 强制字符串；两个开关只认显式 false
+function MultiScreen_saneItem(r) {
+  if (!r || typeof r !== "object") return null;
+  const rid = MultiScreen_saneRid(r.rid);
+  if (!rid) return null;
+  const o = { rid: rid, nn: MultiScreen_saneText(r.nn), avatar: MultiScreen_saneText(r.avatar, 300) };
+  if (r.video === false) o.video = false;
+  if (r.danmaku === false) o.danmaku = false;
+  return o;
+}
+// 档位：只认列表里的五档（"auto" 也在表内），其余一律当脏值
+function MultiScreen_saneQn(q) {
+  if (typeof q !== "string") return "";
+  for (let i = 0; i < MS_QUALITY_LIST.length; i++) if (MS_QUALITY_LIST[i].v === q) return q;
+  return "";
+}
+
 function MultiScreen_getMainRid() {
   return String((typeof rid !== "undefined" && rid) || "");
 }
@@ -740,6 +773,9 @@ function MultiScreen_reapplyAutoQuality() {
     const i = positions[k];
     const rec = msSlotPlayers.get(i);
     if (!rec) continue;
+    /* 换档进行中（旧流 + --next 新流交叉过渡）：别在过渡窗口里再起一次 —— switchQuality 会看到
+       "旧流没画面"走兜底分支，把两条流一起销毁重取（5 房缩放抖动时最容易踩到）。 */
+    if (rec.switching) continue;
     const want = MultiScreen_pickQnForSlot(i);
     if (rec.qn && rec.qn === want) continue;
     MultiScreen_switchQuality(i, msActiveList[i]);
@@ -1050,7 +1086,8 @@ function MultiScreen_renderAll() {
    刚摆好的版面在下次勾选时又打乱。只有 enter（开启/重开）才按原生口径让主房间占槽 0。 */
 function MultiScreen_normalize(list) {
   const mainRid = MultiScreen_getMainRid();
-  let arr = (Array.isArray(list) ? list : []).filter(function (r) { return r && r.rid; });
+  // 逐项清洗：脏对象 / 空 rid / 非字符串文本一律挡在这里（存储与面板两个入口共用）
+  let arr = (Array.isArray(list) ? list : []).map(MultiScreen_saneItem).filter(Boolean);
   if (mainRid && !arr.some(function (r) { return String(r.rid) === mainRid; })) {
     arr = [{ rid: mainRid, nn: "", avatar: "" }].concat(arr);
   }
@@ -1086,6 +1123,7 @@ function MultiScreen_settleSingleScreen() {
   if (MultiScreen_visiblePositions().length > 1) return;
   for (let i = 0; i < MS_SLOT_COUNT; i++) MultiScreen_clearSlot(i);
   MultiScreen_resetPosOwner();
+  MultiScreen_clearPendingWork();   // 回到单屏 = 这一轮多屏的异步工作全部作废（对比/防抖/长按）
 }
 
 // action: "fresh" | "add" | "delete" | "close"
@@ -1103,6 +1141,7 @@ function MultiScreen_apply(action, payload) {
     if (msActiveList.length >= MS_MAX_ROOMS) return MultiScreen_after();
     msActiveList = MultiScreen_normalize(msActiveList.concat([payload]));
   } else if (action === "delete") {
+    MultiScreen_forgetQnCompare(payload);   // 删掉的房间从换档对比里剔除
     /* 用户 2026-10-06：只剩「1 主房 + 1 外房」时，面板上那个 × 也必须能关掉外房 ——
        关完只剩主房间就自然退回单屏，不需要先去点「退出多屏」。
        所以这里**不再**设"最少 2 个"的门槛（MS_MIN_ROOMS 只管"几个格才算多屏版面"）。 */
@@ -1117,6 +1156,40 @@ function MultiScreen_apply(action, payload) {
   MultiScreen_settleSingleScreen();
   MultiScreen_applyLayout();
   return MultiScreen_after();
+}
+
+/* 退出/删房时把"还在路上的异步工作"一并收掉：
+   · 换档对比（msQnCompare）不清掉的话，15s 后它的定时器还会弹一次「清晰度切换…」—— 那时早就退出同屏了；
+   · 尺寸防抖（msAutoQnTimer）会对着已经清空的格子再算一次档位；
+   · 长按计时器（msDragTimer）与自愈合并（msHealTimer）同理。 */
+function MultiScreen_clearPendingWork() {
+  if (msQnCompare) {
+    clearTimeout(msQnCompare.timer);
+    msQnCompare = null;
+  }
+  clearTimeout(msAutoQnTimer);
+  msAutoQnTimer = 0;
+  clearTimeout(msDragTimer);
+  msDragTimer = null;
+  clearTimeout(msHealTimer);
+  msHealTimer = 0;
+}
+
+/* 删掉一个房间时把它从换档对比里剔除：否则 total 永远凑不齐，15s 后报「已确认 N/M」。 */
+function MultiScreen_forgetQnCompare(rid) {
+  if (!msQnCompare) return;
+  const k = String(rid);
+  if (!(k in msQnCompare.prev)) return;
+  delete msQnCompare.prev[k];
+  delete msQnCompare.done[k];
+  delete msQnCompare.same[k];
+  const total = Object.keys(msQnCompare.prev).length;
+  if (!total) {
+    clearTimeout(msQnCompare.timer);
+    msQnCompare = null;
+    return;
+  }
+  if (Object.keys(msQnCompare.done).length >= total) MultiScreen_finishQnCompare();
 }
 
 function MultiScreen_after() {
@@ -1605,8 +1678,14 @@ function MultiScreen_load() {
     const raw = localStorage.getItem("ExSave_MultiScreen");
     if (!raw) return null;
     const j = JSON.parse(raw);
-    if (j && typeof j.qn === "string") msQn = j.qn;
-    const list = (j && Array.isArray(j.list)) ? j.list.filter(function (r) { return r && r.rid; }) : [];
+    const qn = MultiScreen_saneQn(j && j.qn);
+    if (qn) msQn = qn;                              // 脏档位直接忽略（保持当前值，通常是 auto）
+    const rawList = (j && Array.isArray(j.list)) ? j.list : [];
+    const list = [];
+    rawList.forEach(function (r) {
+      const it = MultiScreen_saneItem(r);
+      if (it) list.push(it);
+    });
     return list.length > 1 ? list.slice(0, MS_MAX_ROOMS) : null;
   } catch (e) { return null; }
 }
@@ -1657,6 +1736,57 @@ function MultiScreen_heal() {
   });
 }
 
+/* ---------- SPA 换房 / 播放器被重建后的收手 ---------- */
+/* 斗鱼是 SPA：换房（或播放器初始化）时整棵播放器 DOM 会被重建，旧容器变成游离节点。
+   旧记录里的 <video> 随之脱离文档，但 flv.js 仍在按旧地址拉流（用户看不到任何画面、带宽一直烧），
+   看门狗 interval 也还在空转。这里每秒核一次"我们正在用的容器还在不在树上"：不在了就整体收手 ——
+   销毁全部记录、清掉异步工作、列表退回单屏、通知订阅者（合并侧据此断开所有 socket）。
+   宁可让用户重新开一次同屏，也不留"半死不活"的状态。 */
+let msSwapPatrolTimer = 0;
+let msSwapMissTicks = 0;   // 连续多少次巡检发现容器不在树上（过滤 React 过渡态里的"摘下再放回"）
+
+function MultiScreen_teardownForPlayerSwap() {
+  for (let i = 0; i < MS_SLOT_COUNT; i++) MultiScreen_clearSlot(i);
+  MultiScreen_clearPendingWork();
+  if (msObserver) { try { msObserver.disconnect(); } catch (e) {} }
+  msObserver = null;
+  msWatched = null;
+  msContainer = null;
+  msActiveList = MultiScreen_normalize([]);   // 只留当前房间这一条
+  msHistoryList = [];                          // 旧房间的快照不能再拿去"重开还原"
+  MultiScreen_resetPosOwner();
+  msMultiType = 0;
+  MultiScreen_save();
+  MultiScreen_notifyChange(msActiveList.slice());
+}
+
+function MultiScreen_checkPlayerSwap() {
+  if (!msContainer) return false;
+  if (msContainer.isConnected) { msSwapMissTicks = 0; return false; }
+  /* 页面里已经站着**另一个**容器 = 播放器确实被整体重建了，立刻收手；
+     只是"暂时不在了"（React 过渡态会短暂摘下再放回）则要连续 3 次巡检（1.5s）才认账，
+     否则一次重排就把好好的同屏拆了。 */
+  const fresh = document.getElementById("js-player-multiContainer");
+  if (fresh && fresh !== msContainer) {
+    msSwapMissTicks = 0;
+    if (msActiveList.length >= MS_MIN_ROOMS) {
+      MultiScreen_teardownForPlayerSwap();
+      return true;
+    }
+    msContainer = null;
+    return false;
+  }
+  msSwapMissTicks++;
+  if (msSwapMissTicks < 3) return false;
+  msSwapMissTicks = 0;
+  if (msActiveList.length < MS_MIN_ROOMS) {
+    msContainer = null;                        // 单屏状态：没有资源要收，下次重新取容器即可
+    return false;
+  }
+  MultiScreen_teardownForPlayerSwap();
+  return true;
+}
+
 /* ---------- 入口 ---------- */
 
 /* 绑监听 + 挂观察 + 落到当前状态。与"是否受支持"分开，便于轮询里重复调用。 */
@@ -1675,6 +1805,8 @@ function MultiScreen_bindOnce() {
     window.addEventListener("resize", MultiScreen_onResize);
   }
   MultiScreen_watchContainer();
+  // 慢巡检：容器被页面重建（SPA 换房）后要整体收手，见 MultiScreen_checkPlayerSwap
+  if (!msSwapPatrolTimer) msSwapPatrolTimer = setInterval(MultiScreen_checkPlayerSwap, 500);
   MultiScreen_applyLayout();
   // 清掉可能残留在主画面格上的状态类（早期版本按位置清理时会误加）
   const mainCell = MultiScreen_slots()[msPosOwner.indexOf(0)];
@@ -1752,6 +1884,35 @@ window.MultiScreen_setStallTimings = function (tickMs, quietMs) {
 };
 /* 排障/自检入口：把起播超时兜底压到毫秒级（生产默认 8s）。与 MultiScreen_setStallTimings 同款 ——
    测"超时 → 自动重试"这条链路时不必干等 8 秒。 */
+/* 排障/自检入口：一次列出内部状态（列表几条、还剩几个播放记录、哪些定时器还挂着、位置归属）。
+   真机复现"退出/切房后还有东西在跑"时，控制台一句 MultiScreen_getInternalState() 就能定位。 */
+window.MultiScreen_getInternalState = function () {
+  let players = 0, stallTimers = 0, startTimers = 0, retryTimers = 0, swapTimers = 0;
+  msSlotPlayers.forEach(function (rec) {
+    if (!rec) return;
+    players++;
+    if (rec.stallTimer) stallTimers++;
+    if (rec.startTimer) startTimers++;
+    if (rec.retryTimer) retryTimers++;
+    if (rec.swapTimer) swapTimers++;
+  });
+  return {
+    list: msActiveList.length,
+    players: players,
+    stallTimers: stallTimers,
+    startTimers: startTimers,
+    retryTimers: retryTimers,
+    swapTimers: swapTimers,
+    qnCompare: !!msQnCompare,
+    qnCompareTotal: msQnCompare ? Object.keys(msQnCompare.prev).length : 0,
+    autoQnTimer: !!msAutoQnTimer,
+    healTimer: !!msHealTimer,
+    dragging: !!msDrag,
+    posOwner: msPosOwner.slice(),
+    quality: msQn,
+    supported: MultiScreen_isSupported(),
+  };
+};
 window.MultiScreen_setStartTimeout = function (ms) {
   const n = Number(ms);
   if (n >= 20) msStartTimeoutMs = n;
