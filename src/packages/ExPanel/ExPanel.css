@@ -210,7 +210,7 @@
 }
 
 /* ==========================================================================
-   2. 全量 8 个三级控制台统一尺寸与通透磨砂 (380×370px 齐平三维铁壁)
+   2. 全量 8 个三级控制台统一尺寸与通透磨砂 (380×370 齐平三维铁壁)
    ========================================================================== */
 .miuix-modal,
 .sign-panel,
@@ -352,7 +352,7 @@
     display: block !important;
     flex: 1 1 auto !important;
     min-height: 0 !important;
-    max-height: calc(370px - 52px) !important;
+    max-height: calc(var(--miuix-modal-height) - 52px) !important;
     width: 100% !important;
     overflow-y: auto !important;
     overflow-y: overlay !important;
@@ -2186,7 +2186,7 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
    .is-multiN 后代规则驱动，宿主样式表缺失时会整块失灵；内联更稳且取值与原生完全一致。
    本节只负责"格子里面长什么样"：房名胶囊、加载层、四态文案、拖拽落点与占位块。
 
-   注意：本节禁止出现 380px / 370px（产物级断言认定模态尺寸只能声明一次），
+   注意：本节禁止写死模态宽高（产物级断言认定模态尺寸只能声明一次），
    也禁止出现反引号与美元花括号插值（CSS 会被塞进模板字符串，插值起始符会直接截断它）。
    ========================================================================== */
 
@@ -2358,48 +2358,37 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
 }
 
 /* ==========================================================================
-   22. 同屏播放器面板的「多屏观看」页
+   22. 同屏播放面板的「多屏观看」页
    面板本体是浅色玻璃（--miuix-modal-bg 为白），所以这一节全部走浅色口径；
    格子区压在视频上，用深色口径。两套不混用。
    ========================================================================== */
-
-/* 页签常驻顶部：多屏页内容会滚动，页签不能跟着滚走 */
-.popup-panel__tabs.miuix-seg {
-    position: sticky !important;
-    top: 0 !important;
-    z-index: 3 !important;
-    margin: 0 0 12px 0 !important;
-}
 
 .popup-panel__page[hidden] {
     display: none !important;
 }
 
-.popup-panel__page {
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 12px !important;
-}
-
-/* 已加入数量：跟在标题后面的小胶囊 */
+/* 同屏里的房间数量：跟在标题后面的小胶囊 */
 .popup-ms__count {
     margin-left: 6px !important;
     padding: 1px 6px !important;
     font-style: normal !important;
-    font-size: 11px !important;
+    font-size: 12px !important;
     font-weight: 700 !important;
     color: var(--miuix-blue) !important;
     background: rgba(0, 102, 255, 0.1) !important;
     border-radius: 6px !important;
 }
 
-/* 页面整体可滚：房间多时不会把内容顶出面板 */
+/* 页面整体可滚：房间多时不会把内容顶出面板；纵向 flex 让底部操作区能粘住 */
 .popup-panel__page {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
     overflow-y: auto !important;
     overflow-x: hidden !important;
 }
 
-/* 面板内容高于面板时，让页面自己滚（否则底部会被裁掉：实测 5 房时内容 437px > 面板 370px） */
+/* 面板内容高于面板时，让页面自己滚（否则底部会被裁掉：实测 5 间房时内容 437px > 面板高度） */
 .popup-player-panel .miuix-modal__body {
     display: flex !important;
     flex-direction: column !important;
@@ -2412,17 +2401,18 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
 }
 
 
+/* 与第 4 节的全局滚动条同一口径（4px / rgba(0,0,0,0.18) / 4px 圆角） */
 .popup-panel__page::-webkit-scrollbar,
 .popup-ms__rooms::-webkit-scrollbar,
 .popup-ms__results::-webkit-scrollbar {
-    width: 6px !important;
+    width: 4px !important;
 }
 
 .popup-panel__page::-webkit-scrollbar-thumb,
 .popup-ms__rooms::-webkit-scrollbar-thumb,
 .popup-ms__results::-webkit-scrollbar-thumb {
-    background: rgba(15, 23, 42, 0.18) !important;
-    border-radius: 3px !important;
+    background: rgba(0, 0, 0, 0.18) !important;
+    border-radius: 4px !important;
 }
 
 /* 已加入多屏的列表自己滚，页面其余部分保持不动（外房两行 ≈ 58px/个，五房时滚动看全） */
@@ -2443,6 +2433,12 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
 .popup-ms__restore .popup-panel__paste-btn {
     flex: 0 0 auto !important;
     white-space: nowrap !important;
+}
+
+/* hidden 必须真的收起：上面的 display:flex !important 会压过 UA 样式表的 [hidden]，
+   没有上次配置时那一行仍会白占 8px 版面（对照 .popup-panel__page[hidden] 的写法） */
+.popup-ms__restore[hidden] {
+    display: none !important;
 }
 
 .popup-ms__restore-text {
@@ -2556,7 +2552,7 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
 .popup-ms__room-qn {
     flex: 0 0 auto !important;
     padding: 1px 6px !important;
-    font-size: 10px !important;
+    font-size: 11px !important;
     color: var(--miuix-blue) !important;
     background: rgba(0, 102, 255, 0.08) !important;
     border-radius: 6px !important;
@@ -2670,6 +2666,25 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
     font-variant-numeric: tabular-nums !important;
 }
 
+/* 搜索框撑满卡片宽度：.popup-panel__input-box 原本没有任何样式，input 用的是
+   浏览器默认宽度（约 169px），卡片右边空一大块。特异性与第 9 节的
+   .popup-player-panel input[type="text"] 相同，本节在后面，所以这边生效。 */
+.popup-panel__input-box {
+    display: flex !important;
+    align-items: center !important;
+    margin-top: 6px !important;
+}
+
+.popup-panel__input-box input[type="text"] {
+    width: 100% !important;
+    height: 28px !important;
+    padding: 4px 10px !important;
+    border-radius: 8px !important;
+    background: rgba(255, 255, 255, 0.85) !important;
+    font-size: 12px !important;
+    box-sizing: border-box !important;
+}
+
 /* 快捷来源按钮并排 */
 .popup-ms__src {
     display: flex !important;
@@ -2682,19 +2697,33 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
     justify-content: center !important;
 }
 
-/* 搜索结果行 */
+/* 搜索结果行。行本体是真正的 <button>（此前是 div，键盘用户 Tab 不到、也加不了房）：
+   button 既不继承字体、也不吃 flex 列里的宽度，这里把平铺与文字口径补回来。 */
 .popup-ms__result {
     display: flex !important;
     align-items: center !important;
     gap: 6px !important;
     height: 30px !important;
+    width: 100% !important;
     padding: 0 8px !important;
     box-sizing: border-box !important;
     background: var(--miuix-item-bg) !important;
     border: var(--miuix-item-border) !important;
     border-radius: 8px !important;
+    color: #0f172a !important;
+    font: inherit !important;
+    letter-spacing: inherit !important;
+    text-align: left !important;
+    -webkit-appearance: none !important;
+    appearance: none !important;
     cursor: pointer !important;
     transition: all 0.18s var(--miuix-spring) !important;
+}
+
+/* 键盘焦点必须看得见；鼠标点击不出框（:focus-visible 只在键盘导航时命中） */
+.popup-ms__result:focus-visible {
+    outline: 2px solid var(--miuix-blue) !important;
+    outline-offset: 1px !important;
 }
 
 .popup-ms__result:hover {

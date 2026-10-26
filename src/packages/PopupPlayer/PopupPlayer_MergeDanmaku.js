@@ -49,6 +49,8 @@ const MS_MERGE_COLORS = {
 
 const MS_MERGE_RATE_WINDOW_MS = 1000;
 const MS_MERGE_RATE_MAX = 12;      // 每秒最多上屏多少条合并弹幕（含所有外房）
+/* 超限丢弃不能静默：每 5s 最多提示一次（数值阈值等真机数据，这里只解决"弹幕少但看不出原因"） */
+const MS_MERGE_RATE_WARN_MS = 5000;
 const MS_MERGE_BADGE_COLOR = "rgba(255,255,255,0.22)"; // 统一中性色横条
 /* 总线还没就位时先把报文挂起（不自己拼条目），等到就位再原样交过去；
    挂起队列的上限与寿命：超时仍未等到总线就丢弃并计数（宁可少显示，也不显示非原生的） */
@@ -62,7 +64,8 @@ let msMergeHostVia = null;           // 拿到它的方式："hook"（脚本钩�
 let msMergeInstalled = false;
 let msMergeConns = [];               // { rid, nn, ws }
 let msMergeRate = { at: 0, count: 0 };
-let msMergeStats = { pushed: 0, dropped: 0, noTrack: 0, viaBus: 0, viaHost: 0, held: 0, expired: 0 };
+let msRateWarnAt = 0;               // 上次"超出限速"提示的时间（节流用）
+let msMergeStats = { pushed: 0, dropped: 0, noTrack: 0, viaBus: 0, viaHost: 0, held: 0, expired: 0, pushError: 0 };
 
 /* ---------- ① 脚本钩子 ---------- */
 
@@ -145,6 +148,9 @@ const MS_BOOTSTRAP_MAX_TRIES = 40;   // 最多等 60 秒；弹幕层关着时本
 
 let msBootTimer = 0;
 let msBootTries = 0;
+/* 40 次等满仍未接上引擎：留痕，并允许"下一次真实外房报文"再要一次重试额度。
+   没有这个标记的话，60s 后才打开弹幕区的页面整场都不会有来源横条。 */
+let msBootExpired = false;
 let msRendererProto = null;
 
 function MergeDanmaku_bootstrap() {
@@ -157,6 +163,7 @@ function MergeDanmaku_bootstrap() {
     // 的构造器 —— 实测在弹幕稀疏时会一直 ready 不了。
     const nodes = MergeDanmaku_findDanmakuNodes();
     if (!nodes.length) return false;
+    let wrapped = !!msRendererProto;   // 已包过也算接上（重复调用幂等）
     for (let i = 0; i < nodes.length; i++) {
       const node = nodes[i];
       if (!node.comment) {
@@ -174,12 +181,19 @@ function MergeDanmaku_bootstrap() {
       if (!cm || !cm.space || typeof cm.space.addComment !== "function") continue;
       msMergeSpace = cm.space;
       if (cm.data && cm.data.type && typeof cm.constructor === "function") msMergeCtors[cm.data.type] = cm.constructor;
-      MergeDanmaku_wrapRenderer();
+      wrapped = MergeDanmaku_wrapRenderer() || wrapped;
       if (msMergeCtors.scroll) break;
     }
     if (!msMergeSpace) return false;
     if (!msMergeCtors.scroll) return false;   // 还差一条普通滚动弹幕，下一轮继续
-    console.log("[DouyuEx] 多屏弹幕合并已接入原生引擎");
+    /* 接上引擎 ≠ 能贴横条：render 不在原型上时包装会失败，飘屏就永远没有来源标识。
+       这种"看着成功、实际缺功能"的状态必须说出来，否则只能靠人肉对比才发现。 */
+    if (wrapped) {
+      console.log("[DouyuEx] 多屏弹幕合并已接入原生引擎");
+    } else {
+      console.warn("[DouyuEx] 多屏弹幕合并已接上弹幕引擎，但渲染器没能包装（render 不在原型上？）：" +
+        "**飘屏的来源横条不会显示**；聊天区横条不受影响。可用 MergeDanmaku_getStats() 看 rendererWrapped。");
+    }
   }
   return true;
 }
@@ -196,11 +210,16 @@ function MergeDanmaku_findDanmakuNodes() {
   return out;
 }
 
+/* 返回**是否真的包装到了 render**：调用方据此区分"接上引擎"与"接上引擎但横条贴不上"。
+   · 没有引擎/渲染器            → false
+   · 渲染器原型上没有 render     → false（实例上自挂 render 的写法包不到）
+   · 已经包过（幂等）            → true */
 function MergeDanmaku_wrapRenderer() {
   const rd = msMergeSpace && msMergeSpace._renderer;
-  if (!rd || msRendererProto) return;
+  if (!rd) return false;
+  if (msRendererProto) return true;
   const proto = Object.getPrototypeOf(rd);
-  if (!proto || typeof proto.render !== "function") return;
+  if (!proto || typeof proto.render !== "function") return false;
   msRendererProto = proto;
   const orig = proto.render;
   proto.render = function (cm) {
@@ -212,10 +231,13 @@ function MergeDanmaku_wrapRenderer() {
     }
     return r;
   };
+  return true;
 }
 
 function MergeDanmaku_startBootstrap() {
   if (msBootTimer) return;
+  msBootExpired = false;
+  let done = false;   // 首 tick 就成功时不能再挂 interval（旧实现会白挂一轮）
   // 两件事各自重试：① 原生引擎本体（space + scroll 类）② 播放器自己的弹幕组件。
   // ②拿不到不算失败 —— 外房弹幕退回自建数据上屏（颜色与来源横条照旧），
   // 所以轮询只在"两件都拿到"或"等够了"时停。
@@ -224,17 +246,38 @@ function MergeDanmaku_startBootstrap() {
     const hostReady = !!MergeDanmaku_getHost();
     msBootTries++;
     if ((engineReady && hostReady) || msBootTries >= MS_BOOTSTRAP_MAX_TRIES) {
+      done = true;
       clearInterval(msBootTimer);
       msBootTimer = 0;
       // 引擎接上了、播放器自己的管线没接上：留一条线索，别让它静默降级
       if (engineReady && !hostReady) {
         console.warn("[DouyuEx] 未能接入播放器自己的弹幕管线（React fiber 上溯失败），" +
           "外房弹幕暂按自建数据上屏：颜色与来源横条正常，粉丝牌/等级/贵族底不显示。");
+      } else if (!engineReady) {
+        /* 引擎没抓到也必须留痕：否则"整场没有来源横条"只会被当成功能没生效，
+           而且没人知道已经放弃了 60 秒。 */
+        msBootExpired = true;
+        console.warn("[DouyuEx] 多屏弹幕合并自举到期：" + msBootTries + " 次仍未抓到原生弹幕引擎" +
+          "（弹幕层关着或没有飘屏都算），来源横条暂不可用；外房弹幕仍会经 socketProxy.socketStream 合入。" +
+          "下一次外房报文到来时会自动再试一次。ready=" +
+          (msMergeSpace && msMergeCtors.scroll ? "true" : "false") +
+          " streamVia=" + (msBusVia || "null"));
       }
     }
   };
   tick();
-  msBootTimer = setInterval(tick, MS_BOOTSTRAP_POLL_MS);
+  if (!done) msBootTimer = setInterval(tick, MS_BOOTSTRAP_POLL_MS);
+}
+
+/* 自举到期后才打开弹幕区/换房：给一次重试额度（tries 归零重挂），
+   避免"整场没有来源横条"只能靠刷新页面恢复。没有真实外房报文时不重试，防止空转。 */
+function MergeDanmaku_retryBootstrap() {
+  if (!msBootExpired) return false;
+  if (msMergeSpace && msMergeCtors.scroll) return false;
+  msBootTries = 0;
+  msBootExpired = false;
+  MergeDanmaku_startBootstrap();
+  return true;
 }
 
 /* ---------- ②b 运行时抓取"播放器自己的弹幕组件" ---------- */
@@ -429,17 +472,20 @@ function MergeDanmaku_syncConnections() {
   msMergeConns = msMergeConns.filter(function (c) {
     if (wantMap[c.rid]) return true;
     try {
-      c.ws.closed = true;
-      if (c.ws.ws) c.ws.ws.close();
+      /* 优先走公开 close()：它内部会停心跳、抑制重连（直接改 closed/ws 依赖内部字段，
+         斗鱼或本类一改版就会"关了还在收"，表现为关掉某房弹幕后仍在合入）。 */
+      if (c.ws && typeof c.ws.close === "function") c.ws.close();
+      else if (c.ws && c.ws.ws) { c.ws.closed = true; c.ws.ws.close(); }
     } catch (e) {}
     return false;
   });
 
-  // 刚被关掉弹幕的房间：挂起队列里还没交出去的报文也一并丢掉（否则门一出现还会补上它的弹幕）
+  /* 挂起队列里只保留"仍然该合入"的房间：删房 / 退出多屏 / 关弹幕都要清。
+     旧实现只看 danmaku===false，房间被删掉后它的报文还会被补交一次。 */
   if (msBusHold.length) {
     msBusHold = msBusHold.filter(function (h) {
       const rid = h && h.item ? String(h.item.srcRid) : "";
-      return !rid || !list.some(function (r) { return String(r.rid) === rid && r.danmaku === false; });
+      return !!rid && !!wantMap[rid];
     });
   }
 
@@ -500,10 +546,17 @@ function MergeDanmaku_isSocketData(v) {
 }
 
 function MergeDanmaku_getStream() {
-  if (msBusCache && MergeDanmaku_isSocketData(msBusCache)) return msBusCache;
-  msBusCache = null;
   const W = typeof unsafeWindow !== "undefined" ? unsafeWindow : window;
   const sp = W.socketProxy;
+  /* 缓存必须还是页面当前那扇门：斗鱼换房/重建播放器时 socketProxy 可能被整个替换，
+     旧对象形状仍然像 SocketData，push 进去却不再扇出（viaBus 照涨、界面没弹幕、也不报错）。 */
+  if (msBusCache) {
+    if (!sp || sp.socketStream === msBusCache) {
+      if (MergeDanmaku_isSocketData(msBusCache)) return msBusCache;
+    }
+    msBusCache = null;
+    msBusVia = null;
+  }
   if (sp && MergeDanmaku_isSocketData(sp.socketStream)) {
     msBusCache = sp.socketStream;
     msBusVia = "socketProxy";
@@ -574,8 +627,12 @@ function MergeDanmaku_injectNative(item) {
     msMergeStats.viaBus++;
     return true;
   } catch (e) {
-    // push 抛错（报文畸形等）→ 撤回刚记的账，避免留下会误贴来源的脏条目
+    // push 抛错（报文畸形等）→ 撤回刚记的账，避免留下会误贴来源的脏条目；
+    // 同时清掉总线缓存：下一次重新发现入口，别把后续报文一直推进同一个死对象。
     if (msInjectQueue.length) msInjectQueue.pop();
+    msBusCache = null;
+    msBusVia = null;
+    msMergeStats.pushError++;
     return false;
   }
 }
@@ -603,17 +660,22 @@ function MergeDanmaku_holdForBus(item) {
   }
 }
 
+/* 每个 500ms tick 最多补交这么多条：门一出现就把 200 条同帧灌进原生管线，
+   会整屏爆发 + 聊天列表猛跳，而且绕过了 12 条/秒的预算。 */
+const MS_BUS_FLUSH_PER_TICK = 4;
+
 function MergeDanmaku_flushBusHold() {
   if (!msBusHold.length) return;
   const now = Date.now();
   const ss = MergeDanmaku_getStream();
   if (ss) {
-    // 门出现了：按顺序原样交过去（它们都还在寿命内，等于"这几条晚到了一会儿"）
-    const held = msBusHold;
-    msBusHold = [];
-    held.forEach(function (x) {
+    // 门出现了：按顺序、限量补交（它们都还在寿命内，等于"这几条晚到了一会儿"）
+    let sent = 0;
+    while (msBusHold.length && sent < MS_BUS_FLUSH_PER_TICK) {
+      const x = msBusHold.shift();
+      sent++;
       if (!MergeDanmaku_injectNative(x.item)) MergeDanmaku_dropHeld(x.item);
-    });
+    }
     return;
   }
   const keep = [];
@@ -764,8 +826,23 @@ function MergeDanmaku_handleMsg(room, ret) {
    ② 门还没装好 → 挂起（不自己拼条目），等门出现原样交过去；超时才放弃。 */
 function MergeDanmaku_push(item) {
   if (!item || !item.text) return false;
+  // 自举曾因"弹幕层没开/没有飘屏"到期：这条真实外房报文就是重试的时机
+  MergeDanmaku_retryBootstrap();
   if (!MergeDanmaku_allowRate()) {
     msMergeStats.dropped++;
+    /* 超限不能静默：用户只会看到"外房弹幕怎么这么少"，却没有任何可诊断的线索。 */
+    const now = Date.now();
+    if (now - msRateWarnAt >= MS_MERGE_RATE_WARN_MS) {
+      msRateWarnAt = now;
+      console.warn("[DouyuEx] 外房弹幕超过 " + MS_MERGE_RATE_MAX + " 条/秒，超出的已丢弃（累计 " +
+        msMergeStats.dropped + " 条）；比例与入口状态看 MergeDanmaku_getStats() 的 pushed / viaBus / streamVia。");
+    }
+    return false;
+  }
+  /* 还有旧报文没补交：新报文排在后面，避免聊天区/飘屏出现"新的先到、旧的补在后面"的乱序。
+     补交由 500ms 定时器按 MS_BUS_FLUSH_PER_TICK 推进。 */
+  if (msBusHold.length) {
+    MergeDanmaku_holdForBus(item);
     return false;
   }
   if (MergeDanmaku_injectNative(item)) {
@@ -831,6 +908,13 @@ window.MergeDanmaku_getStats = function () {
     stream: !!MergeDanmaku_getStream(),
     streamVia: msBusVia,
     ready: !!(msMergeSpace && msMergeCtors.scroll),
+    // rendererWrapped = render 是否真的被包装（false = 引擎接上了但飘屏横条贴不上）
+    rendererWrapped: !!msRendererProto,
+    // 自举：bootTries 当前/最后轮询次数；bootExpired = 已放弃并在等下一条外房报文重试
+    bootTries: msBootTries,
+    bootExpired: msBootExpired,
+    // pushError = 报文推进总线时抛错的条数（会清缓存后重新找入口）
+    pushError: msMergeStats.pushError,
     // host = 是否接上了播放器自己的管线（原生资产）；via 是接上的方式：
     //   "hook" 脚本钩子（document-start）/ "fiber" 运行时爬 React fiber / null 没接上
     host: !!msMergeHost,

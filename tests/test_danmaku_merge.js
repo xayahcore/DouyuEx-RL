@@ -25,6 +25,69 @@ function bundlePath() {
   return path.join(__dirname, "../DouyuEx_RL.user.js");
 }
 
+/* ---------- 源码级夹具 ----------
+ * 本轮不许 build，产物里没有本轮新行为；而测试默认读产物。为了能验证源码改动而不碰产物，
+ * 这里把 MergeDanmaku 源码放进一个独立的 vm 上下文，并在**同一脚本作用域**末尾暴露内部状态。
+ * 源码顶层只做常量与 window.* 导出，不会触发页面依赖，所以 stub 掉 window/document 即可求值。 */
+function makeSourceBus() {
+  return {
+    pushes: [],
+    push(p) { this.pushes.push(p); return this; },
+    decoder() {},
+    subscribe() {}
+  };
+}
+
+function loadMergeSource() {
+  const srcPath = path.join(__dirname, "../src/packages/PopupPlayer/PopupPlayer_MergeDanmaku.js");
+  const source = fs.readFileSync(srcPath, "utf8");
+  const logs = { log: [], warn: [] };
+  const timers = { intervals: [], cleared: [] };
+  const win = {};
+  const doc = {
+    querySelectorAll() { return []; },
+    getElementById() { return null; },
+    createElement() {
+      return { style: {}, className: "", textContent: "", setAttribute() {}, appendChild() {}, insertBefore() {}, querySelector() { return null; } };
+    },
+    documentElement: {},
+    body: {}
+  };
+  const ctx = {
+    window: win,
+    document: doc,
+    console: {
+      log(...a) { logs.log.push(a.join(" ")); },
+      warn(...a) { logs.warn.push(a.join(" ")); }
+    },
+    setInterval(fn) { const id = timers.intervals.length + 1; timers.intervals.push({ id, fn }); return id; },
+    clearInterval(id) { timers.cleared.push(id); },
+    setTimeout() { return 0; },
+    clearTimeout() {},
+    MouseEvent: function MouseEvent(type) { this.type = type; },
+    Event: function Event(type) { this.type = type; }
+  };
+  const expose = `
+;globalThis.__msTest = {
+  get space() { return msMergeSpace; }, set space(v) { msMergeSpace = v; },
+  get ctors() { return msMergeCtors; }, set ctors(v) { msMergeCtors = v; },
+  get proto() { return msRendererProto; }, set proto(v) { msRendererProto = v; },
+  get tries() { return msBootTries; }, set tries(v) { msBootTries = v; },
+  get expired() { return msBootExpired; }, set expired(v) { msBootExpired = v; },
+  get bootTimer() { return msBootTimer; }, set bootTimer(v) { msBootTimer = v; },
+  get busCache() { return msBusCache; }, set busCache(v) { msBusCache = v; },
+  get busVia() { return msBusVia; }, set busVia(v) { msBusVia = v; },
+  get hold() { return msBusHold; }, set hold(v) { msBusHold = v; },
+  get conns() { return msMergeConns; }, set conns(v) { msMergeConns = v; },
+  get rate() { return msMergeRate; },
+  get rateWarnAt() { return msRateWarnAt; }, set rateWarnAt(v) { msRateWarnAt = v; },
+  get stats() { return msMergeStats; },
+  get maxTries() { return MS_BOOTSTRAP_MAX_TRIES; }
+};`;
+  vm.runInNewContext(source + expose, ctx, { filename: srcPath });
+  return { ctx, api: ctx.__msTest, logs, timers, win };
+}
+
 // RemoveRepeatedDanmaku 的补丁（真实实现，复制过来当对照）
 function patchRemoveRepeated(content) {
   return content.replace("e.display=new e.renderer(e);", "e.display=new e.renderer(e);e.display.raw.comment=e;");
@@ -204,6 +267,17 @@ async function run() {
   assert.ok(bgOut.indexOf(wantFrag) !== -1, "必须捕获总线且不破坏持有者引用，实际 " + bgOut.slice(0, 80));
   assert.doesNotThrow(() => new vm.Script(bgOut), "补丁后必须仍是合法 JS（不能靠加括号：原上下文没有多余右括号）");
   assert.strictEqual(win0.MergeDanmaku_patchBarrageGroup(bgOut), bgOut, "重复打补丁必须幂等");
+  // 0) 与 RemoveRepeatedDanmaku 的顺序无关（原 patchRemoveRepeated 是死代码，这条承诺从没被测过）
+  const fqBoth = "var t=function(){};t.prototype.convertComment=function(e){return e};function mk(e){e.display=new e.renderer(e);}";
+  const orderMergeFirst = win0.MergeDanmaku_patchFirstqueue(patchRemoveRepeated(fqBoth));
+  const orderShieldFirst = patchRemoveRepeated(win0.MergeDanmaku_patchFirstqueue(fqBoth));
+  assert.strictEqual(orderMergeFirst, orderShieldFirst, "两种补丁顺序必须得到同一份代码");
+  [orderMergeFirst, orderShieldFirst].forEach(function (patched) {
+    assert.ok(patched.indexOf("window.__ExDanmuHost=this;") !== -1, "必须插入主机捕获");
+    assert.ok(patched.indexOf("e.display.raw.comment=e;") !== -1, "必须保留 raw.comment 补丁");
+    assert.ok(patched.indexOf("__ExDanmuHost") > patched.indexOf("convertComment"), "捕获必须发生在 convertComment 里");
+    assert.doesNotThrow(() => new vm.Script(patched), "两段补丁叠加后必须仍是合法 JS");
+  });
   // ---------- 2. 引擎实例捕获与上屏 ----------
   console.log("--> 2. 捕获引擎并喂弹幕");
   const dom = makeDom();
@@ -591,6 +665,122 @@ async function run() {
   win9b.close();
   win9c.close();
   win9d.close();
+
+  // ---------- 10. 源码级：本轮修复（产物未重建，不能靠包内行为验证） ----------
+  console.log("--> 10. 源码级验证本轮修复（不依赖构建产物）");
+
+  // 10.1 M3：包装结果必须可判定
+  const srcWrap = loadMergeSource();
+  assert.strictEqual(srcWrap.ctx.MergeDanmaku_wrapRenderer(), false, "没有引擎/渲染器时必须返回 false");
+  srcWrap.api.space = { _renderer: { render() {} } };
+  assert.strictEqual(srcWrap.ctx.MergeDanmaku_wrapRenderer(), false, "render 定义在实例上时必须返回 false（包装不到）");
+  assert.strictEqual(srcWrap.api.proto, null, "包装失败不得记为已包装");
+  const wrapProto = { render() {} };
+  srcWrap.api.space = { _renderer: Object.create(wrapProto) };
+  assert.strictEqual(srcWrap.ctx.MergeDanmaku_wrapRenderer(), true, "原型上有 render 时必须返回 true");
+  assert.strictEqual(srcWrap.api.proto, wrapProto, "包装成功必须记住被包装的原型");
+  assert.strictEqual(srcWrap.ctx.MergeDanmaku_wrapRenderer(), true, "已包过必须幂等返回 true");
+  assert.strictEqual(srcWrap.win.MergeDanmaku_getStats().rendererWrapped, true, "getStats 必须暴露 rendererWrapped");
+
+  // 10.2 M2：自举到期留痕 + 重试额度 + 首 tick 成功不挂 interval
+  const srcBoot = loadMergeSource();
+  srcBoot.ctx.MergeDanmaku_getHost = () => null;
+  srcBoot.ctx.MergeDanmaku_startBootstrap();
+  assert.strictEqual(srcBoot.timers.intervals.length, 1, "未就绪时必须挂轮询");
+  const bootTicker = srcBoot.timers.intervals[0];
+  for (let i = 0; i < srcBoot.api.maxTries - 1; i++) bootTicker.fn();
+  assert.strictEqual(srcBoot.api.tries, srcBoot.api.maxTries, "轮询次数必须到上限");
+  assert.strictEqual(srcBoot.api.expired, true, "到期必须置 bootExpired（等下一次外房报文重试）");
+  assert.strictEqual(srcBoot.api.bootTimer, 0, "到期必须清掉 interval");
+  const bootWarn = srcBoot.logs.warn.filter((w) => w.indexOf("自举到期") !== -1);
+  assert.strictEqual(bootWarn.length, 1, "engine 未就绪也必须留痕（warn 一条）");
+  assert.ok(bootWarn[0].indexOf("ready=false") !== -1, "warn 必须带 ready，实际 " + bootWarn[0]);
+  assert.ok(bootWarn[0].indexOf("streamVia=") !== -1, "warn 必须带 streamVia，实际 " + bootWarn[0]);
+  assert.ok(bootWarn[0].indexOf(srcBoot.api.maxTries + " 次") !== -1, "warn 必须带轮询次数，实际 " + bootWarn[0]);
+  const bootIntervals = srcBoot.timers.intervals.length;
+  assert.strictEqual(srcBoot.ctx.MergeDanmaku_retryBootstrap(), true, "到期后必须给一次重试额度");
+  assert.strictEqual(srcBoot.api.tries, 1, "重试必须把 tries 归零（本次 tick 后为 1）");
+  assert.strictEqual(srcBoot.api.expired, false, "重试后必须清掉到期标记");
+  assert.strictEqual(srcBoot.timers.intervals.length, bootIntervals + 1, "重试必须重挂轮询");
+
+  const srcBootOk = loadMergeSource();
+  srcBootOk.api.space = { addComment() {}, _renderer: Object.create({ render() {} }) };
+  srcBootOk.api.ctors = { scroll: function ScrollCtor() {} };
+  srcBootOk.ctx.MergeDanmaku_getHost = () => ({ convertComment() {}, cm: { send() {} } });
+  srcBootOk.ctx.MergeDanmaku_startBootstrap();
+  assert.strictEqual(srcBootOk.timers.intervals.length, 0, "首 tick 就成功时不得再挂 interval");
+  assert.strictEqual(srcBootOk.api.bootTimer, 0, "首 tick 就成功时 bootTimer 必须为 0");
+
+  // 10.3 M1：阈值仍是 12，但超限必须可诊断（5s 节流）
+  const srcRate = loadMergeSource();
+  srcRate.win.socketProxy = { socketStream: makeSourceBus() };
+  let srcAccepted = 0;
+  for (let i = 0; i < 13; i++) {
+    if (srcRate.ctx.MergeDanmaku_push({ text: "t" + i, packet: "p" + i, uid: "1", srcRid: "1", srcName: "房" })) srcAccepted++;
+  }
+  assert.strictEqual(srcAccepted, 12, "阈值必须仍是 12 条/秒（本轮只加提示，不改数值）");
+  assert.strictEqual(srcRate.api.stats.dropped, 1, "超限必须计入 dropped");
+  const rateWarns = srcRate.logs.warn.filter((w) => w.indexOf("超过 12 条/秒") !== -1);
+  assert.strictEqual(rateWarns.length, 1, "5s 内超限只提示一次");
+  assert.ok(rateWarns[0].indexOf("累计 1 条") !== -1, "提示必须带累计 dropped，实际 " + rateWarns[0]);
+  srcRate.api.rateWarnAt = Date.now() - 5001;
+  srcRate.api.rate.count = 12;
+  srcRate.ctx.MergeDanmaku_push({ text: "t13", packet: "p13", uid: "1", srcRid: "1", srcName: "房" });
+  assert.strictEqual(srcRate.logs.warn.filter((w) => w.indexOf("超过 12 条/秒") !== -1).length, 2, "5s 窗口过后必须再次提示");
+
+  // 10.4 M6：总线缓存必须跟当前门一致；push 抛错要清缓存并计数
+  const srcBus = loadMergeSource();
+  const busA = makeSourceBus();
+  const busB = makeSourceBus();
+  srcBus.win.socketProxy = { socketStream: busA };
+  assert.strictEqual(srcBus.ctx.MergeDanmaku_getStream(), busA, "必须首选 socketProxy.socketStream");
+  assert.strictEqual(srcBus.api.busVia, "socketProxy", "命中来源必须是 socketProxy");
+  srcBus.win.socketProxy = { socketStream: busB };
+  assert.strictEqual(srcBus.ctx.MergeDanmaku_getStream(), busB, "页面换门后必须重新发现，不能复用旧缓存");
+  const deadBus = { push() { throw new Error("boom"); }, decoder() {}, subscribe() {} };
+  srcBus.win.socketProxy = { socketStream: deadBus };
+  assert.strictEqual(srcBus.ctx.MergeDanmaku_getStream(), deadBus, "换门后必须缓存新门");
+  assert.strictEqual(srcBus.ctx.MergeDanmaku_push({ text: "x", packet: "px", uid: "1", srcRid: "1", srcName: "房" }), false, "push 抛错时不算已上屏");
+  assert.strictEqual(srcBus.api.stats.pushError, 1, "push 抛错必须计入 pushError");
+  assert.strictEqual(srcBus.api.busCache, null, "push 抛错后必须清掉总线缓存");
+
+  // 10.5 M8：补交限速 4 条/500ms，且实时报文排在挂起之后
+  const srcHold = loadMergeSource();
+  const holdBus = makeSourceBus();
+  srcHold.win.socketProxy = { socketStream: holdBus };
+  srcHold.api.hold = [];
+  for (let i = 0; i < 10; i++) {
+    srcHold.api.hold.push({ item: { text: "h" + i, packet: "hp" + i, srcRid: "1", srcName: "房" }, at: Date.now() });
+  }
+  srcHold.ctx.MergeDanmaku_flushBusHold();
+  assert.strictEqual(holdBus.pushes.length, 4, "每个 500ms tick 最多补交 4 条");
+  srcHold.ctx.MergeDanmaku_flushBusHold();
+  assert.strictEqual(holdBus.pushes.length, 8, "下一个 tick 再补 4 条");
+  assert.strictEqual(srcHold.ctx.MergeDanmaku_push({ text: "live", packet: "lp", uid: "1", srcRid: "1", srcName: "房" }), false, "有挂起时实时报文不算已上屏");
+  assert.strictEqual(holdBus.pushes.length, 8, "有挂起时不得越过它们直接注入（保序）");
+  assert.strictEqual(srcHold.api.hold.length, 3, "剩余 2 条 + 新报文 1 条");
+  assert.strictEqual(srcHold.api.hold[2].item.text, "live", "新报文必须排在队尾");
+
+  // 10.6 M9 + M12：挂起队列按 want 清理；关连接走公开 close()
+  const srcConn = loadMergeSource();
+  srcConn.ctx.MultiScreen_getMainRid = () => "9999";
+  srcConn.ctx.MultiScreen_getList = () => [{ rid: "9999" }, { rid: "111", nn: "房一" }];
+  srcConn.ctx.Ex_WebSocket_UnLogin = function FakeWs(rid) { this.rid = rid; this.ws = null; };
+  const closers = { pub: 0, raw: 0 };
+  srcConn.api.hold = [
+    { item: { text: "a", srcRid: "111" }, at: Date.now() },
+    { item: { text: "b", srcRid: "222" }, at: Date.now() },
+    { item: { text: "c" }, at: Date.now() }
+  ];
+  srcConn.api.conns = [
+    { rid: "111", ws: { close() {}, closed: false, ws: null } },
+    { rid: "222", ws: { close() { closers.pub++; }, closed: false, ws: { close() { closers.raw++; } } } }
+  ];
+  srcConn.ctx.MergeDanmaku_syncConnections();
+  assert.deepStrictEqual(srcConn.api.hold.map((h) => h.item.srcRid), ["111"], "删房/退出/关弹幕的挂起报文必须清掉（无 rid 的也清）");
+  assert.strictEqual(srcConn.api.conns.length, 1, "只保留 want 列表里的连接");
+  assert.strictEqual(closers.pub, 1, "关连接必须优先走公开 close()");
+  assert.strictEqual(closers.raw, 0, "有公开 close() 时不得直接动内部 ws");
 
   dom.window.close();
   win3.close();

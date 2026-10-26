@@ -28,6 +28,12 @@ const MS_SWAP_DELAY_MS = 500;     // 换位后真正重排的延迟
 const MS_RELOAD_BTN_MS = 3000;    // 进 loading 后「重新加载」按钮出现的延迟
 const MS_START_TIMEOUT_MS = 8000; // 起播超时兜底提示
 const MS_BOTTOM_GUARD_PX = 42;    // 拖拽起手的底部控制条保护带
+/* 掉线看门狗的节奏：出画面后每 2 秒核一次，6 秒没有 timeupdate 就认定画面卡住了。
+   flv 断了而 <video> 没收到 error 时，画面黑着但 readyState 仍是 2+、也没暂停 ——
+   用户看不到任何提示，只会觉得"多屏坏了"。节奏可压（MultiScreen_setStallTimings，
+   排障与自检用），生产值就是这两个常量。 */
+const MS_STALL_TICK_MS = 2000;
+const MS_STALL_QUIET_MS = 6000;
 
 /* 点小格的行为：**默认什么都不做**，与原生一致（原生多屏点格子不会离开当前页）。
    想改成点小格把它换到主画面，把下面这个开关打开即可（走位置互换，不跳转）。 */
@@ -84,6 +90,9 @@ let msQn = "auto";   // "auto" = 按格子尺寸自动选档；其余为手动�
 let msEpoch = 0;                // 每次重渲染 +1，用于丢弃过期异步回调
 let msDrag = null;
 let msDragTimer = null;
+let msStallTickMs = MS_STALL_TICK_MS;    // 看门狗节奏（MultiScreen_setStallTimings 可临时压低）
+let msStallQuietMs = MS_STALL_QUIET_MS;
+let msStartTimeoutMs = MS_START_TIMEOUT_MS;   // 起播超时兜底（MultiScreen_setStartTimeout 可临时压低）
 // 列表变化订阅者。**必须是多播**：编辑条与弹幕合并都要跟列表变化走，
 // 早先是单槽（msOnChange = fn），后注册的会静默顶掉先注册的 ——
 // 结果编辑条打开着拖拽换位后不再刷新。这里改成数组，逐个调用且互不影响。
@@ -151,9 +160,38 @@ function MultiScreen_visiblePositions() {
   return out;
 }
 
+/* 需要重拉/换档的**外房位置**（升序）：判据是房间身份（外加格子身份兜底），不是下标。
+   ⚠ 别再用 for (let i = 1; …)：那等于假定"位置 0 = 主画面"。拖拽换位之后主画面格可能坐在
+   任意位置上（位置 0 上反而坐着外房），于是真正要换的外房被跳过，而对主画面格调 switchQuality
+   又会被 renderSlot 的主房护栏挡掉 —— 表现是档位角标变了、画面没换（真机 2026-10-26 复现：
+   主画面格拖到位置 1 后选「超清」，外房没有任何新流）。 */
+function MultiScreen_externalPositions() {
+  const mainRid = String(MultiScreen_getMainRid());
+  return MultiScreen_visiblePositions().filter(function (pos) {
+    const r = msActiveList[pos];
+    return !!r && String(r.rid) !== mainRid && msPosOwner[pos] !== 0;   // 身份 0 = 主画面格
+  });
+}
+
 // 位置 → 版面槽号（它是第几个可见格）；显式关掉画面的位置返回 -1
 function MultiScreen_layoutSlotOf(pos) {
   return MultiScreen_visiblePositions().indexOf(pos);
+}
+
+/* 格子身份 → 它**此刻**所在的位置。换位只改位置归属，格子身份永远不变（见 msPosOwner），
+   所以闭包里存"身份"比存"位置 / 房间对象"可靠：这一格里的按钮换位后仍只作用于自己这格。 */
+function MultiScreen_positionOfCell(cellId) {
+  return msPosOwner.indexOf(cellId);
+}
+
+/* 播放记录 → 它**此刻**所在的位置（-1 = 已经被销毁）。异步回调（betard 回包）拿它定位，
+   不要用渲染那一刻的 idx：换位会把记录搬到别的位置上。 */
+function MultiScreen_positionOfRecord(rec) {
+  let found = -1;
+  msSlotPlayers.forEach(function (r, pos) {
+    if (r === rec && found < 0) found = pos;
+  });
+  return found;
 }
 
 /* ⚠⚠ 不要再给 #__h5player 设 pointer-events:none（2026-09-29 实测推翻，原实现已撤除）
@@ -314,17 +352,22 @@ function MultiScreen_renderSlotNoVideo(idx, room) {
     "</span>" +
     '<div class="ms-slot__loading">' +
       '<div class="ms-slot__loading-inner">' +
-        '<div class="ms-slot__tip">已关闭画面（只合入弹幕）</div>' +
+        '<div class="ms-slot__tip">画面已关闭（弹幕照常显示）</div>' +
         '<div class="ms-slot__reload is-visible">开启画面</div>' +
       "</div>" +
     "</div>";
   MultiScreen_fillName(slot, room);
   slot.classList.add("ms-slot--novideo", "ms-slot--notice");
   const btn = slot.querySelector(".ms-slot__reload");
-  if (btn) btn.addEventListener("click", function (e) {
-    e.stopPropagation();
-    MultiScreen_setRoomFlag(String(room.rid), "video", true);
-  });
+  if (btn) {
+    const cellOwner = msPosOwner[idx];   // 身份，不是位置（换位后这个位置上可能已是别的房间）
+    btn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      const pos = MultiScreen_positionOfCell(cellOwner);
+      const now = pos >= 0 ? msActiveList[pos] : null;
+      if (now) MultiScreen_setRoomFlag(String(now.rid), "video", true);
+    });
+  }
 }
 
 function MultiScreen_renderSlot(idx, room) {
@@ -337,6 +380,7 @@ function MultiScreen_renderSlot(idx, room) {
   MultiScreen_clearSlot(idx);
 
   const epoch = ++msEpoch;
+  const cellOwner = msPosOwner[idx];   // 这一格的**身份**：换位不会改它，闭包靠它定位
   // 房名胶囊的类名与取值全部对齐原生 .nameAndIcon / .nameTxt / .nameIcon
   slot.classList.add("ms-slot--loading");
   slot.innerHTML =
@@ -361,6 +405,9 @@ function MultiScreen_renderSlot(idx, room) {
     reloadTimer: 0,
     startTimer: 0,
     url: "",
+    stallTimer: 0,     // 掉线看门狗（interval，必须被 destroyPlayer 清掉）
+    lastTick: 0,       // 最近一次 timeupdate 的时间戳
+    stalled: 0,        // 已经提示过"卡住"（timeupdate 回来时清掉）
   };
   // 起播阶段一律静音（浏览器对"带声音自动播放"有限制）；该房间存的音量在出画面后再套上
   if (rec.video) {
@@ -373,21 +420,34 @@ function MultiScreen_renderSlot(idx, room) {
 
   MultiScreen_fillName(slot, room);
   const reloadEl = slot.querySelector(".ms-slot__reload");
-  reloadEl.addEventListener("click", function (e) {
+  // 红线：DOM 操作必须判空（模板里一定有它，但不赌）
+  if (reloadEl) reloadEl.addEventListener("click", function (e) {
     e.stopPropagation();
-    MultiScreen_renderSlot(idx, room);
+    /* ⚠ 闭包里的 idx / room 都会过期：换位把记录与数据一起换到别的位置，闭包不会跟着换。
+       照旧值重渲染的后果是"清掉隔壁格的记录、把这边的流塞进隔壁格"（两格同房、原房消失）。
+       格子身份换位不变，所以按身份现算它此刻在哪个位置，再取那个位置上的房间。 */
+    const pos = MultiScreen_positionOfCell(cellOwner);
+    const now = pos >= 0 ? msActiveList[pos] : null;
+    if (!now) return;
+    MultiScreen_renderSlot(pos, now);
   });
   // 「重新加载」按钮 3 秒后才出现（原生阈值）
   rec.reloadTimer = setTimeout(function () {
-    if (msSlotPlayers.get(idx) === rec) reloadEl.classList.add("is-visible");
+    /* 判"这条记录还活着"只能按记录身份：换位后它已经不在 idx 上了，
+       用位置判会让「重新加载」按钮在换位过的格子里永远不出现（真机 2026-10-26 清单第 3 条）。 */
+    if (reloadEl && MultiScreen_positionOfRecord(rec) >= 0) reloadEl.classList.add("is-visible");
   }, MS_RELOAD_BTN_MS);
 
   MultiScreen_resolveRoom(room, function (meta) {
-    if (msSlotPlayers.get(idx) !== rec) return;   // 已被重渲染/清空，丢弃过期回调
+    /* 记录可能已经被换位搬到别的位置：按**记录**现找它现在的位置。
+       以前这里按渲染时的 idx 比对，换位后这条回包会被整条丢弃 ——
+       那一格就永远停在"努力加载中…"（没取流、也没有超时兜底，因为超时是 startFlv 里才建的）。 */
+    const pos = MultiScreen_positionOfRecord(rec);
+    if (pos < 0) return;                          // 已被清空/换档/退出，丢弃过期回调
     MultiScreen_fillName(slot, meta);
     // betard 能给出"未开播"就直接落文案，省掉一次注定失败的取流
     if (+meta.showStatus === 2) { MultiScreen_setTip(slot, "主播正在赶来中…"); return; }
-    MultiScreen_fetchStream(idx, meta, epoch);
+    MultiScreen_fetchStream(pos, meta, epoch);
   });
 }
 
@@ -656,7 +716,16 @@ function MultiScreen_applyVolume(rid, v) {
     return;
   }
   msSlotPlayers.forEach(function (rec) {
-    if (rec && String(rec.rid) === k) MultiScreen_applyVolumeToRec(rec, v);
+    if (!rec || String(rec.rid) !== k) return;
+    /* rec.vol 是"出画面那一刻要补上的音量"，也是换档继承给新流的音量：
+       不同步就会在 playing 回调里被出生值盖回去（表现为"拉了音量，出画面又静音"）。
+       换档中的旧流（rec.prev）此刻还在出声，也得跟着改。 */
+    rec.vol = v;
+    MultiScreen_applyVolumeToRec(rec, v);
+    if (rec.prev) {
+      rec.prev.vol = v;
+      MultiScreen_applyVolumeToRec(rec.prev, v);
+    }
   });
 }
 
@@ -665,7 +734,10 @@ function MultiScreen_applyVolume(rid, v) {
 function MultiScreen_reapplyAutoQuality() {
   if (msQn !== "auto" || msMultiType <= 1 || msDrag) return;
   let changed = false;
-  for (let i = 1; i < msActiveList.length && i < MS_SLOT_COUNT; i++) {
+  // 目标位置一律按房间身份筛（换位后主画面格可能不在位置 0，见 MultiScreen_externalPositions）
+  const positions = MultiScreen_externalPositions();
+  for (let k = 0; k < positions.length; k++) {
+    const i = positions[k];
     const rec = msSlotPlayers.get(i);
     if (!rec) continue;
     const want = MultiScreen_pickQnForSlot(i);
@@ -693,6 +765,8 @@ function MultiScreen_destroyPlayer(rec) {
   clearTimeout(rec.startTimer);
   clearTimeout(rec.swapTimer);
   clearTimeout(rec.retryTimer);
+  clearInterval(rec.stallTimer);   // 看门狗是 interval：不清就会一直空转并拽着 slot
+  rec.stallTimer = 0;
   try { if (rec.flv && typeof rec.flv.destroy === "function") rec.flv.destroy(); } catch (e) {}
   try { if (rec.video && rec.video.parentNode) rec.video.parentNode.removeChild(rec.video); } catch (e) {}
 }
@@ -723,6 +797,9 @@ function MultiScreen_switchQuality(idx, room) {
     url: "",
     prev: old,          // 旧流：切换成功前一直留着
     switching: true,
+    stallTimer: 0,
+    lastTick: 0,
+    stalled: 0,
     // 该房间存的音量必须跟着新流走：否则新流以 muted 起播后就再没人给它套音量，
     // 表现为"切完清晰度声音没了，手动拉一下音量条才回来"（用户 2026-10-06 报）
     vol: old.vol === undefined ? MultiScreen_getVolume(String(room.rid), false) : old.vol,
@@ -731,9 +808,11 @@ function MultiScreen_switchQuality(idx, room) {
   clearTimeout(old.reloadTimer);   // 旧流的"重新加载"按钮计时器没意义了，但旧流继续播
 
   rec.swapTimer = setTimeout(function () {
-    if (msSlotPlayers.get(idx) !== rec) return;
-    // 新流超时没出画面：放弃切换，旧流原地继续
-    msSlotPlayers.set(idx, old);
+    /* 8 秒里用户可能又换位了：位置现算，否则判错（白等）甚至把旧流塞进错的格子。 */
+    const pos = MultiScreen_positionOfRecord(rec);
+    if (pos < 0) return;
+    // 新流超时没出画面：放弃切换，旧流放回这条记录此刻的位置
+    msSlotPlayers.set(pos, old);
     MultiScreen_destroyPlayer(rec);
   }, MS_SWAP_TIMEOUT_MS);
 
@@ -770,8 +849,10 @@ function MultiScreen_retryOnce(idx, epoch, room) {
   if (!rec || rec.epoch !== epoch || rec.retried) return false;
   rec.retried = 1;
   rec.retryTimer = setTimeout(function () {
-    const cur = msSlotPlayers.get(idx);
-    if (cur && cur.epoch === epoch && room) MultiScreen_fetchStream(idx, room, epoch);
+    /* 这 2 秒里也可能换位：按记录现算位置，别拿排期那一刻的 idx 取房 */
+    const pos = MultiScreen_positionOfRecord(rec);
+    if (pos < 0 || rec.epoch !== epoch || !room) return;
+    MultiScreen_fetchStream(pos, room, epoch);
   }, 2000);
   return true;
 }
@@ -788,74 +869,149 @@ function MultiScreen_fetchStream(idx, room, epoch) {
   const qn = MultiScreen_qnFor(idx);
   rec.qn = qn;
   getRealLive_Douyu(String(room.rid), true, false, qn, function (url) {
-    const cur = msSlotPlayers.get(idx);
-    if (!cur || cur.epoch !== epoch) return;
+    /* 回包落在这个房间**此刻**所在的位置：取流是网络往返，换位可能就发生在 RTT 里 ——
+       按渲染时的 idx 判记录还在不在，会让这一格永远停在转圈上，连超时兜底都没有
+       （startTimer 是 startFlv 里才建的，而 startFlv 永远没被调到）。 */
+    const pos = MultiScreen_positionOfRecord(rec);
+    if (pos < 0 || rec.epoch !== epoch) return;
     if (!url || url === "None") {
-      if (cur.switching) { MultiScreen_abortSwap(idx, cur); return; }   // 换档失败：旧流继续
-      if (MultiScreen_retryOnce(idx, epoch, room)) return;              // 先自动重试一次
-      MultiScreen_setTip(slot, "房间未开播或其他错误");
+      if (rec.switching) { MultiScreen_abortSwap(pos, rec); return; }   // 换档失败：旧流继续
+      if (MultiScreen_retryOnce(pos, epoch, room)) return;             // 先自动重试一次
+      MultiScreen_setTip(MultiScreen_slotDom(pos), "房间未开播或其他错误");
       return;
     }
-    MultiScreen_startFlv(idx, url, epoch);
+    MultiScreen_startFlv(pos, url, epoch);
   });
 }
 
 /* 换档失败/超时：把旧流放回记录表，销毁新流的半成品。旧流从头到尾没停过。 */
 function MultiScreen_abortSwap(idx, rec) {
   if (!rec || !rec.prev) return;
-  if (msSlotPlayers.get(idx) === rec) msSlotPlayers.set(idx, rec.prev);
   const prev = rec.prev;
+  /* 换档过程中可能又换位了：旧流要放回**这条记录此刻**的位置，不能按入参 idx。 */
+  const pos = MultiScreen_positionOfRecord(rec);
+  const back = pos >= 0 ? pos : idx;
+  if (msSlotPlayers.get(back) === rec) msSlotPlayers.set(back, prev);
   rec.prev = null;
   rec.switching = false;
   MultiScreen_destroyPlayer(rec);
   void prev;
 }
 
+/* ---------- 掉线看门狗 ---------- */
+/*
+ * flv 断了、而媒体元素没收到 error 时，画面会黑着但"还在播"（readyState>=2、没暂停）：
+ * 用户看不到任何提示，只会觉得"多屏坏了"。这里每 2 秒核一次 timeupdate 是否还在推进：
+ *   · 切换中（rec.switching）跳过 —— 那时旧流还在正常播，不是故障；
+ *   · 标签页在后台时跳过（浏览器会节流 timeupdate，不能当卡死）；
+ *   · 同一段卡死只提示一次（rec.stalled），画面自己缓过来时由 timeupdate 撤掉提示；
+ *   · 记录已不在位置表里（pos < 0）立即失效；定时器由 destroyPlayer 清（interval 必须清）。
+ * ⚠ 位置必须**每次现算**：换位（MultiScreen_swapSlotState）只交换 msPosOwner 与 msSlotPlayers，
+ *   记录会被搬到别的位置上。还用"渲染那一刻的 idx"就等于换位后这条记录永远对不上号 ——
+ *   看门狗当场失效（画面卡住再也不提示），提示也会写到别人那一格。
+ */
+function MultiScreen_startStallWatch(rec) {
+  if (!rec || !rec.video) return;
+  clearInterval(rec.stallTimer);
+  rec.lastTick = Date.now();
+  rec.stallTimer = setInterval(function () {
+    const pos = MultiScreen_positionOfRecord(rec);
+    if (pos < 0 || rec.switching) return;
+    const v = rec.video;
+    /* 判"后台"只认 visibilityState === "hidden"：document.hidden 在部分宿主里恒为 true
+       （jsdom 默认停在 prerender 态），用它会把所有环境都当成"永远在后台"而永不提示。 */
+    if (!v || !v.isConnected || v.readyState < 2 || v.paused || document.visibilityState === "hidden") {
+      rec.lastTick = Date.now();   // 还没出画面 / 已暂停 / 页面在后台：都不算卡住
+      return;
+    }
+    if (Date.now() - rec.lastTick < msStallQuietMs) return;
+    if (rec.stalled) return;
+    rec.stalled = 1;
+    // 提示必须落在**这条记录此刻所在位置**的格子上，不是渲染时那一格
+    MultiScreen_setTip(MultiScreen_slotDom(pos), "画面卡住了，点「重新加载」");
+  }, msStallTickMs);
+}
+
+// 画面自己缓过来：把"卡住"的提示撤掉，否则文案会一直盖在正常画面上
+function MultiScreen_clearStallTip(idx, rec) {
+  if (!rec || !rec.stalled) return;
+  rec.stalled = 0;
+  const slot = MultiScreen_slotDom(idx);
+  if (slot) slot.classList.remove("ms-slot--notice");
+}
+
 function MultiScreen_startFlv(idx, url, epoch) {
   const rec = msSlotPlayers.get(idx);
   if (!rec || rec.epoch !== epoch) return;
-  MultiScreen_noteStreamUrl(idx, url);
+  MultiScreen_noteStreamUrl(rec, url);
   const slot = MultiScreen_slotDom(idx);
   if (!rec.video) { MultiScreen_setTip(slot, "播放器未就绪"); return; }
   // flv.js 已由 @require 预注入；只有真的缺失时才按需加载，避免重复 eval 覆盖全局
   if (typeof flvjs === "undefined" && typeof ExLoadLib === "function" && typeof EXURL !== "undefined") {
     ExLoadLib(EXURL.flv, function () { MultiScreen_startFlv(idx, url, epoch); },
-                         function () { MultiScreen_setTip(slot, "flv.js 加载失败"); });
+                         function () { MultiScreen_setTip(slot, "播放组件没能加载，刷新页面再试"); });
     return;
   }
-  if (typeof flvjs === "undefined" || !flvjs.isSupported()) { MultiScreen_setTip(slot, "当前浏览器不支持 flv 播放"); return; }
+  if (typeof flvjs === "undefined" || !flvjs.isSupported()) { MultiScreen_setTip(slot, "当前浏览器放不了这个流"); return; }
   try {
+    /* 同一个 <video> 上再来一次 createPlayer 之前必须销毁旧实例：
+       8 秒超时自动重试（startTimer → retryOnce → fetchStream → 这里）会在同一个 rec、
+       同一个媒体元素上再建一个 flv 实例 —— 两个 player 抢一个 mediaElement，表现为
+       双请求、花屏、声道叠音，而且旧实例从此没人销毁。 */
+    if (rec.flv) {
+      try { if (typeof rec.flv.destroy === "function") rec.flv.destroy(); } catch (e) {}
+      rec.flv = null;
+    }
     const player = flvjs.createPlayer({ type: "flv", url: url }, { fixAudioTimestampGap: false });
     player.attachMediaElement(rec.video);
     player.load();
     player.play();
     rec.flv = player;
     rec.video.addEventListener("playing", function () {
-      const cur = msSlotPlayers.get(idx);
-      if (!cur || cur.epoch !== epoch) return;
-      clearTimeout(cur.startTimer);
+      /* 位置现算：换位只交换 msPosOwner / msSlotPlayers，记录会被搬到别的位置上。
+         用渲染那一刻的 idx 判"记录还在不在"，换位之后才出画面时就会早退 ——
+         loading 层不清、音量不补、看门狗压根不启动（真机 2026-10-26 现场正是"换位后起播"）。 */
+      const pos = MultiScreen_positionOfRecord(rec);
+      if (pos < 0 || rec.epoch !== epoch) return;
+      clearTimeout(rec.startTimer);
       // 换档路径：新流已出画面 → 淡入新的、撤掉旧的（旧流此前一直在播，全程没有黑屏）
-      if (cur.switching) {
-        MultiScreen_finishSwap(idx, cur);
+      if (rec.switching) {
+        MultiScreen_finishSwap(pos, rec);
         // 新流是静音起播的（自动播放限制），出画面这一刻必须把该房间存的音量补上 ——
         // 旧的换档分支在这里直接 return，漏了这一步，于是"切完档就没声音"
-        MultiScreen_applyVolumeToRec(cur, cur.vol === undefined ? MultiScreen_getVolume(cur.rid, false) : cur.vol);
+        MultiScreen_applyVolumeToRec(rec, rec.vol === undefined ? MultiScreen_getVolume(rec.rid, false) : rec.vol);
+        MultiScreen_startStallWatch(rec);   // 新流接管画面，看门狗跟着换
         return;
       }
-      const s = MultiScreen_slotDom(idx);
+      const s = MultiScreen_slotDom(pos);
       // 出画面即撤掉整个加载层（转圈态与文案态一起清）
       if (s) s.classList.remove("ms-slot--loading", "ms-slot--notice");
       // 出画面后再套该房间存的音量（0 就是静音，等于保持现状）
-      MultiScreen_applyVolumeToRec(cur, cur.vol === undefined ? MultiScreen_getVolume(cur.rid, false) : cur.vol);
+      MultiScreen_applyVolumeToRec(rec, rec.vol === undefined ? MultiScreen_getVolume(rec.rid, false) : rec.vol);
+      // 出画面 → 开始盯"还在播但画面不动了"（掉线最常见的那种）
+      MultiScreen_startStallWatch(rec);
     }, { once: true });
+
+    /* 心跳 + 自愈：timeupdate 说明画面在推进；若刚提示过"卡住"而画面回来了，把提示撤掉。
+       监听挂在 rec.video 上，换档时新 rec 有自己的 video，旧的一起销毁，不会累积。 */
+    rec.video.addEventListener("timeupdate", function () {
+      /* 同上：位置现算。用渲染时的 idx 会在换位后早退 —— 画面缓回来了也撤不掉
+         rec.stalled 与提示文案，永久压在正常画面上。 */
+      const pos = MultiScreen_positionOfRecord(rec);
+      if (pos < 0 || rec.switching) return;
+      rec.lastTick = Date.now();
+      MultiScreen_clearStallTip(pos, rec);
+    });
     // 起播超时兜底：到点仍未出画面就给一个可操作的提示。
     // ⚠ 换档时不提示 —— 旧流还在正常播，提示会盖在画面上（超时由 swapTimer 处理：放弃切换）
     rec.startTimer = setTimeout(function () {
-      const cur = msSlotPlayers.get(idx);
-      if (cur !== rec || rec.switching || !rec.video || rec.video.readyState >= 2) return;
-      if (MultiScreen_retryOnce(idx, epoch, msActiveList[idx])) return;   // 先自动重试一次
-      MultiScreen_setTip(slot, "加载缓慢，可点重新加载");
-    }, MS_START_TIMEOUT_MS);
+      /* 位置与房间都现算：换位后 msActiveList[idx] 已经是**别的房间**，
+         照着它重试等于把这一格的重试打到隔壁去（提示也会写到别人那一格）。 */
+      const pos = MultiScreen_positionOfRecord(rec);
+      if (pos < 0 || rec.switching || !rec.video || rec.video.readyState >= 2) return;
+      if (MultiScreen_retryOnce(pos, epoch, msActiveList[pos])) return;   // 先自动重试一次
+      MultiScreen_setTip(MultiScreen_slotDom(pos), "加载缓慢，可点重新加载");
+    }, msStartTimeoutMs);
   } catch (e) {
     if (rec.switching) MultiScreen_abortSwap(idx, rec);
     else MultiScreen_setTip(slot, "播放器创建失败");
@@ -877,7 +1033,7 @@ function MultiScreen_renderAll() {
     if (!want) {
       /* 这个位置不再属于任何房间 → 清干净。
          ⚠ 判据不能只看播放器记录：关掉「合入画面」的房间本来就没有 rec（见 renderSlotNoVideo），
-         但它格子里留着"已关闭画面（只合入弹幕）"的占位 —— 只按 rec 判就会把这个占位一直留在一个
+         但它格子里留着"画面已关闭（弹幕照常显示）"的占位 —— 只按 rec 判就会把这个占位一直留在一个
          已经没人管的位置上（实机自用一遍时看到过，虽然此刻被隐藏着不显眼，但它是颗雷）。 */
       const stale = MultiScreen_slotDom(i);
       if (have || (stale && stale.classList.contains("ms-slot--novideo"))) MultiScreen_clearSlot(i);
@@ -978,23 +1134,31 @@ function MultiScreen_beginQnCompare(idxList) {
   const prev = {};
   idxList.forEach(function (i) {
     const rec = msSlotPlayers.get(i);
-    prev[i] = rec ? rec.url || "" : "";
+    if (!rec) return;   // 还没建记录的位置不参与这次对比
+    prev[String(rec.rid)] = rec.url || "";   // 键用房间号：换位会把记录搬到别的位置
   });
   msQnCompare = { prev: prev, same: {}, done: {}, timer: 0 };
   // 兜底：某格取流失败时 done 永远凑不齐，到点就按已知情况给结论，不能一直不吭声
   msQnCompare.timer = setTimeout(function () { MultiScreen_finishQnCompare(); }, 15000);
 }
-function MultiScreen_noteStreamUrl(idx, url) {
-  const rec = msSlotPlayers.get(idx);
+function MultiScreen_noteStreamUrl(rec, url) {
   if (rec) rec.url = url || "";
-  if (!msQnCompare || !(idx in msQnCompare.prev)) return;
-  if (msQnCompare.done[idx]) return;
-  msQnCompare.done[idx] = 1;
-  if ((url || "") === msQnCompare.prev[idx]) msQnCompare.same[idx] = 1;
+  const k = rec ? String(rec.rid) : "";
+  if (!msQnCompare || !k || !(k in msQnCompare.prev)) return;
+  if (msQnCompare.done[k]) return;
+  msQnCompare.done[k] = 1;
+  if ((url || "") === msQnCompare.prev[k]) msQnCompare.same[k] = 1;
   const total = Object.keys(msQnCompare.prev).length;
   if (Object.keys(msQnCompare.done).length >= total) MultiScreen_finishQnCompare();
 }
 
+// 档位显示名（提示里用「超清」这种用户口径，不暴露 "3" 这类内部值）
+function MultiScreen_qnLabel(qn) {
+  for (let i = 0; i < MS_QUALITY_LIST.length; i++) {
+    if (String(MS_QUALITY_LIST[i].v) === String(qn)) return MS_QUALITY_LIST[i].name;
+  }
+  return String(qn);
+}
 function MultiScreen_finishQnCompare() {
   if (!msQnCompare) return;
   const total = Object.keys(msQnCompare.prev).length;
@@ -1003,15 +1167,17 @@ function MultiScreen_finishQnCompare() {
   clearTimeout(msQnCompare.timer);
   msQnCompare = null;
   if (!total) return;
+  // 提示一律用用户口径：不提"格子 / 流地址"，直接说画面换没换
+  const qnName = MultiScreen_qnLabel(msQn);
   if (doneCount < total) {
-    // 有格子没取到流（失败或还在路上）：如实说，不假装成功
-    showMessage("画质切换：" + doneCount + "/" + total + " 个格子已确认" + (sameCount ? "，其中 " + sameCount + " 个地址未变化" : ""), "info");
+    // 有房间还没确认到新画面（失败或还在路上）：如实说，不假装成功
+    showMessage("清晰度切换：已确认 " + doneCount + "/" + total + " 个房间" + (sameCount ? "，其中 " + sameCount + " 个本来就是这一档" : ""), "info");
   } else if (sameCount >= total) {
-    showMessage("该直播间只提供同一档画质，流地址未变化", "info");
+    showMessage("其它房间本来就是「" + qnName + "」，画面没变", "info");
   } else if (sameCount > 0) {
-    showMessage("部分直播间只提供同一档画质（" + sameCount + "/" + total + " 未变化）", "info");
+    showMessage("其它房间已切到「" + qnName + "」，其中 " + sameCount + " 个本来就是这一档", "info");
   } else {
-    showMessage("画质已切换", "success");
+    showMessage("其它房间已切到「" + qnName + "」", "success");
   }
 }
 function MultiScreen_setQuality(qn) {
@@ -1020,26 +1186,19 @@ function MultiScreen_setQuality(qn) {
   MultiScreen_save();
   // 面板/编辑条上的档位显示跟着走（面板开着时那枚胶囊与角标要立刻反映新档位）
   MultiScreen_notifyChange(msActiveList.slice());
+  /* 目标位置按**房间身份**筛，不假定「位置 0 = 主画面」：换位后位置 0 上坐的可能是外房，
+     而位置 1 上才是主画面格（真机 2026-10-26：选「超清」只改了角标，外房没有任何新流）。 */
+  const targets = MultiScreen_externalPositions();   // 已经排除了主房与关掉画面的房间
   /* 自动档：按尺寸重拉即可，不走"换档前后对比"那套自检 —— 尺寸一变就可能换档，
      每次都弹提示反而吵；自检只在用户手动选具体档位时做。 */
   if (msQn === "auto") {
-    for (let i = 1; i < msActiveList.length && i < MS_SLOT_COUNT; i++) {
-      if (msActiveList[i] && msActiveList[i].video === false) continue;
-      MultiScreen_switchQuality(i, msActiveList[i]);
-    }
-    showMessage("外房清晰度：按格子大小自动", "success");
+    for (let k = 0; k < targets.length; k++) MultiScreen_switchQuality(targets[k], msActiveList[targets[k]]);
+    showMessage("其它房间清晰度：按每块画面的大小自动选", "success");
     return;
   }
-  const targets = [];
-  for (let i = 1; i < msActiveList.length && i < MS_SLOT_COUNT; i++) {
-    if (msActiveList[i] && msActiveList[i].video !== false) targets.push(i);   // 关掉画面的房间没流可换
-  }
   MultiScreen_beginQnCompare(targets);
-  // 只有外房格子需要重拉；主画面归斗鱼原生管。走平滑换档，不黑屏。
-  for (let i = 1; i < msActiveList.length && i < MS_SLOT_COUNT; i++) {
-    if (msActiveList[i] && msActiveList[i].video === false) continue;
-    MultiScreen_switchQuality(i, msActiveList[i]);
-  }
+  // 只有外房需要重拉；主画面归斗鱼原生管。走平滑换档，不黑屏。
+  for (let k = 0; k < targets.length; k++) MultiScreen_switchQuality(targets[k], msActiveList[targets[k]]);
 }
 
 /* ---------- 落点判定（原生 queryCurrentBox 的等价实现） ---------- */
@@ -1056,6 +1215,10 @@ function MultiScreen_hitTest(clientX, clientY, forLongPress) {
   if (n < MS_MIN_ROOMS || n > MS_MAX_ROOMS) return -1;
   const r = c.getBoundingClientRect();
   if (!r.width || !r.height) return -1;
+  /* 坐标必须落在容器矩形内：2 分屏的分区表没有 x 边界分支、4 分屏连 y 边界都没有，
+     容器外的点击（右侧聊天区、页面留白）会被算成命中某一格 —— 长按 300ms 就会把
+     格子拎起来，松手漂过界还会真的换位。四套布局统一先在矩形上钳一次。 */
+  if (clientX < r.left || clientX > r.right || clientY < r.top || clientY > r.bottom) return -1;
   const yRel = clientY - r.top;
   if (forLongPress && yRel >= r.height - MS_BOTTOM_GUARD_PX) return -1;  // 底部控制条保护带
   const d = (clientX - r.left) / r.width;   // 归一化 x
@@ -1088,6 +1251,9 @@ function MultiScreen_hitTest(clientX, clientY, forLongPress) {
 /* ---------- 拖拽换位 ---------- */
 
 function MultiScreen_onMouseDown(e) {
+  /* 自有界面（面板 / 弹幕历史 / 重载按钮）上的按下不参与多屏拖拽：
+     面板与弹幕历史浮在播放器上方，面板里的长按会穿过坐标判定把背后的格子拖起来。 */
+  if (MultiScreen_isOwnUi(e.target)) return;
   if (e.button !== 0) return;
   if (!MultiScreen_isSupported() || msActiveList.length < MS_MIN_ROOMS) return;
   // 起手位置必须落在多屏容器的有效格子里：容器外的点击一概不管。
@@ -1163,6 +1329,17 @@ function MultiScreen_onMouseMove(e) {
   MultiScreen_setCur(msDrag.to, false);
   msDrag.to = hit;
   MultiScreen_setCur(hit, true);   // 落点变化即更新，无节流（原生同款）
+}
+
+/* 指针离开文档 / 窗口失焦：按"取消拖拽"收尾。
+   真机上把鼠标拖出浏览器窗口再松手，document 收不到 mouseup → msDrag 永不复位，
+   之后 applyLayout 全程早退（"拖拽中不抢内联样式"），整个版面直接冻住，只能刷新。 */
+function MultiScreen_onPointerLost() {
+  clearTimeout(msDragTimer);
+  const drag = msDrag;
+  if (!drag) return;
+  msDrag = null;                 // 先复位：cancelDrag 末尾的 applyLayout 会检查它
+  MultiScreen_cancelDrag(drag);
 }
 
 function MultiScreen_onMouseUp(e) {
@@ -1465,6 +1642,9 @@ function MultiScreen_bindOnce() {
     document.addEventListener("click", MultiScreen_onClick);
     document.addEventListener("mousemove", MultiScreen_onMouseMove);
     document.addEventListener("mouseup", MultiScreen_onMouseUp);
+    // 指针丢了也要收尾（见 MultiScreen_onPointerLost 的注释）
+    document.addEventListener("mouseleave", MultiScreen_onPointerLost);
+    window.addEventListener("blur", MultiScreen_onPointerLost);
     // 窗口缩放会改变格子像素尺寸 → 自动档需要重新核（防抖，且只在档位变化时重拉）
     window.addEventListener("resize", MultiScreen_onResize);
   }
@@ -1534,6 +1714,22 @@ window.MultiScreen_abortSwap = MultiScreen_abortSwap;
 window.MultiScreen_destroyPlayer = MultiScreen_destroyPlayer;
 window.MS_SWAP_TIMEOUT_MS = MS_SWAP_TIMEOUT_MS;
 window.MS_QN_AUTO_TIERS = MS_QN_AUTO_TIERS;
+window.MS_STALL_TICK_MS = MS_STALL_TICK_MS;
+window.MS_STALL_QUIET_MS = MS_STALL_QUIET_MS;
+/* 排障入口：把掉线看门狗压到毫秒级（自检用；真机复现"画面卡住"也可以先压低再断网，
+   不必干等 8 秒）。生产默认值就是 MS_STALL_TICK_MS / MS_STALL_QUIET_MS。 */
+window.MultiScreen_setStallTimings = function (tickMs, quietMs) {
+  const t = Number(tickMs);
+  const q = Number(quietMs);
+  if (t >= 20) msStallTickMs = t;
+  if (q >= 40) msStallQuietMs = q;
+};
+/* 排障/自检入口：把起播超时兜底压到毫秒级（生产默认 8s）。与 MultiScreen_setStallTimings 同款 ——
+   测"超时 → 自动重试"这条链路时不必干等 8 秒。 */
+window.MultiScreen_setStartTimeout = function (ms) {
+  const n = Number(ms);
+  if (n >= 20) msStartTimeoutMs = n;
+};
 window.MultiScreen_onChange = function (fn) {
   // 多播订阅：重复注册同一个函数只记一次
   if (typeof fn === "function" && msOnChangeList.indexOf(fn) < 0) msOnChangeList.push(fn);

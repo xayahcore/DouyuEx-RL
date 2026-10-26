@@ -27,19 +27,18 @@ function initPkg_PopupPlayer_Func() {
         createPopupPlayerPanel();
         panel = document.querySelector(".popup-player-panel");
       }
-      if (panel) {
-        if (panel.style.display === "block" || panel.style.display === "flex") {
-          panel.style.setProperty("display", "none", "important");
-        } else {
-          // 每次打开都重画一遍：多屏状态可能在这期间被别处改过（编辑条选了档位、
-          // 缩窗口触发了自动换档、拖拽换了位），面板上的档位角标与勾选态必须是当下的
-          PopupPlayer_renderMultiPage();
-          if (typeof openMiuixPanelCentered === "function") {
-            openMiuixPanelCentered(panel, btn);
-          } else {
-            panel.style.setProperty("display", "flex", "important");
-          }
-        }
+      if (!panel) return;
+      /* 点击 = **只开不关**（与签到 / 一键续牌 / 版本更新一致）。
+         Dock 图标是"划过即打开"的（ExPanel 的 ensureDockIndicators 给 showExRightPanel 传 forceOpen），
+         所以指针移到图标上时面板其实已经开了；这里若还做 toggle，"移过去 → 点一下"的必然结果
+         就是"刚弹出来又被自己关掉"，看起来像图标坏了。关闭只留两个出口：右上角 × 与 ESC。 */
+      // 每次打开都重画一遍：多屏状态可能在这期间被别处改过（面板选了档位、
+      // 缩窗口触发了自动换档、拖拽换了位），面板上的档位角标与勾选态必须是当下的
+      PopupPlayer_renderMultiPage();
+      if (typeof openMiuixPanelCentered === "function") {
+        openMiuixPanelCentered(panel, btn);
+      } else {
+        panel.style.setProperty("display", "flex", "important");
       }
     });
   }
@@ -54,12 +53,12 @@ function createPopupPlayerPanel() {
       <div class="popup-panel__page" data-page="multi">
         <div class="popup-panel__card">
           <div class="popup-panel__card-header">
-            <span class="popup-panel__card-title">已加入多屏 <em class="popup-ms__count" id="popup-ms-count">1 / 5</em></span>
+            <span class="popup-panel__card-title">同屏里的房间 <em class="popup-ms__count" id="popup-ms-count">1 / 5</em></span>
           </div>
           <div class="popup-ms__restore" id="popup-ms-restore" hidden></div>
           <div class="popup-ms__rooms" id="popup-ms-rooms"></div>
           <div class="popup-ms__qrow">
-            <span class="popup-ms__qlabel">外房清晰度</span>
+            <span class="popup-ms__qlabel">其它房间清晰度</span>
             <div class="popup-ms__quality miuix-seg" id="popup-ms-quality"></div>
           </div>
         </div>
@@ -80,17 +79,18 @@ function createPopupPlayerPanel() {
         </div>
 
         <div class="popup-panel__action-wrap">
-          <button type="button" class="ex-btn-primary popup-panel__submit-btn" id="popup-ms-toggle-btn">开启多屏</button>
+          <button type="button" class="ex-btn-primary popup-panel__submit-btn" id="popup-ms-toggle-btn">先加一个房间</button>
         </div>
       </div>
     </div>
   `;
   document.body.appendChild(p);
   if (typeof ensureMiuixPanelHeader === "function") {
-    ensureMiuixPanelHeader(p, "同屏播放器");
+    ensureMiuixPanelHeader(p, "同屏播放");
   }
+  PopupPlayer_bindEscClose();
 
-  /* 主操作（开启/退出多屏）常驻面板底部：房间多时页面会滚动，按钮必须一直点得到。
+  /* 主操作（退出同屏 / 先加一个房间）常驻面板底部：房间多时页面会滚动，按钮必须一直点得到。
      刻意用内联样式 —— 操作区容器在构建期有"只允许一条统一规则"的护栏（见测试场景 11），
      面板专属的粘底不能写进共享 CSS。 */
   let actWrap = p.querySelector(".popup-panel__action-wrap");
@@ -135,9 +135,10 @@ function PopupPlayer_initMultiPage(p) {
       e.stopPropagation();
       if (MultiScreen_getList().length > 1) {
         MultiScreen_exit();
-        showMessage("已退出多屏", "info");
+        showMessage("已退出同屏 · 房间都记着，下次点「一键恢复」", "info");
       } else {
-        showMessage("先添加至少 1 个直播间再开启", "warning");
+        // 按钮在这种状态下是 disabled，这里只是兜底（其余入口仍可能走到）
+        showMessage("先在下面加一个房间，加上就自动开始", "warning");
         return;
       }
       PopupPlayer_renderMultiPage();
@@ -152,6 +153,10 @@ function PopupPlayer_initMultiPage(p) {
       PopupPlayer_msSearch(searchInp.value.trim());
     });
     searchInp.addEventListener("keydown", function (e) {
+      /* ESC 必须放行（P1-1）：面板的关闭监听挂在 document 的冒泡阶段，
+         这里无差别 stopPropagation 会把它吃掉 —— 用户在搜索框里按 ESC 时面板关不掉。
+         其余按键继续拦住，免得边搜边把斗鱼自己的快捷键（空格暂停之类）一起触发。 */
+      if (e.key === "Escape" || e.keyCode === 27) return;
       e.stopPropagation();
       if (e.key === "Enter") PopupPlayer_msSearch(searchInp.value.trim());
     });
@@ -177,17 +182,22 @@ function PopupPlayer_renderMultiPage() {
   if (!countEl || !roomsEl) return;
 
   let list = MultiScreen_getList();
+  let mainRid = MultiScreen_getMainRid();
+  /* 还没进同屏时 msActiveList 是空的：当前这一间本来就在，补一条**只用于显示**的虚拟行。
+     否则面板写着 0 / 5、一间房都看不到，主房音量条也没处可点（静态模板默认写的就是 1 / 5）。 */
+  if (!list.length && mainRid) list = [{ rid: mainRid, nn: "", avatar: "" }];
   countEl.textContent = list.length + " / " + MS_MAX_ROOMS;
   PopupPlayer_ensureNames(list);
 
-  let mainRid = MultiScreen_getMainRid();
+  // 5 间房时这个列表一直在内部滚动中：重画前后要保住位置，别把人弹回顶部
+  let roomsScroll = roomsEl.scrollTop;
   roomsEl.innerHTML = list.map(function (r) {
     let rid = PopupPlayer_msEsc(r.rid);
     let isMain = String(r.rid) === String(mainRid);
     let vol = Math.round(MultiScreen_getVolume(r.rid, isMain) * 100);
     let volTitle = isMain
-      ? "主房间音量（斗鱼自己的音量条可能把它盖回来）"
-      : "这个房间的音量（0 = 静音）";
+      ? "当前直播间音量（斗鱼自己的音量条可能把它改回来）"
+      : "这间房的音量（拖到 0 = 静音）";
     let volHtml =
       '<input type="range" class="popup-ms__room-vol" data-rid="' + rid + '"' +
         ' min="0" max="100" step="5" value="' + vol + '" style="--vol:' + vol + '%"' +
@@ -210,18 +220,19 @@ function PopupPlayer_renderMultiPage() {
     let vdOn = MultiScreen_isRoomOn(r.rid, "video");
     let qnName = MultiScreen_roomQnName(r.rid);
     let qnTitle = MultiScreen_getQuality() === "auto"
-      ? "当前档位（自动档按格子大小选出来的，缩放窗口会跟着变）"
-      : "当前档位（手动选择）";
+      ? "当前清晰度（自动：按每块画面的大小选，缩放窗口会跟着变）"
+      : "当前清晰度（手动选择）";
     let sub =
       '<div class="popup-ms__room-sub">' +
-        PopupPlayer_chip(r.rid, "danmaku", dmOn, "弹幕", "合入这个房间的弹幕（关掉就不再连它的弹幕）") +
-        PopupPlayer_chip(r.rid, "video", vdOn, "画面", "合入这个房间的画面（关掉后这个房间不占格子，只把它的弹幕合进来，省一份带宽）") +
+        PopupPlayer_chip(r.rid, "danmaku", dmOn, "弹幕", "把这个房间的弹幕也显示在这里（关掉就不再接收它的弹幕）") +
+        PopupPlayer_chip(r.rid, "video", vdOn, "画面", "把这个房间的画面也放进来（关掉后只留它的弹幕，省一份网速）") +
         (qnName ? '<span class="popup-ms__room-qn" title="' + PopupPlayer_msEsc(qnTitle) + '">' + PopupPlayer_msEsc(qnName) + "</span>" : "") +
         '<span class="popup-ms__room-grow"></span>' +
         volHtml +
       "</div>";
     return '<div class="popup-ms__room" data-rid="' + rid + '">' + head + sub + "</div>";
   }).join("");
+  roomsEl.scrollTop = roomsScroll;
 
   Array.prototype.forEach.call(roomsEl.querySelectorAll(".popup-ms__room-vol"), function (inp) {
     let sync = function () {
@@ -248,9 +259,9 @@ function PopupPlayer_renderMultiPage() {
       if (!MultiScreen_setRoomFlag(rid, key, !wasOn)) return;
       PopupPlayer_renderMultiPage();
       if (key === "danmaku") {
-        showMessage(wasOn ? "已停止合入这个房间的弹幕" : "已开始合入这个房间的弹幕", "info");
+        showMessage(wasOn ? "已停止接收这间房的弹幕" : "已开始接收这间房的弹幕", "info");
       } else {
-        showMessage(wasOn ? "已关闭这个房间的画面（只合入弹幕）" : "已开始加载这个房间的画面", "info");
+        showMessage(wasOn ? "已关掉这间房的画面（只留弹幕）" : "已开始显示这间房的画面", "info");
       }
     });
   });
@@ -275,22 +286,34 @@ function PopupPlayer_renderMultiPage() {
       restoreEl.innerHTML = "";
     } else {
       let names = saved.map(function (r) { return r.nn || ("房间 " + r.rid); }).join("、");
+      let totalRooms = saved.length + 1;   // saved 里只有其它房间，当前这一间也算在一套里
       restoreEl.hidden = false;
       restoreEl.innerHTML =
-        "<span class=\"popup-ms__restore-text\" title=\"" + PopupPlayer_msEsc(names) + "\">上次配置：" +
-          saved.length + " 个房间 · " + PopupPlayer_msEsc(names) + "</span>" +
+        "<span class=\"popup-ms__restore-text\" title=\"" + PopupPlayer_msEsc(names) + "\">上次同屏：" +
+          totalRooms + " 个房间 · " + PopupPlayer_msEsc(names) + "</span>" +
         "<button type=\"button\" class=\"popup-panel__paste-btn\" id=\"popup-ms-restore-btn\">一键恢复</button>";
       let rb = restoreEl.querySelector("#popup-ms-restore-btn");
       if (rb) rb.addEventListener("click", function (e) {
         e.stopPropagation();
+        let before = MultiScreen_getList().length;
         MultiScreen_enter(saved);
         PopupPlayer_renderMultiPage();
-        showMessage("已恢复上次的多屏配置", "success");
+        showMessage(before > 1
+          ? "已恢复上次的同屏配置 · " + totalRooms + " 个房间（替换了原来的 " + before + " 间）"
+          : "已恢复上次的同屏配置 · " + totalRooms + " 个房间",
+          "success");
       });
     }
   }
 
-  if (toggleBtn) toggleBtn.textContent = list.length > 1 ? "退出多屏" : "开启多屏";
+  if (toggleBtn) {
+    let inMulti = list.length > 1;
+    toggleBtn.textContent = inMulti ? "退出同屏" : "先加一个房间";
+    toggleBtn.disabled = !inMulti;
+    toggleBtn.title = inMulti
+      ? "退出同屏（房间都记着，下次可一键恢复）"
+      : "在下面搜房间号，加进来就自动开始";
+  }
 }
 
 /* 补房名：一键恢复回来的配置里只有外房，主房间那一行没有名字（列表项 nn 为空）。
@@ -298,14 +321,67 @@ function PopupPlayer_renderMultiPage() {
    问过一次就不再问 —— 失败时也不能让"重画 → 再问"转成死循环。 */
 let msPanelNameAsked = {};
 let msPanelSettleTimer = 0;
+let msPanelEscBound = false;
+
+/* 面板是 fixed 的三级弹窗，用户第一反应是按 ESC 收起。
+   监听走 document 的冒泡阶段（与 ExpandTool_GiftPicker / VideoToolbarMenu 同一种写法），
+   不占 capture，免得把礼包选择器的 ESC 抢掉；全屏看直播时 ESC 归浏览器（退出全屏），不拦。 */
+function PopupPlayer_bindEscClose() {
+  if (msPanelEscBound) return;
+  msPanelEscBound = true;
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "Escape" && e.keyCode !== 27) return;
+    if (document.fullscreenElement) return;
+    let panel = document.querySelector(".popup-player-panel");
+    if (!panel) return;
+    if (panel.style.display !== "flex" && panel.style.display !== "block") return;
+    panel.style.removeProperty("display");
+    panel.style.setProperty("display", "none", "important");
+    panel.classList.remove("miuix-modal-in");
+    if (typeof updateDockActiveIndicator === "function") updateDockActiveIndicator();
+  });
+}
+
+/* 本页主播名：主房间就是当前这个直播间，标题栏里本来就有名字，没必要为它再打一次接口。
+   斗鱼两种版式（.Title-anchorName / .anchorName__6NXv9）都取不到才退回页面标题。 */
+function PopupPlayer_readPageAnchorName() {
+  let name = "";
+  try {
+    let el = document.querySelector(".Title-anchorName")
+      || document.querySelector(".anchorName__6NXv9")
+      || document.querySelector('[class*="Title-anchorName"]');
+    if (el) name = String(el.textContent || "").trim();
+  } catch (e) { name = ""; }
+  if (name) return name.slice(0, 40);
+
+  // 页面标题形如「主播名 - 斗鱼」「主播名的直播间 - 斗鱼」；站点名本身（含「斗鱼」）一律不认
+  let t = "";
+  try { t = String(document.title || "").trim(); } catch (e) { t = ""; }
+  if (!t) return "";
+  t = t.replace(/[-_|–—]\s*斗鱼.*$/, "").trim();
+  t = t.replace(/^直播[·:：\s]*/, "").trim();
+  t = t.replace(/的直播间$/, "").trim();
+  if (!t || t.length > 30 || t.indexOf("斗鱼") !== -1) return "";
+  return t;
+}
 
 function PopupPlayer_ensureNames(list) {
   if (typeof MultiScreen_resolveRoom !== "function") return;
+  let mainRid = typeof MultiScreen_getMainRid === "function" ? String(MultiScreen_getMainRid()) : "";
   list.forEach(function (r) {
     let k = String(r.rid);
-    if (r.nn || msPanelNameAsked[k]) return;
+    if (r.nn) return;
+    /* ① 缓存优先于「问过没」的标志（P0-2）。主房间在每次归一化里都会新建一个 nn 为空的对象
+       （MultiScreen_normalize 补的那一条），若先看标志就直接返回，于是面板第一行永远停在
+       「房间 7523467」。缓存里有名字就先补上，一个请求都不用发。 */
     let cached = typeof MultiScreen_getMetaName === "function" ? MultiScreen_getMetaName(k) : "";
     if (cached) { r.nn = cached; return; }
+    /* ② 主房间的名字就在本页标题栏：先读页面，读不到才去问接口（问过就不再重复问） */
+    if (mainRid && k === mainRid) {
+      let pageName = PopupPlayer_readPageAnchorName();
+      if (pageName) { r.nn = pageName; return; }
+    }
+    if (msPanelNameAsked[k]) return;
     msPanelNameAsked[k] = 1;
     MultiScreen_resolveRoom(r, function (meta) {
       if (!meta || !meta.nn || r.nn) return;
@@ -322,16 +398,16 @@ function PopupPlayer_chip(rid, key, on, label, title) {
     ' title="' + PopupPlayer_msEsc(title) + '">' + label + "</button>";
 }
 
-/* 外房清晰度：与编辑条顶栏那颗胶囊同一处状态（MultiScreen_setQuality）。
-   放这里是为了"不用先开编辑条也能看见/能改"—— 自动档的当前档位就显示在每个房间行里。 */
+/* 其它房间的清晰度：与多屏状态同一处来源（MultiScreen_setQuality）。
+   编辑条删除后这里是唯一入口 —— 自动档的当前清晰度就显示在每个房间行里。 */
 function PopupPlayer_renderQualityRow() {
   let box = document.getElementById("popup-ms-quality");
   if (!box || typeof MultiScreen_getQuality !== "function") return;
   let cur = String(MultiScreen_getQuality());
   box.innerHTML = MS_QUALITY_LIST.map(function (q) {
     let tip = q.v === "auto"
-      ? "按每个格子的实际大小选档：大格给最高档，小格自动降档（每个房间行的角标就是它选出来的档位）"
-      : "外房固定用「" + q.name + "」";
+      ? "自动：按每块画面的实际大小选清晰度，大的给最高、小的自动降（每行右边那枚小标签就是它选出来的）"
+      : "其它房间固定用「" + q.name + "」";
     return '<label class="miuix-seg__item" title="' + PopupPlayer_msEsc(tip) + '">' +
       '<input type="radio" name="ms_quality_panel" value="' + q.v + '"' + (cur === q.v ? " checked" : "") + " />" +
       '<span class="miuix-seg__label">' + PopupPlayer_msEsc(q.short || q.name) + "</span>" +
@@ -367,9 +443,9 @@ function PopupPlayer_toggleRoom(room) {
         if (pr && pr.catch) pr.catch(function () {});
       }
     } catch (e) {}
-    showMessage("该主播尚未开播喔", "warning");
+    showMessage("主播还没开播 · 等他上线再加", "warning");
   } else if (!selected && list.length >= MS_MAX_ROOMS) {
-    showMessage("多屏模式下，最多" + MS_MAX_ROOMS + "个直播间", "warning");
+    showMessage("同屏最多 " + MS_MAX_ROOMS + " 个房间 · 先去掉一间再加", "warning");
   } else {
     if (selected) MultiScreen_removeRoom(rid);
     else MultiScreen_addRoom(room);
@@ -382,8 +458,12 @@ function PopupPlayer_toggleRoom(room) {
 function PopupPlayer_msRenderResults(rows, emptyTip) {
   let box = document.getElementById("popup-ms-results");
   if (!box) return;
+  let keepScroll = box.scrollTop;   // 结果区同样是内部滚动，重画别把人弹回顶部
   if (!rows.length) {
-    box.innerHTML = '<div class="popup-ms__empty">' + PopupPlayer_msEsc(emptyTip || "没有找到房间") + "</div>";
+    // 显式传空串 = 清空结果区：链接/房间号直接加入成功时，不该再说一句「没找到」
+    box.innerHTML = emptyTip === ""
+      ? ""
+      : '<div class="popup-ms__empty">' + PopupPlayer_msEsc(emptyTip || "没有找到房间") + "</div>";
     return;
   }
   let selected = {};
@@ -391,17 +471,19 @@ function PopupPlayer_msRenderResults(rows, emptyTip) {
   box.innerHTML = rows.map(function (r) {
     let rid = String(r.rid);
     let on = selected[rid];
-    // 已加入的、以及未开播的，都标记出来（未开播的点了会被编辑条四项校验拦下并提示）
-    let flag = on ? '<span class="popup-ms__flag is-on">已加入</span>'
-      : (+r.showStatus === 2 ? '<span class="popup-ms__flag">未开播</span>' : "");
+    // 已在同屏里的、以及没开播的，都先标出来（没开播的点了会被校验拦下并提示）
+    let flag = on ? '<span class="popup-ms__flag is-on">同屏里</span>'
+      : (+r.showStatus === 2 ? '<span class="popup-ms__flag">没开播</span>' : "");
+    /* 行是真正的 <button>：Tab 能选中、Enter / Space 即加入（此前是 div，键盘用户根本加不了房） */
     return (
-      '<div class="popup-ms__result' + (on ? " is-on" : "") + '" data-rid="' + PopupPlayer_msEsc(rid) + '">' +
+      '<button type="button" class="popup-ms__result' + (on ? " is-on" : "") + '" data-rid="' + PopupPlayer_msEsc(rid) + '">' +
         '<span class="popup-ms__result-name">' + PopupPlayer_msEsc(r.nn || ("房间 " + rid)) + "</span>" +
         '<span class="popup-ms__result-meta">' + PopupPlayer_msEsc(rid) + (r.sub ? " · " + PopupPlayer_msEsc(r.sub) : "") + "</span>" +
         flag +
-      "</div>"
+      "</button>"
     );
   }).join("");
+  box.scrollTop = keepScroll;
 
   Array.prototype.forEach.call(box.querySelectorAll(".popup-ms__result"), function (row) {
     row.addEventListener("click", function () {
@@ -418,20 +500,26 @@ function PopupPlayer_msRenderResults(rows, emptyTip) {
 
 /* 搜索走斗鱼自己的搜索接口，与站内搜索同源，不用额外 @connect */
 function PopupPlayer_msSearch(kw) {
-  if (!kw) {
+  if (!String(kw == null ? "" : kw).trim()) {
     showMessage("请输入房间号、链接或主播名", "info");
     return;
   }
-  // 纯数字 / 直播间链接直接当房间号处理，省一次搜索
-  let bare = String(kw).replace(/^https?:\/\/[^/]*douyu\.com\//i, "").replace(/[^\d]/g, "");
-  if (/^\d+$/.test(bare) && String(kw).indexOf("douyu.com") !== -1) {
-    if (PopupPlayer_toggleRoom({ rid: bare, nn: "", avatar: "", showStatus: undefined })) {
-      PopupPlayer_renderMultiPage();
-      PopupPlayer_msRenderResults([], "");
-    }
+  /* 直播间链接只取 douyu.com/<数字> 这一段。早先用 replace(/[^\d]/g,"") 把握手串与
+     分享参数里的数字也拼进房号（.../2288?dyshid=1 → 22881），会加进一个不存在的房间。 */
+  let q = String(kw).trim();
+  let linkMatch = q.match(/douyu\.com\/(\d+)/i);
+  if (linkMatch) {
+    PopupPlayer_msQuickAdd(linkMatch[1]);
+    return;
+  }
+  // 纯数字：直接当房间号加进来，省一次搜索
+  if (/^\d+$/.test(q)) {
+    PopupPlayer_msQuickAdd(q);
     return;
   }
 
+  let box = document.getElementById("popup-ms-results");
+  if (box) box.innerHTML = '<div class="popup-ms__empty">搜索中…</div>';
   fetch("https://www.douyu.com/japi/search/api/getSearchRec?kw=" + encodeURIComponent(kw) + "&type=all", {
     method: "GET",
     mode: "no-cors",
@@ -450,18 +538,46 @@ function PopupPlayer_msSearch(kw) {
         hot: it.hot || ""
       };
     }).filter(function (r) { return r.rid; });
-    PopupPlayer_msRenderResults(rows, "没有搜到相关直播间");
+    PopupPlayer_msRenderResults(rows, "没找到相关直播间");
   }).catch(function () {
-    showMessage("搜索失败，请稍后重试", "error");
+    showMessage("没搜成 · 网络有点慢，检查一下网络再点一次「搜索」", "error");
   });
+}
+
+/* 直接按房间号加入（链接 / 纯数字走这里）。
+   这里刻意不做"再点一次就移除"：手输的房号被悄悄删掉会莫名其妙 —— 移除只留房间行上的 ×。 */
+function PopupPlayer_msQuickAdd(rid) {
+  let id = String(rid);
+  if (!id) return;
+  if (id === String(MultiScreen_getMainRid())) {
+    showMessage("这就是当前直播间，已经在同屏里了", "info");
+    return;
+  }
+  let exists = MultiScreen_getList().some(function (r) { return String(r.rid) === id; });
+  if (exists) {
+    showMessage("这间房已经在同屏里了", "info");
+    return;
+  }
+  if (PopupPlayer_toggleRoom({ rid: id, nn: "", avatar: "", showStatus: undefined })) {
+    PopupPlayer_renderMultiPage();
+    PopupPlayer_msRenderResults([], "");
+  }
 }
 
 /* 关注在播：复用关注列表接口，取「正在直播且非录播」的前若干 */
 function PopupPlayer_msLoadFollow() {
-  if (typeof getFollowList !== "function") return;
+  if (typeof getFollowList !== "function") {
+    showMessage("读不到关注列表 · 这个功能没装上，刷新页面再试", "error");
+    PopupPlayer_msRenderResults([], "读不到关注列表 · 这个功能没装上，刷新页面再试");
+    return;
+  }
+  PopupPlayer_msRenderResults([], "正在加载关注列表…");
   getFollowList().then(function (ret) {
     if (!ret || String(ret.error) !== "0") {
-      showMessage("关注列表获取失败，可能未登录", "error");
+      /* 失败必须把结果区从「正在加载…」换掉（P1-2）：只弹一条 toast 的话，卡片里那句加载文案
+         会一直停在那里，看起来像永远在转、又没有任何可点的东西。 */
+      PopupPlayer_msRenderResults([], "读不到关注列表 · 可能还没登录，也可能网络慢；点一次「关注在播」重试");
+      showMessage("读不到关注列表 · 可能是还没登录，也可能是网络有点慢", "error");
       return;
     }
     let arr = (ret.data && ret.data.list) || [];
@@ -476,7 +592,9 @@ function PopupPlayer_msLoadFollow() {
         hot: it.online || ""
       };
     }).slice(0, 50);
-    PopupPlayer_msRenderResults(rows, "关注的直播间当前都没有开播");
+    PopupPlayer_msRenderResults(rows, "关注的主播现在都没开播");
+  }).catch(function () {
+    PopupPlayer_msRenderResults([], "读不到关注列表 · 网络有点慢，稍后再点一次");
   });
 }
 
@@ -484,5 +602,5 @@ function PopupPlayer_msLoadFollow() {
    （凡进过多屏的房间都会记一笔），存 ExSave_MultiScreenRecent */
 function PopupPlayer_msLoadRecent() {
   let rows = MultiScreen_getRecent();
-  PopupPlayer_msRenderResults(rows, "还没有多屏观看记录");
+  PopupPlayer_msRenderResults(rows, "还没有同屏观看记录");
 }

@@ -256,6 +256,47 @@ function ensureDockIndicators() {
   });
 }
 
+/* ==================== Dock 激活指示器 ====================
+ * 八个 Dock 按钮的「展开态」原先只有一半：openMiuixPanelCentered 会给当前按钮加上
+ * is-active / ex-dock-active（CSS 据此点亮图标底部那枚 24×4 蓝色小条），但全项目没有任何地方
+ * 把它摘下来；而所有关闭出口调用的 updateDockActiveIndicator() 根本没有定义 —— 那些调用
+ * （Sign / DanmakuHistory / PopupPlayer / 二级菜单 ×、面板 ×）其实全是空操作。
+ * 于是图标底下的蓝条一旦亮起就永远亮着，看不出面板到底开没开。
+ * 这里补齐：按「面板此刻是否真的显示着」逐个按钮复位，打开与关闭两侧都调它。
+ */
+const EX_DOCK_PANEL_MAP = [
+  ["ex-sign", ".sign-panel"],
+  ["fans-continue", ".fans-continue-panel"],
+  ["extool-icon", ".extool"],
+  ["livetool-icon", ".livetool"],
+  ["bloop-icon", ".bloop"],
+  ["ex-lottery", ".exlottery"],
+  ["exlottery-icon", ".exlottery"],
+  ["popup-player", ".popup-player-panel"],
+  ["ex-update", ".exupdate-panel"],
+  ["danmaku-history", ".danmaku-history-panel"]
+];
+
+function ExPanel_panelIsShown(el) {
+  if (!el) return false;
+  const d = el.style.display;
+  if (d === "flex" || d === "block") return true;
+  if (d === "none") return false;
+  try { return window.getComputedStyle(el).display !== "none"; } catch (e) { return false; }
+}
+
+function updateDockActiveIndicator() {
+  const dockWrap = document.querySelector(".ex-panel__wrap");
+  if (!dockWrap) return;
+  EX_DOCK_PANEL_MAP.forEach(function (pair) {
+    const btn = dockWrap.querySelector(":scope > div." + pair[0]);
+    if (!btn) return;
+    const on = ExPanel_panelIsShown(document.querySelector(pair[1]));
+    btn.classList.toggle("is-active", on);
+    btn.classList.toggle("ex-dock-active", on);
+  });
+}
+
 function openExPanel() {
   let a = document.getElementsByClassName("ex-panel")[0];
   if (!a) return;
@@ -421,3 +462,4 @@ window.hideExPanel = hideExPanel;
 window.toggleExPanel = toggleExPanel;
 window.showExPanel = showExPanel;
 window.isAnyThirdLevelPanelOpen = isAnyThirdLevelPanelOpen;
+window.updateDockActiveIndicator = updateDockActiveIndicator;
