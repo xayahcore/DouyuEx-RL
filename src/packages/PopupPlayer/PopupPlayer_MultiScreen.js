@@ -1078,10 +1078,14 @@ function MultiScreen_normalizeMainFirst(list) {
 // action: "fresh" | "add" | "delete" | "close"
 function MultiScreen_apply(action, payload) {
   if (action === "close") {
-    // 原生：关闭时快照进 historyRoomList 供重开还原，然后清空槽 1~4
+    // 原生：关闭时快照进 historyRoomList 供重开还原，然后清理**全部位置**
     msHistoryList = msActiveList.slice();
     msActiveList = MultiScreen_normalize([]);
-    for (let i = 1; i < MS_SLOT_COUNT; i++) MultiScreen_clearSlot(i);
+    /* ⚠ 必须遍历全部位置，不能写 for (let i = 1; …)：那等于假定「位置 0 = 主画面」。
+       换位后外房的记录就坐在位置 0，只清 1~4 会把它连 <video> 带 flv 实例一起留在隐藏格里继续播
+       —— 真机 2026-10-26 复现：退出同屏后那一格 currentTime 16.6 → 18.1 仍在推进，白耗带宽。
+       clearSlot 自己按格子身份（msPosOwner[idx] !== 0）决定要不要清内容，主画面格永远不动。 */
+    for (let i = 0; i < MS_SLOT_COUNT; i++) MultiScreen_clearSlot(i);
   } else if (action === "add") {
     if (msActiveList.length >= MS_MAX_ROOMS) return MultiScreen_after();
     msActiveList = MultiScreen_normalize(msActiveList.concat([payload]));
@@ -1101,8 +1105,13 @@ function MultiScreen_apply(action, payload) {
 function MultiScreen_after() {
   msMultiType = MultiScreen_visiblePositions().length;
   MultiScreen_save();
-  // 进了多屏的房间都记一笔"最近看过"
-  for (let i = 1; i < msActiveList.length; i++) MultiScreen_pushRecent(msActiveList[i]);
+  /* 进了多屏的房间都记一笔"最近看过"。按**房间身份**排除主房，不假定它坐在下标 0：
+     换过位之后主房可能在下标 1，那时按下标跳 0 会把主房记进"最近看过"、还漏掉真正的外房。 */
+  const mrAfter = String(MultiScreen_getMainRid());
+  for (let i = 0; i < msActiveList.length && i < MS_SLOT_COUNT; i++) {
+    const rr = msActiveList[i];
+    if (rr && String(rr.rid) !== mrAfter) MultiScreen_pushRecent(rr);
+  }
   MultiScreen_notifyChange(msActiveList.slice());
   return msActiveList;
 }

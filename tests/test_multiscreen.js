@@ -1377,7 +1377,8 @@ async function run() {
   const c38 = win38.MultiScreen_getContainer();
   const fetched38 = [];
   win38.getRealLive_Douyu = function (rid, v, https, qn, cb) { fetched38.push(String(rid)); cb("https://example.com/i.flv"); };
-  win38.flvjs = { isSupported: () => true, createPlayer: () => ({ attachMediaElement() {}, load() {}, play() {}, destroy() {} }) };
+  const flv38 = { destroyed: 0 };
+  win38.flvjs = { isSupported: () => true, createPlayer: () => ({ attachMediaElement() {}, load() {}, play() {}, destroy() { flv38.destroyed++; } }) };
   enterGrid(win38, 2);                                   // 位置 0 = 主房 9999，位置 1 = 外房 1001
   const mainCell38 = cellPos(win38, 0);
   const extCell38 = cellPos(win38, 1);
@@ -1405,12 +1406,27 @@ async function run() {
   fetched38.length = 0;
   win38.MultiScreen_reapplyAutoQuality();
   assert.deepStrictEqual(fetched38, ["1001"], "自动档重算（缩放窗口走这条）换位后也必须打到外房 1001，实际 " + JSON.stringify(fetched38));
+  /* 退出同屏的清理（逐位置 clearSlot）同样不能假定「位置 0 = 主画面」：
+     换位后外房坐在位置 0，旧实现只清 1~4，那一格的 <video> 与 flv 实例会留在隐藏格里继续播
+     —— 真机 2026-10-26 复现：退出同屏后 currentTime 16.6 → 18.1 仍在推进（白耗带宽）。
+     这里清"位置 0 上的那一格"，钉住"清它必须真的停流、且主画面格一毫不碰"。 */
+  Object.defineProperty(cellPos(win38, 0).querySelector("video"), "readyState", { value: 4, configurable: true });
+  win38.MultiScreen_clearSlot(0);
+  await sleep(60);
+  assert.strictEqual(cellPos(win38, 0).querySelector("video"), null, "清位置 0 时外房格不得残留 <video>（旧实现只清 1~4，它一直留在隐藏格里播）");
+  assert.ok(flv38.destroyed >= 1, "清位置 0 必须销毁 flv 实例（destroyed=" + flv38.destroyed + "）");
+  assert.ok(cellPos(win38, 1).querySelector("#realVideo"), "主画面格（现坐在位置 1）里的原生播放器必须原样保留");
   win38.close();
 
-  console.log("--> 28.8 源码级护栏（判空 / 看门狗 interval 必须清）");
+  console.log("--> 28.8 源码级护栏（判空 / 看门狗 interval 必须清 / 退出时不假定位置 0 = 主画面）");
   const msSrcBatch1 = stripMsComments(fs.readFileSync(path.join(__dirname, "../src/packages/PopupPlayer/PopupPlayer_MultiScreen.js"), "utf8"));
   assert.ok(/if \(reloadEl\) reloadEl\.addEventListener/.test(msSrcBatch1), "「重新加载」绑定必须判空（AGENTS 红线：DOM 操作必须判空）");
   assert.ok(/clearInterval\(rec\.stallTimer\)/.test(msSrcBatch1), "destroyPlayer 必须清掉看门狗 interval，否则它一直空转并拽着 slot");
+  /* 退出同屏的清理必须遍历**全部位置**：clearSlot 内部已按格子身份（msPosOwner[idx] !== 0）决定
+     要不要清内容，所以从 0 开始循环是安全的；而写成 for (let i = 1; …) 就等于假定「位置 0 = 主画面」，
+     换位后坐在位置 0 的外房会连 <video> 带 flv 实例一起留在隐藏格里继续播（真机 2026-10-26 复现）。 */
+  assert.ok(/for \(let i = 0; i < MS_SLOT_COUNT; i\+\+\) MultiScreen_clearSlot\(i\)/.test(msSrcBatch1), "退出同屏（close 分支）必须从位置 0 开始清格");
+  assert.strictEqual(/for \(let i = 1; i < MS_SLOT_COUNT; i\+\+\) MultiScreen_clearSlot\(i\)/.test(msSrcBatch1), false, "close 分支不得只清 1~4：换位后外房可能正坐在位置 0");
 
   dom.window.close();
   console.log("=== 多屏复刻单元测试 100% 通过 ===");
