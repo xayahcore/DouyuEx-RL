@@ -16,3 +16,40 @@
     cursor: pointer;
     margin-left: 3px;
 }
+
+/* ==================== 观看时间 / 开播时间（2026-10-27 从右上角横条搬来） ====================
+   放在「本月消费」左侧滚动：右侧工具栏这一行宽度有限，开播时间带着日期根本放不下，
+   滚动（超出才滚）比截断成「…」更诚实 —— 悬停会暂停，title 里还有完整时间。 */
+.monthcost__ticker {
+    display: inline-block;
+    vertical-align: middle;
+    max-width: 150px;
+    overflow: hidden;
+    white-space: nowrap;
+    margin-right: 6px;
+    font-size: 12px;
+    line-height: 18px;
+    color: #999;
+}
+
+.monthcost__ticker-track {
+    display: inline-block;
+    white-space: nowrap;
+    vertical-align: top;
+    will-change: transform;
+}
+
+/* 两份完全相同的副本，每份自带右内边距：translateX(-50%) 正好滚过一整份，无缝衔接 */
+.monthcost__ticker-copy {
+    display: inline-block;
+    padding-right: 24px;
+}
+
+.monthcost__ticker:hover .monthcost__ticker-track {
+    animation-play-state: paused;
+}
+
+@keyframes monthcost-ticker {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+}

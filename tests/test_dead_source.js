@@ -19,6 +19,9 @@ function stripComments(src) {
 
 const MAIN_SRC = read("src/main.js");
 const REAL_AUDIENCE_SRC = read("src/packages/RealAudience/RealAudience.js");
+const REAL_AUDIENCE_CSS = read("src/packages/RealAudience/RealAudience.css");
+const MONTH_COST_SRC = read("src/packages/MonthCost/MonthCost.js");
+const LIVETOOL_SRC = read("src/packages/LiveTool/LiveTool.js");
 const DANMAKU_HISTORY_SRC = read("src/packages/DanmakuHistory/DanmakuHistory.js");
 const MONITOR_SRC = read("src/packages/Monitor/Monitor.js");
 
@@ -61,6 +64,41 @@ function testNoDoseeingDependency() {
         );
     });
 
+    // ③ 统计条已整体撤下（2026-10-27）：数据站停服后它只剩贵宾数，用户判定无意义。
+    //    类名与节点 id 都不得回潮；同时确认两项数据是「搬家」而不是「删掉」。
+    ["real-audience", "贵宾数"].forEach(function (needle) {
+        assert.strictEqual(
+            raCode.indexOf(needle),
+            -1,
+            "RealAudience 不得再出现「" + needle + "」（统计条已整条撤下）"
+        );
+    });
+    assert.strictEqual(
+        REAL_AUDIENCE_CSS.indexOf(".real-audience"),
+        -1,
+        "RealAudience.css 不得再定义统计条样式（横条已撤）"
+    );
+    assert.strictEqual(
+        raCode.indexOf("layout-Player-rank"),
+        -1,
+        "统计条撤下后不得再把排行榜往下顶（.layout-Player-rank 的 top 覆盖必须一起撤）"
+    );
+
+    const ltCode = stripComments(LIVETOOL_SRC);
+    assert.strictEqual(
+        ltCode.indexOf("initPkg_RealAudience_Handle"),
+        -1,
+        "LiveTool 不得再注册「贵宾数」处理器（统计条撤下后它没有出口）"
+    );
+
+    const mcCode = stripComments(MONTH_COST_SRC);
+    ["monthcost__ticker", "swf_api/h5room/", "fsjk/getCardTaskInfo"].forEach(function (needle) {
+        assert.ok(
+            mcCode.indexOf(needle) !== -1,
+            "观看时间 / 开播时间必须搬到 MonthCost 左侧滚动条（缺少 " + needle + "）"
+        );
+    });
+
     // ② 历史弹幕：不得再引导用户去死站登录
     const dhCode = stripComments(DANMAKU_HISTORY_SRC);
     assert.ok(
@@ -72,7 +110,7 @@ function testNoDoseeingDependency() {
         "DanmakuHistory 不得再把停服误报成「需先登录」"
     );
 
-    console.log("✓ 场景 1 通过: 死源依赖已清零（@connect / 请求 / 节点 / 登录引导）");
+    console.log("✓ 场景 1 通过: 死源依赖已清零（@connect / 请求 / 节点 / 登录引导 / 统计条撤下 / 数据搬家）");
 }
 
 function loadMonitor(opts = {}) {

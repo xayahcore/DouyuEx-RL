@@ -1,11 +1,7 @@
-.real-audience {
-    /* 入口已撤（数据站停服），不再是可点击元素 —— 别给用户 pointer 手型暗示 */
-    cursor: default;
-    display: flex;
-    padding: 0 7px;
-    line-height: 33px;
-    color: rgb(153, 153, 153);
-}
+/* ==================== 统计条已整体撤下（2026-10-27） ====================
+   右上角横条连同贵宾数一起取消：数据站停服后它只剩一个没有参照的数字。
+   观看时间与开播时间搬到「本月消费」左侧滚动显示，样式归口 MonthCost.css。
+   本文件只剩头像框下方那两个原生入口的样式。 */
 
 #Ex_EnterYuba {
     width: 100%;
@@ -13,9 +9,4 @@
 
 .Title-anchorPic-bottom i{
     display: none !important;
-}
-
-/* 只剩贵宾数这一个带图标的项；活跃/弹幕/礼物三个 id 已随停服的数据站一起撤下 */
-#real-audience__noble {
-    margin-left: 2px;
 }

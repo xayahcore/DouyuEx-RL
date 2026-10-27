@@ -16,7 +16,7 @@ try {
  *  ① 关键词回复里 `let result = regObj.exec(txt); if (result.length > 0)` ——
  *     正则不命中时 exec 返回 null，直接抛 TypeError（Reply.js:252-253 / Mute.js:298-299 旧行号）；
  *  ② LiveTool 的 ws 回调里十几个处理器是裸调的顺序调用，异常一抛，排在后面的
- *     贵宾数（RealAudience）、弹幕回执（BarrageSendCheck）、投票、谢礼物…… 全部不再执行；
+ *     自动谢礼物（Gift）、弹幕回执（BarrageSendCheck）、投票、答题…… 全部不再执行；
  *  ③ Ex_WebSocket_UnLogin 的 onmessage 也没有 try/catch，异常还会顺带杀掉同一帧里的后续分包。
  * 所以这里不只测「不抛错」，还要测「一个处理器炸了，别人照跑」。
  *
@@ -70,8 +70,7 @@ const STUB_NAMES = [
     "initPkg_LiveTool_Vote_Handle",
     "initPkg_LiveTool_BarrageSpeed_Handle",
     "initPkg_LiveTool_RankList_Handle",
-    "initPkg_LiveTool_BarrageSendCheck_Handle",
-    "initPkg_RealAudience_Handle"
+    "initPkg_LiveTool_BarrageSendCheck_Handle"
 ];
 const STUBS = STUB_NAMES.map(function (name) {
     return "function " + name + "(ret) { ExTest_calls.push(" + JSON.stringify(name) + "); }";
@@ -112,7 +111,6 @@ function makeDispatchSandbox() {
             getMuteIdList: function () { return muteIdList; },
             overrideReply: function (fn) { initPkg_LiveTool_Reply_Handle = fn; },
             overrideMute: function (fn) { initPkg_LiveTool_Mute_Handle = fn; },
-            overrideRealAudience: function (fn) { initPkg_RealAudience_Handle = fn; },
             // 真实入口：initPkg_LiveTool_HandleFunc 里注册的 ws 回调
             startWs: function () { initPkg_LiveTool_HandleFunc(); }
         };
@@ -241,13 +239,13 @@ function testRuleParsing() {
 /* ============================ ④ 派发链隔离：一个炸了，别人照跑 ============================ */
 
 function testDispatchIsolation() {
-    console.log("=== ④ 派发链隔离：关键词回复抛错，贵宾数/回执等后续处理器必须照常执行 ===");
+    console.log("=== ④ 派发链隔离：关键词回复抛错，谢礼物/回执等后续处理器必须照常执行 ===");
     const { dom, api, calls, errors } = makeDispatchSandbox();
 
     assert.strictEqual(typeof api.dispatch, "function", "缺少 LiveTool_dispatchBarrage：派发链仍未做逐项隔离");
     assert.strictEqual(typeof api.handlers, "function", "缺少 LiveTool_barrageHandlers：派发表不可枚举");
     const names = api.handlers().map(function (h) { return h[0]; });
-    ["关键词回复", "关键词禁言", "贵宾数", "弹幕回执"].forEach(function (n) {
+    ["关键词回复", "关键词禁言", "自动谢礼物", "弹幕回执"].forEach(function (n) {
         assert.ok(names.indexOf(n) !== -1, "派发表缺少处理器: " + n + "，实际 " + JSON.stringify(names));
     });
 
@@ -260,8 +258,8 @@ function testDispatchIsolation() {
 
     assert.deepStrictEqual(failed, ["关键词回复"], "失败的处理器必须被如实记下来: " + JSON.stringify(failed));
     assert.ok(
-        calls.indexOf("initPkg_RealAudience_Handle") !== -1,
-        "贵宾数处理器必须照常执行（这正是 P0-2 被掐掉的后果）: " + JSON.stringify(calls)
+        calls.indexOf("initPkg_LiveTool_Gift_Handle") !== -1,
+        "自动谢礼物处理器必须照常执行（这正是 P0-2 被掐掉的后果）: " + JSON.stringify(calls)
     );
     assert.ok(
         calls.indexOf("initPkg_LiveTool_BarrageSendCheck_Handle") !== -1,
@@ -322,7 +320,7 @@ function testRealWebSocketEntry() {
     assert.strictEqual(
         calls.length,
         STUB_NAMES.length,
-        "贵宾数/回执等后续处理器必须全部执行（这正是 P0-2 被掐掉的部分）: " + JSON.stringify(calls)
+        "谢礼物/回执等后续处理器必须全部执行（这正是 P0-2 被掐掉的部分）: " + JSON.stringify(calls)
     );
 
     console.log("✓ ⑤B 通过: 从 ws 入口进来的不命中弹幕不再打崩派发链");

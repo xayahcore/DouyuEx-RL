@@ -19,9 +19,10 @@ const REAL_AUDIENCE_SRC = fs.readFileSync(
  * 挂载"真实源码"（非镜像实现）：common.js 的全局 rid 解析 + RealAudience 模块本体。
  * 每个用例独立 jsdom、独立函数作用域，避免模块级 let/const 互相污染。
  *
- * 关于 document-start 的复刻：jsdom 默认不执行内联 <script>（未开 runScripts），
- * 这恰好对应真实处境 —— 页面里那行房间号只作为 HTML 文本存在，能不能解析出来
- * 完全取决于 exParseRealRid；而 window.room_id 由用例在"页面脚本跑起来之后"补上。
+ * 2026-10-27：右上角统计条（.real-audience）整条撤下 —— 数据站停服后它只剩一个贵宾数，
+ * 用户判定无意义。本测试因此只钉两件事：
+ *   ① room_id 运行时解析（它决定了 h5room / fsjk 这些接口拿哪个号，与统计条无关，照旧保留）；
+ *   ② 统计条真的不再出现，而头像框那三个入口（回看/投稿/鱼吧）与赛事聊天室入口的隐藏没有跟着丢。
  */
 function loadRealAudience(opts) {
     opts = opts || {};
@@ -32,12 +33,17 @@ function loadRealAudience(opts) {
     const inlineRoom = opts.inlineRoom ? `<script>var $ROOM = {}; $ROOM.room_id = ${opts.inlineRoom};</script>` : "";
     const announce = opts.announce === false ? "" : `<div class="layout-Player-announce"></div>`;
     const rankAll = opts.rankAll === false ? "" : `<div class="layout-Player-rankAll"></div>`;
+    const avatarDom = opts.avatar === false ? "" : `
+            <div class="VideoEntry-tabItem"><a href="${url}">视频</a></div>
+            <div class="Title-anchorPicBack"></div>
+            <div class="MatchSystemChatRoomEntry">赛事聊天室</div>`;
 
     const dom = new JSDOM(
         `<!DOCTYPE html><html><head>${canonical}</head><body>
             <div class="layout-Player-videoEntity"><video></video></div>
             ${announce}
             ${rankAll}
+            ${avatarDom}
             <div class="Barrage-main"><ul class="Barrage-list"></ul></div>
             ${inlineRoomId}${inlineRoom}
         </body></html>`,
@@ -51,19 +57,16 @@ function loadRealAudience(opts) {
         error: () => {},
         warn: (...args) => warnings.push(args.join(" "))
     };
-
-    // 第三方数据站（doseeing）已于 2026-09-30 全线停服，RealAudience 不再向它发请求。
-    // 这个桩现在只剩"计数"职责：calls 必须恒为 0，用例会断言（死源依赖是否真的摘干净）。
-    const gmState = {
-        calls: 0,
-        fail: !!opts.gmFail,
-        payload: opts.gmPayload || { error: 0, data: {} }
-    };
+    const styles = [];
+    const opened = [];
+    const polls = [];
+    let pollIndex = 0;
 
     const factory = new Function(
         "window", "document", "location", "unsafeWindow",
         "setTimeout", "clearTimeout", "setInterval", "clearInterval",
-        "fetch", "GM_xmlhttpRequest", "StyleHook_set", "getType", "showMessage", "console",
+        "fetch", "GM_xmlhttpRequest", "StyleHook_set", "getType", "showMessage", "GM_openInTab",
+        "ExGuard_pollFor", "console",
         COMMON_SRC + "\n" + REAL_AUDIENCE_SRC + `
         return {
             getRid: function () { return rid; },
@@ -71,12 +74,7 @@ function loadRealAudience(opts) {
             refreshRid: exRefreshRid,
             pathShortId: exPathShortId,
             isConfident: function () { return exRidConfident; },
-            info: function () { return real_info; },
-            initDom: initPkg_RealAudience_Dom,
-            ensure: realAudienceEnsure,
-            switchWatch: switchRealAndTodayWatch,
-            setViewer: setRealViewer,
-            handleNoble: initPkg_RealAudience_Handle
+            init: initPkg_RealAudience
         };
         `
     );
@@ -84,53 +82,24 @@ function loadRealAudience(opts) {
     const api = factory(
         win, win.document, win.location, win,
         win.setTimeout, win.clearTimeout, win.setInterval, win.clearInterval,
-        () => Promise.resolve({ json: async () => ({ error: 0, data: { todayWatch: 0 } }) }),
-        (req) => {
-            if (!req) return;
-            gmState.calls++;
-            if (gmState.fail) {
-                if (typeof req.onerror === "function") req.onerror(new Error("blocked"));
-                return;
-            }
-            if (typeof req.onload === "function") req.onload({ response: gmState.payload });
-        },
+        () => Promise.resolve({ json: async () => ({ error: 0, data: {} }) }),
         () => {},
-        // getType：按 sendBarrage 报文的真实形态取 type@=xxx，供「贵宾数」用例驱动
-        (str) => {
-            const m = String(str).match(/type@=([^\/]*)/);
-            return m ? m[1] : "unknown";
-        },
+        (name, css) => styles.push(String(css || "")),
+        () => "unknown",
         () => {},
+        (target) => opened.push(target),
+        (findFn, onFound, cfg) => {
+            polls.push({ findFn: findFn, onFound: onFound, cfg: cfg || {} });
+            return { cancel: () => {}, done: false, tries: pollIndex++ };
+        },
         quietConsole
     );
 
-    return { dom, win, api, warnings, gmState };
+    return { dom, win, api, warnings, styles, opened, polls };
 }
 
 function wait(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function statsBarEl(win) {
-    // 存活性探针改看「已播」节点：#real-audience__total 属于死源三项，
-    // 2026-10-26 起连同节点一起撤掉了（数据站停服）。
-    return win.document.getElementById("real-audience__time");
-}
-
-function countBars(win) {
-    return win.document.querySelectorAll(".real-audience").length;
-}
-
-/**
- * 读统计条的“已写入值”。
- * 真实代码走 realAudienceSet(id, "innerText", v)，写的是 innerText 属性；
- * jsdom 不实现 innerText（不会反映到 textContent），HTML 里的 **** 占位符却在 textContent 上。
- * 所以读值必须读属性本身，两者不能混为一谈。
- */
-function statValue(win, id) {
-    const el = win.document.getElementById(id);
-    if (!el) return null;
-    return el.innerText === undefined ? null : String(el.innerText);
 }
 
 async function testRealRid() {
@@ -149,7 +118,7 @@ async function testRealRid() {
         await wait(900);
         assert.strictEqual(api.getRid(), "796449", "生命周期纠偏后 rid 必须变成真实 room_id");
         assert.strictEqual(api.isConfident(), true, "拿到页面真实号后必须标记为已确认，停止无谓重算");
-        console.log(`✓ 场景 1 通过: rid ${"15000"} → ${api.getRid()}（短号已被真实号替换）`);
+        console.log("✓ 场景 1 通过: rid 15000 → " + api.getRid() + "（短号已被真实号替换）");
         dom.window.close();
     }
 
@@ -194,186 +163,115 @@ async function testRealRid() {
     console.log("=== 真实 room_id 解析 4/4 场景全部通过 ===");
 }
 
-async function testStatsBarSustain() {
-    console.log("=== 统计条落点与自愈（issue #1 问题一：刷新后统计条不显示） ===");
+function testStatsBarRemoved() {
+    console.log("=== 统计条撤下（2026-10-27：只剩贵宾数的横条整体取消） ===");
 
-    // === 场景 5: 容器就绪时必须插到播放器区块，绝不落到 .Barrage-main ===
+    // === 场景 5: 初始化不得再插入任何统计条节点 ===
     {
-        console.log("--> 场景 5: 播放器区块已渲染 → 统计条必须落在 .layout-Player-announce...");
+        console.log("--> 场景 5: initPkg_RealAudience 后不得出现 .real-audience / 贵宾数节点...");
         const { dom, win, api } = loadRealAudience({ url: "https://www.douyu.com/74751" });
-        assert.strictEqual(api.initDom(), true, "容器存在时插入必须成功");
-        const bar = statsBarEl(win);
-        assert.ok(bar, "统计条节点必须存在");
-        assert.ok(
-            win.document.querySelector(".layout-Player-announce .real-audience"),
-            "统计条必须挂在 .layout-Player-announce 内"
-        );
+        api.init();
         assert.strictEqual(
-            win.document.querySelectorAll(".Barrage-main .real-audience").length,
+            win.document.querySelectorAll(".real-audience").length,
             0,
-            "统计条绝不允许落到持续重绘的 .Barrage-main 里"
+            "右上角统计条已整体取消，不得再插入 .real-audience"
         );
-        console.log("✓ 场景 5 通过: 统计条落点正确，弹幕区内无残留");
+        ["real-audience__noble", "real-audience__time", "real-audience__watchtime"].forEach((id) => {
+            assert.strictEqual(win.document.getElementById(id), null, "统计条节点 #" + id + " 不得再存在");
+        });
+        console.log("✓ 场景 5 通过: 初始化后没有任何统计条节点");
         dom.window.close();
     }
 
-    // === 场景 6: 容器尚未渲染 → 不得落弹幕区，且容器出现后必须补插 ===
+    // === 场景 6: 排行榜不再被顶开 34px（横条腾出的空间要还回去） ===
     {
-        console.log("--> 场景 6: 播放器区块未渲染 → 不落弹幕区，容器出现后 500ms 轮询补插...");
+        console.log("--> 场景 6: 样式钩子只藏 .VideoEntry，不再改 .layout-Player-rank 的 top...");
+        const { dom, api, styles } = loadRealAudience({ url: "https://www.douyu.com/74751" });
+        api.init();
+        const css = styles.join("\n");
+        assert.ok(css.indexOf(".VideoEntry{display:none") !== -1, "视频投稿入口仍必须隐藏，实际样式: " + JSON.stringify(css));
+        assert.strictEqual(
+            css.indexOf("layout-Player-rank"),
+            -1,
+            "统计条撤下后不得再把排行榜往下顶 34px，实际样式: " + JSON.stringify(css)
+        );
+        console.log("✓ 场景 6 通过: 排行榜回到页面原生位置");
+        dom.window.close();
+    }
+
+    // === 场景 7: 头像框三个入口（回看 / 投稿 / 鱼吧）不能跟着统计条一起消失 ===
+    {
+        console.log("--> 场景 7: 回看 / 投稿 / 鱼吧 三个入口照旧插入并可点击...");
+        const { dom, win, api, opened } = loadRealAudience({ url: "https://www.douyu.com/74751" });
+        api.init();
+        ["Ex_VideoReview", "Ex_VideoSubmit", "Ex_EnterYuba"].forEach((id) => {
+            assert.ok(win.document.getElementById(id), "#" + id + " 必须仍然被插入（它跟统计条无关）");
+        });
+        win.document.getElementById("Ex_VideoSubmit").dispatchEvent(new win.Event("click", { bubbles: true }));
+        assert.deepStrictEqual(
+            opened,
+            ["https://www.douyu.com/74751?type=video"],
+            "点击投稿必须打开投稿页，实际 " + JSON.stringify(opened)
+        );
+        console.log("✓ 场景 7 通过: 三个入口与跳转都还在");
+        dom.window.close();
+    }
+
+    // === 场景 8: 赛事聊天室入口照旧被藏掉（以前挂在统计条那条路径上） ===
+    {
+        console.log("--> 场景 8: .MatchSystemChatRoomEntry 仍然必须被隐藏...");
+        const { dom, win, api } = loadRealAudience({ url: "https://www.douyu.com/74751" });
+        api.init();
+        const entry = win.document.querySelector(".MatchSystemChatRoomEntry");
+        assert.ok(entry, "前置条件：页面里有赛事聊天室入口");
+        assert.strictEqual(entry.style.display, "none", "赛事聊天室入口必须仍然被隐藏（它跟数据源无关）");
+        console.log("✓ 场景 8 通过: 推广入口没有跟着统计条一起放回来");
+        dom.window.close();
+    }
+
+    // === 场景 9: 入口晚渲染时用有上限轮询补藏，且不无限重试 ===
+    {
+        console.log("--> 场景 9: 入口晚渲染 → 有上限轮询补藏（不刷屏）...");
+        const { dom, win, api, polls } = loadRealAudience({ url: "https://www.douyu.com/74751", avatar: false });
+        // 先没有入口，再补一个进去
+        api.init();
+        assert.strictEqual(polls.length, 1, "入口不存在时必须挂一次有上限轮询，实际 " + polls.length);
+        assert.strictEqual(polls[0].findFn, ".MatchSystemChatRoomEntry", "轮询目标必须就是这个入口");
+        assert.strictEqual(polls[0].cfg.maxTries, 20, "轮询必须有上限（20 次），不无限重试");
+        const late = win.document.createElement("div");
+        late.className = "MatchSystemChatRoomEntry";
+        win.document.body.appendChild(late);
+        const found = typeof polls[0].findFn === "function"
+            ? polls[0].findFn()
+            : win.document.querySelector(polls[0].findFn);
+        polls[0].onFound(found);
+        assert.strictEqual(late.style.display, "none", "轮询命中后必须把入口藏掉");
+        console.log("✓ 场景 9 通过: 晚渲染入口由 20×500ms 的有上限轮询补藏");
+        dom.window.close();
+    }
+
+    // === 场景 10: 页面什么都没有时初始化不得抛异常 ===
+    {
+        console.log("--> 场景 10: 容器与头像框全缺失 → initPkg_RealAudience 不得抛错...");
         const { dom, win, api } = loadRealAudience({
             url: "https://www.douyu.com/74751",
             announce: false,
-            rankAll: false
+            rankAll: false,
+            avatar: false
         });
-        assert.strictEqual(api.initDom(), false, "容器缺失时插入必须返回 false");
-        assert.strictEqual(
-            win.document.querySelectorAll(".Barrage-main .real-audience").length,
-            0,
-            "容器缺失时绝不能退而求其次塞进 .Barrage-main"
-        );
-
-        // 模拟播放器区块稍后渲染出来
-        const announce = win.document.createElement("div");
-        announce.className = "layout-Player-announce";
-        win.document.body.insertBefore(announce, win.document.querySelector(".layout-Player-rankAll"));
-        await wait(800);
-
-        assert.ok(statsBarEl(win), "容器出现后必须由轮询把统计条补插上去");
-        assert.ok(
-            win.document.querySelector(".layout-Player-announce .real-audience"),
-            "补插后的统计条必须落在播放器区块内"
-        );
-        console.log("✓ 场景 6 通过: 轮询补插成功，全程未污染弹幕区");
+        assert.doesNotThrow(() => api.init(), "节点缺失时初始化必须安全返回");
+        assert.strictEqual(win.document.querySelectorAll(".real-audience").length, 0, "缺节点时也不得插统计条");
+        console.log("✓ 场景 10 通过: 缺节点不抛错、不留残留");
         dom.window.close();
     }
 
-    // === 场景 7: 统计条被页面重绘冲掉后必须自愈，且不得留下重复节点 ===
-    {
-        console.log("--> 场景 7: 模拟页面重绘冲掉统计条 → 必须自愈且无重复...");
-        const { dom, win, api } = loadRealAudience({ url: "https://www.douyu.com/74751" });
-        api.initDom();
-        assert.strictEqual(countBars(win), 1, "初始应只有一条统计条");
-
-        // 页面重绘把节点连根拔掉（这正是 F5 后统计条消失的现场）
-        win.document.querySelectorAll(".real-audience").forEach((el) => el.remove());
-        assert.strictEqual(statsBarEl(win), null, "前置条件：统计条已被冲掉");
-
-        assert.strictEqual(api.ensure(), true, "自愈必须成功");
-        assert.ok(statsBarEl(win), "自愈后统计条必须重新存在");
-        assert.ok(
-            win.document.querySelector(".layout-Player-announce .real-audience"),
-            "自愈后必须重新挂回播放器区块"
-        );
-        assert.strictEqual(countBars(win), 1, "自愈不得留下重复统计条");
-        console.log("✓ 场景 7 通过: 统计条自愈成功且无重复");
-        dom.window.close();
-    }
-
-    // === 场景 8: 节点与容器都不在时，定时器回调必须静默跳过而不是抛 TypeError ===
-    {
-        console.log("--> 场景 8: 节点与容器均缺失 → switchRealAndTodayWatch 不得抛异常...");
-        const { dom, win, api } = loadRealAudience({ url: "https://www.douyu.com/74751" });
-        api.initDom();
-        win.document.querySelectorAll(".real-audience").forEach((el) => el.remove());
-        win.document.querySelector(".layout-Player-announce").remove();
-        win.document.querySelector(".layout-Player-rankAll").remove();
-        assert.strictEqual(api.ensure(), false, "容器缺失时自愈必须安全返回 false");
-
-        assert.doesNotThrow(() => api.switchWatch(), "节点缺失时切换回调必须安全返回");
-        await assert.doesNotReject(() => api.setViewer(), "节点缺失时数据刷新必须安全返回");
-        console.log("✓ 场景 8 通过: 节点缺失时两个定时器回调均静默跳过，不再每 5 秒抛一次 TypeError");
-        dom.window.close();
-    }
-
-    // === 场景 9: 死源已停服 → 零请求、死块不渲染、本机项照写 ===
-    {
-        console.log("--> 场景 9: 数据站已停服 → 零请求、死块不渲染、已播/贵宾照写...");
-        const { dom, win, api, warnings, gmState } = loadRealAudience({ url: "https://www.douyu.com/74751" });
-        api.initDom();
-        await api.setViewer();
-
-        // ① 一条请求都不许发：对方站点对所有路径只返回「停止服务公告」页
-        assert.strictEqual(
-            gmState.calls,
-            0,
-            "数据源停服后不得再向 doseeing 发任何请求，实际发了 " + gmState.calls + " 次"
-        );
-        assert.ok(
-            !warnings.some((w) => w.indexOf("真实人数") !== -1),
-            "既然不再请求，就不得再产生「真实人数请求失败」噪声告警：" + JSON.stringify(warnings)
-        );
-
-        // ② 死源三项：节点必须干脆不存在，而不是留着永远显示 **** / 0
-        ["real-audience__total", "real-audience__barrage", "real-audience__money_yc", "real-audience__t"].forEach((id) => {
-            assert.strictEqual(
-                win.document.getElementById(id),
-                null,
-                "死源节点 #" + id + " 不得存在（留着只会永远显示 **** 或 0，等于骗人）"
-            );
-        });
-
-        // ③ 本机算得出来的项照旧有值：已播（h5room showtime）
-        const timeVal = statValue(win, "real-audience__time");
-        assert.ok(
-            timeVal !== null && timeVal.indexOf("已播:") === 0 && timeVal.indexOf("****") === -1,
-            "「已播」只用本地 showtime，必须照写，实际 " + JSON.stringify(timeVal)
-        );
-
-        // ④ 贵宾数：来自长连接 oni.vn，与死源无关，同样照写（12345 → 1.2万）
-        api.handleNoble("type@=oni/rid@=74751/vn@=12345/");
-        await api.setViewer();
-        assert.strictEqual(
-            statValue(win, "real-audience__noble"),
-            "1.2万",
-            "「贵宾数」来自长连接，必须照写，实际 " + JSON.stringify(statValue(win, "real-audience__noble"))
-        );
-
-        // ⑤ 整条带停服说明：用户悬停能知道为什么少了三项
-        const bar = win.document.getElementsByClassName("real-audience")[0];
-        assert.ok(
-            String(bar.getAttribute("title")).indexOf("停止服务") !== -1,
-            "统计条必须带「数据源已停止服务」的悬停说明，实际 " + JSON.stringify(bar.getAttribute("title"))
-        );
-        console.log("✓ 场景 9 通过: 零请求 + 死块不渲染 + 已播/贵宾照写 + 停服说明在位");
-        dom.window.close();
-    }
-
-    // === 场景 10: 自愈重建出来的只是空壳，必须自动补一次数据 ===
-    {
-        console.log("--> 场景 10: 自愈后必须自动补数据，不能只恢复空壳等 150 秒...");
-        const { dom, win, api } = loadRealAudience({ url: "https://www.douyu.com/74751" });
-        api.initDom();
-        await api.setViewer();
-        const before = statValue(win, "real-audience__time");
-
-        // 页面重绘把节点连根拔掉，再由**外部调用方**（switchRealAndTodayWatch 那条路）触发自愈
-        win.document.querySelectorAll(".real-audience").forEach((el) => el.remove());
-        assert.strictEqual(api.ensure(), true, "自愈必须成功");
-        assert.strictEqual(
-            win.document.getElementById("real-audience__time").textContent,
-            "已播:****",
-            "重建后的节点带的是 HTML 里的 **** 占位符（前提：数据必须靠补刷回来）"
-        );
-
-        await wait(80); // 让自愈排的那次补刷跑完
-        const after = statValue(win, "real-audience__time");
-        assert.strictEqual(
-            String(after),
-            String(before),
-            "自愈必须自动补一次数据 —— 否则要等下一次 setRealViewer（150 秒）才有人数，实际 " + after
-        );
-        assert.ok(String(after).indexOf("****") === -1, "补刷后的【已播】不得仍是占位符");
-        console.log("✓ 场景 10 通过: 自愈后自动补数据，不再空等 150 秒");
-        dom.window.close();
-    }
-
-    console.log("=== 统计条落点与自愈 6/6 场景全部通过 ===");
+    console.log("=== 统计条撤下 6/6 场景全部通过 ===");
 }
 
 (async function main() {
     await testRealRid();
-    await testStatsBarSustain();
-    console.log("=== 真实人数统计条回归测试 100% 通过 ===");
+    testStatsBarRemoved();
+    console.log("=== RealAudience 回归测试 100% 通过 ===");
 })().catch((e) => {
     console.error("测试失败:", e && e.stack ? e.stack : e);
     process.exit(1);

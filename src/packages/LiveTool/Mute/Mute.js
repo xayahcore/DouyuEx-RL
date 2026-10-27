@@ -287,7 +287,7 @@ async function initPkg_LiveTool_Mute_Handle(text) {
             }
             // 命中判定统一走 LiveTool_keywordRuleHit：正则不命中时 exec 返回 null，
             // 旧代码直接取 result.length 会在 async 处理器里抛 TypeError（一条无人接的 rejection），
-            // 而处理器本身抛错又会把整条派发链上排在后面的关键词回复/回执/贵宾数一起带停。
+            // 而处理器本身抛错又会把整条派发链上排在后面的关键词回复/回执/投票一起带停。
             if (LiveTool_keywordRuleHit(key, txt) != true) {
                 continue;
             }

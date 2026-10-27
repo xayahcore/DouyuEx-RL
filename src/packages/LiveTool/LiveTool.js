@@ -1,7 +1,7 @@
 function initPkg_LiveTool() {
 	// 逐步兜底：UI 插桩与「弹幕派发注册」是两件事，不能连坐。
 	// 历史上任何一步 DOM 缺失（页面少一个容器类名）都会抛错并中断后面的初始化，
-	// 于是 initPkg_LiveTool_HandleFunc 根本没执行 —— 玩家看到的就是「贵宾数 / 回执 / 投票全没了」。
+	// 于是 initPkg_LiveTool_HandleFunc 根本没执行 —— 玩家看到的就是「回执 / 投票 / 谢礼物全没了」。
 	LiveTool_tryInit("Dom", initPkg_LiveTool_Dom);
 	LiveTool_tryInit("Module", initPkg_LiveTool_Module);
 	LiveTool_tryInit("Func", initPkg_LiveTool_Func);
@@ -133,7 +133,7 @@ function initPkg_LiveTool_HandleFunc() {
 	// 开启ws，并且设置处理函数的入口
 	// 是否生效由每个处理函数决定，可以设置一个变量保存开启状态，判断是否要执行
 	let ws = new Ex_WebSocket_UnLogin(rid, (ret) => {
-		// 派发链逐项隔离：任何单个处理器抛错都不再影响排在后面的人（贵宾数 / 回执 / 投票…）
+		// 派发链逐项隔离：任何单个处理器抛错都不再影响排在后面的人（回执 / 投票 / 谢礼物…）
 		LiveTool_dispatchBarrage(ret);
 	});
 }
@@ -155,8 +155,7 @@ function LiveTool_barrageHandlers() {
 		["投票", initPkg_LiveTool_Vote_Handle],
 		["弹幕时速", initPkg_LiveTool_BarrageSpeed_Handle],
 		["排行榜", initPkg_LiveTool_RankList_Handle],
-		["弹幕回执", initPkg_LiveTool_BarrageSendCheck_Handle],
-		["贵宾数", initPkg_RealAudience_Handle]
+		["弹幕回执", initPkg_LiveTool_BarrageSendCheck_Handle]
 	];
 }
 
@@ -169,7 +168,7 @@ function LiveTool_reportHandlerError(name, err) {
  * 弹幕派发：逐个处理器隔离执行。
  *
  * 历史问题（P0-2）：处理器是按顺序裸调的，关键词回复里 `regObj.exec(txt).length`
- * 在正则不命中时拿到 null 并抛 TypeError，同一个回调里排在后面的贵宾数、弹幕回执、
+ * 在正则不命中时拿到 null 并抛 TypeError，同一个回调里排在后面的弹幕回执、
  * 投票、谢礼物…全部不会再执行 —— 一条弹幕就能打崩整条链。
  * 现在每个处理器各自 try/catch，async 处理器的 reject 也兜住，只记日志、不中断后续。
  *

@@ -240,7 +240,7 @@ function initPkg_LiveTool_Reply_Handle(text) {
                 continue;
             }
             // 命中判定统一走 LiveTool_keywordRuleHit：正则不命中时 exec 返回 null，
-            // 旧代码直接取 result.length 会抛 TypeError，把整条弹幕派发链（贵宾数/回执/投票…）一起掐死。
+            // 旧代码直接取 result.length 会抛 TypeError，把整条弹幕派发链（回执/投票/谢礼物…）一起掐死。
             if (LiveTool_keywordRuleHit(key, txt) != true) {
                 continue;
             }
