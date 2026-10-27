@@ -314,6 +314,9 @@ function createExUpdatePanel() {
   if (typeof ensureMiuixPanelHeader === "function") {
     ensureMiuixPanelHeader(p, "版本更新");
   }
+  /* 主按钮（检查更新 / 我已收到 / 前往更新）常驻面板底部（与同屏面板一致）：更新日志很长，
+     按钮必须始终可见可点。只能内联样式 —— 操作区有"只允许一条统一 CSS 规则"的构建护栏。 */
+  if (typeof ExUI_stickActionBar === "function") ExUI_stickActionBar(p);
 
   var btn = p.querySelector("#exupdate-action-btn");
   if (!btn) return;

@@ -91,11 +91,19 @@ function testNoDoseeingDependency() {
         "LiveTool 不得再注册「贵宾数」处理器（统计条撤下后它没有出口）"
     );
 
+    // 2026-10-27 用户反馈 4：两项数据从「本月消费」左侧滚动条搬到标题栏「复制直播流」右边。
+    // 所以这里钉的是「搬家」而不是「删掉」—— MonthCost 侧必须彻底干净，数据口径原样落在新包里。
     const mcCode = stripComments(MONTH_COST_SRC);
-    ["monthcost__ticker", "swf_api/h5room/", "fsjk/getCardTaskInfo"].forEach(function (needle) {
+    assert.strictEqual(
+        mcCode.indexOf("monthcost__ticker"),
+        -1,
+        "「本月消费」左侧滚动条已撤下（两项数据搬去标题栏），MonthCost 不得再出现 monthcost__ticker"
+    );
+    const TITLE_TIME_SRC = read("src/packages/TitleTime/TitleTime.js");
+    ["ex-title-time", "swf_api/h5room/", "fsjk/getCardTaskInfo"].forEach(function (needle) {
         assert.ok(
-            mcCode.indexOf(needle) !== -1,
-            "观看时间 / 开播时间必须搬到 MonthCost 左侧滚动条（缺少 " + needle + "）"
+            TITLE_TIME_SRC.indexOf(needle) !== -1,
+            "观看时间 / 开播时间必须在标题栏新包 TitleTime 里（缺少 " + needle + "）"
         );
     });
 

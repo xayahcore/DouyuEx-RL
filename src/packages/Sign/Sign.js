@@ -132,6 +132,9 @@ function createSignPanel() {
   if (typeof ensureMiuixPanelHeader === "function") {
     ensureMiuixPanelHeader(p, "一键签到");
   }
+  /* 主按钮「开始签到」常驻面板底部（与同屏面板一致）：签到选项多时内容要滚动，
+     按钮必须始终可见可点。只能内联样式 —— 操作区有"只允许一条统一 CSS 规则"的构建护栏。 */
+  if (typeof ExUI_stickActionBar === "function") ExUI_stickActionBar(p);
 
   var defCfg = { room: true, client: true, yuba: true, fanshome: true, stardiscover: true, points: true, watchpoints: false };
   var currentCfg = defCfg;

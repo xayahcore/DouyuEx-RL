@@ -33,7 +33,10 @@ function initPkg_ExpandTool_Module() {
     ["Tab 切换", initPkg_ExpandTool_TabSwitch],
     ["P2P", initPkg_ExpandTool_P2P],
     ["网页全屏", initPkg_ExpandTool_FullScreen],
-    ["弹幕颜色", initPkg_ExpandTool_AutoBarrageColor]
+    ["弹幕颜色", initPkg_ExpandTool_AutoBarrageColor],
+    // 「在线弹幕助手」跳转：胶囊条图标已撤下且不恢复，能力搬到本面板最后一卡（#extool__monitor_open）。
+    // 与其它模块一样直接引用函数名 —— 函数声明就在同一文件里，逐项兜底仍由 ExpandTool_tryInit 负责。
+    ["在线弹幕助手", initPkg_ExpandTool_MonitorLink]
   ];
   for (let i = 0; i < modules.length; i++) {
     ExpandTool_tryInit(modules[i][0], modules[i][1]);
@@ -196,6 +199,25 @@ function ExpandTool_insertModal() {
           </div>
         </div>
       </div>
+
+      <!-- 卡片 4: 在线工具（第三方站点）
+           胶囊条上的「在线弹幕助手」图标已按用户决定撤下且不恢复（见 src/packages/Monitor/Monitor.js），
+           "打开第三方数据站"这个能力搬到这里：用户主动点按钮才跳，不再让一个可能打不开的站点常驻在胶囊条上 -->
+      <div class="fans-panel__card" id="extool__monitor_card">
+        <div class="fans-panel__card-header">
+          <span class="fans-panel__card-title">在线工具</span>
+          <span style="font-size: 11px; color: #64748b;">第三方站点</span>
+        </div>
+        <div class="sign-options-list">
+          <div class="sign-option-item">
+            <div class="sign-option-text">
+              <span class="sign-option-title">在线弹幕助手</span>
+              <span style="font-size: 10.5px; color: #64748b; line-height: 1.35;">在单独网页查看本房间的弹幕数据（第三方数据站 douyuex.com）</span>
+            </div>
+            <button type="button" class="ex-picker-btn" id="extool__monitor_open" title="在新标签页打开在线弹幕助手">打开</button>
+          </div>
+        </div>
+      </div>
     </div>
   `;
 
@@ -222,5 +244,79 @@ function initPkg_ExpandTool_Func() {
     icon.addEventListener("click", function () {
       showExRightPanel("扩展功能", this);
     });
+  }
+}
+
+/* ==================== 在线弹幕助手（第三方数据站） ====================
+ * 口径变更（2026-10-27，用户明确决定）：胶囊条上的 .ex-monitor 图标撤下且**不恢复**，
+ * 见 src/packages/Monitor/Monitor.js 的 MONITOR_ENTRY_ENABLED = false。
+ * "打开在线弹幕助手"这个能力本身没删，搬进本面板最后一张卡片 —— 由用户主动点按钮才跳，
+ * 不再让一个可用性不由我们掌握的第三方站点常驻在胶囊条上。
+ *
+ * 本函数只负责"绑定 + 跳转"，不对 douyuex.com 的可用性做任何判断：
+ * 站点由第三方维护，打不打得开不在本插件的控制范围内。
+ */
+function initPkg_ExpandTool_MonitorLink() {
+  const btn = document.getElementById("extool__monitor_open");
+  // 面板没插进来（站点结构变更 / 被裁剪 / 别的脚本抢先清空）就没有可绑的按钮：
+  // 留一条自证信息后安全返回，绝不抛错去连坐后面（或前面）的模块。
+  if (!btn) {
+    if (typeof ExGuard_warn === "function") {
+      ExGuard_warn("扩展功能", "未找到在线弹幕助手按钮（#extool__monitor_open），本次不绑定");
+    }
+    return false;
+  }
+  // 幂等：面板节点可能被反复初始化（ExPanel 重绘 / 手动重跑 initPkg），
+  // 而 insertModal 的"已存在就 return"只护住面板、护不住这里的事件绑定，
+  // 绑定两次的结果就是一次点击开两个标签页。
+  if (btn.getAttribute("data-extool-monitor-bound") === "1") return true;
+  btn.setAttribute("data-extool-monitor-bound", "1");
+
+  btn.addEventListener("click", function (e) {
+    // 卡片与条目本身带点击/悬停语义，先把冒泡掐掉，避免顺带触发外层节点
+    if (e && typeof e.stopPropagation === "function") e.stopPropagation();
+
+    const roomId = ExpandTool_monitorRoomId();
+    if (!roomId) {
+      // 非直播间页面 / 限流页 / 真实房间号还没纠偏出来：不拼半截地址给用户
+      ExpandTool_monitorHint("没拿到有效的房间号，暂时打不开在线弹幕助手", "warning", "rid 为空或不合法，在线弹幕助手无法拼出地址");
+      return;
+    }
+    if (typeof openPage !== "function") {
+      ExpandTool_monitorHint("当前环境不支持打开新标签页，在线弹幕助手打不开", "error", "openPage 不可用，在线弹幕助手打不开");
+      return;
+    }
+    try {
+      openPage("https://www.douyuex.com/" + roomId);
+    } catch (err) {
+      // 权限被拒 / 隐私模式拦弹窗只提示，不把异常甩给点击事件（否则面板交互会断在半路）
+      ExpandTool_monitorHint("打开在线弹幕助手失败，可稍后重试", "error", "打开在线弹幕助手失败", err);
+    }
+  });
+  return true;
+}
+
+/**
+ * 当前房间号（统一出口）：rid 由 common.js 在生命周期节点上反复纠偏，
+ * 非直播间页面或限流页可能还是空串，取不到就返回空串交给调用方提示，不抛错。
+ */
+function ExpandTool_monitorRoomId() {
+  if (typeof rid === "undefined" || rid === null || rid === undefined) return "";
+  const text = String(rid).trim();
+  // 房间号只会是数字；带空白/斜杠/问号的脏值直接当"没拿到"，免得拼出一个错地址
+  if (!/^[0-9]+$/.test(text)) return "";
+  return text;
+}
+
+/** 提示出口：优先用户可见的 showMessage，环境里没有就退到 ExGuard_warn，两者都没有则静默 */
+function ExpandTool_monitorHint(message, type, warnText, err) {
+  if (typeof showMessage === "function") {
+    try {
+      showMessage(message, type || "info");
+      return;
+    } catch (e) {}
+  }
+  if (typeof ExGuard_warn === "function") {
+    ExGuard_warn("扩展功能", warnText || message, err);
   }
 }

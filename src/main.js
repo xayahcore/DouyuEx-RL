@@ -94,6 +94,9 @@ function initPkg() {
   initPkg_Safe("ExPanel", initPkg_ExPanel);
   initPkg_Safe("RealAudience", initPkg_RealAudience);
   initPkg_Safe("CopyRealLive", initPkg_CopyRealLive);
+  /* 观看时间 / 开播时间挂在「复制直播流」右边的标题栏里：必须先有 CopyRealLive 的 #copy-real-live，
+     故紧随其后接线；节点晚渲染时由包内的有上限等待兜底，等不到只留一条日志。 */
+  initPkg_Safe("TitleTime", initPkg_TitleTime);
   initPkg_Safe("RemoveAD", initPkg_RemoveAD);
   initPkg_Safe("Shield", initPkg_Shield);
   initPkg_Safe("BagInfo", initPkg_BagInfo);

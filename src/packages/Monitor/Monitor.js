@@ -1,11 +1,18 @@
-/* ==================== 入口收敛（2026-10-26） ====================
+/* ==================== 入口收敛（2026-10-26 撤下 / 2026-10-27 定案） ====================
  * 这个图标指向 https://www.douyuex.com/<rid> —— 第三方数据站。
  * 同类数据源 doseeing.com 已于 2026-09-30 全线停服（右上角那三项数字就是这么没的），
  * douyuex.com 的可用性同样不由我们掌握：点过去可能只是一张空壳/公告页。
  * 所以胶囊条上的这个入口默认撤下，避免"点了没内容"。
  *
+ * 2026-10-27 用户定案：这个二级菜单图标**不恢复**（不要把它加回胶囊条）。
+ * "打开在线弹幕助手"的能力没有丢，已搬到「扩展功能」面板最后一张卡片：
+ *   src/packages/ExpandTool/ExpandTool.js → initPkg_ExpandTool_MonitorLink()
+ *   按钮 id：extool__monitor_open（点击仍是 openPage("https://www.douyuex.com/" + rid)）
+ * 也就是说：需要这个跳转的用户主动去面板里点，而不是让它常驻在胶囊条上。
+ *
  * 包体本身一行没删（插入逻辑与点击逻辑都在），改下面这个开关即可整体回滚：
- *   const MONITOR_ENTRY_ENABLED = true;   // 恢复图标与跳转
+ *   const MONITOR_ENTRY_ENABLED = true;   // 恢复胶囊条图标与跳转（与面板里的按钮并存，互不依赖）
+ * 注意：这里只是"能不能回滚"的技术兜底，不代表要恢复 —— 用户要求保持 false。
  */
 const MONITOR_ENTRY_ENABLED = false;
 

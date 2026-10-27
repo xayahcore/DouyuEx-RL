@@ -577,6 +577,34 @@ function getTextareaPosition(element) {
 	return cursorPos;
 }
 
+/* 三级面板的主操作区统一「粘底常驻」：内容再多也一直看得见、点得到主按钮。
+ *
+ * 为什么只能写内联样式：构建门禁钉死「三个操作区只能有一条统一 CSS 规则」
+ * （tests/test_built_bundle.js 场景 11）—— 任何包级 CSS 再碰 .action-wrap 都会挂，
+ * 所以粘底只能在面板创建时点一次 inline style。
+ *
+ * 为什么不给背景/渐变：用户明确要求去掉按钮底部那层白色渐变遮罩，滚动内容要直接从
+ * 按钮后面透出来。这里连残留的 inline background 一并清空，防止旧写法（同屏面板曾
+ * 画过 linear-gradient）在重开面板时被带回来。
+ *
+ * root 为空（面板还没插进文档、选择器改版、传错类型）时安全返回 0，绝不抛错。
+ */
+function ExUI_stickActionBar(root) {
+  if (!root || typeof root.querySelectorAll !== "function") return 0;
+  let wraps = root.querySelectorAll(
+    ".fans-panel__action-wrap, .popup-panel__action-wrap, .exupdate-panel__action-wrap"
+  );
+  Array.prototype.forEach.call(wraps, function (wrap) {
+    if (!wrap || !wrap.style) return;
+    wrap.style.position = "sticky";
+    wrap.style.bottom = "0";
+    wrap.style.zIndex = "3";
+    wrap.style.paddingTop = "8px";
+    wrap.style.background = "";
+  });
+  return wraps.length;
+}
+
 	function showExRightPanel(name, triggerBtn, forceOpen) {
 		let panels = [
 			{ name: "弹幕发送小助手", className: "bloop" },
@@ -628,6 +656,10 @@ function getTextareaPosition(element) {
 	if (targetDom) {
 		if (typeof ensureMiuixPanelHeader === "function") {
 			ensureMiuixPanelHeader(targetDom, targetItem.name);
+		}
+		// Dock / 快捷键入口也补一次粘底：面板可能由旧代码或别的包建好，包内那一次不会再跑
+		if (typeof ExUI_stickActionBar === "function") {
+			ExUI_stickActionBar(targetDom);
 		}
 		if (typeof openMiuixPanelCentered === "function") {
 			openMiuixPanelCentered(targetDom, triggerBtn);

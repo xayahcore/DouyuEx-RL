@@ -1,0 +1,35 @@
+/* 标题栏「观看时间 / 开播时间」：紧挨「复制直播流」右侧（2026-10-27 从「本月消费」搬来）
+   标题栏一行里宽度有限：整块限宽、每一项自己出省略号，
+   宁可截断成「…」（悬停有完整值），也不把标题栏挤成两行或撑破排版。 */
+.ex-title-time {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    /* 两项都按「标签 + 数值」完整写出大约 300px：给足宽度，让常见值（1小时2分5秒 / 10-27 18:30）
+       不必一上来就省略；真的更窄时靠下面的 min-width:0 + ellipsis 收缩，不撑坏标题栏。 */
+    max-width: 300px;
+    min-width: 0;
+    overflow: hidden;
+    vertical-align: middle;
+    margin-right: 6px;
+    font-size: 12px;
+    line-height: 18px;
+    color: #7b8494;   /* 标签用中性灰：在标题栏浅底上够淡，但不会淡到看不清 */
+    cursor: default;
+    user-select: none;
+}
+
+.ex-title-time__item {
+    display: inline-block;
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* 数值比标签深一点：一眼先看到数字，标签只作说明。
+   注意别用更浅的灰（例如 #c9c9c9）—— 标题栏是浅底，浅灰等于看不见。 */
+.ex-title-time__value {
+    color: #4b5563;
+}

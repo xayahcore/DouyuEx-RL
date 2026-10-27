@@ -1031,6 +1031,16 @@ async function run() {
   const awStyleFx = actionWrapFx.getAttribute("style") || "";
   assert.ok(/position:\s*sticky/.test(awStyleFx), "操作区必须 sticky 贴底，否则 5 房时「退出同屏」会被顶出可视区，实际: " + awStyleFx);
   assert.ok(/bottom:\s*0/.test(awStyleFx), "粘底必须贴面板底边（bottom: 0），实际: " + awStyleFx);
+  /* 用户反馈（2026-10-27）：按钮底部那层白色渐变遮罩要去掉 —— 操作区不得再声明任何背景，
+     连 background 简写都不许出现（否则换个写法又能把渐变加回来）。 */
+  assert.ok(
+    !/linear-gradient/.test(awStyleFx),
+    "操作区不得再带白色渐变背景（用户要求删掉按钮底部的渐变），实际: " + awStyleFx
+  );
+  assert.ok(
+    !/background/i.test(awStyleFx),
+    "操作区不得声明任何 background（阶梯防回归：先禁渐变，再禁任何背景写法），实际: " + awStyleFx
+  );
   assert.strictEqual(panelFx.querySelector("#popup-ms-toggle-btn").tagName, "BUTTON", "主按钮必须是 button（disabled 才生效）");
 
   console.log("--> 27.3 面板：ESC 收起 + Dock 指示条随开合复位");

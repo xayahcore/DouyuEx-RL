@@ -91,15 +91,21 @@ function createPopupPlayerPanel() {
   PopupPlayer_bindEscClose();
 
   /* 主操作（退出同屏 / 先加一个房间）常驻面板底部：房间多时页面会滚动，按钮必须一直点得到。
-     刻意用内联样式 —— 操作区容器在构建期有"只允许一条统一规则"的护栏（见测试场景 11），
-     面板专属的粘底不能写进共享 CSS。 */
-  let actWrap = p.querySelector(".popup-panel__action-wrap");
-  if (actWrap) {
-    actWrap.style.position = "sticky";
-    actWrap.style.bottom = "0";
-    actWrap.style.zIndex = "3";
-    actWrap.style.paddingTop = "8px";
-    actWrap.style.background = "linear-gradient(to top, rgba(255,255,255,0.78) 62%, rgba(255,255,255,0)) ";
+     统一走 ExUI_stickActionBar（内联样式）—— 操作区容器在构建期有"只允许一条统一规则"的
+     护栏（见测试场景 11），面板专属的粘底不能写进共享 CSS。
+     ⚠ 不再画白色渐变：用户明确要求删掉按钮底部那层遮罩（2026-10-27），滚动内容直接透出来。 */
+  if (typeof ExUI_stickActionBar === "function") {
+    ExUI_stickActionBar(p);
+  } else {
+    /* 兜底：公共函数没打进来（构建裁剪 / 旧版本混合）时自己上一次，效果与它完全一致 ——
+       粘底、置顶，且**不带任何背景**，否则用户刚要求去掉的渐变会从这条路径回来。 */
+    let actWrap = p.querySelector(".popup-panel__action-wrap");
+    if (actWrap) {
+      actWrap.style.position = "sticky";
+      actWrap.style.bottom = "0";
+      actWrap.style.zIndex = "3";
+      actWrap.style.paddingTop = "8px";
+    }
   }
   PopupPlayer_renderMultiPage();
   PopupPlayer_initMultiPage(p);

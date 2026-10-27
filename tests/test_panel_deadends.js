@@ -1429,7 +1429,9 @@ function loadExpandToolInit() {
     const mods = [
         "initPkg_ExpandTool_Treasure", "initPkg_ExpandTool_RedPacket_Room", "initPkg_ExpandTool_AutoFish",
         "initPkg_ExpandTool_ClearBag", "initPkg_ExpandTool_SendGift", "initPkg_ExpandTool_TabSwitch",
-        "initPkg_ExpandTool_P2P", "initPkg_ExpandTool_FullScreen", "initPkg_ExpandTool_AutoBarrageColor"
+        "initPkg_ExpandTool_P2P", "initPkg_ExpandTool_FullScreen", "initPkg_ExpandTool_AutoBarrageColor",
+        // 2026-10-27 新增：在线弹幕助手跳转（入口从胶囊条搬到面板最后一卡）
+        "initPkg_ExpandTool_MonitorLink"
     ];
     const names = tops.concat(mods);
     const factory = new Function(names.join(", ") + ", console",
@@ -1453,7 +1455,7 @@ function loadExpandToolInit() {
 function testExpandToolInitIsolation() {
     const page = loadExpandToolInit();
 
-    // 绿：12 个入口按原顺序全部执行（面板 → 交互 → 9 个模块）
+    // 绿：13 个入口按原顺序全部执行（面板 → 交互 → 10 个模块）
     const clean = page.build(collectConsole());
     clean.api.init();
     assert.deepStrictEqual(clean.order, page.names, "ExpandTool 必须按原顺序初始化全部入口");
@@ -1474,7 +1476,7 @@ function testExpandToolInitIsolation() {
     noPanel.api.init();
     assert.deepStrictEqual(noPanel.order, page.names, "面板初始化失败时后续步骤仍要全跑");
 
-    console.log("✓ 场景 21 通过: ExpandTool 12 个初始化入口逐项隔离，单点失败不再连坐");
+    console.log("✓ 场景 21 通过: ExpandTool 13 个初始化入口逐项隔离，单点失败不再连坐");
 }
 
 /* ------------------------------------------------------------------ */

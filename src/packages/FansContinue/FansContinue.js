@@ -155,6 +155,9 @@ function createFansContinuePanel() {
   if (typeof ensureMiuixPanelHeader === "function") {
     ensureMiuixPanelHeader(p, "一键续牌");
   }
+  /* 主按钮「立即开始续牌」常驻面板底部（与同屏面板一致）：按钮必须始终可见可点。
+     只能内联样式 —— 操作区有"只允许一条统一 CSS 规则"的构建护栏（见测试场景 11）。 */
+  if (typeof ExUI_stickActionBar === "function") ExUI_stickActionBar(p);
 
   let saved = localStorage.getItem("ExSave_FansContinue");
   if (saved) {

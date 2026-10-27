@@ -4,12 +4,12 @@
  * 随之撤下的还有：贵宾数解析（LiveTool 派发表的「贵宾数」项）、已播/已观看的 5 秒切换、
  * 150 秒写值定时器、自愈重建与停服说明；.layout-Player-rank 也不再需要为横条让出 34px。
  *
- * 两项本机算得出来的数据没有跟着丢，搬到了「本月消费」左侧滚动显示
- * （src/packages/MonthCost/MonthCost.js 的 monthcost__ticker）：
+ * 两项本机算得出来的数据没有跟着丢，搬到了标题栏「复制直播流」右边
+ * （src/packages/TitleTime/TitleTime.js 的 ex-title-time）：
  *   观看时间 ← 官方 fsjk/getCardTaskInfo（需登录，只代表本人）
  *   开播时间 ← h5room 的 show_time（斗鱼自有接口，从未停服）
  * 要恢复整条横条，必须同时改回三处：本包的统计条 DOM 与定时器、LiveTool 的「贵宾数」注册、
- * 以及 MonthCost 里搬过去的那块滚动显示（否则同两份数据会有两个出口）。
+ * 以及 TitleTime 里搬到标题栏的那块显示（否则同两份数据会有两个出口）。
  */
 
 // 头像框下方是否有原生条目容器（决定回看/投稿插件的类名与高度）
