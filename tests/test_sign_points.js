@@ -571,7 +571,8 @@ async function testPanelWiring() {
     assert.ok(watch, "面板必须有「看直播领积分」勾选项");
     assert.strictEqual(points.checked, true, "积分签到默认开");
     assert.strictEqual(watch.checked, false, "看播积分默认关（常驻项不替用户默认打开）");
-    assert.strictEqual(doc.querySelectorAll(".sign-options-list .sign-checkbox").length, 7);
+    // 房间与粉丝牌签到已移除（斗鱼 checkIn 下线），剩 6 项
+    assert.strictEqual(doc.querySelectorAll(".sign-options-list .sign-checkbox").length, 6);
 
     const calls = [];
     env.api.patchSetEnabled((on) => calls.push(on));
@@ -586,7 +587,7 @@ async function testPanelWiring() {
     env.api.initPkgSign();
     assert.strictEqual(booted.length, 1, "initPkg_Sign 必须引导一次看播积分");
     env.dom.window.close();
-    console.log("✓ D1 通过: 面板 7 项、看播开关即时生效并落盘、初始化会引导常驻逻辑");
+    console.log("✓ D1 通过: 面板 6 项、看播开关即时生效并落盘、初始化会引导常驻逻辑");
 }
 
 async function testEngineSteps() {

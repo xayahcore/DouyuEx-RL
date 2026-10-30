@@ -1,10 +1,27 @@
 let ExPanel_anchorParent = null;
 let ExPanel_anchorNextSibling = null;
 
+/* 三级面板统一清单：× 收起、精灵球「全部收敛」、激活指示器都认这一份，
+ * 以后新增面板只改这里，不会再出现"某个出口漏掉一个面板"。 */
+const EX_THIRD_LEVEL_PANELS = ".sign-panel, .fans-continue-panel, .fans-panel, .extool, .livetool, .bloop, .exlottery, .popup-player-panel, .exupdate-panel, .danmaku-history-panel";
+
+/** 一次收起所有三级面板（二级菜单的 × 与点精灵球共用） */
+function ExPanel_closeAllThirdLevel() {
+  const panels = document.querySelectorAll(EX_THIRD_LEVEL_PANELS);
+  for (let i = 0; i < panels.length; i++) {
+    const p = panels[i];
+    p.style.removeProperty("display");
+    p.style.setProperty("display", "none", "important");
+    p.classList.remove("miuix-modal-in");
+  }
+  if (typeof updateDockActiveIndicator === "function") {
+    updateDockActiveIndicator();
+  }
+  return panels.length;
+}
+
 function isAnyThirdLevelPanelOpen() {
-  const panels = document.querySelectorAll(
-    ".sign-panel, .fans-continue-panel, .fans-panel, .extool, .livetool, .bloop, .exlottery, .popup-player-panel, .exupdate-panel, .danmaku-history-panel"
-  );
+  const panels = document.querySelectorAll(EX_THIRD_LEVEL_PANELS);
   for (let i = 0; i < panels.length; i++) {
     const p = panels[i];
     let isShowing = p.style.display === "flex" || p.style.display === "block" || (window.getComputedStyle(p).display !== "none" && p.style.display !== "none");
@@ -27,17 +44,7 @@ function initPkg_ExPanel() {
       closeBtn.addEventListener("click", (e) => {
         e.stopPropagation();
         hideExPanel();
-        var allPanels = document.querySelectorAll(
-          ".sign-panel, .fans-continue-panel, .fans-panel, .extool, .livetool, .bloop, .exlottery, .popup-player-panel, .exupdate-panel, .danmaku-history-panel"
-        );
-        allPanels.forEach((p) => {
-          p.style.removeProperty("display");
-          p.style.setProperty("display", "none", "important");
-          p.classList.remove("miuix-modal-in");
-        });
-        if (typeof updateDockActiveIndicator === "function") {
-          updateDockActiveIndicator();
-        }
+        ExPanel_closeAllThirdLevel();
       });
     }
   }
@@ -532,11 +539,20 @@ function openMiuixPanelCentered(panel, btnEl) {
   panel.style.setProperty("display", "flex", "important");
   panel.classList.remove("miuix-modal-out");
   panel.classList.add("miuix-modal-in");
+
+  /* 所有入口（Dock 图标点击 / 二级菜单悬停 / 快捷键）打开三级面板都会走到这里。
+   * 需要"打开即刷新"的面板（例如一键续牌的徽章与资产）自己监听这条事件 ——
+   * 旧实现只在图标点击那条路上调 update，悬停打开时面板就一直是占位符。 */
+  try {
+    document.dispatchEvent(new CustomEvent("DouyuEx:thirdLevelOpened", { detail: { panel: panel } }));
+  } catch (e) {}
 }
 
 window.ensureMiuixPanelHeader = ensureMiuixPanelHeader;
 window.openMiuixPanelCentered = openMiuixPanelCentered;
 window.openExPanel = openExPanel;
+window.ExPanel_closeAllThirdLevel = ExPanel_closeAllThirdLevel;
+window.isAnyThirdLevelPanelOpen = isAnyThirdLevelPanelOpen;
 window.hideExPanel = hideExPanel;
 window.toggleExPanel = toggleExPanel;
 window.showExPanel = showExPanel;

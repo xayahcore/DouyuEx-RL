@@ -21,6 +21,7 @@ const SHIELD_SRC = read("src/packages/Shield/Shield.js");
 const REPEATED_SRC = read("src/packages/Shield/RemoveRepeatedDanmaku.js");
 const REMOVE_ENTER_SRC = read("src/packages/Shield/RemoveEnter.js");
 const REMOVE_BG_SRC = read("src/packages/Shield/RemoveDanmakuBackground.js");
+
 const BARRAGE_SRC = read("src/packages/BarragePanel/BarragePanel.js");
 
 /**
@@ -456,9 +457,8 @@ function loadShield(savedRepeated) {
         "document", "window", "console", "localStorage", "MutationObserver",
         "setInterval", "clearInterval", "setTimeout", "clearTimeout", "StyleHook_set", "StyleHook_remove",
         EXGUARD_SRC + "\n" + DOMHOOK_SRC + "\n" + REMOVE_ENTER_SRC + "\n" + REMOVE_BG_SRC + "\n" + SHIELD_SRC + "\n" + REPEATED_SRC + "\n" +
-        "return { init: initPkg_Shield, enable: initPkg_Shield_Enable, wait: Shield_waitForFilterKeywords, " +
-        "repeatedInit: initPkg_Shield_RemoveRepeatedDanmaku, removeRepeated: removeRepeatedDanmaku, " +
-        "pollOpts: Shield_pollOpts, mapSize: function () { return Object.keys(repeatedDanmakuMap).length; } };"
+        "return { init: initPkg_Shield, removeRepeated: removeRepeatedDanmaku, " +
+        "mapSize: function () { return Object.keys(repeatedDanmakuMap).length; } };"
     );
     const api = factory(
         win.document, win, log.console, win.localStorage, win.MutationObserver,
@@ -469,32 +469,12 @@ function loadShield(savedRepeated) {
 }
 
 async function testShieldBoundedAndIsolated() {
+    // 进场弹幕状态应用有上限：容器始终不出现时，60 秒后必须停表
     const a = loadShield();
-    a.api.pollOpts.intervalMs = 10;
-    a.api.pollOpts.maxTries = 3;
-    assert.doesNotThrow(function () { a.api.init(); }, "弹幕工具条不存在时初始化不得抛错");
+    assert.doesNotThrow(function () { a.api.init(); }, "容器不存在时初始化不得抛错");
     a.clock.advance(61000);
-    assert.ok(a.log.warns.some((s) => s.indexOf("弹幕屏蔽") !== -1), "轮询放弃必须留痕: " + JSON.stringify(a.log.warns));
-    assert.strictEqual(a.clock.pending(), 0, "有上限轮询与进场弹幕补应用都必须停表");
-
-    // 三个开关面板逐项隔离：空页面里全部早退，不得抛错
-    assert.doesNotThrow(function () { a.api.enable(); }, "面板不存在时逐个开关初始化不得抛错");
+    assert.strictEqual(a.clock.pending(), 0, "进场弹幕补应用达到上限后必须停表");
     assert.strictEqual(a.log.errors.length, 0);
-
-    // 面板存在时才注入；等待有上限
-    const b = loadShield();
-    b.win.document.body.innerHTML = "<div class='FilterKeywords'></div>";
-    assert.strictEqual(b.api.wait(0), true, "面板已存在时应立即启用");
-    assert.ok(b.win.document.getElementById("ex-removeRepeatedDanmaku"), "面板存在时必须注入「屏蔽重复弹幕」开关");
-    assert.ok(b.win.document.getElementById("ex-removeEnterBarrage"), "面板存在时必须注入「屏蔽进场弹幕」开关");
-    assert.ok(b.win.document.getElementById("ex-removeDanmakuBackground"), "面板存在时必须注入「屏蔽弹幕背景」开关");
-    assert.strictEqual(b.log.errors.length, 0, "三个开关逐项初始化不得抛错");
-
-    const c = loadShield();
-    c.api.wait(100);
-    assert.ok(c.log.warns.some((s) => s.indexOf("等了 5 秒") !== -1), "等待 100 次仍无面板必须留痕");
-    c.clock.advance(6000);
-    assert.strictEqual(c.clock.pending(), 0, "等待链到达上限后不得继续排期");
 
     // 弹幕节点缺少 .comment：旧实现 removedDom.comment.uuid 直接 TypeError
     const d = loadShield(true);
@@ -508,7 +488,7 @@ async function testShieldBoundedAndIsolated() {
     assert.strictEqual(d.api.mapSize(), 0, "没有 comment 的节点不得写进去重表");
     assert.ok(d.log.warns.length >= 0);
 
-    console.log("✓ 场景 7 通过: Shield 轮询有上限、三开关逐项隔离、缺 .comment 节点不炸");
+    console.log("✓ 场景 7 通过: 进场弹幕补应用有上限、缺 .comment 节点不炸");
 }
 
 function loadBarrage(opts) {
@@ -604,8 +584,8 @@ function testStaticGuardRails() {
     assert.ok(lotteryCode.indexOf("if (!list || !list.lastElementChild)") !== -1, "粉丝牌列表必须三层校验");
 
     const shieldCode = SHIELD_SRC;
-    assert.ok(shieldCode.indexOf("ExGuard_pollFor") !== -1, "Shield 轮询必须走有上限实现");
-    assert.ok(shieldCode.indexOf("Shield_waitForFilterKeywords") !== -1, "面板等待必须有上限");
+    assert.ok(shieldCode.indexOf("Shield_applyRemoveEnterWhenReady") !== -1, "Shield 必须页面加载即应用进场弹幕状态");
+    assert.ok(shieldCode.indexOf("shieldSettingPanel") === -1, "Shield 不得再依赖斗鱼原生菜单节点（改版即失效）");
     assert.ok(REPEATED_SRC.indexOf("ExGuard_pollFor") !== -1, "重复弹幕的节点等待必须走有上限实现");
 
     const barrageCode = BARRAGE_SRC;

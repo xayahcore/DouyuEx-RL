@@ -34,6 +34,7 @@ function initPkg_ExpandTool_Module() {
     ["P2P", initPkg_ExpandTool_P2P],
     ["网页全屏", initPkg_ExpandTool_FullScreen],
     ["弹幕颜色", initPkg_ExpandTool_AutoBarrageColor],
+    ["弹幕屏蔽", initPkg_ExpandTool_Shield],
     // 「在线弹幕助手」跳转：胶囊条图标已撤下且不恢复，能力搬到本面板最后一卡（#extool__monitor_open）。
     // 与其它模块一样直接引用函数名 —— 函数声明就在同一文件里，逐项兜底仍由 ExpandTool_tryInit 负责。
     ["在线弹幕助手", initPkg_ExpandTool_MonitorLink]
@@ -97,6 +98,47 @@ function ExpandTool_insertModal() {
               <span class="sign-option-desc">自动匹配当前佩戴粉丝牌最高弹幕色</span>
             </div>
             <input id="extool__autobarragecolor" class="sign-checkbox" type="checkbox">
+          </label>
+        </div>
+      </div>
+
+      <!-- 卡片 1.5: 弹幕屏蔽 -->
+      <div class="fans-panel__card">
+        <div class="fans-panel__card-header">
+          <span class="fans-panel__card-title">弹幕屏蔽</span>
+          <span style="font-size: 11px; color: #64748b;">发言框上方那行「XXX 来了」也在这里关</span>
+        </div>
+        <div class="sign-options-list">
+          <label class="sign-option-item" title="隐藏发言框上方那行「XXX 来了」进场提示">
+            <div class="sign-option-text">
+              <span class="sign-option-title">屏蔽进场弹幕</span>
+              <span class="sign-option-desc">发言框上方的「XXX 来了」不再显示</span>
+            </div>
+            <input id="extool__removeEnter" class="sign-checkbox" type="checkbox">
+          </label>
+          <div class="sign-option-item" style="flex-direction: column; align-items: stretch; gap: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div class="sign-option-text">
+                <span class="sign-option-title">屏蔽重复弹幕</span>
+                <span class="sign-option-desc">同一条弹幕只留一条，并标出重复次数</span>
+              </div>
+              <input id="extool__removeRepeated" class="sign-checkbox" type="checkbox">
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: #64748b;">
+              <span>窗口：</span>
+              <input id="extool__repeatedSeconds" type="number" min="1" max="300" style="width: 65px; height: 26px; text-align: center;" value="5" />
+              <span>秒（1-300）</span>
+              <label style="display:inline-flex;align-items:center;gap:4px;margin-left:6px;">
+                <input id="extool__enlargeDanmaku" type="checkbox" /> 放大重复弹幕
+              </label>
+            </div>
+          </div>
+          <label class="sign-option-item" title="去掉弹幕黑底与描边背景">
+            <div class="sign-option-text">
+              <span class="sign-option-title">屏蔽弹幕背景</span>
+              <span class="sign-option-desc">去掉弹幕黑底与描边，画面更干净</span>
+            </div>
+            <input id="extool__removeDanmakuBg" class="sign-checkbox" type="checkbox">
           </label>
         </div>
       </div>

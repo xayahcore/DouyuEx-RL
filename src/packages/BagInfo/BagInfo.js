@@ -53,8 +53,9 @@ function initPkg_BagInfo_Func() {
                             let expiryDiv = document.createElement("div");
                             expiryDiv.className = "bag-info";
                             if (isBeta) {
-                                expiryDiv.style.left = "8px";
-                                expiryDiv.style.bottom = "auto";
+                                // 新版背包格子是 68×76：贴左下角（原来的 8px + bottom:auto 会压在图标上）
+                                expiryDiv.style.left = "2px";
+                                expiryDiv.style.bottom = "2px";
                             }
                             expiryDiv.textContent = expiryText;
                             chunk.insertBefore(expiryDiv, chunk.childNodes[0]);
@@ -95,16 +96,22 @@ function initPkg_BagInfo_Func() {
     });
 }
 
-/* 到期时间：接口给的是秒级时间戳，原来直接 innerHTML = expiry - 1，
-   页面下方就是一行 10 位裸数字（有时还是 NaN）。这里按日期显示，没有到期时间就不占版面。 */
+/* 到期信息：接口 expiry 给的是**剩余天数**（2026-10-30 真机实测：赞 29 / 粉丝荧光棒 3 / 陪伴印章 1），
+   不是时间戳。旧实现 innerHTML = expiry - 1 会渲染成一串裸数字；上一版按「秒级时间戳」乘 1000，
+   于是在页面上变成 1970-01-01（用户反馈的正是这个）。现在按天数说人话，只有真给了 10 位时间戳时才按日期格式化。 */
 function BagInfo_formatExpiry(expiry) {
+    if (expiry === null || typeof expiry === "undefined" || expiry === "") return "";
     let n = Number(expiry);
-    if (!expiry || !isFinite(n) || n <= 0) return "";
-    if (n < 1e12) n = n * 1000;          // 正常是秒；已经是毫秒的就别再乘
-    let d = new Date(n);
-    if (isNaN(d.getTime())) return String(expiry);
-    if (typeof dateFormat === "function") return dateFormat("yyyy-MM-dd", d);
-    return d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2);
+    if (!isFinite(n) || n < 0) return "";
+    if (n >= 1e9) {                       // 个别礼物下发的是秒级/毫秒级时间戳：照旧按日期显示
+        let ms = n < 1e12 ? n * 1000 : n;
+        let d = new Date(ms);
+        if (isNaN(d.getTime())) return "";
+        if (typeof dateFormat === "function") return dateFormat("yyyy-MM-dd", d);
+        return d.getFullYear() + "-" + ("0" + (d.getMonth() + 1)).slice(-2) + "-" + ("0" + d.getDate()).slice(-2);
+    }
+    let days = Math.floor(n);
+    return days <= 0 ? "今天到期" : "剩 " + days + " 天";
 }
 
 async function clearBagGifts(bagGiftsJson, room_id) {

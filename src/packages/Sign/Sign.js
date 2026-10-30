@@ -61,13 +61,6 @@ function createSignPanel() {
         </div>
         <div class="sign-options-list">
           <label class="sign-option-item">
-            <input type="checkbox" id="sign_opt_room" class="sign-checkbox" data-key="room">
-            <div class="sign-option-text">
-              <span class="sign-option-title">房间与粉丝牌签到</span>
-              <span class="sign-option-desc">为所有关注与拥牌房间赠送亲密度</span>
-            </div>
-          </label>
-          <label class="sign-option-item">
             <input type="checkbox" id="sign_opt_client" class="sign-checkbox" data-key="client">
             <div class="sign-option-text">
               <span class="sign-option-title">客户端模拟签到</span>
@@ -136,7 +129,9 @@ function createSignPanel() {
      按钮必须始终可见可点。只能内联样式 —— 操作区有"只允许一条统一 CSS 规则"的构建护栏。 */
   if (typeof ExUI_stickActionBar === "function") ExUI_stickActionBar(p);
 
-  var defCfg = { room: true, client: true, yuba: true, fanshome: true, stardiscover: true, points: true, watchpoints: false };
+  // room（房间与粉丝牌签到）已整条移除：斗鱼把 /japi/roomuserlevel/apinc/checkIn 下线了，
+  // 留着只会给每个关注房间刷一条 error=8，见 2026-10-30 Greasy Fork 反馈 #342901。
+  var defCfg = { client: true, yuba: true, fanshome: true, stardiscover: true, points: true, watchpoints: false };
   var currentCfg = defCfg;
   try {
     var saved = JSON.parse(localStorage.getItem("ExSave_SignConfig"));
@@ -215,14 +210,15 @@ async function executeSignEngine(options, onLog) {
       showMessage(msg, isSuccess ? "success" : "info");
     };
   }
-  var opts = options || { room: true, client: true, yuba: true, fanshome: true, stardiscover: true, points: true, watchpoints: false };
+  var opts = options || { client: true, yuba: true, fanshome: true, stardiscover: true, points: true, watchpoints: false };
 
   onLog("正在准备签到环境...", true);
 
   // 每个子任务把真实结果记在这里，末尾按计数汇报（不再无条件宣布「已完成」）
   var results = [];
-  function pushResult(name, ok, fail) {
-    results.push({ name: name, ok: Number(ok) || 0, fail: Number(fail) || 0 });
+  // skipped = 今日已签到 / 接口已下线 / 非粉丝 这类「不算失败也不该刷红」的条目
+  function pushResult(name, ok, fail, skipped) {
+    results.push({ name: name, ok: Number(ok) || 0, fail: Number(fail) || 0, skipped: Number(skipped) || 0 });
   }
 
   // 1. 鱼吧签到
@@ -285,24 +281,8 @@ async function executeSignEngine(options, onLog) {
     }
   }
 
-  // 3. 房间与粉丝牌签到
-  if (opts.room) {
-    try {
-      onLog("正在获取关注房间列表执行签到...");
-      if (typeof signAllRoom === "function") {
-        // signAllRoom 返回的 Promise 会等所有 checkIn 响应落地，summary 给的是真实成败
-        var roomRes = await signAllRoom(true);
-        var roomFail = (roomRes.fail || 0) + (roomRes.listFailed ? 1 : 0);
-        pushResult("房间签到", roomRes.ok, roomFail);
-      } else {
-        pushResult("房间签到", 0, 1);
-        onLog("【房间签到】模块未加载，已跳过", false);
-      }
-    } catch (err) {
-      pushResult("房间签到", 0, 1);
-      onLog("【房间签到】执行异常: " + (err.message || "未知错误"), false);
-    }
-  }
+  // 3. 房间与粉丝牌签到：斗鱼已下线该接口（2026-10-30 实测 error=8「功能已下线」，钻粉 userSign 也 404），
+  //    整条功能已移除 —— 签到面板不再提供这个勾选项，也不再往关注房间列表发任何请求。
 
   // 4. 星推日常任务全景自动化
   if (opts.stardiscover) {
@@ -325,17 +305,15 @@ async function executeSignEngine(options, onLog) {
     try {
       var fansOk = 0;
       var fansFail = 0;
+      var fansSkip = 0;
       if (typeof initPkg_Sign_FansTree === "function") {
         var treeRes = await initPkg_Sign_FansTree();
         fansOk += (treeRes && treeRes.ok) || 0;
         fansFail += (treeRes && treeRes.fail) || 0;
+        fansSkip += (treeRes && treeRes.skipped) || 0;
       }
-      if (typeof initPkg_Sign_SuperFans === "function") {
-        var supRes2 = await initPkg_Sign_SuperFans();
-        fansOk += (supRes2 && supRes2.ok) || 0;
-        fansFail += (supRes2 && supRes2.fail) || 0;
-      }
-      pushResult("粉丝家园", fansOk, fansFail);
+      // 钻粉联赛签到已整条移除：/japi/interactnc/web/dfansact/userSign 实测 404，接口没了。
+      pushResult("粉丝家园", fansOk, fansFail, fansSkip);
       onLog("【粉丝家园】成功 " + fansOk + " 个" + (fansFail > 0 ? "，失败 " + fansFail + " 个" : ""), fansFail === 0);
     } catch (err) {
       pushResult("粉丝家园", 0, 1);
@@ -378,17 +356,23 @@ async function executeSignEngine(options, onLog) {
 
   var totalOk = 0;
   var totalFail = 0;
+  var totalSkip = 0;
   for (var ri = 0; ri < results.length; ri++) {
     totalOk += results[ri].ok;
     totalFail += results[ri].fail;
+    totalSkip += results[ri].skipped || 0;
   }
   var failedNames = results.filter(function (x) { return x.fail > 0; }).map(function (x) { return x.name; });
+  // 「跳过项」= 今日已签到 / 接口已下线 / 非粉丝：不再混进失败数里刷红
+  var skipNote = totalSkip > 0 ? "，跳过 " + totalSkip + " 项（已签到/已下线/非粉丝）" : "";
   if (totalFail > 0) {
-    onLog("签到结束：成功 " + totalOk + " 项，失败 " + totalFail + " 项（" + failedNames.join("、") + "）", false);
+    onLog("签到结束：成功 " + totalOk + " 项，失败 " + totalFail + " 项（" + failedNames.join("、") + "）" + skipNote, false);
+  } else if (totalSkip > 0) {
+    onLog("签到结束：成功 " + totalOk + " 项" + skipNote + "，没有失败项", true);
   } else {
     onLog("所有已选签到任务执行完毕！", true);
   }
-  return { ok: totalOk, fail: totalFail, results: results };
+  return { ok: totalOk, fail: totalFail, skipped: totalSkip, results: results };
 }
 
 window.createSignPanel = createSignPanel;

@@ -23,106 +23,6 @@ try {
   ExGuard_warn("屏蔽重复弹幕", "启动时挂载失败，稍后随面板重绘再试", e);
 }
 
-function initPkg_Shield_RemoveRepeatedDanmaku() {
-  const shieldTool = document.getElementsByClassName("FilterKeywords")[0];
-  if (!shieldTool) {
-    ExGuard_warn("屏蔽重复弹幕", "屏蔽设置面板不存在，本次不注入开关");
-    return;
-  }
-  if (document.getElementById("ex-removeRepeatedDanmaku")) return;
-  shieldTool.insertAdjacentHTML(
-    "afterbegin",
-    `<div class="FilterSwitchStatus" id="ex-removeRepeatedDanmaku">
-    <h3>屏蔽重复弹幕</h3>
-    <div>
-      <span class="FilterSwitchStatus-status ${isRemoveRepeatedDanmaku ? "is-checked" : "is-noChecked"}">${isRemoveRepeatedDanmaku ? "已开启" : "未开启"}</span>
-      <span class="FilterSwitchStatus-switch ${isRemoveRepeatedDanmaku ? "is-checked" : "is-noChecked"}">
-        <span class="FilterSwitchStatus-switch-inner"></span>
-      </span>
-    </div>
-  </div>
-  <p class="FilterKeywords-intelligentText" style="display: flex; align-items: center;justify-content: space-between;">
-    <span>
-      <input type="number" id="ex-repeatedDanmakuSeconds" min="1" max="300" value="${repeatedDanmakuSeconds}" style="width: 38px; height: 14px; text-align: center;" />
-      <span>秒内重复的弹幕只显示一次</span>
-    </span>
-    <label style="margin-left: 10px;display: inline-flex; align-items: center;">
-      <input type="checkbox" id="ex-enlargeDanmaku" ${isEnlargeDanmaku ? "checked" : ""} style="margin-right: 4px;" />
-      放大重复弹幕
-    </label>
-  </p>`
-  );
-
-  const dom = document.getElementById("ex-removeRepeatedDanmaku");
-  if (!dom) return;
-  const statusSpan = dom.querySelector(".FilterSwitchStatus-status");
-  const switchSpan = dom.querySelector(".FilterSwitchStatus-switch");
-  if (!statusSpan || !switchSpan) return;
-  const secondsInput = document.getElementById("ex-repeatedDanmakuSeconds");
-  const enlargeCheckbox = document.getElementById("ex-enlargeDanmaku");
-  if (!secondsInput || !enlargeCheckbox) return;
-
-  // 阻止输入框和checkbox点击事件冒泡
-  secondsInput.addEventListener("click", (e) => {
-    e.stopPropagation();
-  });
-  enlargeCheckbox.addEventListener("click", (e) => {
-    e.stopPropagation();
-  });
-
-  // 输入框值改变事件
-  secondsInput.addEventListener("input", () => {
-    let value = parseInt(secondsInput.value);
-    if (isNaN(value) || value < 1) {
-      value = 1;
-      secondsInput.value = 1;
-    } else if (value > 300) {
-      value = 300;
-      secondsInput.value = 300;
-    }
-    repeatedDanmakuSeconds = value;
-    setLocalRepeatedDanmakuSeconds(value);
-
-    // 如果功能已开启，需要重启以应用新设置
-    if (isRemoveRepeatedDanmaku) {
-      if (repeatedDanmakuDomHook) {
-        repeatedDanmakuDomHook.closeHook();
-        repeatedDanmakuDomHook = null;
-      }
-      stopRepeatedDanmakuCleanupTimer();
-      removeRepeatedDanmaku();
-    }
-  });
-
-  // checkbox改变事件
-  enlargeCheckbox.addEventListener("change", () => {
-    isEnlargeDanmaku = enlargeCheckbox.checked;
-    setLocalIsEnlargeDanmaku(isEnlargeDanmaku);
-  });
-
-  dom.addEventListener("click", () => {
-    isRemoveRepeatedDanmaku = !isRemoveRepeatedDanmaku;
-    if (isRemoveRepeatedDanmaku) {
-      removeRepeatedDanmaku();
-      statusSpan.className = statusSpan.className.replace("is-noChecked", "is-checked");
-      statusSpan.textContent = "已开启";
-      switchSpan.className = switchSpan.className.replace("is-noChecked", "is-checked");
-    } else {
-      if (repeatedDanmakuDomHook) {
-        repeatedDanmakuDomHook.closeHook();
-        repeatedDanmakuDomHook = null;
-      }
-      stopRepeatedDanmakuCleanupTimer();
-      StyleHook_remove("Ex_Style_RemoveRepeatedDanmaku");
-      StyleHook_remove("Ex_Style_RemoveRepeatedDanmaku_Count");
-      statusSpan.className = statusSpan.className.replace("is-checked", "is-noChecked");
-      statusSpan.textContent = "未开启";
-      switchSpan.className = switchSpan.className.replace("is-checked", "is-noChecked");
-    }
-    saveRemoveRepeatedDanmaku();
-  });
-}
-
 function initPkg_Shield_RemoveRepeatedDanmaku_ScriptHook() {
   scriptHook({
     url: "/firstqueue",
@@ -342,7 +242,8 @@ function getLocalRepeatedDanmakuSeconds() {
   const saved = localStorage.getItem("ExSave_repeatedDanmakuSeconds");
   if (saved) {
     const value = parseInt(saved);
-    if (!isNaN(value) && value >= 1 && value <= 60) {
+    // 面板允许 1-300 秒；这里也按同一区间读回，避免设置 60 秒以上被悄悄回到 5
+    if (!isNaN(value) && value >= 1 && value <= 300) {
       return value;
     }
   }

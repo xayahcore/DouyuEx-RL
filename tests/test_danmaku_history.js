@@ -478,13 +478,21 @@ async function run() {
         ok("main.js 接线存在（防被 tree-shaking 静默删除）");
 
         const exPanel = fs.readFileSync(EXPANEL_PATH, "utf8");
-        const selectorLines = exPanel.match(/\.sign-panel, \.fans-continue-panel[\s\S]*?\.exupdate-panel[^\n]*/g) || [];
-        assert.strictEqual(selectorLines.length, 3, "应存在 3 处互斥清单");
-        selectorLines.forEach((line) => {
+        // 2026-10-30 起三级面板清单收敛成一份常量（EX_THIRD_LEVEL_PANELS），所有出口引用它；
+        // 这里改成「只许有一份，且必须登记新面板」，避免又出现某个出口漏登记。
+        const constMatch = exPanel.match(/const EX_THIRD_LEVEL_PANELS = "([^"]+)"/);
+        assert.ok(constMatch, "ExPanel.js 必须有统一的三级面板清单常量 EX_THIRD_LEVEL_PANELS");
+        assert.ok(constMatch[1].indexOf(".danmaku-history-panel") !== -1,
+            "三级面板清单必须登记 .danmaku-history-panel，实际：" + constMatch[1]);
+        const inlineCopies = exPanel.match(/\.sign-panel, \.fans-continue-panel[\s\S]*?\.exupdate-panel[^\n]*/g) || [];
+        // 现在只剩 2 处：统一常量 + openMiuixPanelCentered 里那份（它多带一个弹幕小尾巴面板，
+        // 语义不同，刻意不合并）；两份都必须登记新面板。
+        assert.strictEqual(inlineCopies.length, 2, "三级面板清单只允许这两处（常量 + 居中打开时的互斥清单）");
+        inlineCopies.forEach(function (line) {
             assert.ok(line.indexOf(".danmaku-history-panel") !== -1,
-                "3 处互斥清单都必须登记新面板：\n" + line);
+                "每份清单都必须登记 .danmaku-history-panel：\n" + line);
         });
-        ok("ExPanel.js 三处互斥清单均已登记 .danmaku-history-panel");
+        ok("ExPanel.js 三级面板清单已收敛为单份常量，并登记 .danmaku-history-panel");
 
         const css = fs.readFileSync(EXPANEL_CSS_PATH, "utf8");
         const cssNorm = css.replace(/\r\n/g, "\n");

@@ -36,7 +36,8 @@ function stripComments(src) {
 const SIBLING_MODULES = [
     "initPkg_ExpandTool_Treasure", "initPkg_ExpandTool_RedPacket_Room", "initPkg_ExpandTool_AutoFish",
     "initPkg_ExpandTool_ClearBag", "initPkg_ExpandTool_SendGift", "initPkg_ExpandTool_TabSwitch",
-    "initPkg_ExpandTool_P2P", "initPkg_ExpandTool_FullScreen", "initPkg_ExpandTool_AutoBarrageColor"
+    "initPkg_ExpandTool_P2P", "initPkg_ExpandTool_FullScreen", "initPkg_ExpandTool_AutoBarrageColor",
+    "initPkg_ExpandTool_Shield"
 ];
 
 const PAGE_HTML = `<!DOCTYPE html><html><body>

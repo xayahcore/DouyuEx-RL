@@ -2,9 +2,18 @@
     position: absolute;
     background-color: rgba(0, 0, 0, 0.6);
     color: white;
-    width: 20px;
+    /* 原来是写死的 20×20 方块：只够显示 1~2 位数字，写上日期/「剩 29 天」就被裁成看不清的黑块。
+       改成按内容自适应，保证胶囊里能完整读出来。 */
+    min-width: 20px;
+    max-width: 100%;
+    padding: 0 3px;
+    border-radius: 3px;
+    font-size: 11px;
     font-weight: 800;
-    height: 20px;
+    line-height: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    box-sizing: border-box;
     text-align: center;
     z-index: 10;
     bottom: 0;

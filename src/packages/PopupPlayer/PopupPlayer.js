@@ -1,3 +1,18 @@
+/* 面板可能由「图标点击」之外的路打开（二级菜单悬停 / 快捷键），那些路径不走下面的点击
+ * 处理，旧实现只在点击里重画 → 悬停打开时多屏房间列表与档位角标是旧的。
+ * 统一监听「三级面板打开」事件补一次重画。 */
+let PopupPlayer_refreshBound = false;
+function PopupPlayer_bindRefresh() {
+  if (PopupPlayer_refreshBound) return;
+  PopupPlayer_refreshBound = true;
+  document.addEventListener("DouyuEx:thirdLevelOpened", function (ev) {
+    var panel = ev && ev.detail && ev.detail.panel;
+    if (panel && panel.classList && panel.classList.contains("popup-player-panel")) {
+      if (typeof PopupPlayer_renderMultiPage === "function") PopupPlayer_renderMultiPage();
+    }
+  });
+}
+
 function initPkg_PopupPlayer() {
   initPkg_PopupPlayer_Dom();
   initPkg_PopupPlayer_Func();
@@ -34,6 +49,7 @@ function initPkg_PopupPlayer_Func() {
          就是"刚弹出来又被自己关掉"，看起来像图标坏了。关闭只留两个出口：右上角 × 与 ESC。 */
       // 每次打开都重画一遍：多屏状态可能在这期间被别处改过（面板选了档位、
       // 缩窗口触发了自动换档、拖拽换了位），面板上的档位角标与勾选态必须是当下的
+      PopupPlayer_bindRefresh();
       PopupPlayer_renderMultiPage();
       if (typeof openMiuixPanelCentered === "function") {
         openMiuixPanelCentered(panel, btn);

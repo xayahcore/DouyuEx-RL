@@ -1,6 +1,23 @@
+let FansContinue_refreshBound = false;
+
 function initPkg_FansContinue() {
   initPkg_FansContinue_Dom();
   initPkg_FansContinue_Func();
+  FansContinue_bindRefresh();
+}
+
+/* 面板可能由「图标点击」之外的路打开（二级菜单悬停、快捷键），旧实现只在点击那条路
+ * 调 update → 悬停打开时徽章与资产一直停在占位符。现在统一监听「三级面板打开」事件。 */
+function FansContinue_bindRefresh() {
+  if (FansContinue_refreshBound) return;
+  FansContinue_refreshBound = true;
+  document.addEventListener("DouyuEx:thirdLevelOpened", function (ev) {
+    var panel = ev && ev.detail && ev.detail.panel;
+    if (!panel || !panel.classList) return;
+    if (panel.classList.contains("fans-continue-panel")) {
+      updateFansContinuePanel();
+    }
+  });
 }
 
 function initPkg_FansContinue_Dom() {
@@ -47,15 +64,13 @@ function updateFansContinuePanel() {
   var badgeNameEl = document.getElementById("fans-panel-badge-name");
   var badgeCountEl = document.getElementById("fans-panel-badge-count");
   var stickCountEl = document.getElementById("fans-panel-stick-count");
+  var statusEl = document.getElementById("fans-panel-badge-status");
+  var listEl = document.getElementById("fans-panel-badge-list");
 
-  try { localStorage.removeItem("ExSave_GoldBadgeName"); } catch (e) {}
-  var activeBadge = "";
-  try {
-    var domBadge = document.querySelector(".FansMedal-name, dy-fan-medal, .FansMedalWrap .FansMedal-name");
-    if (domBadge && domBadge.textContent) activeBadge = domBadge.textContent.trim();
-  } catch (e) {}
-  if (badgeNameEl) badgeNameEl.textContent = activeBadge || "已配粉丝牌";
+  if (badgeNameEl) badgeNameEl.textContent = "读取中…";
+  if (listEl) listEl.innerHTML = '<div class="fans-panel__badge-empty">正在读取粉丝牌…</div>';
 
+  // 背包荧光棒（亲密度道具）：268 / 2358 都是荧光棒
   if (typeof fetchUserBackpackGifts === "function") {
     fetchUserBackpackGifts(rid, function (list) {
       var stickCount = 0;
@@ -69,7 +84,7 @@ function updateFansContinuePanel() {
     });
   } else if (typeof getBagGifts === "function") {
     getBagGifts(rid, function (ret) {
-      var list = ret.data?.list || [];
+      var list = (ret && ret.data && ret.data.list) || [];
       var stickCount = 0;
       for (var idx = 0; idx < list.length; idx++) {
         if (268 == list[idx].id || 2358 == list[idx].id) {
@@ -87,23 +102,147 @@ function updateFansContinuePanel() {
     cache: "default",
     credentials: "include"
   })
-    .then((e) => e.text())
-    .then((e) => {
-      var badgeList = new DOMParser().parseFromString(e, "text/html").getElementsByClassName("fans-badge-list")[0];
-      var o = badgeList ? badgeList.lastElementChild : null;
-      var count = o ? o.children.length : 0;
-      if (badgeCountEl) badgeCountEl.textContent = String(count);
-      if (!activeBadge && badgeList && badgeNameEl) {
-        var activeLi = badgeList.querySelector("li.active, li[data-active='1'], .fans-badge-item.active");
-        if (activeLi) {
-          var nameSpan = activeLi.querySelector(".badge-name, .fans-badge-name, span");
-          if (nameSpan && nameSpan.textContent) badgeNameEl.textContent = nameSpan.textContent.trim();
+    .then((res) => res.text())
+    .then((html) => {
+      var badges = FansContinue_parseBadges(html);
+      if (badgeCountEl) badgeCountEl.textContent = String(badges.length);
+
+      if (!badges.length) {
+        if (badgeNameEl) badgeNameEl.textContent = "无粉丝牌";
+        if (statusEl) statusEl.textContent = "无需续牌";
+        if (listEl) listEl.innerHTML = '<div class="fans-panel__badge-empty">当前没有粉丝牌</div>';
+        return;
+      }
+
+      // 佩戴中的那块（列表里显示「取消佩戴」的就是当前佩戴）
+      var worn = badges.filter(function (b) { return b.worn; })[0] || null;
+
+
+      if (badgeNameEl) {
+        badgeNameEl.textContent = worn ? (worn.name + " · Lv." + worn.level) : "未佩戴（按最高亲密度展示）";
+      }
+      if (statusEl) {
+        // 接口里**没有**每块牌的"剩余天数"：data-fans-delwaittime 对所有牌子都是同一个常量，
+        // 当倒计时显示就是假数据（2026-10-30 用户当场发现两块牌都写「剩 10 天」）。
+        // 这一格改放真实拿得到的「今日亲密度合计」。
+        var todaySum = 0;
+        for (var ti = 0; ti < badges.length; ti++) todaySum += badges[ti].today || 0;
+        statusEl.textContent = "+" + (Math.round(todaySum * 10) / 10);
+        statusEl.title = "今天在这些牌子上的亲密度合计";
+      }
+
+      if (listEl) {
+        var html2 = "";
+        for (var i = 0; i < badges.length; i++) {
+          var b = badges[i];
+          var meta = "Lv." + b.level;
+          if (isFinite(b.intimacy)) meta += " · 亲密 " + b.intimacy;
+          meta += " · 今日 +" + (b.today || 0);
+          if (isFinite(b.rank)) meta += " · 排名 " + b.rank;
+          html2 += '<div class="fans-panel__badge-row">' +
+            '<div class="fans-panel__badge-main">' +
+              '<span class="fans-panel__badge-name">' + FansContinue_escape(b.name) +
+                (b.worn ? '<em class="fans-panel__badge-worn">佩戴中</em>' : "") +
+              '</span>' +
+              '<span class="fans-panel__badge-meta">' + FansContinue_escape(meta) + '</span>' +
+            '</div>' +
+            '<button type="button" class="fans-panel__badge-wear" data-rid="' + FansContinue_escape(b.rid) +
+              '" data-worn="' + (b.worn ? "1" : "0") + '">' + (b.worn ? "卸下" : "佩戴") + '</button>' +
+          '</div>';
         }
+        listEl.innerHTML = html2;
       }
     })
-    .catch(() => {});
+    .catch(function () {
+      if (badgeNameEl) badgeNameEl.textContent = "读取失败";
+      if (listEl) listEl.innerHTML = '<div class="fans-panel__badge-empty">粉丝牌列表请求失败</div>';
+    });
 }
 
+/**
+ * 佩戴 / 取消佩戴粉丝牌。
+ * 接口与参数是从斗鱼「我的头衔」页面抓包得到的：POST /member/cp/operBadge
+ *   rid=房间号 & type=1(佩戴)/2(取消佩戴)/3(删除，不提供) & ctn=acf_ccn
+ * 成功后重新拉一次列表（服务端会把原来那块牌的佩戴状态一并改掉）。
+ */
+async function FansContinue_setWear(rid, type, btn) {
+  if (!rid) return;
+  if (btn) { btn.disabled = true; btn.textContent = type === 1 ? "佩戴中…" : "卸下中…"; }
+  try {
+    const ctn = (typeof getCCN === "function") ? getCCN() : "";
+    const res = await fetch("https://www.douyu.com/member/cp/operBadge", {
+      method: "POST",
+      mode: "no-cors",
+      credentials: "include",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: "rid=" + encodeURIComponent(rid) + "&type=" + type + "&ctn=" + encodeURIComponent(ctn == null ? "" : ctn)
+    });
+    const data = await res.json();
+    // 实测返回是 {"result":0,"msg":"ok"}（不是别的接口那种 error 字段）——
+    // 两种都认，避免又把成功当失败。
+    const okFlag = data && (Number(data.result) === 0 || Number(data.error) === 0);
+    if (okFlag) {
+      showMessage(type === 1 ? "已佩戴该粉丝牌" : "已取消佩戴", "success");
+      updateFansContinuePanel();
+    } else {
+      showMessage("操作失败：" + ((data && (data.msg || data.result || data.error)) || "接口无响应"), "error");
+      if (btn) { btn.disabled = false; btn.textContent = type === 1 ? "佩戴" : "卸下"; }
+    }
+  } catch (e) {
+    if (typeof ExGuard_warn === "function") ExGuard_warn("续牌", "佩戴操作失败", e);
+    showMessage("操作失败：请求异常", "error");
+    if (btn) { btn.disabled = false; btn.textContent = type === 1 ? "佩戴" : "卸下"; }
+  }
+}
+
+/** 解析 getFansBadgeList 返回的表格：每行一块牌子（徽章名/等级/亲密度/剩余天数/是否佩戴） */
+function FansContinue_parseBadges(html) {
+  var out = [];
+  try {
+    var doc = new DOMParser().parseFromString(html, "text/html");
+    var wrap = doc.getElementsByClassName("fans-badge-list")[0];
+    var last = wrap ? wrap.lastElementChild : null;
+    if (!last || !last.children) return out;
+    var rows = last.children;
+    for (var i = 0; i < rows.length; i++) {
+      var tr = rows[i];
+      if (!tr || tr.tagName !== "TR") continue;
+      var name = "";
+      var link = tr.querySelector("a[title]");
+      if (link) name = (link.getAttribute("title") || "").trim();
+      if (!name) {
+        var txt = (tr.textContent || "").replace(/\s+/g, " ").trim();
+        name = txt.split(" ")[0] || "未知徽章";
+      }
+      var level = parseInt(tr.getAttribute("data-fans-level"), 10);
+      var intimacy = parseFloat(tr.getAttribute("data-fans-intimacy"));
+      var rank = parseInt(tr.getAttribute("data-fans-rank"), 10);
+      // 今日亲密度在表格第 4 列（表头：徽章 / 主播 / 亲密值 / 今日亲密度 / 排名 / 操作）
+      var tds = tr.children;
+      var todayText = tds && tds.length > 3 ? (tds[3].textContent || "").trim() : "";
+      var today = parseFloat(todayText);
+      var rowText = (tr.textContent || "").replace(/\s+/g, " ");
+      out.push({
+        rid: tr.getAttribute("data-fans-room") || "",
+        name: name,
+        level: isNaN(level) ? 0 : level,
+        intimacy: isNaN(intimacy) ? NaN : intimacy,
+        today: isNaN(today) ? 0 : today,
+        rank: isNaN(rank) ? NaN : rank,
+        worn: rowText.indexOf("取消佩戴") !== -1
+      });
+    }
+  } catch (e) {
+    if (typeof ExGuard_warn === "function") ExGuard_warn("续牌", "粉丝牌列表解析失败", e);
+  }
+  return out;
+}
+
+function FansContinue_escape(s) {
+  return String(s == null ? "" : s)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
 function createFansContinuePanel() {
   if (document.querySelector(".fans-continue-panel")) return;
   var p = document.createElement("div");
@@ -128,6 +267,16 @@ function createFansContinuePanel() {
             <span class="fans-panel__asset-label">牌子状态</span>
             <span class="fans-panel__asset-value fans-panel__status--ok" id="fans-panel-badge-status">健康保活</span>
           </div>
+        </div>
+      </div>
+
+      <div class="fans-panel__card">
+        <div class="fans-panel__card-header">
+          <span class="fans-panel__card-title">粉丝牌明细</span>
+          <span class="fans-panel__badge-tag" id="fans-panel-badge-tip">亲密值 · 今日</span>
+        </div>
+        <div class="fans-panel__badge-list" id="fans-panel-badge-list">
+          <div class="fans-panel__badge-empty">打开面板时读取…</div>
         </div>
       </div>
 
@@ -159,10 +308,26 @@ function createFansContinuePanel() {
      只能内联样式 —— 操作区有"只允许一条统一 CSS 规则"的构建护栏（见测试场景 11）。 */
   if (typeof ExUI_stickActionBar === "function") ExUI_stickActionBar(p);
 
+  // 建好就把数据拉起来：此时面板还没显示，读到结果再显示也就不闪占位符
+  try { updateFansContinuePanel(); } catch (e) { console.warn("[DouyuEx] 续牌面板初次读取失败", e); }
+
   let saved = localStorage.getItem("ExSave_FansContinue");
   if (saved) {
     let inp = p.querySelector("#fans-panel-stick-input");
     if (inp) inp.value = saved;
+  }
+
+  // 佩戴 / 卸下：事件委托到列表容器，每次重绘不用重新绑定
+  const badgeListEl = p.querySelector("#fans-panel-badge-list");
+  if (badgeListEl) {
+    badgeListEl.addEventListener("click", function (ev) {
+      const btn = ev && ev.target && ev.target.closest ? ev.target.closest(".fans-panel__badge-wear") : null;
+      if (!btn) return;
+      ev.stopPropagation();
+      const rid = btn.getAttribute("data-rid");
+      const worn = btn.getAttribute("data-worn") === "1";
+      FansContinue_setWear(rid, worn ? 2 : 1, btn);
+    });
   }
 
   let startBtn = p.querySelector("#fans-panel-start-btn");

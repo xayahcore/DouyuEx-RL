@@ -38,6 +38,20 @@ function Update_refreshTip() {
 }
 
 /** 用户已经看过这个远端版本：熄灭红点，且之后同一版本不再亮 */
+let Update_seenBound = false;
+/* 红点熄灭原来只在「点图标」那条路上做；悬停/快捷键打开面板时红点不灭，
+ * 用户会以为"看过了还亮着"。统一监听三级面板打开事件。 */
+function Update_bindSeenOnOpen() {
+  if (Update_seenBound) return;
+  Update_seenBound = true;
+  document.addEventListener("DouyuEx:thirdLevelOpened", function (ev) {
+    var panel = ev && ev.detail && ev.detail.panel;
+    if (panel && panel.classList && panel.classList.contains("exupdate-panel") && isNeedUpdate) {
+      Update_markRemoteSeen();
+    }
+  });
+}
+
 function Update_markRemoteSeen() {
   if (lastestVersion) {
     GM_setValue(UPDATE_SEEN_KEY, lastestVersion);
@@ -68,6 +82,7 @@ function isNewerVersion(remote, local) {
 function initPkg_Update() {
   initPkg_Update_Dom();
   initPkg_Update_Func();
+  Update_bindSeenOnOpen();
   initVersionLifecycleNotice();
 
   // 上次页面里已经探到过新版本：刷新后直接把红点恢复出来，不必等 12 小时窗口

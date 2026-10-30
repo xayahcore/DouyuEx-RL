@@ -1,0 +1,125 @@
+/* 一键续牌：徽章与资产卡片、粉丝牌明细列表 */
+.fans-panel__asset-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.fans-panel__asset-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #f5f7fb;
+}
+
+.fans-panel__asset-label {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.fans-panel__asset-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 20px;
+}
+
+.fans-panel__status--ok {
+  font-size: 13px;
+  color: #10b981;
+}
+
+.fans-panel__badge-tag {
+  font-size: 11px;
+  color: #0066ff;
+  background: rgba(0, 102, 255, 0.08);
+  border-radius: 999px;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+
+.fans-panel__badge-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+  max-height: 210px;
+  overflow-y: auto;
+}
+
+.fans-panel__badge-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.fans-panel__badge-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.fans-panel__badge-wear {
+  flex: 0 0 auto;
+  padding: 4px 12px;
+  font-size: 11px;
+  line-height: 16px;
+  color: #0066ff;
+  background: rgba(0, 102, 255, 0.08);
+  border: 1px solid rgba(0, 102, 255, 0.2);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.fans-panel__badge-wear:hover {
+  background: rgba(0, 102, 255, 0.16);
+}
+
+.fans-panel__badge-wear:disabled {
+  color: #94a3b8;
+  border-color: #e2e8f0;
+  background: #f1f5f9;
+  cursor: default;
+}
+
+.fans-panel__badge-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #0f172a;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.fans-panel__badge-worn {
+  font-style: normal;
+  font-size: 10px;
+  font-weight: 600;
+  color: #0066ff;
+  background: rgba(0, 102, 255, 0.1);
+  border-radius: 999px;
+  padding: 1px 6px;
+}
+
+.fans-panel__badge-meta {
+  font-size: 11px;
+  color: #64748b;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.fans-panel__badge-empty {
+  font-size: 12px;
+  color: #94a3b8;
+  padding: 8px 2px;
+}

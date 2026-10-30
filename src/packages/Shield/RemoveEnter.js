@@ -1,22 +1,13 @@
 let isRemoveEnterBarrage = getLocalIsRemoveEnterBarrage();
 
-/* ==================== 进场弹幕屏蔽（P0 修复，2026-10-26） ====================
- * 旧实现的根因是"两半各自成立、合起来必错"：
- *   ① RemoveAD 的 CSS 里写着
- *        #js-barrage-extend-container{display:none;display:var(--enter-display,none)!important}
- *      回退值是 none；
- *   ② 全项目唯一写 --enter-display 的地方就在本文件，而它只在 `.FilterKeywords`
- *      （弹幕屏蔽设置面板）渲染出来之后、被 initPkg_Shield_Enable 调一次。
- * 于是：新开一个直播间、不去点弹幕屏蔽设置 → 变量没人写 → 回退值 none 生效
- * → 进场弹幕永久不显示；而同一个状态的开关上却写着「未开启」。
- *
- * 现在的契约（三条，缺一条就会重演）：
- *   1) 状态应用与 UI 注入解耦：Shield_applyRemoveEnter 由 initPkg_Shield() 在
- *      页面加载时无条件调用，容器晚出现时按 500ms、最多 60 秒补应用；
- *   2) 直接改真实节点的内联 display：屏蔽 = none!important，
- *      不屏蔽 = removeProperty（交还页面原生值，不猜它原本是 block 还是 flex）；
- *   3) UI 注入幂等：设置面板会被页面反复重绘，重复插入会变成两个开关。
- * 因此 CSS 变量那套（含 CSS.supports 兼容分支）已整体退场，不再猜回退值。
+/* ==================== 进场弹幕屏蔽 ====================
+ * 状态应用与开关 UI 解耦：
+ *   1) Shield_applyRemoveEnter 由 initPkg_Shield() 在页面加载时无条件调用，容器晚出现时按
+ *      500ms、最多 60 秒补应用；
+ *   2) 直接改真实节点的内联 display：屏蔽 = none!important，不屏蔽 = removeProperty；
+ *   3) 开关本身挂在斗鱼原生新菜单（.shieldSettingPanel，见 ShieldMenu.js）里，
+ *      不再依赖旧面板 .FilterKeywords —— 那套面板 2026-10 起不再渲染，开关会彻底消失；
+ *   4) UI 注入幂等：菜单会被 React 反复重绘，重复插入会变成两个开关。
  */
 
 /**
@@ -48,56 +39,11 @@ function Shield_applyRemoveEnterWhenReady(tries) {
   return false;
 }
 
-function initPkg_Shield_RemoveEnter() {
-  const shieldTool = document.getElementsByClassName("FilterKeywords")[0];
-  if (!shieldTool) return;
-
-  // 面板出现时再应用一次：容器可能刚好在这时渲染出来
-  Shield_applyRemoveEnter();
-
-  // 幂等：内置开关面板每重绘一次都会走到这里
-  if (document.getElementById("ex-removeEnterBarrage")) return;
-
-  shieldTool.insertAdjacentHTML(
-    "afterbegin",
-    `<div class="FilterSwitchStatus" id="ex-removeEnterBarrage">
-    <h3>屏蔽进场弹幕</h3>
-    <div>
-      <span class="FilterSwitchStatus-status ${isRemoveEnterBarrage ? "is-checked" : "is-noChecked"}">${isRemoveEnterBarrage ? "已开启" : "未开启"}</span>
-      <span class="FilterSwitchStatus-switch ${isRemoveEnterBarrage ? "is-checked" : "is-noChecked"}">
-        <span class="FilterSwitchStatus-switch-inner"></span>
-      </span>
-    </div>
-  </div>`
-  );
-
-  const dom = document.getElementById("ex-removeEnterBarrage");
-  if (!dom) return;
-  const statusSpan = dom.querySelector(".FilterSwitchStatus-status");
-  const switchSpan = dom.querySelector(".FilterSwitchStatus-switch");
-  if (!statusSpan || !switchSpan) return;
-
-  dom.addEventListener("click", () => {
-    isRemoveEnterBarrage = !isRemoveEnterBarrage;
-    // 先改真实节点、再改文案：顺序反了就是旧实现的病 ——
-    // 开关说"已开启"而页面没变，或者页面藏了而开关说"未开启"。
-    Shield_applyRemoveEnter();
-    if (isRemoveEnterBarrage) {
-      statusSpan.className = statusSpan.className.replace("is-noChecked", "is-checked");
-      statusSpan.textContent = "已开启";
-      switchSpan.className = switchSpan.className.replace("is-noChecked", "is-checked");
-    } else {
-      statusSpan.className = statusSpan.className.replace("is-checked", "is-noChecked");
-      statusSpan.textContent = "未开启";
-      switchSpan.className = switchSpan.className.replace("is-checked", "is-noChecked");
-    }
-    saveRemoveEnterBarrage();
-  });
-}
-
 function getLocalIsRemoveEnterBarrage() {
   const ret = localStorage.getItem("ExSave_isRemoveEnterBarrage");
-  return ret ? Number(ret) === 1 : false; // 默认为false（不屏蔽进场弹幕）
+  // 2026-10-30 用户反馈（Greasy Fork / rikka147）：「发言框上面的『XXX 来了』以前插件是屏蔽的，现在又有了」。
+  // 未存储过 = 老用户，按老观感默认屏蔽；显式关掉过的（存了 "0"）继续不屏蔽。
+  return ret ? Number(ret) === 1 : true;
 }
 
 function saveRemoveEnterBarrage() {

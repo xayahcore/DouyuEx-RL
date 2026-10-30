@@ -33,9 +33,21 @@ function initPkg_ExIcon_insertDom() {
 function initPkg_ExIcon_Func() {
 	let icon = document.getElementsByClassName("ex-icon")[0];
 	if (icon) {
-		// 点击精灵球切换二级菜单展开/折叠（不悬停自动打开，也不自动关闭）
+		// 点击精灵球：
+		//   ① 有三级面板展开时 = 「全部收敛」—— 收起所有三级面板，并把二级胶囊菜单一并折起
+		//      （与二级菜单自己的折叠语义一致；否则面板还开着却把菜单折掉，用户会以为丢东西）；
+		//   ② 没有三级面板展开时，保持原来的展开/折叠切换。
 		icon.addEventListener("click", (e) => {
 			e.stopPropagation();
+			if (typeof isAnyThirdLevelPanelOpen === "function" && isAnyThirdLevelPanelOpen()) {
+				if (typeof ExPanel_closeAllThirdLevel === "function") {
+					ExPanel_closeAllThirdLevel();
+				}
+				if (typeof hideExPanel === "function") {
+					hideExPanel();
+				}
+				return;
+			}
 			if (typeof toggleExPanel === "function") {
 				toggleExPanel();
 			} else if (typeof showExPanel === "function") {

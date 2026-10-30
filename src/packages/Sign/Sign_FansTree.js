@@ -7,16 +7,21 @@ async function initPkg_Sign_FansTree() {
   }
   let ok = 0;
   let fail = 0;
+  let skipped = 0;
   for (let i = 0; i < myFansBadgeList.length; i++) {
     const roomId = myFansBadgeList[i];
     try {
       const ret = await signRoomTree(roomId);
-      if (!ret || ret.error !== 0) {
-        fail++;
-        showMessage(`【粉丝家园】${roomId}${(ret && ret.msg) || "签到失败"}`, "error");
-      } else {
+      if (ret && Number(ret.error) === 0) {
         ok++;
         showMessage(`【粉丝家园】${roomId}签到成功！`, "success");
+      } else if (ret && Number(ret.error) === 1006) {
+        // 真机实测：1006 = 「签到失败，非房间粉丝用户」——不是故障，按跳过计，别混进失败数
+        skipped++;
+        ExGuard_warn("粉丝家园", `${roomId} 非房间粉丝，跳过（1006）`);
+      } else {
+        fail++;
+        showMessage(`【粉丝家园】${roomId}${(ret && ret.msg) || "签到失败"}`, "error");
       }
     } catch (err) {
       fail++;
@@ -24,9 +29,9 @@ async function initPkg_Sign_FansTree() {
     }
   }
   if (fail > 0) {
-    showMessage(`【粉丝家园】完成 ${ok} 个，失败 ${fail} 个`, "warning");
+    showMessage(`【粉丝家园】完成 ${ok} 个，失败 ${fail} 个` + (skipped > 0 ? `，跳过 ${skipped} 个` : ""), "warning");
   }
-  return { ok, fail };
+  return { ok, fail, skipped };
 }
 
 function signRoomTree(rid) {

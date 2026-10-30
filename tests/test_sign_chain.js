@@ -30,7 +30,6 @@ function readSrc(rel) {
 const EXGUARD_SRC = readSrc("src/require/ExGuard/ExGuard.js");
 const YUBA_SRC = readSrc("src/packages/Sign/Sign_Yuba.js");
 const SIGN_SRC = readSrc("src/packages/Sign/Sign.js");
-const ROOM_SRC = readSrc("src/packages/Sign/Sign_Room.js");
 const FANS_SRC = readSrc("src/packages/Sign/Sign_FansTree.js");
 const STAR_SRC = readSrc("src/packages/Sign/Sign_StarDiscover.js");
 
@@ -252,43 +251,17 @@ async function testClientSignTimeout() {
     console.log("✓ ⑤ 通过: 无响应也能落地并提示");
 }
 
-/* ============ ⑥ 房间签到：真实成败 + 探测失败提示 ============ */
+/* ============ ⑥ 房间签到：接口已下线，功能整条移除（回归护栏） ============ */
 
-async function testRoomSignSummary() {
-    console.log("=== ⑥ 房间签到：汇总按真实成败；探测页失败要提示 ===");
-    const messages = [];
-    const gmReqs = [];
-    function okJson(payload) {
-        return Promise.resolve({ json: function () { return Promise.resolve(payload); } });
-    }
-    const fetchGood = function (url) {
-        if (String(url).indexOf("page=1428") !== -1) return okJson({ data: { pageCount: 1, total: 2 } });
-        return okJson({ data: { list: [{ room_id: "111", show_status: "1" }, { room_id: "222", show_status: "1" }] } });
-    };
-    const env = makeSandbox([ROOM_SRC], ["fetch", "GM_xmlhttpRequest", "showMessage", "dyToken"],
-        [fetchGood, makeGm(gmReqs), function (m) { messages.push(String(m)); }, "TOKEN"],
-        "({ all: signAllRoom })");
-    env.api.all(true);
-    await tick();
-    await tick();
-    assert.strictEqual(gmReqs.length, 2, "两个房间各一条 checkIn，实际 " + gmReqs.length);
-    gmReqs[0].onload({ response: { error: 0 } });
-    gmReqs[1].onload({ response: { error: 1 } });
-    await tick();
-    assert.ok(messages.some(function (m) { return m.indexOf("成功 1 个，失败 1 个") !== -1; }), "汇总必须按真实成败，实际 " + JSON.stringify(messages));
-    env.dom.window.close();
-
-    // 探测页返回不含 data（未登录/风控）
-    const messages2 = [];
-    const env2 = makeSandbox([ROOM_SRC], ["fetch", "GM_xmlhttpRequest", "showMessage", "dyToken"],
-        [function () { return okJson({}); }, makeGm([]), function (m) { messages2.push(String(m)); }, "TOKEN"],
-        "({ all: signAllRoom })");
-    env2.api.all(true);
-    await tick();
-    await tick();
-    assert.ok(messages2.some(function (m) { return m.indexOf("获取关注房间列表失败") !== -1; }), "探测页异常必须提示，实际 " + JSON.stringify(messages2));
-    env2.dom.window.close();
-    console.log("✓ ⑥ 通过: 真实成败 + 探测失败提示");
+function testRoomSignRemoved() {
+    console.log("=== ⑥ 房间签到：斗鱼已下线该接口，功能必须整条移除 ===");
+    const roomPath = path.join(SRC_DIR, "src/packages/Sign/Sign_Room.js");
+    assert.strictEqual(fs.existsSync(roomPath), false,
+        "Sign_Room.js 必须删除（/japi/roomuserlevel/apinc/checkIn 已下线，error=8）");
+    assert.ok(SIGN_SRC.indexOf("signAllRoom") === -1, "Sign.js 不得再调用 signAllRoom");
+    assert.ok(SIGN_SRC.indexOf("sign_opt_room") === -1, "签到面板不得再提供「房间与粉丝牌签到」勾选项");
+    assert.ok(SIGN_SRC.indexOf("opts.room") === -1, "签到引擎不得再有 room 分支");
+    console.log("✓ ⑥ 通过: 已下线的房间签到没有残留入口");
 }
 
 /* ============ ⑦ 粉丝家园：单房间失败不拖垮整批 ============ */
@@ -308,10 +281,20 @@ async function testFansHomePartialFailure() {
         "({ run: initPkg_Sign_FansTree })");
     const res = await env.api.run();
     assert.strictEqual(bodies.length, 2, "两个房间都要尝试（旧实现第一个失败就整批停），实际 " + bodies.length);
-    assert.deepStrictEqual(res, { ok: 1, fail: 1 }, "一个失败一个成功，实际 " + JSON.stringify(res));
+    assert.deepStrictEqual(res, { ok: 1, fail: 1, skipped: 0 }, "一个失败一个成功，实际 " + JSON.stringify(res));
     assert.ok(messages.some(function (m) { return m.indexOf("完成 1 个，失败 1 个") !== -1; }), "失败要有汇总提示，实际 " + JSON.stringify(messages));
     env.dom.window.close();
-    console.log("✓ ⑦ 通过: 单房间异常不再拖垮整批");
+
+    // 1006「签到失败，非房间粉丝用户」= 不是故障，必须计跳过（2026-10-30 真机实测口径）
+    const messages2 = [];
+    const env2 = makeSandbox([FANS_SRC], ["fetch", "showMessage", "myFansBadgeList", "getCCN"],
+        [function () { return Promise.resolve({ json: function () { return Promise.resolve({ error: 1006, msg: "签到失败，非房间粉丝用户" }); } }); },
+         function (m) { messages2.push(String(m)); }, ["1", "2"], function () { return "CCN"; }],
+        "({ run: initPkg_Sign_FansTree })");
+    const res2 = await env2.api.run();
+    assert.deepStrictEqual(res2, { ok: 0, fail: 0, skipped: 2 }, "非粉丝必须计入跳过而不是失败，实际 " + JSON.stringify(res2));
+    env2.dom.window.close();
+    console.log("✓ ⑦ 通过: 单房间异常不再拖垮整批；非粉丝按跳过计");
 }
 
 /* ============ ⑧ 一键签到必须真的等到子任务结束 ============ */
@@ -419,7 +402,7 @@ const SCENARIOS = [
     ["汇总一次", testYubaSummaryOnce],
     ["重试封顶", testYubaRetryCap],
     ["客户端", testClientSignTimeout],
-    ["房间", testRoomSignSummary],
+    ["房间已下线", testRoomSignRemoved],
     ["粉丝家园", testFansHomePartialFailure],
     ["引擎等待", testEngineAwaitsSubtasks],
     ["星推诚实", testStarDiscoverHonest]

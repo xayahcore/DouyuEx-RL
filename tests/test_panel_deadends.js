@@ -1430,6 +1430,8 @@ function loadExpandToolInit() {
         "initPkg_ExpandTool_Treasure", "initPkg_ExpandTool_RedPacket_Room", "initPkg_ExpandTool_AutoFish",
         "initPkg_ExpandTool_ClearBag", "initPkg_ExpandTool_SendGift", "initPkg_ExpandTool_TabSwitch",
         "initPkg_ExpandTool_P2P", "initPkg_ExpandTool_FullScreen", "initPkg_ExpandTool_AutoBarrageColor",
+        // 2026-10-30 新增：弹幕屏蔽三开关（进场弹幕 / 重复弹幕 / 弹幕背景）
+        "initPkg_ExpandTool_Shield",
         // 2026-10-27 新增：在线弹幕助手跳转（入口从胶囊条搬到面板最后一卡）
         "initPkg_ExpandTool_MonitorLink"
     ];
