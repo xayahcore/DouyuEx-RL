@@ -40,11 +40,16 @@ function initPkg_ExIcon_Func() {
 		icon.addEventListener("click", (e) => {
 			e.stopPropagation();
 			if (typeof isAnyThirdLevelPanelOpen === "function" && isAnyThirdLevelPanelOpen()) {
-				if (typeof ExPanel_closeAllThirdLevel === "function") {
-					ExPanel_closeAllThirdLevel();
-				}
-				if (typeof hideExPanel === "function") {
-					hideExPanel();
+				// 统一收敛出口：三级面板 + 运行期子菜单层 + 二级菜单一次收完
+				if (typeof ExPanel_closeAllMenus === "function") {
+					ExPanel_closeAllMenus();
+				} else {
+					if (typeof ExPanel_closeAllThirdLevel === "function") {
+						ExPanel_closeAllThirdLevel();
+					}
+					if (typeof hideExPanel === "function") {
+						hideExPanel();
+					}
 				}
 				return;
 			}

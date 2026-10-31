@@ -5,6 +5,34 @@ let ExPanel_anchorNextSibling = null;
  * 以后新增面板只改这里，不会再出现"某个出口漏掉一个面板"。 */
 const EX_THIRD_LEVEL_PANELS = ".sign-panel, .fans-continue-panel, .fans-panel, .extool, .livetool, .bloop, .exlottery, .popup-player-panel, .exupdate-panel, .danmaku-history-panel";
 
+/* ==================== 点击菜单外部自动关闭 ====================
+ * 用户要求（2026-11-01）：点菜单外面的任何位置，把二级 / 三级 / 子菜单一次性收掉。
+ * 判定靠一份「菜单面」清单 —— 点中其中任意一项（或它们的子孙）算点在菜单里，
+ * 点在其它任何地方就算点外面。三级面板直接从 EX_THIRD_LEVEL_PANELS 拆出来，
+ * 以后新增面板只改上面那一份，这里不会漏登记。
+ */
+const EX_MENU_SURFACE_EXTRA = [
+  ".ex-panel",                      /* 二级胶囊菜单（工具条本体） */
+  ".ex-icon",                       /* 一级精灵球：展开 / 全部收敛的开关 */
+  ".ChatToolBar-DanmakuTail-Panel", /* 弹幕小尾巴面板 */
+  "#ex-vtoolbar-menu",              /* 视频工具条上的 DouyuEx 菜单 */
+  ".ex-gift-picker-modal",          /* 扩展功能里再打开的礼物选择器 */
+  ".ex-gift-picker-mask",           /* 它的遮罩：点遮罩由选择器自己收，不连带收走原有面板 */
+  ".ex-pip-menu-root",              /* 加强版画中画菜单 */
+  "[data-ex-menu-layer]"            /* 运行期追加的次级菜单层（ExPanel_markMenuLayer 打标记） */
+];
+
+/** 菜单面总清单：二级胶囊 + 全部三级面板 + 之后任何一层子菜单 */
+const EX_MENU_SURFACE_SELECTOR = EX_MENU_SURFACE_EXTRA
+  .concat(EX_THIRD_LEVEL_PANELS.split(","))
+  .map(function (s) { return String(s).trim(); })
+  .filter(function (s) { return !!s; })
+  .join(", ");
+
+/* 「开关」不是菜单面：点它们要交给自己的展开 / 收起逻辑，
+ * 不能被"点外面"抢先一步收掉（否则同一次点击会变成"先关再开"，看起来像点了没反应）。 */
+const EX_MENU_TRIGGER_SELECTOR = ".ex-icon, .ChatToolBar-DanmakuTail";
+
 /** 一次收起所有三级面板（二级菜单的 × 与点精灵球共用） */
 function ExPanel_closeAllThirdLevel() {
   const panels = document.querySelectorAll(EX_THIRD_LEVEL_PANELS);
@@ -35,7 +63,7 @@ function isAnyThirdLevelPanelOpen() {
 function initPkg_ExPanel() {
   initPkg_ExPanel_insertDom();
 
-  // 二级菜单生命周期完全由用户驱动：仅「点击精灵球」展开、「点击 ×」关闭，
+  // 二级菜单生命周期完全由用户驱动：仅「点击精灵球」展开、「点击 ×」或「点菜单外面」关闭，
   // 不悬停自动打开、不因鼠标移出而自动关闭。
   let exPanelDOM = document.querySelector(`.ex-panel`);
   if (exPanelDOM) {
@@ -43,13 +71,114 @@ function initPkg_ExPanel() {
     if (closeBtn) {
       closeBtn.addEventListener("click", (e) => {
         e.stopPropagation();
-        hideExPanel();
-        ExPanel_closeAllThirdLevel();
+        ExPanel_closeAllMenus();
       });
     }
   }
 
   ExPanel_startSelfHeal();
+  ExPanel_bindClickOutside();
+}
+
+/* ==================== 点击菜单外部自动关闭 ==================== */
+/* 用 var 不用 let：产物是「所有包拼进同一个作用域」的一份脚本，任何人都可能在声明语句执行前
+ * 就调到 ExPanel_bindClickOutside()，let 会在这里撞 TDZ 把整根脚本掐断（ExGuard 那次事故同款）。
+ * var 在脚本启动时就存在（值 undefined，判假），最多是多绑一次，绝不会抛。 */
+var ExPanel_outsideClickBound = false;
+
+/** 事件 target 可能是文本节点，统一归一到元素节点 */
+function ExPanel_elementOf(node) {
+  if (!node) return null;
+  if (node.nodeType === 1) return node;
+  return node.parentElement || null;
+}
+
+/** 节点是否落在 selector 命中的元素里（含自身） */
+function ExPanel_matchesAny(node, selector) {
+  const el = ExPanel_elementOf(node);
+  if (!el || typeof el.closest !== "function") return false;
+  try {
+    return !!el.closest(selector);
+  } catch (e) {
+    return false;
+  }
+}
+
+/** 这次点击算不算「点在菜单里」：菜单面本身 / 它的子孙 / 开关按钮都算 */
+function ExPanel_isInsideMenu(node) {
+  return ExPanel_matchesAny(node, EX_MENU_SURFACE_SELECTOR) || ExPanel_matchesAny(node, EX_MENU_TRIGGER_SELECTOR);
+}
+
+/**
+ * 面板里再开出来的子菜单（下拉、选择器、弹层）打上这个标记，
+ * 之后点它内部就不会被当成「点菜单外面」。返回传入的节点，方便链式调用。
+ */
+function ExPanel_markMenuLayer(node) {
+  if (!node || node.nodeType !== 1 || typeof node.setAttribute !== "function") return node || null;
+  node.setAttribute("data-ex-menu-layer", "1");
+  return node;
+}
+
+/** 此刻是否还有任意一层菜单展开着（二级 / 三级 / 子菜单层） */
+function ExPanel_hasOpenMenu() {
+  const dock = document.querySelector(".ex-panel");
+  if (dock && (dock.style.display === "flex" || dock.style.display === "block")) return true;
+  if (isAnyThirdLevelPanelOpen()) return true;
+  const layers = document.querySelectorAll("[data-ex-menu-layer]");
+  for (let i = 0; i < layers.length; i++) {
+    if (ExPanel_panelIsShown(layers[i])) return true;
+  }
+  return false;
+}
+
+/**
+ * 一次收起整套菜单：三级面板 + 运行期子菜单层 + 二级胶囊菜单。
+ * 「点菜单外面」、精灵球的「全部收敛」、二级菜单的 × 都走这一个出口，
+ * 以后新增层只要登记进 EX_MENU_SURFACE_EXTRA，三条出口自动跟上。
+ */
+function ExPanel_closeAllMenus() {
+  let closed = ExPanel_closeAllThirdLevel();
+
+  const layers = document.querySelectorAll("[data-ex-menu-layer]");
+  for (let i = 0; i < layers.length; i++) {
+    const layer = layers[i];
+    if (!ExPanel_panelIsShown(layer)) continue;
+    layer.style.removeProperty("display");
+    layer.style.setProperty("display", "none", "important");
+    layer.classList.remove("miuix-modal-in");
+    closed++;
+  }
+
+  const dock = document.querySelector(".ex-panel");
+  if (dock && (dock.style.display === "flex" || dock.style.display === "block")) {
+    hideExPanel();
+    closed++;
+  }
+
+  if (typeof updateDockActiveIndicator === "function") updateDockActiveIndicator();
+  return closed;
+}
+
+/**
+ * 用 mousedown 的捕获阶段判定，而不是 click：
+ * 捕获阶段动手时，本次点击自己的 click 处理器还一次都没跑 ——
+ * 「点在别处 → 先收菜单 → 目标自己的 click 再打开新面板」这个顺序天然成立，
+ * 不会出现「刚点开的面板被同一次点击立刻收掉」。
+ * 另外按下在菜单里、拖到外面松手（框选 / 拖拽）也不会被误判成点外面。
+ */
+function ExPanel_onMenuOutsideMouseDown(e) {
+  if (!e) return;
+  if (typeof e.button === "number" && e.button !== 0) return; // 只认左键
+  if (ExPanel_isInsideMenu(e.target)) return;
+  if (!ExPanel_hasOpenMenu()) return;
+  ExPanel_closeAllMenus();
+}
+
+function ExPanel_bindClickOutside() {
+  if (ExPanel_outsideClickBound) return;
+  if (typeof document === "undefined" || !document || !document.addEventListener) return;
+  ExPanel_outsideClickBound = true;
+  document.addEventListener("mousedown", ExPanel_onMenuOutsideMouseDown, true);
 }
 
 /* ==================== Dock 自愈 ====================
@@ -388,14 +517,16 @@ function openExPanel() {
   if (!a) return;
   ExPanel_syncHost();
   ensureDockIndicators();
+  // 「收起动画还没走完就又被点开」必须真的重新展开：hideExPanel 的 display:none 要等 160ms 才落地，
+  // 旧判断只看 display，这中间点精灵球会变成"再收一次"，用户看到的是点了没反应。
+  const pendingClose = a.classList.contains("miuix-dock-out");
   let isShown = a.style.display === "flex" || a.style.display === "block";
-  if (!isShown) {
-    a.classList.remove("miuix-dock-out");
-    a.classList.add("miuix-dock-in");
-    a.style.display = "flex";
-    if (a.classList.contains("ex-panel--floating")) {
-      ExPanel_updateFloatingPosition();
-    }
+  if (isShown && !pendingClose) return;
+  a.classList.remove("miuix-dock-out");
+  a.classList.add("miuix-dock-in");
+  a.style.display = "flex";
+  if (a.classList.contains("ex-panel--floating")) {
+    ExPanel_updateFloatingPosition();
   }
 }
 
@@ -415,7 +546,7 @@ function hideExPanel() {
 function toggleExPanel() {
   let a = document.getElementsByClassName("ex-panel")[0];
   if (!a) return;
-  let isShown = a.style.display === "flex" || a.style.display === "block";
+  let isShown = (a.style.display === "flex" || a.style.display === "block") && !a.classList.contains("miuix-dock-out");
   if (isShown) {
     hideExPanel();
   } else {
@@ -552,6 +683,10 @@ window.ensureMiuixPanelHeader = ensureMiuixPanelHeader;
 window.openMiuixPanelCentered = openMiuixPanelCentered;
 window.openExPanel = openExPanel;
 window.ExPanel_closeAllThirdLevel = ExPanel_closeAllThirdLevel;
+window.ExPanel_closeAllMenus = ExPanel_closeAllMenus;
+window.ExPanel_isInsideMenu = ExPanel_isInsideMenu;
+window.ExPanel_markMenuLayer = ExPanel_markMenuLayer;
+window.ExPanel_bindClickOutside = ExPanel_bindClickOutside;
 window.isAnyThirdLevelPanelOpen = isAnyThirdLevelPanelOpen;
 window.hideExPanel = hideExPanel;
 window.toggleExPanel = toggleExPanel;
