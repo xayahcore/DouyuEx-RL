@@ -36,11 +36,35 @@ function initPkg_ExpandTool_P2P_Set() {
 function initKillP2P() {
 	let ret = localStorage.getItem("ExSave_P2P");
 	if (ret != null) {
-		let retJson = JSON.parse(ret);
+		// 本地档位被写坏时不能让整个 KillP2P 初始化失败（那等于拦截静默失效）：
+		// 弹幕小尾巴那处同类问题早就修过，这里补上同一口径。
+		let retJson = null;
+		try {
+			retJson = JSON.parse(ret);
+		} catch (e) {
+			if (typeof ExGuard_warn === "function") ExGuard_warn("阻止P2P上传", "本地设置已损坏，按「不拦截」处理", e);
+			return;
+		}
+		if (!retJson || typeof retJson !== "object") return;
         if (retJson.isKillP2P) {
             killP2P();
         }
 	}
+}
+
+/**
+ * 造一个「已经挂好 catch 的失败 Promise」。
+ * 调用方照样拿到 NotSupportedError（fail-fast 语义不变，P2P 起不来），
+ * 但这个 Promise 实例已经有处理器了 —— 浏览器不会再把它当成「未处理的拒绝」报出来。
+ * 真机上它原来会以 Runtime.exceptionThrown（NotSupportedError: WebRTC P2P disabled
+ * by user policy）的身份冒到控制台，栈顶就是我们这个文件，看着像插件自己崩了。
+ */
+function GracefulP2PBlocker_fail(message) {
+  const rejected = Promise.reject(new DOMException(message, "NotSupportedError"));
+  try {
+    rejected.catch(function () {});
+  } catch (e) {}
+  return rejected;
 }
 
 class GracefulP2PBlocker {
@@ -65,10 +89,10 @@ class GracefulP2PBlocker {
     };
   }
   createOffer() {
-    return Promise.reject(new DOMException("WebRTC P2P disabled by user policy", "NotSupportedError"));
+    return GracefulP2PBlocker_fail("WebRTC P2P disabled by user policy");
   }
   createAnswer() {
-    return Promise.reject(new DOMException("WebRTC P2P disabled by user policy", "NotSupportedError"));
+    return GracefulP2PBlocker_fail("WebRTC P2P disabled by user policy");
   }
   setLocalDescription() {
     return Promise.resolve();

@@ -74,7 +74,9 @@ function ExGuard_asList(value) {
  * 有上限的元素轮询。
  * @param {Function|string} findFn 返回目标节点（或 null）的函数；传字符串则按选择器查
  * @param {Function} onFound 命中后的回调（抛错只告警，不影响轮询收尾）
- * @param {{intervalMs?:number,maxTries?:number,tag?:string,immediate?:boolean}} [opts]
+ * @param {{intervalMs?:number,maxTries?:number,tag?:string,immediate?:boolean,quiet?:boolean}} [opts]
+ *        quiet: 这个节点本来就「可缺省」（例如只在用户点开浮层后才出现），等不到不算异常，
+ *               收工时不打 warn 只留一条 debug —— 否则真机每份文档一条「等待 10 秒」会把真问题盖住
  * @returns {{cancel:Function,done:boolean,tries:number}}
  */
 function ExGuard_pollFor(findFn, onFound, opts) {
@@ -120,7 +122,15 @@ function ExGuard_pollFor(findFn, onFound, opts) {
       state.done = true;
       stopTimer();
       const seconds = Math.round((intervalMs * maxTries) / 1000);
-      ExGuard_warn(tag, "等待目标节点 " + seconds + " 秒仍未出现，已放弃（不影响其它功能）");
+      if (config.quiet) {
+        try {
+          if (typeof console !== "undefined" && console.debug) {
+            console.debug("[DouyuEx] " + tag + "：等待目标节点 " + seconds + " 秒仍未出现（预期内可缺省，已放弃）");
+          }
+        } catch (e) {}
+      } else {
+        ExGuard_warn(tag, "等待目标节点 " + seconds + " 秒仍未出现，已放弃（不影响其它功能）");
+      }
     }
   };
 

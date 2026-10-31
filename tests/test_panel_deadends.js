@@ -1787,13 +1787,15 @@ function testRefreshRestorePaths() {
 }
 
 function testRefreshZIndexHooks() {
-    // W4：changeToolBarZIndex 挂在三个 DomHook 上，节点短暂消失就会在回调里抛
+    // W4：changeToolBarZIndex 挂在两个 DomHook 上（旧选择器 .right-e7ea5d 在真机 DOM 已消失，
+    // 2026-11 起只盯现行的 .right-17e251 与 .video__VfhVg），节点短暂消失就会在回调里抛
     const page = loadRefresh({
-        html: "<!DOCTYPE html><html><body><div class='right-e7ea5d'></div><div class='layout-Player-video'></div><div id='js-player-dialog'></div></body></html>",
+        html: "<!DOCTYPE html><html><body><div class='right-17e251'></div><div class='video__VfhVg'></div>" +
+            "<div class='layout-Player-video'></div><div id='js-player-dialog'></div></body></html>",
     });
     page.api.initVideo();
     page.clock.advance(1600);
-    assert.ok(page.hooks.length >= 3, "三个 DomHook 必须都挂上，实际 " + page.hooks.length);
+    assert.ok(page.hooks.length >= 2, "两个 DomHook 必须都挂上，实际 " + page.hooks.length);
     assert.doesNotThrow(function () {
         page.hooks.forEach(function (h) { h.cb([{ target: { className: "toggle__P8TKM" } }]); });
     }, "没有播放器工具条时回调不得抛错");
@@ -1801,7 +1803,8 @@ function testRefreshZIndexHooks() {
 
     // 有工具条 + 新版布局：z-index 要真的写
     const withToolbar = loadRefresh({
-        html: "<!DOCTYPE html><html><body><div class='right-e7ea5d'></div><div class='layout-Player-video'></div>" +
+        html: "<!DOCTYPE html><html><body><div class='right-17e251'></div><div class='video__VfhVg'></div>" +
+            "<div class='layout-Player-video'></div>" +
             "<div id='js-player-dialog'><div id='js-player-toolbar'></div></div>" +
             "<div class='live-next-body'></div></body></html>",
     });

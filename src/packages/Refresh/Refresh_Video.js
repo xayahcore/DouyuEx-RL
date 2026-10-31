@@ -42,9 +42,9 @@ function Refresh_Video_insertIcon() {
 }
 
 function initPkg_Refresh_Video_Func() {
-    new DomHook(".right-e7ea5d", true, () => {
-        changeToolBarZIndex();
-    });
+    // ⚠ 旧选择器 .right-e7ea5d 在 2026-11 的真机 DOM 里已经不存在（getElementsByClassName 命中 0），
+    // 留着它只会在每份文档初始化时白打一条「DomHook：目标 .right-e7ea5d 不存在」的噪音。
+    // 现行控制条是 .right-17e251（getValidDom 的高低位就是这么排的），只盯它即可。
     new DomHook(".right-17e251", true, () => {
         changeToolBarZIndex();
     });

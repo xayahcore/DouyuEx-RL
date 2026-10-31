@@ -41,7 +41,9 @@ function hideMatchSystemChatEntry() {
 	};
 	if (hide(document.querySelector(".MatchSystemChatRoomEntry"))) return true;
 	if (typeof ExGuard_pollFor !== "function") return false;
-	ExGuard_pollFor(".MatchSystemChatRoomEntry", hide, { intervalMs: 500, maxTries: 20, tag: "赛事聊天室入口" });
+	// quiet：这个入口只有赛事/活动房间里才有，普通直播间隔多久都不会出现 ——
+	// 照样补藏 10 秒，但等不到不再打一条 warn（真机每份文档一条，纯噪音）。
+	ExGuard_pollFor(".MatchSystemChatRoomEntry", hide, { intervalMs: 500, maxTries: 20, tag: "赛事聊天室入口", quiet: true });
 	return false;
 }
 

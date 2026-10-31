@@ -1,18 +1,42 @@
+/* 盯 body 子树的那个 observer：留着引用，便于排查时判断有没有挂上。
+ * 用 var 不用 let/const：全包同域，压缩与执行顺序都不该成为新的 TDZ 哑雷。 */
+var FansBadgeList_hook = null;
+
 function initPkg_FansBadgeList() {
     // 粉丝牌表格有两种出现形态：
     //   ① member/cp/getFansBadgeList 独立页（router 直接调，表格一开始就在）；
     //   ② 房间内的粉丝牌浮层（异步渲染、点开才出现）。
     // 旧实现只取一次 querySelectorAll，第②种形态永远是 0 行 —— 功能静默不存在。
-    // 现在：一次就命中就地处理；没命中就用有上限轮询等它（等不到由 ExGuard 留痕）。
+    // 现在：一次就命中就地处理；没命中就「盯着 body 子树等它出现」。
+    // ⚠ 中间那版曾改成 20 次 × 500ms 的定长轮询 —— 真机实测每份文档白等 10 秒，
+    //   还会留一条「等待目标节点 10 秒仍未出现」的 warning：房间加载时那个浮层根本没开，
+    //   注定等不到。改成 MutationObserver 后，浮层什么时候点开、什么时候渲染，都能接住。
     if (FansBadgeList_annotateRows()) return;
+    if (typeof DomHook === "function") {
+        let lastRun = 0;
+        try {
+            FansBadgeList_hook = new DomHook("body", true, function () {
+                const now = Date.now();
+                if (now - lastRun < 400) return; // 聊天区每秒几十次变更，按 400ms 节流
+                lastRun = now;
+                FansBadgeList_annotateRows();
+            });
+            if (!FansBadgeList_hook.failed) return;
+        } catch (e) {
+            if (typeof ExGuard_warn === "function") ExGuard_warn("粉丝牌页", "浮层监听挂不上，退回有上限轮询", e);
+        }
+    }
+    // 兜底（没有 DomHook / body 挂不上）：仍然是「有上限轮询」，但等不到只留 debug
     if (typeof ExGuard_pollFor !== "function") return;
     ExGuard_pollFor(function () {
         const rows = document.querySelectorAll(".fans-badge-list tr");
         return rows.length > 1 ? document.querySelector(".fans-badge-list") : null;
     }, function () {
         FansBadgeList_annotateRows();
-    }, { intervalMs: 500, maxTries: 20, tag: "粉丝牌页" });
+    }, { intervalMs: 500, maxTries: 20, tag: "粉丝牌页", quiet: true });
 }
+
+
 
 /**
  * 给每一行补「已获取 N 天 / 获取日期」。返回 true = 表格已就位（不必再等）。
