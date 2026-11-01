@@ -190,6 +190,8 @@
     display: block !important;
     pointer-events: none !important;
     transition: transform 0.22s var(--miuix-spring) !important;
+    /* Phosphor 图标是 currentColor 线稿，统一给一个中性墨色；旧的内联彩色 SVG 自带 fill，不受影响 */
+    color: #334155 !important;
 }
 
 .ex-panel__wrap > div:hover .ex-panel__icon svg,
@@ -2809,4 +2811,65 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
     vertical-align: 1px !important;
     flex: 0 0 auto !important;
     max-width: none !important;
+}
+
+/* ==========================================================================
+   Phosphor 图标层（二级 Dock / 三级面板头 / 四级卡片头） 2026-11-01
+   来源：phosphor-icons/core（MIT）Regular + Fill。
+   图标池在 ExIcon/ExIcons.js；JS 侧全部 typeof 判空，找不到就退回各包自带的内联 SVG。
+   ========================================================================== */
+.ex-ico {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+/* 常态线稿，选中换填充：两份都在 DOM 里，只切显示，不动 JS */
+.ex-ico--fill {
+    display: none !important;
+}
+
+.ex-panel__wrap > div.is-active .ex-ico--line,
+.ex-panel__wrap > div.ex-dock-active .ex-ico--line {
+    display: none !important;
+}
+
+.ex-panel__wrap > div.is-active .ex-ico--fill,
+.ex-panel__wrap > div.ex-dock-active .ex-ico--fill {
+    display: flex !important;
+}
+
+/* 选中态统一走产品蓝：填充版图标 + 底部指示条，图标层本身不带任何彩色 */
+.ex-panel__wrap > div.is-active .ex-panel__icon svg,
+.ex-panel__wrap > div.ex-dock-active .ex-panel__icon svg {
+    color: var(--miuix-blue) !important;
+}
+
+/* 三级面板头图标 */
+.ex-title-ico {
+    display: inline-flex;
+    align-items: center;
+    margin-right: 8px;
+    color: #334155;
+}
+
+.ex-title-ico svg {
+    width: 19px;
+    height: 19px;
+    display: block;
+}
+
+/* 四级卡片头图标：15px，正好塞进 13px 标题行，不顶高卡片 */
+.ex-card-ico {
+    display: inline-flex;
+    align-items: center;
+    margin-right: 7px;
+    color: #334155;
+    vertical-align: -2px;
+}
+
+.ex-card-ico svg {
+    width: 15px;
+    height: 15px;
+    display: block;
 }

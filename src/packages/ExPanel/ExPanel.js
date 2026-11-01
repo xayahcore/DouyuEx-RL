@@ -454,6 +454,27 @@ function ensureDockIndicators() {
       btn.appendChild(ind);
     }
 
+    // Phosphor 图标层：把各包自带的内联 SVG 换成统一的「线稿 + 选中填充」两份，
+    // 切换只靠 CSS（.is-active / .ex-dock-active），不重建 DOM。
+    // 找不到图标池就原样留着旧图标，纯增强、可回退。
+    if (typeof ExIcoDock === "function" && typeof EX_ICO_DOCK_MAP !== "undefined") {
+      const icoHost = btn.querySelector(".ex-panel__icon");
+      if (icoHost && !icoHost.querySelector(".ex-ico")) {
+        let icoName = "";
+        for (let key in EX_ICO_DOCK_MAP) {
+          if (btn.classList.contains(key)) {
+            icoName = EX_ICO_DOCK_MAP[key];
+            break;
+          }
+        }
+        if (icoName) {
+          const tip = icoHost.querySelector(".ex-panel__tip");
+          icoHost.innerHTML = ExIcoDock(icoName);
+          if (tip) icoHost.appendChild(tip);
+        }
+      }
+    }
+
     if (!btn.dataset.hoverBound) {
       btn.dataset.hoverBound = "1";
       btn.style.cursor = "pointer";
@@ -584,6 +605,21 @@ function ensureMiuixPanelHeader(el, title) {
     if (titleEl) titleEl.textContent = title;
   }
 
+  // 三级面板头图标：与二级 Dock 同一枚，形成「点谁进谁」的对应关系
+  if (typeof ExIcoSvg === "function" && typeof EX_ICO_TITLE_MAP !== "undefined") {
+    var titleBox = header.querySelector(".miuix-modal__title-box");
+    var titleIconName = EX_ICO_TITLE_MAP[title];
+    if (titleBox && titleIconName) {
+      var titleIco = titleBox.querySelector(".ex-title-ico");
+      if (!titleIco) {
+        titleIco = document.createElement("span");
+        titleIco.className = "ex-title-ico";
+        titleBox.insertBefore(titleIco, titleBox.firstChild);
+      }
+      titleIco.innerHTML = ExIcoSvg(titleIconName, false);
+    }
+  }
+
   // 滚动条起始点统一规定在顶栏下方：将所有非 Header 内容封装进 .miuix-modal__body
   var body = el.querySelector(":scope > .miuix-modal__body");
   if (!body) {
@@ -601,6 +637,11 @@ function ensureMiuixPanelHeader(el, title) {
   nodesToMove.forEach((n) => {
     body.appendChild(n);
   });
+
+  // 四级卡片头图标：按标题文字匹配，插在标题 span 内部（保住 card-header 的 space-between 布局）
+  if (typeof ExIco_decorateCards === "function") {
+    ExIco_decorateCards(body);
+  }
 
   var closeBtn = header.querySelector(".miuix-modal__close");
   if (closeBtn) {
