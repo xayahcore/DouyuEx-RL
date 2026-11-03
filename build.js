@@ -9,11 +9,15 @@ let cssNormalizedLength = 0;
 let js = "";
 let coreJs = "";
 
+function readSource(file) {
+  return fs.readFileSync(file, "utf8").replace(/\r\n?/g, "\n");
+}
+
 function handleCoreFolder() {
   const coreFiles = ["./src/core/quality.js", "./src/core/rank_engine.js"];
   coreFiles.forEach((file) => {
     if (fs.existsSync(file)) {
-      coreJs += fs.readFileSync(file, "utf8") + "\r\n";
+      coreJs += readSource(file) + "\n";
     }
   });
 }
@@ -30,16 +34,16 @@ function handleFolder(folderPath, excludingFileName) {
       handleFolder(itemPath, excludingFileName);
     } else {
       if (item !== excludingFileName) {
-        const fileContent = fs.readFileSync(itemPath, "utf8");
-        // 记录每个 CSS 文件在拼接串中的起始偏移：CSS 拼接后会删掉 CRLF 变成一整行，
-        // 行号随之失去意义，只有偏移量能把报错定位回具体文件（见 verifyCssSafety）。
-        // 注意偏移必须按"删除 CRLF 之后"的长度累计，否则会整体错位、指到隔壁文件。
+        const fileContent = readSource(itemPath);
+        // 保留 CSS 中的换行空白，统一使用 LF，避免不同平台检出产生不同样式字符串。
+        // 定位偏移按实际拼接长度累计，包含文件之间的换行（见 verifyCssSafety）。
         if (item.includes(".css")) {
+          const cssChunk = fileContent.replace(/[ \t]+$/, "") + (fileContent.endsWith("\n") ? "" : "\n");
           cssFileSpans.push({ file: itemPath, start: cssNormalizedLength });
-          cssNormalizedLength += fileContent.replace(/\r\n/g, "").length;
-          css += fileContent + "\r\n";
+          cssNormalizedLength += cssChunk.length;
+          css += cssChunk;
         }
-        if (item.includes(".js")) js += fileContent + "\r\n";
+        if (item.includes(".js")) js += fileContent + "\n";
       }
     }
   });
@@ -51,7 +55,7 @@ function generateVersion() {
   }
   // 解析失败必须中断：此前这里是写死的旧版本号兜底，一旦 main.js 的 @version
   // 读不到就会静默产出错误版本，版本日志校验也会按错版本号去查表。
-  const mainContent = fs.readFileSync("./src/main.js", "utf8");
+  const mainContent = readSource("./src/main.js");
   const m = mainContent.match(/\/\/\s*@version\s+([^\r\n]+)/);
   if (!m || !m[1]) {
     console.error("[Build] 无法从 src/main.js 解析 @version，终止构建（避免静默产出错误版本号）");
@@ -75,7 +79,7 @@ function verifyUpdateLog(version) {
     process.exit(1);
   }
 
-  const src = fs.readFileSync(logPath, "utf8");
+  const src = readSource(logPath);
   const sandbox = {};
   let data;
   try {
@@ -197,7 +201,7 @@ function extractHeader(code) {
   if (idx === -1) return { header: "", body: code };
   const splitPos = idx + endTag.length;
   return {
-    header: code.substring(0, splitPos) + "\r\n\r\n",
+    header: code.substring(0, splitPos) + "\n\n",
     body: code.substring(splitPos),
   };
 }
@@ -211,8 +215,7 @@ function extractHeader(code) {
  * 三者都会让语法核验报出 "missing ) after argument list" 这类极难定位的错误。
  * 注意 "\\2713"（双反斜杠）是安全的 —— 只在 CSS 里写转义时才需要改成字面字符。
  *
- * 报错定位用「偏移量 + 具体文件」而非行号：CSS 在拼接时已删除 CRLF，整份样式是一行，
- * 行号恒为 1，没有参考价值。
+ * 报错定位使用拼接后的偏移量与文件起始位置，映射回具体 CSS 文件。
  */
 function verifyCssSafety() {
   const offenders = [];
@@ -257,14 +260,13 @@ function build() {
 
   handleCoreFolder();
   handleFolder("./src", "main.js");
-  css = css.replace(/\r\n/g, "");
 
   // 版本更新日志数据源强校验（早于语法核验，缺失即中断）
   verifyUpdateLog(version);
   // CSS 模板字面量安全性校验
   verifyCssSafety();
 
-  let template = fs.readFileSync("./src/main.js", "utf8");
+  let template = readSource("./src/main.js");
   template = template
     .replace("// 核心层标记 勿删", coreJs)
     .replace("/*编译器标记 勿删*/", css)

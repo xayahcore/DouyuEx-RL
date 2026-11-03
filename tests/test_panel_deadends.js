@@ -10,7 +10,8 @@ try {
 }
 
 const ROOT = path.join(__dirname, "..");
-const read = (rel) => fs.readFileSync(path.join(ROOT, rel), "utf8");
+// Windows checkout may use CRLF; keep exact source fixtures independent of Git's line-ending conversion.
+const read = (rel) => fs.readFileSync(path.join(ROOT, rel), "utf8").replace(/\r\n/g, "\n");
 
 const COMMON_SRC = read("src/common.js");
 const EXGUARD_SRC = read("src/require/ExGuard/ExGuard.js");
