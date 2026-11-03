@@ -26,6 +26,7 @@ let pipKeepAliveCanvas = null;
 let pipVisRecoverHandler = null;
 let pipFrameStallTimer = null;
 let pipFullscreenListenerBound = false;
+const pipVideoSyncBindings = new WeakMap();
 
 const PIP_MENU_SVG_NATIVE = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="5" width="18" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/><rect x="13" y="13" width="7" height="5" rx="1" stroke="currentColor" stroke-width="1.5"/></svg>`;
 const PIP_MENU_SVG_ENHANCED = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="3" y="5" width="18" height="12" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M7 10h5.5M7 13h3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>`;
@@ -101,6 +102,7 @@ function PictureInPictureControl_initPipUiText(pipWindow) {
 }
 
 function PictureInPictureControl_cleanupEnhancedPip(pipWindow, pipVideo) {
+    PictureInPictureControl_unbindVideoSync(pipVideo);
     if (!window.__pip_is_active__) {
         return;
     }
@@ -1066,13 +1068,24 @@ async function PictureInPictureControl_handle() {
     PictureInPictureControl_bindCleanup(video, pipWindow, pipVideo);
 }
 
+function PictureInPictureControl_unbindVideoSync(pipVideo) {
+    const binding = pipVideoSyncBindings.get(pipVideo);
+    if (!binding) return;
+    binding.video.removeEventListener("play", binding.syncVideo);
+    binding.video.removeEventListener("pause", binding.syncVideo);
+    pipVideoSyncBindings.delete(pipVideo);
+}
+
 function PictureInPictureControl_bindVideoSync(video, pipVideo) {
+    if (!video || !pipVideo) return;
+    PictureInPictureControl_unbindVideoSync(pipVideo);
     function syncVideo() {
         if (video.paused) pipVideo.pause();
         else pipVideo.play().catch(() => { });
     }
     video.addEventListener("play", syncVideo);
     video.addEventListener("pause", syncVideo);
+    pipVideoSyncBindings.set(pipVideo, { video, syncVideo });
 }
 
 function PictureInPictureControl_bindCleanup(video, pipWindow, pipVideo) {
