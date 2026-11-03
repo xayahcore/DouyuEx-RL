@@ -58,11 +58,12 @@ DouyuEx-RL/
 
 ## 三、 核心底层机制与协议拦截原理
 
-### 3.1 极速无缝最高画质强锁 (`src/core/quality.js`)
-1. **起播 12 秒黄金保护窗口**：通过 `isInitialLoad()` 记录 `_roomEnterTime`，配合 `location.pathname` 变化自感知重置；
-2. **斩断官方低码率预载流**：在 `window` 上通过 `Object.defineProperty` 劫持 `preloadStreamUrlPromise` 与 `getLegacyFirstStream`，彻底废除官方预载流下载；
-3. **拦截 `/betard/{rid}` 响应**：在 XMLHttpRequest 与 fetch 层面精准截获房间配置，将下发的首选清晰度硬改锁定为原画（`rate: 0`）；
-4. **本地存储 6 大偏好 Key 镜像硬化**：对齐斗鱼底层包装格式，预先将 `rateRecordTime_h5p_room` 等 6 个本地键全部锁定为原画 `0`，有效期设为 365 天。
+### 3.1 起播最高画质选择 (`src/core/quality.js`)
+1. 开启 `ExSave_HighestVideoQuality` 后，在起播 12 秒内尝试选择最高档位；网址路径变化时重置状态，保护期结束后允许用户手动降档。
+2. 从 `/betard/{rid}` 的 `room.multirates` 或取流响应的 `data.multirates` 读取档位，兼容 `rate` 与旧的 `type`，选择返回列表中的首个有效档位。沿用播放器的最高档优先顺序，不按名称、码率或档位编号重新排序；`rate=0` 不一定最高。
+3. fetch 首次获得列表后，最多补取一次最高档的真实播放响应。失败时保留原可播放响应；账号是否有权播放该档位由服务端判断。XHR 保留原生传输，并使用有界的画质菜单补选。
+4. `ExSave_HighestQualityRate` 保存按网址路径隔离的短期档位提示（5 分钟）。已选档位写入播放器偏好；`rateRecordTime_h5p_room` 是未登录限流标记，仍由 `NoLogin` 管理，不再当作画质缓存。
+5. 回归场景见 `tests/test_highest_quality.js`。转播房间的网址 RID 与实际流 RID 可能不同，验证时应同时观察取流响应和视频实际分辨率。
 
 ### 3.2 活跃榜贡献值实时注入 (`src/core/rank_engine.js`)
 1. **主上下文 WebSocket 原型劫持**：在页面初始化最早期劫持原生 WebSocket，截获 `ranklist`、`dayrk`、`weekrk`、`monthrk`、`totalrk` 数据包；

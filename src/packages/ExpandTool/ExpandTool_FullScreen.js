@@ -109,9 +109,9 @@ function initPkg_ExpandTool_HighestVideoQuality_Set() {
 }
 
 function initHighestVideoQuality() {
-	// 已由 src/core/quality.js 在原生主上下文最早期全链路接管，此处保持开关状态同步
+	// core/quality.js 按首流实际 multirates 选择档位；12 秒后允许手动切换。
 }
 
 function highestVideoQuality() {
-    // 0 轮询协议层强锁，避免与 core/quality.js 发生二次切流冲突
+    // 保留旧入口，不另启轮询，避免与核心层有界补选发生二次切流。
 }
