@@ -1,0 +1,49 @@
+.ex-room-revenue {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    max-width: 330px;
+    min-width: 0;
+    margin-right: 6px;
+    vertical-align: middle;
+    color: #4b5563;
+    font-size: 12px;
+    line-height: 18px;
+}
+
+.ex-room-revenue__value {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ex-room-revenue__refresh,
+.ex-room-revenue__source {
+    flex: none;
+    color: #64748b;
+    font: inherit;
+}
+
+.ex-room-revenue__refresh {
+    border: 0;
+    background: transparent;
+    padding: 0 2px;
+    cursor: pointer;
+}
+
+.ex-room-revenue__refresh:disabled {
+    cursor: wait;
+    opacity: 0.5;
+}
+
+.ex-room-revenue__source {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.ex-room-revenue__refresh:focus-visible,
+.ex-room-revenue__source:focus-visible {
+    outline: 2px solid #f60;
+    outline-offset: 2px;
+}

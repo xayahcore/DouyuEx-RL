@@ -51,6 +51,7 @@ async function main() {
     </body></html>`, {
         url: "https://www.douyu.com/9999",
         runScripts: "dangerously",
+        pretendToBeVisual: true,
     });
     const win = dom.window;
 
@@ -76,7 +77,16 @@ async function main() {
     win.GM_deleteValue = function () {};
     win.GM_openInTab = function () {};
     win.GM_setClipboard = function () {};
-    win.GM_xmlhttpRequest = function () {};
+    const revenueRequests = [];
+    win.GM_xmlhttpRequest = function (options) {
+        if (options.url.indexOf("https://dy.roozj.com/api/ranking/anchors?") === 0) {
+            revenueRequests.push(options);
+            const timer = win.setTimeout(function () {
+                options.onload({ status: 200, responseText: JSON.stringify({ code: 0, data: [{ room_id: "9999", total_income: 123.45, total_fans: 7, paid_fans: 3 }] }) });
+            }, 0);
+            return { abort: function () { win.clearTimeout(timer); } };
+        }
+    };
     win.GM_cookie = function () {};
     win.GM_registerMenuCommand = function () {};
     win.room_id = "9999";
@@ -108,6 +118,15 @@ async function main() {
         "两个前缀文案必须都在，实际 " + JSON.stringify(titleTime.textContent));
     assert.ok(String(titleTime.title).indexOf("2026-10-27 18:30") !== -1, "悬停必须给完整开播时间，实际 " + JSON.stringify(titleTime.title));
     console.log("✓ ① 标题栏：复制直播流右边是观看时间 + 开播时间，数据来自官方接口");
+
+    const revenue = win.document.querySelector(".ex-room-revenue");
+    assert.ok(revenue, "流水模块必须接入构建产物并真正挂载");
+    assert.strictEqual(titleTime.nextElementSibling, revenue, "流水位于时长后方，不打断复制流与时长的相邻关系");
+    assert.strictEqual(win.document.querySelectorAll(".ex-room-revenue").length, 1);
+    assert.ok(revenue.textContent.includes("123.45"), "金额沿用来源鱼翅单位，不能除以100");
+    assert.strictEqual(revenueRequests.length, 1, "首次挂载仅发起一次公开汇总请求");
+    assert.strictEqual(revenueRequests[0].anonymous, true, "第三方汇总请求不携带登录凭据");
+    assert.strictEqual(revenue.querySelector(".ex-room-revenue__source").href, "https://dy.roozj.com/");
 
     /* ---------- ② 同屏面板：主按钮粘底且没有白色渐变 ---------- */
     assert.doesNotThrow(function () { win.createPopupPlayerPanel(); }, "同屏面板必须能建出来");
