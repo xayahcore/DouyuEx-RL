@@ -41,6 +41,7 @@ async function main() {
         <div class="layout-Player-videoEntity"><video></video></div>
         <div class="Barrage-main"><ul id="js-barrage-list" class="Barrage-list"></ul></div>
         <div class="BackpackButton"></div>
+        <div class="layout-Player-asideMainTop"><div class="layout-Player-rankAll"><span id="native-sidebar-item">原生侧栏</span></div><div class="layout-Player-rank"></div></div>
         <div class="Title">
             <div class="Title-col"><span class="Title-row-text">c1</span></div>
             <div class="Title-col"><span class="Title-row-text">c2</span></div>
@@ -121,7 +122,9 @@ async function main() {
 
     const revenue = win.document.querySelector(".ex-room-revenue");
     assert.ok(revenue, "流水模块必须接入构建产物并真正挂载");
-    assert.strictEqual(titleTime.nextElementSibling, revenue, "流水位于时长后方，不打断复制流与时长的相邻关系");
+    assert.strictEqual(revenue.parentNode, win.document.querySelector(".layout-Player-rankAll"), "沿用原版右侧rankAll挂载位置");
+    assert.strictEqual(revenue.parentNode.firstElementChild, revenue, "统计条应位于右侧容器首位");
+    assert.notStrictEqual(titleTime.nextElementSibling, revenue, "标题栏不得遗留流水入口");
     assert.strictEqual(win.document.querySelectorAll(".ex-room-revenue").length, 1);
     assert.ok(revenue.textContent.includes("123.45"), "金额沿用来源鱼翅单位，不能除以100");
     assert.strictEqual(revenueRequests.length, 1, "首次挂载仅发起一次公开汇总请求");

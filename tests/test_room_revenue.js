@@ -2,10 +2,11 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const path = require("node:path");
 const { JSDOM } = require("jsdom");
-const source = fs.readFileSync(path.join(__dirname, "../src/packages/RoomRevenue/RoomRevenue.js"), "utf8");
+const source = fs.readFileSync(process.env.ROOM_REVENUE_TEST_SOURCE || path.join(__dirname, "../src/packages/RoomRevenue/RoomRevenue.js"), "utf8");
 
 const START = new Date(2026, 10, 5, 12, 0, 0).getTime();
-const ANCHOR = '<div class="Title-col"><span id="copy-real-live">复制直播流</span><span class="ex-title-time">观看时间 / 开播时间</span><span id="after-title">原生信息</span></div>';
+const ANCHOR = '<div class="Title-col"><span id="copy-real-live">复制直播流</span><span class="ex-title-time">观看时间 / 开播时间</span><span id="after-title">原生信息</span></div>' +
+    '<div class="layout-Player-asideMainTop"><div class="layout-Player-announce"><span id="native-notice">公告</span></div><div class="layout-Player-rankAll"></div><div class="layout-Player-rank" style="position:absolute;top:12px;display:block">排行榜</div></div>';
 const row = (amount = 99.4, extra = {}) => ({ room_id: "6979222", vip_id: "6657", anchor_name: "玩机器丶Machine", total_income: amount, ...extra });
 const payload = (rows = [row()]) => ({ code: 0, data: rows, source: "memory_pool_0ms" });
 const flush = async () => { for (let index = 0; index < 5; index++) await Promise.resolve(); };
@@ -97,7 +98,11 @@ async function main() {
         const copy = env.win.document.getElementById("copy-real-live");
         const time = env.win.document.querySelector(".ex-title-time");
         assert.equal(copy.nextElementSibling, time, "TitleTime must stay immediately after CopyRealLive");
-        assert.equal(time.nextElementSibling, env.node());
+        assert.equal(time.nextElementSibling.id, "after-title", "title information must not contain the revenue bar");
+        assert.equal(env.node().parentElement.className, "layout-Player-announce", "use the original announcement host first");
+        assert.equal(env.node().parentElement.firstElementChild, env.node(), "prepend before the native announcement");
+        assert.equal(env.node().nextElementSibling.id, "native-notice");
+        assert.equal(env.node().classList.contains("Title-blockInline"), false);
         assert.equal(env.requests.length, 1, "repeated init must share the first request");
         assert.equal(env.menus.size, 1);
         const request = env.requests[0].config;
@@ -117,19 +122,19 @@ async function main() {
         assert.ok(!Object.keys(request.headers || {}).some(key => /authorization|cookie/i.test(key)));
         env.respond();
         await flush();
-        assert.match(env.value(), /今日流水\s*99\.4\s*鱼翅/, "public income is already in fish fins; do not divide by 100");
+        assert.match(env.value(), /99\.4\s*鱼翅/, "public income is already in fish fins; do not divide by 100");
         assert.match(env.description(), /2026-11-05/);
         assert.equal(env.node().querySelector(".ex-room-revenue__source").href, "https://dy.roozj.com/");
         assert.ok(env.node().querySelector(".ex-room-revenue__refresh"));
         env.close();
-        console.log("✓ enabled by default, idempotent title placement, anonymous public aggregate request and correct units");
+        console.log("✓ enabled by default, original sidebar placement, anonymous public aggregate request and correct units");
     }
     {
         const env = environment();
         env.api.init();
         env.respond(payload([row(999, { room_id: "2222", vip_id: "66570" }), row(0)]));
         await flush();
-        assert.match(env.value(), /今日流水\s*0(?:\.0+)?\s*鱼翅/);
+        assert.match(env.value(), /^0(?:\.0+)?\s*鱼翅/);
         env.api.refresh(true);
         env.respond(payload([row("12.5", { room_id: "8000", vip_id: "6657" })]));
         await flush();
@@ -308,7 +313,7 @@ async function main() {
         env.navigate("/6657", "6979222");
         await flush();
         assert.equal(env.requests.length, beforeReturn, "returning to a room reuses its fresh daily cache");
-        assert.match(env.value(), /今日流水\s*0(?:\.0+)?\s*鱼翅/);
+        assert.match(env.value(), /^0(?:\.0+)?\s*鱼翅/);
         env.close();
         console.log("✓ a genuine zero survives same-key cache reads and returning to a previous room");
     }
@@ -479,6 +484,82 @@ async function main() {
         assert.equal(env.requests.length, 2, "request latency must not make the 150-second tick skip until 300 seconds");
         env.close();
         console.log("✓ first-response latency does not double the automatic refresh period through the TTL cache");
+    }
+    {
+        const env = environment();
+        env.win.document.querySelector('.layout-Player-announce').remove();
+        const rank = env.win.document.querySelector('.layout-Player-rank');
+        const originalStyle = rank.getAttribute('style');
+        const outside = env.win.document.createElement('div');
+        outside.className = 'layout-Player-rank';
+        outside.style.position = 'absolute';
+        env.win.document.body.appendChild(outside);
+        env.api.init();
+        assert.equal(env.node().parentElement.className, 'layout-Player-rankAll');
+        assert.equal(env.node().parentElement.firstElementChild, env.node());
+        assert.equal(rank.classList.contains('ex-room-revenue-rank-offset'), true);
+        assert.equal(outside.classList.contains('ex-room-revenue-rank-offset'), false, 'do not move unrelated players');
+        assert.equal(rank.getAttribute('style'), originalStyle);
+        env.api.setEnabled(false);
+        assert.equal(rank.classList.contains('ex-room-revenue-rank-offset'), false);
+        assert.equal(rank.getAttribute('style'), originalStyle, 'preserve native top, priority and display');
+        env.close();
+        console.log('✓ rankAll fallback reserves only the corresponding absolute rank and releases it on disable');
+    }
+    {
+        const env = environment();
+        const title = env.win.document.querySelector('.Title-col');
+        const legacy = env.win.document.createElement('div');
+        legacy.className = 'ex-room-revenue Title-blockInline';
+        legacy.innerHTML = '<span class="ex-room-revenue__value">old title placement</span>';
+        title.appendChild(legacy);
+        env.api.init();
+        assert.equal(env.node(), legacy, 'migrate the existing node instead of leaving a duplicate');
+        assert.equal(title.querySelector('.ex-room-revenue'), null);
+        assert.equal(env.node().querySelectorAll('[data-revenue-metric]').length, 3);
+        const oldRank = env.win.document.querySelector('.layout-Player-rank');
+        const oldRegion = env.win.document.querySelector('.layout-Player-asideMainTop');
+        const replacement = env.win.document.createElement('div');
+        replacement.className = 'layout-Player-asideMainTop';
+        replacement.innerHTML = '<div class="layout-Player-rankAll"></div><div class="layout-Player-rank" style="position:static"></div>';
+        oldRegion.replaceWith(replacement);
+        env.api.init();
+        assert.equal(env.win.document.querySelectorAll('.ex-room-revenue').length, 1);
+        assert.equal(replacement.querySelector('.layout-Player-rankAll').firstElementChild, env.node());
+        assert.equal(oldRank.classList.contains('ex-room-revenue-rank-offset'), false);
+        assert.equal(replacement.querySelector('.layout-Player-rank').classList.contains('ex-room-revenue-rank-offset'), false, 'static rank is displaced by normal flow only');
+        env.close();
+        console.log('✓ old title placement migrates and replaced sidebar containers retain one bar without stale offsets');
+    }
+    {
+        const env = environment();
+        env.win.document.querySelector('.layout-Player-asideMainTop').remove();
+        env.api.init();
+        await env.advance(11000);
+        assert.equal(env.node(), null, 'a title anchor alone is not a valid revenue mount');
+        assert.equal(env.requests.length, 0);
+        assert.equal(env.timers.size, 0);
+        env.close();
+        console.log('✓ missing sidebar does not fall back to the title or leave an endless mounting loop');
+    }
+    {
+        const env = environment();
+        env.api.init();
+        env.respond(payload([row(12.3, { total_fans: 0, paid_fans: 3, danmu_users: 45, peak_vip: 999 })]));
+        assert.equal(env.node().querySelector('.ex-room-revenue__donors').textContent, '0');
+        assert.equal(env.node().querySelector('.ex-room-revenue__speakers').textContent, '45');
+        assert.match(env.description(), /今日送礼人数/);
+        assert.match(env.description(), /今日发言人数/);
+        assert.match(env.description(), /付费送礼人数：3/);
+        assert.doesNotMatch(env.description(), /观看人数|实时贵宾|999/, 'do not relabel public aggregates as live viewers or nobles');
+        env.api.refresh(false);
+        assert.equal(env.requests.length, 1);
+        assert.equal(env.node().querySelector('.ex-room-revenue__speakers').textContent, '45');
+        env.api.refresh(true);
+        env.respond(payload([row(12.3, { danmu_users: null })]));
+        assert.equal(env.node().querySelector('.ex-room-revenue__speakers').textContent, '—');
+        env.close();
+        console.log('✓ compact metrics preserve donor/speaker semantics, cache values, genuine zeros and missing fields');
     }
 }
 

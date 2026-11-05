@@ -1,27 +1,75 @@
 .ex-room-revenue {
-    display: inline-flex;
+    display: flex;
     align-items: center;
-    gap: 5px;
-    max-width: 330px;
+    gap: 4px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    height: 33px;
+    padding: 0 7px;
     min-width: 0;
-    margin-right: 6px;
-    vertical-align: middle;
-    color: #4b5563;
+    color: #999;
     font-size: 12px;
-    line-height: 18px;
+    line-height: 33px;
+    white-space: nowrap;
 }
 
-.ex-room-revenue__value {
+.ex-room-revenue__metrics {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.ex-room-revenue__metric {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    min-width: 0;
+}
+
+.ex-room-revenue__value,
+.ex-room-revenue__donors,
+.ex-room-revenue__speakers {
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
+.ex-room-revenue__icon {
+    width: 16px;
+    height: 16px;
+    flex: none;
+    fill: currentColor;
+    line-height: 16px;
+    text-align: center;
+}
+
+.ex-room-revenue__donors {
+    color: #ed5a65;
+}
+
+.ex-room-revenue__icon--speakers {
+    color: #1296db;
+}
+
+.ex-room-revenue__icon--income {
+    color: #f54330;
+    font-size: 17px;
+    font-weight: 600;
+}
+
+.layout-Player-rank.ex-room-revenue-rank-offset {
+    top: 34px !important;
+}
+
 .ex-room-revenue__refresh,
 .ex-room-revenue__source {
     flex: none;
-    color: #64748b;
+    color: inherit;
     font: inherit;
 }
 
@@ -38,8 +86,9 @@
 }
 
 .ex-room-revenue__source {
-    text-decoration: underline;
-    text-underline-offset: 2px;
+    text-decoration: none;
+    padding: 0 2px;
+    font-size: 14px;
 }
 
 .ex-room-revenue__refresh:focus-visible,

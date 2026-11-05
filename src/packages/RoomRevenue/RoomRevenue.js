@@ -4,8 +4,9 @@ const ROOM_REVENUE_API = "https://dy.roozj.com/api/ranking/anchors";
 let roomRevenueState = {
     initialized: false, enabled: true, timer: null, waitTimer: null, waitTries: 0,
     request: null, context: null, blockedRid: "", cache: new Map(),
-    income: null, donors: null, paidDonors: null, updatedAt: null, loading: false, stale: false, message: ""
+    income: null, donors: null, paidDonors: null, speakers: null, updatedAt: null, loading: false, stale: false, message: ""
 };
+let roomRevenueRankNode = null;
 
 function RoomRevenue_id(value) {
     const text = value === undefined || value === null ? "" : String(value).trim();
@@ -46,6 +47,7 @@ function RoomRevenue_syncContext() {
         state.income = cached ? cached.income : null;
         state.donors = cached ? cached.donors : null;
         state.paidDonors = cached ? cached.paidDonors : null;
+        state.speakers = cached ? cached.speakers : null;
         state.updatedAt = cached ? cached.updatedAt : null;
         state.stale = !!(cached && Date.now() - cached.updatedAt >= ROOM_REVENUE_INTERVAL);
         state.message = "";
@@ -71,11 +73,11 @@ function RoomRevenue_render() {
     if (!node) return;
     const state = roomRevenueState;
     const value = node.querySelector(".ex-room-revenue__value");
-    let text = "今日流水 ";
+    let text = "";
     if (state.income !== null) {
         text += (state.income > 0 && state.income < 0.01 ? "<0.01" : state.income.toLocaleString("zh-CN", { maximumFractionDigits: 2 })) + "鱼翅";
         if (state.stale) text += "（上次）";
-    } else text += state.loading ? "加载中" : state.message ? "暂不可用" : "—";
+    } else text = state.loading ? "…" : "—";
     if (value) value.textContent = text;
     const refresh = node.querySelector(".ex-room-revenue__refresh");
     if (refresh) refresh.disabled = state.loading;
@@ -84,22 +86,96 @@ function RoomRevenue_render() {
     if (state.income !== null) detail.push("公开流水数值：" + state.income + "鱼翅");
     if (state.donors !== null) detail.push("送礼人数：" + state.donors);
     if (state.paidDonors !== null) detail.push("付费送礼人数：" + state.paidDonors);
+    if (state.speakers !== null && state.speakers !== undefined) detail.push("今日发言人数：" + state.speakers);
     if (state.updatedAt !== null) detail.push("获取时间：" + new Date(state.updatedAt).toLocaleString());
     if (state.stale) detail.push("显示上次成功结果");
     if (state.loading) detail.push("正在刷新");
     if (state.message) detail.push(state.message);
     node.title = detail.join("\n");
+    const metrics = [
+        ["donors", state.donors, "今日送礼人数", "total_fans"],
+        ["speakers", state.speakers, "今日发言人数", "danmu_users"]
+    ];
+    for (const [name, count, label, field] of metrics) {
+        const item = node.querySelector('[data-revenue-metric="' + name + '"]');
+        const number = node.querySelector(".ex-room-revenue__" + name);
+        const formatted = count === null || count === undefined ? "—" : count.toLocaleString("zh-CN");
+        if (number) number.textContent = formatted;
+        if (item) {
+            item.title = label + "（公开榜单 " + field + "）：" + formatted + "\n" + node.title;
+            item.setAttribute("aria-label", label + " " + formatted);
+        }
+    }
+    const money = node.querySelector('[data-revenue-metric="income"]');
+    if (money) {
+        money.title = "今日流水（公开榜单 total_income，单位：鱼翅）\n" + node.title;
+        money.setAttribute("aria-label", "今日流水 " + text);
+    }
+}
+
+function RoomRevenue_icon(kind) {
+    const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    icon.setAttribute("viewBox", "0 0 24 24");
+    icon.setAttribute("aria-hidden", "true");
+    icon.setAttribute("focusable", "false");
+    icon.setAttribute("class", "ex-room-revenue__icon ex-room-revenue__icon--" + kind);
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", kind === "donors"
+        ? "M12 2a5 5 0 1 0 0 10 5 5 0 0 0 0-10ZM3 22v-2a9 9 0 0 1 18 0v2h-2v-2a7 7 0 0 0-14 0v2H3Z"
+        : "M4 3h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-9l-5 3v-3H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm2 5v2h2V8H6Zm5 0v2h7V8h-7Zm-5 5v2h12v-2H6Z");
+    icon.appendChild(path);
+    return icon;
+}
+
+function RoomRevenue_reserveSpace(host) {
+    let rank = null;
+    // 当前版 rankAll/rank 同处 asideMainTop，static 排行榜由横条自然推下。
+    // 旧版绝对定位排行榜才需要原版的 top:34px；不改 display，也不全局影响其他播放器。
+    const region = host && (host.closest(".layout-Player-asideMainTop") || host.closest(".layout-Player-asideMain") || host.parentElement);
+    if (region) {
+        const candidates = Array.from(region.querySelectorAll(".layout-Player-rank")).filter(function(item) { return !item.contains(host); });
+        if (candidates.length === 1) {
+            const position = window.getComputedStyle(candidates[0]).position;
+            if (position === "absolute" || position === "fixed") rank = candidates[0];
+        }
+    }
+    if (roomRevenueRankNode && roomRevenueRankNode !== rank) roomRevenueRankNode.classList.remove("ex-room-revenue-rank-offset");
+    roomRevenueRankNode = rank;
+    if (rank) rank.classList.add("ex-room-revenue-rank-offset");
 }
 
 function RoomRevenue_mount() {
-    const anchor = document.querySelector(".ex-title-time");
-    if (!anchor || !anchor.parentNode) return false;
+    // 沿用原版 RealAudience 的挂载顺序和 prepend 方式。
+    const host = document.querySelector(".layout-Player-announce") || document.querySelector(".layout-Player-rankAll");
     let node = document.querySelector(".ex-room-revenue");
-    if (!node) {
-        node = document.createElement("div");
-        node.className = "ex-room-revenue Title-blockInline";
-        const value = document.createElement("span");
-        value.className = "ex-room-revenue__value";
+    if (!host) {
+        if (node) node.remove();
+        RoomRevenue_reserveSpace(null);
+        return false;
+    }
+    if (!node) node = document.createElement("div");
+    node.className = "ex-room-revenue";
+    // 老版本已挂在标题栏的节点也能就地升级、搬移；不留下第二份金额出口。
+    if (!node.querySelector(".ex-room-revenue__metrics")) {
+        node.replaceChildren();
+        const metrics = document.createElement("div");
+        metrics.className = "ex-room-revenue__metrics";
+        for (const name of ["donors", "speakers", "income"]) {
+            const item = document.createElement("span");
+            item.className = "ex-room-revenue__metric";
+            item.dataset.revenueMetric = name;
+            if (name === "income") {
+                const icon = document.createElement("span");
+                icon.className = "ex-room-revenue__icon ex-room-revenue__icon--income";
+                icon.textContent = "¥";
+                icon.setAttribute("aria-hidden", "true");
+                item.appendChild(icon);
+            } else item.appendChild(RoomRevenue_icon(name));
+            const value = document.createElement("span");
+            value.className = name === "income" ? "ex-room-revenue__value" : "ex-room-revenue__" + name;
+            item.appendChild(value);
+            metrics.appendChild(item);
+        }
         const refresh = document.createElement("button");
         refresh.type = "button";
         refresh.className = "ex-room-revenue__refresh";
@@ -112,12 +188,13 @@ function RoomRevenue_mount() {
         source.href = "https://dy.roozj.com/";
         source.target = "_blank";
         source.rel = "noopener noreferrer";
-        source.textContent = "dy.roozj";
-        source.title = "查看流水来源";
-        node.append(value, refresh, source);
+        source.textContent = "↗";
+        source.title = "来源：dy.roozj.com 公开榜单";
+        source.setAttribute("aria-label", "查看流水来源 dy.roozj.com");
+        node.append(metrics, refresh, source);
     }
-    // 保留 copy-real-live 紧邻 TitleTime 的契约，金额放在时长后方。
-    if (node.parentNode !== anchor.parentNode || anchor.nextElementSibling !== node) anchor.parentNode.insertBefore(node, anchor.nextSibling);
+    if (node.parentNode !== host || host.firstElementChild !== node) host.insertBefore(node, host.firstChild);
+    RoomRevenue_reserveSpace(host);
     RoomRevenue_render();
     return true;
 }
@@ -164,7 +241,7 @@ function RoomRevenue_parse(response, context) {
     if (typeof amount !== "number" && !(typeof amount === "string" && /^\d+(?:\.\d+)?$/.test(amount.trim()))) return { error: "来源暂无有效流水数值" };
     const income = Number(amount);
     if (!Number.isFinite(income) || income < 0) return { error: "来源流水数值不可用" };
-    return { income: income, donors: RoomRevenue_count(row.total_fans), paidDonors: RoomRevenue_count(row.paid_fans) };
+    return { income: income, donors: RoomRevenue_count(row.total_fans), paidDonors: RoomRevenue_count(row.paid_fans), speakers: RoomRevenue_count(row.danmu_users) };
 }
 
 function RoomRevenue_refresh(force) {
@@ -178,6 +255,7 @@ function RoomRevenue_refresh(force) {
         state.income = cached.income;
         state.donors = cached.donors;
         state.paidDonors = cached.paidDonors;
+        state.speakers = cached.speakers;
         state.updatedAt = cached.updatedAt;
         state.stale = false;
         state.message = "";
@@ -206,11 +284,12 @@ function RoomRevenue_refresh(force) {
             state.income = result.income;
             state.donors = result.donors;
             state.paidDonors = result.paidDonors;
+            state.speakers = result.speakers;
             state.updatedAt = Date.now();
             state.stale = false;
             state.message = "";
             state.cache.delete(context.key);
-            state.cache.set(context.key, { income: result.income, donors: result.donors, paidDonors: result.paidDonors, updatedAt: state.updatedAt });
+            state.cache.set(context.key, { income: result.income, donors: result.donors, paidDonors: result.paidDonors, speakers: result.speakers, updatedAt: state.updatedAt });
             while (state.cache.size > 8) state.cache.delete(state.cache.keys().next().value);
         }
         RoomRevenue_render();
@@ -272,6 +351,7 @@ function RoomRevenue_setEnabled(enabled) {
     else {
         const node = document.querySelector(".ex-room-revenue");
         if (node) node.remove();
+        RoomRevenue_reserveSpace(null);
     }
 }
 

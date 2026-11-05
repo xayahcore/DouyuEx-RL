@@ -1,6 +1,6 @@
 # 直播间流水
 
-在直播间标题栏的观看／开播时间后显示当日礼物流水，数据来自 [ROZJ 公开主播榜单](https://dy.roozj.com/)。金额单位沿用来源站的「鱼翅」，不换算为人民币，也不代表主播实际到账收入。
+沿用原版 DouyuEx 的右侧弹幕区顶部统计条位置，紧凑展示今日送礼人数、发言人数和礼物流水，数据来自 [ROZJ 公开主播榜单](https://dy.roozj.com/)。金额单位沿用来源站的「鱼翅」，不换算为人民币，也不代表主播实际到账收入。
 
 - 默认开启，每 150 秒更新一次；页面隐藏时暂停网络刷新。
 - 显示统计日期和获取时间，可手动刷新或打开来源站核对。
@@ -13,4 +13,4 @@
 
 公开统计可能存在采集遗漏、延迟、免费礼物计价等口径差异。此功能不会恢复已停服的 doseeing 接口，也不把流水或送礼人数当作实时在线人数。
 
-配置键为 `ExSave_RoomRevenue`。实现集中在 `src/packages/RoomRevenue/`，与现有时长显示、头像入口及弹幕处理独立；回归测试见 `tests/test_room_revenue.js`。
+配置键为 `ExSave_RoomRevenue`。实现集中在 `src/packages/RoomRevenue/`；与原版一样，优先插入 `.layout-Player-announce` 首位，否则插入 `.layout-Player-rankAll`。仅为同一区域的绝对定位排行榜预留高度，关闭时清理，现有标题时长保持原位。回归测试见 `tests/test_room_revenue.js`。
