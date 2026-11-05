@@ -65,6 +65,154 @@ const streamURL = "https://www.douyu.com/lapi/live/getH5PlayV1/6979222";
 const form = rate => ({ method: "POST", body: "cdn=ws-h5&rate=" + rate });
 
 async function run() {
+    const preloadEnv = environment();
+    const preload = Promise.resolve(stream(15));
+    preloadEnv.context.preloadStreamUrlPromise = preload;
+    assert.equal(preloadEnv.context.preloadStreamUrlPromise, preload, "startup must preserve the native preload promise, including an already-correct stream");
+    assert.equal((await preloadEnv.context.preloadStreamUrlPromise).data.rate, 15);
+    assert.equal(preloadEnv.calls.length, 0, "reading a native preload must not request another stream");
+    console.log("✓ native preload remains immediately available without another request");
+
+    const shared = environment();
+    let releaseSharedUpgrade;
+    const sharedCompletions = [];
+    shared.replies.push(stream(0), stream(0), () => new Promise(resolve => { releaseSharedUpgrade = resolve; }));
+    const sharedFirst = shared.context.fetch(streamURL, form(0)).then(response => { sharedCompletions.push("first"); return response; });
+    const sharedSecond = shared.context.fetch(streamURL, form(0)).then(response => { sharedCompletions.push("second"); return response; });
+    for (let step = 0; step < 30 && shared.calls.length < 3; step++) await new Promise(setImmediate);
+    await new Promise(setImmediate);
+    assert.equal(shared.calls.length, 3, "concurrent initial requests share one upgrade request");
+    assert.deepEqual(sharedCompletions, [], "a concurrent low stream must not escape while the shared upgrade is pending");
+    releaseSharedUpgrade(new Response(JSON.stringify(stream(15))));
+    const sharedResponses = await Promise.all([sharedFirst, sharedSecond]);
+    assert.notEqual(sharedResponses[0], sharedResponses[1], "callers need separately consumable response bodies");
+    assert.deepEqual(await Promise.all(sharedResponses.map(async response => (await response.json()).data.rate)), [15, 15]);
+    shared.replies.push(stream(4));
+    assert.equal((await (await shared.context.fetch(streamURL, form(4))).json()).data.rate, 4);
+    assert.equal(new URLSearchParams(shared.calls.at(-1).init.body).get("rate"), "4", "the first successful upgrade must immediately release later quality choices");
+    console.log("✓ concurrent startup responses share the upgrade; success immediately releases later choices");
+
+    const sharedCancel = environment();
+    const cancelledCaller = new AbortController();
+    let releaseRemainingUpgrade;
+    sharedCancel.replies.push(stream(0), stream(0), () => new Promise(resolve => { releaseRemainingUpgrade = resolve; }));
+    const cancelledRequest = sharedCancel.context.fetch(streamURL, { ...form(0), signal: cancelledCaller.signal });
+    const remainingRequest = sharedCancel.context.fetch(streamURL, form(0));
+    for (let step = 0; step < 30 && sharedCancel.calls.length < 3; step++) await new Promise(setImmediate);
+    assert.equal(sharedCancel.calls.length, 3);
+    const cancellation = new Error("cancel just one initial request");
+    const cancelledAssertion = assert.rejects(cancelledRequest, error => error === cancellation);
+    cancelledCaller.abort(cancellation);
+    await cancelledAssertion;
+    assert.equal(sharedCancel.calls[2].init.signal.aborted, false, "one caller must not abort the upgrade still needed by another");
+    releaseRemainingUpgrade(new Response(JSON.stringify(stream(15))));
+    assert.equal((await (await remainingRequest).json()).data.rate, 15);
+    assert.equal(sharedCancel.timers.size, 0);
+    console.log("✓ cancelling one startup caller leaves the other caller's upgrade alive");
+
+    const lateInitial = environment();
+    let releaseLateInitial;
+    lateInitial.replies.push(stream(0), () => new Promise(resolve => { releaseLateInitial = resolve; }), stream(15));
+    const upgradedInitial = lateInitial.context.fetch(streamURL, form(0));
+    const lateInitialRequest = lateInitial.context.fetch(streamURL, form(0));
+    assert.equal((await (await upgradedInitial).json()).data.rate, 15);
+    lateInitial.replies.push(stream(4));
+    assert.equal((await (await lateInitial.context.fetch(streamURL, form(4))).json()).data.rate, 4);
+    releaseLateInitial(new Response(JSON.stringify(stream(0))));
+    assert.equal((await (await lateInitialRequest).json()).data.rate, 15, "an already-in-flight startup response must use the shared result even after automatic selection ends");
+    console.log("✓ late initial responses cannot restore the low stream after the upgrade");
+
+    const cancelAll = environment();
+    const callers = [new AbortController(), new AbortController()];
+    cancelAll.replies.push(stream(0), stream(0), () => new Promise(() => {}));
+    const allRequests = callers.map(caller => cancelAll.context.fetch(streamURL, { ...form(0), signal: caller.signal }));
+    const allCancelled = allRequests.map(request => assert.rejects(request, error => error.name === "AbortError"));
+    for (let step = 0; step < 30 && cancelAll.calls.length < 3; step++) await new Promise(setImmediate);
+    callers[0].abort();
+    assert.equal(cancelAll.calls[2].init.signal.aborted, false);
+    callers[1].abort();
+    await Promise.all(allCancelled);
+    await new Promise(setImmediate);
+    assert.equal(cancelAll.calls[2].init.signal.aborted, true, "abort shared network work when no startup caller needs it");
+    assert.equal(cancelAll.timers.size, 0);
+    console.log("✓ cancelling every startup caller aborts the shared request and clears its timer");
+
+    const nativeHighest = environment();
+    nativeHighest.replies.push(stream(15));
+    await nativeHighest.context.fetch(streamURL, form(0));
+    assert.equal(nativeHighest.calls.length, 1, "a native highest stream needs no replay");
+    nativeHighest.context.getLegacyFirstStream = options => options;
+    assert.equal(nativeHighest.context.getLegacyFirstStream({ rate: 4 }).rate, 4, "native highest-quality success ends first-stream interception immediately");
+    nativeHighest.replies.push(stream(4));
+    await nativeHighest.context.fetch(streamURL, form(4));
+    assert.equal(new URLSearchParams(nativeHighest.calls.at(-1).init.body).get("rate"), "4");
+    console.log("✓ native highest-quality success also releases later choices without waiting 12 seconds");
+
+    const sharedRooms = environment();
+    let releaseOldUpgrade;
+    sharedRooms.replies.push(stream(0), () => new Promise(resolve => { releaseOldUpgrade = resolve; }));
+    const oldRoomRequest = sharedRooms.context.fetch(streamURL, form(0));
+    for (let step = 0; step < 30 && sharedRooms.calls.length < 2; step++) await new Promise(setImmediate);
+    sharedRooms.navigate("/2002");
+    const newRoomRates = [{ rate: 16, name: "4K" }, { rate: 4, name: "蓝光4M" }];
+    sharedRooms.replies.push(stream(4, newRoomRates), stream(16, newRoomRates));
+    assert.equal((await (await sharedRooms.context.fetch("https://www.douyu.com/lapi/live/getH5PlayV1/2002", form(4))).json()).data.rate, 16);
+    releaseOldUpgrade(new Response(JSON.stringify(stream(15))));
+    assert.equal((await (await oldRoomRequest).json()).data.rate, 0, "the old room's late replay is not applied after navigation");
+    const newRoomCache = JSON.parse(sharedRooms.storage.get("ExSave_HighestQualityRate"));
+    assert.equal(newRoomCache.path, "/2002");
+    assert.equal(newRoomCache.rate, 16, "old task completion cannot replace the new room's preference");
+    console.log("✓ a late shared upgrade cannot change the next room's quality state");
+
+    for (const variant of [
+        { input: streamURL, init: { method: "POST", body: "cdn=other&rate=4" } },
+        { input: streamURL, init: { method: "POST", body: "cdn=ws-h5&rate=4&codec=h265" } },
+        { input: streamURL, init: { ...form(4), headers: { "x-playback": "different" } } },
+        { input: streamURL.replace("getH5PlayV1", "getH5PlayV2"), init: form(4) },
+        { input: new Request(streamURL, { ...form(4), headers: { "content-type": "application/x-www-form-urlencoded" } }) }
+    ]) {
+        const incompatible = environment();
+        let releaseCompatibleUpgrade;
+        incompatible.replies.push(stream(0), () => new Promise(resolve => { releaseCompatibleUpgrade = resolve; }));
+        const originalStartup = incompatible.context.fetch(streamURL, form(0));
+        for (let step = 0; step < 30 && incompatible.calls.length < 2; step++) await new Promise(setImmediate);
+        const nativeResponse = new Response(JSON.stringify(stream(4)));
+        incompatible.replies.push(() => Promise.resolve(nativeResponse));
+        const bypassed = await incompatible.context.fetch(variant.input, variant.init);
+        assert.equal(bypassed, nativeResponse, "different endpoint/CDN/codec/headers or an unverified Request must retain its own native response");
+        assert.equal(new URLSearchParams(incompatible.calls.at(-1).body || incompatible.calls.at(-1).init.body).get("rate"), "4", "native line recovery must not be retargeted while another startup request upgrades");
+        releaseCompatibleUpgrade(new Response(JSON.stringify(stream(15))));
+        assert.equal((await (await originalStartup).json()).data.rate, 15);
+    }
+    console.log("✓ incompatible startup requests retain their own endpoint, line, payload and response");
+
+    const nativeCancel = environment();
+    const nativeCaller = new AbortController();
+    const nativeReady = new Response(JSON.stringify(stream(15)));
+    const nativeClone = nativeReady.clone;
+    nativeReady.clone = function() {
+        if (nativeCaller.signal.aborted) throw new TypeError("aborted native response body");
+        return nativeClone.call(this);
+    };
+    Object.defineProperties(nativeReady, { url: { value: streamURL }, type: { value: "cors" }, redirected: { value: true } });
+    let releaseNativeFollower;
+    nativeCancel.replies.push(() => Promise.resolve(nativeReady), () => new Promise(resolve => { releaseNativeFollower = resolve; }));
+    const nativeLeader = nativeCancel.context.fetch(streamURL, { ...form(0), signal: nativeCaller.signal });
+    const nativeFollower = nativeCancel.context.fetch(streamURL, form(0));
+    const leaderResponse = await nativeLeader;
+    const leaderClone = leaderResponse.clone();
+    assert.equal(leaderClone.url, streamURL);
+    assert.equal(leaderClone.type, "cors");
+    assert.equal(leaderClone.redirected, true);
+    assert.equal((await leaderResponse.json()).data.rate, 15);
+    assert.throws(() => leaderResponse.clone(), TypeError, "snapshot clone must still reject a consumed body");
+    nativeCaller.abort();
+    releaseNativeFollower(new Response(JSON.stringify(stream(0))));
+    const followerResponse = await nativeFollower;
+    assert.equal(followerResponse.url, streamURL);
+    assert.equal((await followerResponse.json()).data.rate, 15, "late callers must not depend on the first caller's abortable native body");
+    console.log("✓ shared response snapshots preserve metadata and isolate native-body cancellation");
+
     const env = environment();
     env.replies.push(metadata());
     const data = await (await env.context.fetch("https://www.douyu.com/betard/1001")).json();
@@ -120,7 +268,7 @@ async function run() {
     assert.equal(requestEnv.calls[1].input.headers.get("x-test"), "retained");
     const params = new URLSearchParams("rate=4&cdn=test");
     await requestEnv.context.fetch(new URL(streamURL), { method: "POST", body: params });
-    assert.equal(requestEnv.calls.at(-1).init.body.get("rate"), "15");
+    assert.equal(requestEnv.calls.at(-1).init.body.get("rate"), "4", "after highest-quality success, later URLSearchParams choices stay unchanged");
     assert.equal(params.get("rate"), "4");
     console.log("✓ Request/URL/URLSearchParams supported without mutating caller bodies");
 
