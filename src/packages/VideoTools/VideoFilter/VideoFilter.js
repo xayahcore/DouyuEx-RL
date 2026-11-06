@@ -63,7 +63,7 @@ function Filter_getPanelHtml() {
                 </div>
             </div>
             <div class="filter__filter">
-                <p style="color:white;float:left;line-height:20px">滤镜</p>
+                <p class="dx-ink-white dx-lh-20 dx-float-left" >滤镜</p>
                 <select class="c3-4f78e3" id="filter__select">
                     <option class="option-b5745c" value="default">无</option>
                     <option class="option-b5745c" value="1977">1977</option>
@@ -87,7 +87,7 @@ function Filter_getPanelHtml() {
                     <option class="option-b5745c" value="Xpro2">Xpro2</option>
                 </select>
             </div>
-            <ul style="clear:both">
+            <ul class="dx-clear-both" >
                 <li id="filter__reset2">重置</li>
             </ul>
         </div>
@@ -145,11 +145,11 @@ function Filter_insertEnhanceModal() {
             <div class="enhance-modal__content">
                 <img class="enhance-modal__img" src="https://c-yuba.douyucdn.cn/yubavod/b/zEqAvQaXrd5L/c16fdac3db1903db3a39a6557c2b5ab5.gif" alt=""/>
                 <div class="enhance-modal__text">
-                    开启后，弹幕飘屏会被遮挡，请将鼠标移入到直播画面中并点击<img style="width:32px;" src="https://c-yuba.douyucdn.cn/yubavod/b/zEqAvQaXrd5L/2dd9e0d70e39a532a2675717eb054129.png" alt="">
+                    开启后，弹幕飘屏会被遮挡，请将鼠标移入到直播画面中并点击<img class="dx-w-32" src="https://c-yuba.douyucdn.cn/yubavod/b/zEqAvQaXrd5L/2dd9e0d70e39a532a2675717eb054129.png" alt="" >
                     <br />
                     完成后，再<b>刷新</b>以恢复弹幕飘屏，该功能会<b>自动保存</b>
                     <br />
-                    <a style="color: #ff7700;" href="https://www.microsoft.com/zh-cn/edge/features/enhance-video?form=MT0160" target="_blank">没有增强图标？</a>
+                    <a class="dx-ink-ff7700" href="https://www.microsoft.com/zh-cn/edge/features/enhance-video?form=MT0160" target="_blank" >没有增强图标？</a>
                 </div>
             </div>
         </div>

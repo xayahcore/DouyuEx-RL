@@ -1,0 +1,318 @@
+/* ==========================================================================
+   after-glass2.css —— 「单层玻璃卡」：比路线 G 更透（卡片 alpha 0.87 → 0.62）
+   --------------------------------------------------------------------------
+   透光率 13% → 38%。代价是三件事必须一起改，少一件就翻车：
+     ① 次级文字不能浅：#334155 在 0.62 上只有 3.86，不够 4.5 —— 说明文字统一 #1e293b(5.46)，
+        主次层级改由字号 + 字重承担（标题 12.5px/600，说明 11.5px/400）。
+     ② 蓝色不许直接画在玻璃上：#0066ff 对 0.62 卡片只有 1.80 —— 所有蓝元素改成"自带底"的形态
+        （蓝底白字药丸 4.83，或白底蓝图标 4.83）。「极速秒开」那种裸蓝字必须变药丸。
+     ③ 开关不加白晕（用户 2026-11-01 定）：改用 1px 深色内环 rgba(15,23,42,.70)，
+        合成后 关态 4.24 / 开态 4.81，两态都过 1.4.11 的 3:1；旋钮对填充 关 3.35 / 开 4.83。
+   Dock 与路线 G 相同：磁贴 0.42 + 图标 #0f172a，选中 0.92 白 + 蓝图标。
+   ========================================================================== */
+
+.after {
+  --g2-shell: rgba(255, 255, 255, 0.34);
+  --g2-card: rgba(255, 255, 255, 0.62);
+  --g2-blur: blur(28px) saturate(200%);
+  --g2-card-hairline: inset 0 0 0 0.5px rgba(255, 255, 255, 0.28);
+  --g2-ink-1: #0f172a;      /* 黑场 6.66:1 */
+  --g2-ink-2: #1e293b;      /* 黑场 5.46:1 —— 次级文字的下限 */
+  --g2-blue: #0066ff;
+  --g2-hit: 44px;
+}
+
+/* ---------- 外壳 0.34 ---------- */
+.after .miuix-modal,
+.after .sign-panel,
+.after .fans-continue-panel,
+.after .extool,
+.after .livetool,
+.after .bloop,
+.after .exlottery,
+.after .popup-player-panel,
+.after .exupdate-panel,
+.after .danmaku-history-panel {
+  background: var(--g2-shell) !important;
+  backdrop-filter: var(--g2-blur) !important;
+  -webkit-backdrop-filter: var(--g2-blur) !important;
+  border: 1px solid rgba(255, 255, 255, 0.45) !important;
+  box-shadow: inset 0 1px 1.5px rgba(255, 255, 255, 0.9), 0 18px 44px rgba(15, 23, 42, 0.20) !important;
+}
+
+/* ---------- 头与卡片同为一层 0.62（没有"岛"） ---------- */
+.after .miuix-modal__header {
+  background: var(--g2-card) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.30) !important;
+}
+.after .miuix-modal__body {
+  background: transparent !important;
+  padding: 10px 0 14px 0 !important;
+  max-height: none !important;
+}
+
+.after .fans-panel__card,
+.after .popup-panel__card,
+.after .exupdate-panel__card,
+.after .miuix-card,
+.after .livetool__cell {
+  background: var(--g2-card) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: none !important;
+  border-radius: 14px !important;
+  box-shadow: var(--g2-card-hairline), 0 2px 10px rgba(15, 23, 42, 0.06) !important;
+  margin: 0 12px 10px 12px !important;
+  padding: 12px 14px !important;
+}
+
+/* ---------- ① 字：主次只由字号/字重区分 ---------- */
+.after .sign-option-title {
+  color: var(--g2-ink-1) !important;
+  font-size: 12.5px !important;
+  font-weight: 600 !important;
+  line-height: 1.35 !important;
+}
+.after .sign-option-desc {
+  color: var(--g2-ink-2) !important;   /* 5.46:1，不能再浅 */
+  font-size: 11.5px !important;
+  font-weight: 400 !important;
+  line-height: 1.4 !important;
+}
+.after .fans-panel__card-title,
+.after .exupdate-panel__card-title,
+.after .popup-panel__card-title,
+.after .miuix-card__title,
+.after .miuix-modal__title,
+.after .livetool__cell_title > span[id$="__title"] {
+  color: var(--g2-ink-1) !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+}
+.after .fans-panel__card-header > span:not(.fans-panel__card-title),
+.after .exupdate-panel__card-header > span:not(.exupdate-panel__card-title) {
+  color: var(--g2-ink-2) !important;
+  font-size: 11.5px !important;
+}
+.after .exupdate-list { color: var(--g2-ink-2) !important; font-size: 12px !important; }
+.after .sign-log-box {
+  color: var(--g2-ink-2) !important;
+  font-size: 11.5px !important;
+  background: rgba(255, 255, 255, 0.72) !important;
+  border-color: rgba(15, 23, 42, 0.08) !important;
+}
+
+/* ---------- ② 蓝：一律自带底 ---------- */
+/* 「极速秒开」这类裸蓝字 → 蓝底白字药丸（按内联色值精确命中） */
+.after .fans-panel__card-header > span[style*="0066ff"],
+.after .fans-panel__card-header > span[style*="0, 102, 255"] {
+  background: var(--g2-blue) !important;
+  color: #ffffff !important;
+  border-radius: 999px !important;
+  padding: 1px 8px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+}
+/* 抽屉药丸（导出 / 导入）→ 蓝底白字 */
+.after .livetool__cell_title span:not([id$="__title"]) {
+  background: var(--g2-blue) !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+  border-radius: 8px !important;
+  font-size: 11.5px !important;
+}
+.after .livetool__cell_title span:not([id$="__title"]):hover {
+  background: #0052d9 !important;
+}
+/* 面板头图标：白底蓝图标（蓝对白 4.83），不再裸蓝画在玻璃上 */
+.after .ex-title-ico {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border-radius: 6px !important;
+  padding: 1px 2px !important;
+  color: var(--g2-blue) !important;
+}
+.after .ex-title-ico svg { color: var(--g2-blue) !important; }
+/* 卡片头小图标：深墨（3.86:1 ≥ 图形 3:1） */
+.after .ex-card-ico,
+.after .ex-card-ico svg { color: var(--g2-ink-2) !important; }
+/* 分段胶囊：选中是白底蓝字（4.83），未选中深墨 */
+.after .miuix-seg { background: rgba(15, 23, 42, 0.06) !important; border-radius: 8px !important; }
+.after .miuix-seg__label { color: var(--g2-ink-2) !important; font-size: 11.5px !important; }
+.after .miuix-seg__item > input[type="radio"]:checked + .miuix-seg__label {
+  background: #ffffff !important;
+  color: var(--g2-blue) !important;
+}
+
+/* ---------- ③ 开关：保持现状，本次不动（用户 2026-11-01 定） ----------
+ * 过程留档：先试过 4px 白晕、再试过 1px 深色内环，两次都被判定"肉眼可见一圈东西"，作废。
+ * 现状 = ExPanel.css:716-781 那一套（轨道 rgba(0,0,0,.14) + 白旋钮 + 开态 #0066ff），
+ * 本文件不再对 .sign-checkbox / .miuix-switch 做任何外观声明。
+ * 已知代价（记录，不作为待办）：关态轨道对卡片约 1.2–1.3:1，低于 1.4.11 的 3:1；
+ * 唯一保留的改动是键盘 focus 环（只在 Tab 时出现，不影响静态观感，见下方 A6 段）。 */
+/* ---------- 行与列表 ---------- */
+.after .sign-option-item,
+.after .miuix-item {
+  background: rgba(255, 255, 255, 0.34) !important;
+  border: 1px solid rgba(255, 255, 255, 0.42) !important;
+  border-radius: 10px !important;
+  padding: 8px 12px !important;
+  gap: 8px !important;
+  min-height: var(--g2-hit) !important;
+}
+.after .sign-option-item:hover,
+.after .miuix-item:hover {
+  background: rgba(255, 255, 255, 0.60) !important;
+  border-color: rgba(0, 102, 255, 0.40) !important;
+  transform: none !important;
+}
+.after .sign-options-list { gap: 8px !important; }
+.after .fans-panel__card-header,
+.after .exupdate-panel__card-header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.34) !important;
+  margin-bottom: 10px !important;
+  padding-bottom: 6px !important;
+}
+
+/* ---------- Dock：与路线 G 一致 ---------- */
+.after .ex-panel {
+  background: rgba(255, 255, 255, 0.34) !important;
+  backdrop-filter: var(--g2-blur) !important;
+  -webkit-backdrop-filter: var(--g2-blur) !important;
+  border: 1px solid rgba(255, 255, 255, 0.45) !important;
+  padding: 8px 16px !important;
+}
+.after .ex-panel__wrap { gap: 8px !important; }
+.after .ex-panel__wrap > div {
+  background: rgba(255, 255, 255, 0.42) !important;
+  border: 1px solid rgba(255, 255, 255, 0.55) !important;
+  transform: none !important;
+}
+.after .ex-panel__icon svg,
+.after .ex-ico { color: #0f172a !important; }
+.after .ex-panel__wrap > div:hover,
+.after .ex-panel__wrap > div.is-demo-hover {
+  background: rgba(255, 255, 255, 0.46) !important;
+  transform: none !important;
+  border-color: var(--g2-blue) !important;
+  box-shadow: inset 0 0 0 1.5px rgba(0, 102, 255, 0.45) !important;
+}
+.after .ex-panel__wrap > div.is-active,
+.after .ex-panel__wrap > div.ex-dock-active {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-color: rgba(0, 102, 255, 0.30) !important;
+  box-shadow: 0 8px 20px rgba(0, 102, 255, 0.26), inset 0 1px 1px #fff !important;
+  transform: translateY(-2px) !important;
+}
+.after .ex-panel__wrap > div.is-active .ex-panel__icon svg,
+.after .ex-panel__wrap > div.ex-dock-active .ex-panel__icon svg,
+.after .ex-panel__wrap > div.is-active .ex-ico,
+.after .ex-panel__wrap > div.ex-dock-active .ex-ico {
+  color: var(--g2-blue) !important;
+  fill: currentColor !important;
+}
+
+/* ---------- 关闭按钮 / 命中区 / 焦点环 ---------- */
+.after .miuix-modal__close {
+  background: rgba(255, 255, 255, 0.85) !important;
+  color: var(--g2-ink-2) !important;
+}
+.after .miuix-modal__close::after,
+.after .ex-panel__close::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--g2-hit);
+  height: var(--g2-hit);
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+}
+.after .miuix-modal__close:focus-visible,
+.after .ex-panel__close:focus-visible,
+.after .sign-option-item:focus-visible,
+.after .miuix-item:focus-visible,
+.after .ex-panel__wrap > div:focus-visible,
+.after .ex-btn-primary:focus-visible,
+.after .fans-panel__submit-btn:focus-visible,
+.after .exupdate-panel__submit-btn:focus-visible,
+.after input.sign-checkbox:focus-visible,
+.after input.miuix-switch:focus-visible,
+.after .sign-checkbox.is-demo-focus,
+.after input.sign-checkbox.is-demo-focus {
+  outline: 2px solid var(--g2-blue) !important;
+  outline-offset: 2px !important;
+}
+.after .ex-btn-primary,
+.after .fans-panel__submit-btn,
+.after .exupdate-panel__submit-btn {
+  height: var(--g2-hit) !important;
+  border-radius: 8px !important;
+  font-size: 14px !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .after .ex-panel,
+  .after .ex-panel *,
+  .after .miuix-modal,
+  .after .miuix-modal * {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+  .after .ex-panel__wrap > div:hover,
+  .after .ex-panel__wrap > div.is-demo-hover,
+  .after .ex-panel__wrap > div.is-active,
+  .after .miuix-modal__close:hover,
+  .after .ex-panel__close:hover { transform: none !important; }
+}
+
+
+/* ==========================================================================
+   G2+ · 液体玻璃修饰（2026-11-01 Lead 追加）
+   --------------------------------------------------------------------------
+   不改变任何 alpha、不改变任何墨色 —— 只加"受光"与"切边"三件事：
+   alpha 与墨色一变就会动对比度，这里一条都不动，所以前面所有实测数值仍然成立。
+   1) 卡片上沿受光：linear-gradient 只加白、且只加在上 38%，文字区实际亮度略升（对比只会更安全）
+   2) 玻璃切边：外层 0.5px 深色外描边 + 内层 1px 白色高光，做出"切面"的折射感
+   3) 面板外框：同样的双描边，外加更深的落地阴影，产生"厚玻璃板"的悬浮感
+   ========================================================================== */
+
+.after .fans-panel__card,
+.after .popup-panel__card,
+.after .exupdate-panel__card,
+.after .miuix-card,
+.after .livetool__cell {
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0) 38%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.36) !important;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.78),
+    0 0 0 0.5px rgba(15, 23, 42, 0.10),
+    0 6px 16px rgba(15, 23, 42, 0.10) !important;
+}
+
+.after .miuix-modal,
+.after .sign-panel,
+.after .fans-continue-panel,
+.after .extool,
+.after .livetool,
+.after .bloop,
+.after .exlottery,
+.after .popup-player-panel,
+.after .exupdate-panel {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.90),
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.55),
+    0 0 0 0.5px rgba(15, 23, 42, 0.14),
+    0 18px 44px rgba(15, 23, 42, 0.22) !important;
+}
+
+/* Dock 胶囊：同款双描边，胶囊在页面横向拉开时"厚玻璃条"的观感更明显 */
+.after .ex-panel {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.95),
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.55),
+    0 0 0 0.5px rgba(15, 23, 42, 0.12),
+    0 14px 34px rgba(15, 23, 42, 0.20) !important;
+}
+

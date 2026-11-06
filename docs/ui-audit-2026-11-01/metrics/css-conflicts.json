@@ -1,0 +1,117 @@
+{
+  "individualSelectorCount": 471,
+  "conflictingSelectors": 3,
+  "conflicts": [
+    {
+      "selector": ".miuix-modal__title-box",
+      "rules": [
+        302,
+        2859
+      ],
+      "duplicateProps": [
+        {
+          "prop": "display",
+          "count": 2,
+          "docs": [
+            {
+              "line": 302,
+              "value": "flex"
+            },
+            {
+              "line": 2859,
+              "value": "flex"
+            }
+          ]
+        },
+        {
+          "prop": "align-items",
+          "count": 2,
+          "docs": [
+            {
+              "line": 302,
+              "value": "center"
+            },
+            {
+              "line": 2859,
+              "value": "center"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".miuix-modal select:focus",
+      "rules": [
+        1009,
+        1921
+      ],
+      "duplicateProps": [
+        {
+          "prop": "border-color",
+          "count": 2,
+          "docs": [
+            {
+              "line": 1009,
+              "value": "var(--miuix-blue)"
+            },
+            {
+              "line": 1921,
+              "value": "var(--miuix-blue)"
+            }
+          ]
+        },
+        {
+          "prop": "box-shadow",
+          "count": 2,
+          "docs": [
+            {
+              "line": 1009,
+              "value": "0 0 0 2px var(--miuix-blue-glow)"
+            },
+            {
+              "line": 1921,
+              "value": "0 0 0 2px var(--miuix-blue-glow)"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "selector": ".extool input[type=\"text\"]:focus",
+      "rules": [
+        1009,
+        1675
+      ],
+      "duplicateProps": [
+        {
+          "prop": "border-color",
+          "count": 2,
+          "docs": [
+            {
+              "line": 1009,
+              "value": "var(--miuix-blue)"
+            },
+            {
+              "line": 1675,
+              "value": "var(--miuix-blue)"
+            }
+          ]
+        },
+        {
+          "prop": "box-shadow",
+          "count": 2,
+          "docs": [
+            {
+              "line": 1009,
+              "value": "0 0 0 2px var(--miuix-blue-glow)"
+            },
+            {
+              "line": 1675,
+              "value": "0 0 0 2px var(--miuix-blue-glow)"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

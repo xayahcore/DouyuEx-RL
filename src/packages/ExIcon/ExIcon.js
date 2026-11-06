@@ -20,7 +20,7 @@ function initPkg_ExIcon() {
 function initPkg_ExIcon_insertDom() {
 	let a = document.createElement("div");
 	a.className = "ex-icon";
-	a.innerHTML = `<a title="DouyuEx ver.${curVersion}">${PokeballIcon_svg}<i id="ex-icon__tip" class="ex-panel__tip"></i></a>`;
+	a.innerHTML = `<a title="DouyuEx ver.${curVersion}" role="button" tabindex="0" aria-label="DouyuEx 菜单（回车展开 / 收起）">${PokeballIcon_svg}<i id="ex-icon__tip" class="ex-panel__tip"></i></a>`;
 	let b = document.querySelector(".PlayerToolbar-ContentCell .PlayerToolbar-Wealth")
 		|| document.querySelector(".ToolbarGiftArea-container")
 		|| document.querySelector(".PlayerToolbar")
@@ -37,7 +37,14 @@ function initPkg_ExIcon_Func() {
 		//   ① 有三级面板展开时 = 「全部收敛」—— 收起所有三级面板，并把二级胶囊菜单一并折起
 		//      （与二级菜单自己的折叠语义一致；否则面板还开着却把菜单折掉，用户会以为丢东西）；
 		//   ② 没有三级面板展开时，保持原来的展开/折叠切换。
-		icon.addEventListener("click", (e) => {
+		// 键盘可达（S1-B / I-20）：精灵球是无 href 的 a，补语义后还要能用 Enter/Space 触发
+	icon.addEventListener("keydown", (e) => {
+		if (e.key === "Enter" || e.key === " " || e.keyCode === 13 || e.keyCode === 32) {
+			e.preventDefault();
+			icon.click();
+		}
+	});
+	icon.addEventListener("click", (e) => {
 			e.stopPropagation();
 			if (typeof isAnyThirdLevelPanelOpen === "function" && isAnyThirdLevelPanelOpen()) {
 				// 统一收敛出口：三级面板 + 运行期子菜单层 + 二级菜单一次收完

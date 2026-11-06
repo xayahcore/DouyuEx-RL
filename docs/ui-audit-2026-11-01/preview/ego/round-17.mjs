@@ -1,0 +1,10 @@
+const task = await taskSpace("dyex-uiux-audit");
+const page = task.page("p1");
+const DIR = "D:/DouyuEx-RL/docs/ui-audit-2026-11-01/preview/shots/";
+await page.cdp("Emulation.setDeviceMetricsOverride", { width: 1637, height: 900, deviceScaleFactor: 1, mobile: false });
+await page.goto("http://127.0.0.1:8899/docs/ui-audit-2026-11-01/preview/harness.html?zoom=1");
+await page.waitForFunction(() => document.body.dataset.ready === "1", undefined, { timeout: 20000 });
+await page.waitForTimeout(280);
+await page.screenshot({ path: DIR + "11-zoom-text.png" });
+await page.cdp("Emulation.clearDeviceMetricsOverride");
+console.log("SHOT 11-zoom-text.png");

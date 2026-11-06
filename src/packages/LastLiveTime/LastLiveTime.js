@@ -192,8 +192,8 @@ function initPkg_LastLiveTime_Dom() {
 
       timeCard.innerHTML = `
 					<div class="ex-llt-title">
-						<span style="display: inline-flex; width: 18px; height: 18px; margin-right: 8px;">
-							<svg style="width: 100%; height: 100%; fill: currentColor;"><use xlink:href="#time_92d92c7"></use></svg>
+						<span class="dx-d-inline-flex dx-w-18 dx-h-18 dx-mr-8" >
+							<svg class="dx-w-100 dx-h-100 dx-fill-currentcolor" ><use xlink:href="#time_92d92c7"></use></svg>
 						</span>
 						上次开播时间
 					</div>

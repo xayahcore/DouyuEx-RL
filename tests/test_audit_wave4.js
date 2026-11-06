@@ -22,6 +22,7 @@ function readSrc(rel) {
     return text;
 }
 const EXGUARD_SRC = readSrc("src/require/ExGuard/ExGuard.js");
+const EXUI_SRC = readSrc("src/packages/ExUI/ExUI.js");
 
 function makeSandbox(sources, extraNames, extraValues, exposeExpr, overrides) {
     const opts = overrides || {};
@@ -34,7 +35,7 @@ function makeSandbox(sources, extraNames, extraValues, exposeExpr, overrides) {
         error: function () {}
     };
     const names = ["window", "document", "localStorage", "console", "setTimeout", "clearTimeout", "setInterval", "clearInterval"].concat(extraNames);
-    const factory = new Function(names.join(","), EXGUARD_SRC + "\n" + sources.join("\n") + "\nreturn (" + exposeExpr + ");");
+    const factory = new Function(names.join(","), EXGUARD_SRC + "\n" + EXUI_SRC + "\n" + sources.join("\n") + "\nreturn (" + exposeExpr + ");");
     const api = factory.apply(null, [win, win.document, opts.localStorage || win.localStorage, quietConsole,
         win.setTimeout, win.clearTimeout, win.setInterval, win.clearInterval].concat(extraValues));
     return { dom, win, api, warnings };

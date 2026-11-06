@@ -34,6 +34,7 @@ function readSrc(rel) {
 }
 
 const LIVETOOL_SRC = readSrc("src/packages/LiveTool/LiveTool.js");
+const EXUI_SRC = readSrc("src/packages/ExUI/ExUI.js");
 const REPLY_SRC = readSrc("src/packages/LiveTool/Reply/Reply.js");
 const MUTE_SRC = readSrc("src/packages/LiveTool/Mute/Mute.js");
 const LOOP_SRC = readSrc("src/packages/BarrageLoop/BarrageLoop.js");
@@ -98,7 +99,7 @@ function makeDispatchSandbox() {
         "setTimeout", "clearTimeout", "getRandom",
         "rid", "my_uid", "sendBarrage", "showMessage", "showMessageWindow",
         "addMuteUser", "dateFormat", "ExTest_calls", "Ex_WebSocket_UnLogin",
-        STUBS + "\n" + GET_STR_MIDDLE_SRC + "\n" + LIVETOOL_SRC + "\n" + REPLY_SRC + "\n" + MUTE_SRC + `
+        STUBS + "\n" + EXUI_SRC + "\n" + GET_STR_MIDDLE_SRC + "\n" + LIVETOOL_SRC + "\n" + REPLY_SRC + "\n" + MUTE_SRC + `
         return {
             handleReply: initPkg_LiveTool_Reply_Handle,
             handleMute: initPkg_LiveTool_Mute_Handle,

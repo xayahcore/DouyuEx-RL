@@ -11,6 +11,7 @@ try {
 
 const SIGN_POINTS_SRC = fs.readFileSync(path.join(__dirname, "../src/packages/Sign/Sign_Points.js"), "utf8");
 const SIGN_WATCH_SRC = fs.readFileSync(path.join(__dirname, "../src/packages/Sign/Sign_WatchPoints.js"), "utf8");
+const EXUI_SRC = fs.readFileSync(path.join(__dirname, "../src/packages/ExUI/ExUI.js"), "utf8");
 const SIGN_SRC = fs.readFileSync(path.join(__dirname, "../src/packages/Sign/Sign.js"), "utf8");
 
 // 常量直接从源码里抠出来，免得改了源码测试还在用旧值静默通过
@@ -91,7 +92,7 @@ function makeEnv(opts) {
             let pad = (v) => (v < 10 ? "0" + v : "" + v);
             return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
         }
-        ` + SIGN_POINTS_SRC + "\n" + SIGN_WATCH_SRC + "\n" + SIGN_SRC + `
+        ` + EXUI_SRC + "\n" + SIGN_POINTS_SRC + "\n" + SIGN_WATCH_SRC + "\n" + SIGN_SRC + `
         return {
             inPeriod: Sign_Points_inPeriod,
             isLoginError: Sign_Points_isLoginError,

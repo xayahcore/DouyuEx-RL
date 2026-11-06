@@ -6,6 +6,7 @@ try { JSDOM = require("jsdom").JSDOM; } catch (e) { console.error("[测试] 缺�
 
 const ROOT = path.join(__dirname, "..");
 const SRC = fs.readFileSync(path.join(ROOT, "src/packages/FansContinue/FansContinue.js"), "utf8");
+const EXUI_SRC = fs.readFileSync(path.join(ROOT, "src/packages/ExUI/ExUI.js"), "utf8");
 
 /**
  * 一键续牌「打开即读数据」回归（2026-10-30 用户回归报障）：
@@ -43,7 +44,7 @@ function load() {
     const factory = new Function(
         "document", "window", "localStorage", "console", "setTimeout", "clearTimeout",
         "fetch", "DOMParser", "getBagGifts", "showMessage", "rid", "CustomEvent", "MutationObserver", "ExGuard_warn",
-        SRC + `
+        EXUI_SRC + "\n" + SRC + `
         return {
             create: createFansContinuePanel,
             update: updateFansContinuePanel,

@@ -26,7 +26,7 @@ function PopupPlayer_insertIcon() {
   let a = document.createElement("div");
   a.className = "popup-player";
   a.innerHTML =
-    '<a class="ex-panel__icon" title="同屏播放"><svg style="display:block;" t="1579448049771" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="1804" width="30" height="30"><path d="M353.024 900.416H109.952c-57.856 0-109.952-46.336-109.952-98.432V153.6c0-52.096 52.096-98.432 109.952-98.432h810.176c57.856 0 104.192 46.336 104.192 98.496v185.472c0 28.928-23.168 52.096-46.336 52.096s-46.272-23.168-46.272-52.096V159.36H98.368V807.68h248.896c34.688 0 52.032 17.408 52.032 46.336 0 28.928-17.344 46.272-46.272 46.272" fill="#f26b1f" p-id="1805"></path><path d="M619.2 631.488c-5.76 0-5.76 5.76-5.76 11.52v223.04c0 5.76 5.76 11.52 5.76 11.52h289.344c5.76 0 11.584-5.76 11.584-11.52v-222.976c0-5.824-5.76-11.584-11.52-11.584H619.136z m289.344 338.688h-289.28a103.68 103.68 0 0 1-104.192-104.128v-222.976c0-57.92 46.272-109.952 104.128-109.952h289.344c57.856 0 104.128 46.272 104.128 109.952v222.976c5.824 57.856-40.448 104.128-104.128 104.128z" fill="#f26b1f" p-id="1806"></path></svg><i id="popup-player__tip" class="ex-panel__tip"></i></a>';
+    '<a class="ex-panel__icon" title="同屏播放"><svg t="1579448049771" class="icon dx-d-block" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="1804" width="30" height="30" ><path d="M353.024 900.416H109.952c-57.856 0-109.952-46.336-109.952-98.432V153.6c0-52.096 52.096-98.432 109.952-98.432h810.176c57.856 0 104.192 46.336 104.192 98.496v185.472c0 28.928-23.168 52.096-46.336 52.096s-46.272-23.168-46.272-52.096V159.36H98.368V807.68h248.896c34.688 0 52.032 17.408 52.032 46.336 0 28.928-17.344 46.272-46.272 46.272" fill="#f26b1f" p-id="1805"></path><path d="M619.2 631.488c-5.76 0-5.76 5.76-5.76 11.52v223.04c0 5.76 5.76 11.52 5.76 11.52h289.344c5.76 0 11.584-5.76 11.584-11.52v-222.976c0-5.824-5.76-11.584-11.52-11.584H619.136z m289.344 338.688h-289.28a103.68 103.68 0 0 1-104.192-104.128v-222.976c0-57.92 46.272-109.952 104.128-109.952h289.344c57.856 0 104.128 46.272 104.128 109.952v222.976c5.824 57.856-40.448 104.128-104.128 104.128z" fill="#f26b1f" p-id="1806"></path></svg><i id="popup-player__tip" class="ex-panel__tip"></i></a>';
 
   let b = document.getElementsByClassName("ex-panel__wrap")[0];
   if (b) b.insertBefore(a, b.childNodes[0]);
@@ -64,42 +64,67 @@ function createPopupPlayerPanel() {
   if (document.querySelector(".popup-player-panel")) return;
   var p = document.createElement("div");
   p.className = "popup-player-panel miuix-modal";
-  p.innerHTML = `
-    <div class="miuix-modal__body">
-      <div class="popup-panel__page" data-page="multi">
-        <div class="popup-panel__card">
-          <div class="popup-panel__card-header">
-            <span class="popup-panel__card-title">同屏里的房间 <em class="popup-ms__count" id="popup-ms-count">1 / 5</em></span>
-          </div>
-          <div class="popup-ms__restore" id="popup-ms-restore" hidden></div>
-          <div class="popup-ms__rooms" id="popup-ms-rooms"></div>
-          <div class="popup-ms__qrow">
-            <span class="popup-ms__qlabel">其它房间清晰度</span>
-            <div class="popup-ms__quality miuix-seg" id="popup-ms-quality"></div>
-          </div>
-        </div>
-
-        <div class="popup-panel__card">
-          <div class="popup-panel__card-header">
-            <span class="popup-panel__card-title">添加房间</span>
-            <button type="button" class="popup-panel__paste-btn" id="popup-ms-search-btn">搜索</button>
-          </div>
-          <div class="popup-panel__input-box">
-            <input type="text" id="popup-ms-search" placeholder="房间号 / 直播间链接 / 主播名" />
-          </div>
-          <div class="popup-ms__src">
-            <button type="button" class="popup-panel__paste-btn popup-ms__src-btn" data-src="follow">关注在播</button>
-            <button type="button" class="popup-panel__paste-btn popup-ms__src-btn" data-src="recent">最近看过</button>
-          </div>
-          <div class="popup-ms__results" id="popup-ms-results"></div>
-        </div>
-
-        <div class="popup-panel__action-wrap">
-          <button type="button" class="ex-btn-primary popup-panel__submit-btn" id="popup-ms-toggle-btn">先加一个房间</button>
-        </div>
-      </div>
-    </div>
-  `;
+  /* S2 迁移（2026-11-01）：面板骨架改由 ExUI 产出，旧类名一律走 legacy 影子。
+     ⚠ 这里刻意不用 ExUI.card：card() 必带一层 .ui-card__body、并给标题挂 .ui-card__title，
+        而本面板两张卡片本来就没有 body 层（restore/rooms/qrow 与 input-box/src/results
+        都是卡片的直接子节点）—— 用了就多一层结构与两个节点，违背「同层级」判据。
+        改用通用容器 ExUI.stack 逐节点等价重建：节点数、文本、id、data-* 与迁移前一一对应。 */
+  var roomsCard = ExUI.stack({
+    cls: "ui-card",
+    html:
+      ExUI.stack({
+        cls: "ui-card__head",
+        html: ExUI.stack({
+          cls: "ui-card__title",
+          // 标题里那颗计数胶囊是内容级节点（popup-ms__count），原样留在标题内部
+          html: ExUI.esc("同屏里的房间 ") + '<em class="popup-ms__count" id="popup-ms-count">1 / 5</em>'
+        })
+      }) +
+      '<div class="popup-ms__restore" id="popup-ms-restore" hidden></div>' +
+      '<div class="popup-ms__rooms" id="popup-ms-rooms"></div>' +
+      '<div class="popup-ms__qrow">' +
+        '<span class="popup-ms__qlabel">其它房间清晰度</span>' +
+        '<div class="popup-ms__quality miuix-seg" id="popup-ms-quality"></div>' +
+      "</div>"
+  });
+  var searchCard = ExUI.stack({
+    cls: "ui-card",
+    html:
+      ExUI.stack({
+        cls: "ui-card__head",
+        html: ExUI.stack({ cls: "ui-card__title", html: ExUI.esc("添加房间") })
+      }) +
+      // 搜索框与「搜索」按钮同一行：按钮在输入框右侧（用户 2026-11-04：放到上方不直观）
+      '<div class="popup-panel__input-box">' +
+        '<input type="text" id="popup-ms-search" placeholder="房间号 / 直播间链接 / 主播名" />' +
+        ExUI.btn("搜索", { variant: "quiet", id: "popup-ms-search-btn", legacy: "popup-panel__paste-btn", cls: "popup-ms__search-btn" }) +
+      "</div>" +
+      // 关注/最近两枚按钮带 data-src，ExUI.btn 不产自定义属性，按原样保留（内容级类名）
+      '<div class="popup-ms__src">' +
+        '<button type="button" class="popup-panel__paste-btn popup-ms__src-btn" data-src="follow">关注在播</button>' +
+        '<button type="button" class="popup-panel__paste-btn popup-ms__src-btn" data-src="recent">最近看过</button>' +
+      "</div>" +
+      '<div class="popup-ms__results" id="popup-ms-results"></div>'
+  });
+  var actionBar = ExUI.stack({
+    cls: "ui-actions",
+    html: ExUI.btn("先加一个房间", {
+      variant: "primary",
+      id: "popup-ms-toggle-btn",
+      
+    })
+  });
+  p.innerHTML = ExUI.stack({
+    legacy: "miuix-modal__body",
+    html: ExUI.stack({
+      legacy: "popup-panel__page",
+      html: roomsCard + searchCard + actionBar
+    })
+  });
+  /* ExUI 只产类名、不产自定义属性：.popup-panel__page 上的 data-page="multi" 迁移前就有，
+     渲染后原样补挂（查不到就跳过，不影响面板创建）。 */
+  var pageEl = p.querySelector(".popup-panel__page");
+  if (pageEl) pageEl.setAttribute("data-page", "multi");
   document.body.appendChild(p);
   if (typeof ensureMiuixPanelHeader === "function") {
     ensureMiuixPanelHeader(p, "同屏播放");
@@ -115,7 +140,7 @@ function createPopupPlayerPanel() {
   } else {
     /* 兜底：公共函数没打进来（构建裁剪 / 旧版本混合）时自己上一次，效果与它完全一致 ——
        粘底、置顶，且**不带任何背景**，否则用户刚要求去掉的渐变会从这条路径回来。 */
-    let actWrap = p.querySelector(".popup-panel__action-wrap");
+    let actWrap = p.querySelector(".ui-actions");
     if (actWrap) {
       actWrap.style.position = "sticky";
       actWrap.style.bottom = "0";
@@ -159,8 +184,9 @@ function PopupPlayer_initMultiPage(p) {
         MultiScreen_exit();
         showMessage("已退出同屏 · 房间都记着，下次点「一键恢复」", "info");
       } else {
-        // 按钮在这种状态下是 disabled，这里只是兜底（其余入口仍可能走到）
-        showMessage("先在下面加一个房间，加上就自动开始", "warning");
+        // 还没加房间：把焦点送到搜索框，而不是弹一条警告（点了有反应才叫按钮）
+        var inp = p.querySelector("#popup-ms-search");
+        if (inp) { if (inp.scrollIntoView) inp.scrollIntoView({ block: "nearest" }); inp.focus(); }
         return;
       }
       PopupPlayer_renderMultiPage();
@@ -221,9 +247,7 @@ function PopupPlayer_renderMultiPage() {
       ? "当前直播间音量（斗鱼自己的音量条可能把它改回来）"
       : "这间房的音量（拖到 0 = 静音）";
     let volHtml =
-      '<input type="range" class="popup-ms__room-vol" data-rid="' + rid + '"' +
-        ' min="0" max="100" step="5" value="' + vol + '" style="--vol:' + vol + '%"' +
-        ' title="' + PopupPlayer_msEsc(volTitle) + '" aria-label="音量" />' +
+      '<input type="range" class="popup-ms__room-vol" style="--vol:' + vol + '%" data-rid="' + rid + '"' + ' min="0" max="100" step="5" value="' + vol + '" ' + ' title="' + PopupPlayer_msEsc(volTitle) + '" aria-label="音量" />' +
       '<span class="popup-ms__room-volnum">' + vol + "</span>";
     // 第一行：房名 + 房号（主画面）/ 移除
     let head =
@@ -313,7 +337,7 @@ function PopupPlayer_renderMultiPage() {
       restoreEl.innerHTML =
         "<span class=\"popup-ms__restore-text\" title=\"" + PopupPlayer_msEsc(names) + "\">上次同屏：" +
           totalRooms + " 个房间 · " + PopupPlayer_msEsc(names) + "</span>" +
-        "<button type=\"button\" class=\"popup-panel__paste-btn\" id=\"popup-ms-restore-btn\">一键恢复</button>";
+        "<button type=\"button\" class=\"ui-btn ui-btn--quiet popup-ms__restore-btn\" id=\"popup-ms-restore-btn\">一键恢复</button>";
       let rb = restoreEl.querySelector("#popup-ms-restore-btn");
       if (rb) rb.addEventListener("click", function (e) {
         e.stopPropagation();
@@ -330,8 +354,8 @@ function PopupPlayer_renderMultiPage() {
 
   if (toggleBtn) {
     let inMulti = list.length > 1;
-    toggleBtn.textContent = inMulti ? "退出同屏" : "先加一个房间";
-    toggleBtn.disabled = !inMulti;
+    toggleBtn.textContent = inMulti ? "退出同屏" : "去添加房间";
+    toggleBtn.disabled = false;   /* 不再靠禁用：点了就聚焦搜索框，比一个点不动的蓝按钮直观 */
     toggleBtn.title = inMulti
       ? "退出同屏（房间都记着，下次可一键恢复）"
       : "在下面搜房间号，加进来就自动开始";
@@ -353,6 +377,8 @@ function PopupPlayer_bindEscClose() {
   msPanelEscBound = true;
   document.addEventListener("keydown", function (e) {
     if (e.key !== "Escape" && e.keyCode !== 27) return;
+    // 生产环境 ESC 已统一收到 ExPanel（S1-B / I-03）；独立加载（单测 / 页面无 ExPanel）时才走本地兜底
+    if (typeof ExPanel_escBound !== "undefined" && ExPanel_escBound) return;
     if (document.fullscreenElement) return;
     let panel = document.querySelector(".popup-player-panel");
     if (!panel) return;

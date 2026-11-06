@@ -1,0 +1,330 @@
+{
+  "focusable": {
+    "dockFocusable": [
+      "BUTTON.ex-panel__close :: 关闭工具条"
+    ],
+    "dockTiles": [
+      {
+        "tag": "DIV",
+        "hasTabIndex": false,
+        "innerA": false,
+        "role": null,
+        "aria": null
+      },
+      {
+        "tag": "DIV",
+        "hasTabIndex": false,
+        "innerA": false,
+        "role": null,
+        "aria": null
+      },
+      {
+        "tag": "DIV",
+        "hasTabIndex": false,
+        "innerA": false,
+        "role": null,
+        "aria": null
+      },
+      {
+        "tag": "DIV",
+        "hasTabIndex": false,
+        "innerA": false,
+        "role": null,
+        "aria": null
+      },
+      {
+        "tag": "DIV",
+        "hasTabIndex": false,
+        "innerA": false,
+        "role": null,
+        "aria": null
+      },
+      {
+        "tag": "DIV",
+        "hasTabIndex": false,
+        "innerA": false,
+        "role": null,
+        "aria": null
+      },
+      {
+        "tag": "DIV",
+        "hasTabIndex": false,
+        "innerA": false,
+        "role": null,
+        "aria": null
+      },
+      {
+        "tag": "DIV",
+        "hasTabIndex": false,
+        "innerA": false,
+        "role": null,
+        "aria": null
+      }
+    ],
+    "globalEsc": false,
+    "panelRoles": [
+      {
+        "cls": "extool",
+        "role": null,
+        "ariaModal": null,
+        "ariaLabel": null,
+        "tabIndex": null
+      },
+      {
+        "cls": "bloop",
+        "role": null,
+        "ariaModal": null,
+        "ariaLabel": null,
+        "tabIndex": null
+      },
+      {
+        "cls": "livetool",
+        "role": null,
+        "ariaModal": null,
+        "ariaLabel": null,
+        "tabIndex": null
+      },
+      {
+        "cls": "exlottery",
+        "role": null,
+        "ariaModal": null,
+        "ariaLabel": null,
+        "tabIndex": null
+      },
+      {
+        "cls": "sign-panel",
+        "role": null,
+        "ariaModal": null,
+        "ariaLabel": null,
+        "tabIndex": null
+      },
+      {
+        "cls": "fans-continue-panel",
+        "role": null,
+        "ariaModal": null,
+        "ariaLabel": null,
+        "tabIndex": null
+      },
+      {
+        "cls": "popup-player-panel",
+        "role": null,
+        "ariaModal": null,
+        "ariaLabel": null,
+        "tabIndex": null
+      },
+      {
+        "cls": "exupdate-panel",
+        "role": null,
+        "ariaModal": null,
+        "ariaLabel": null,
+        "tabIndex": null
+      }
+    ],
+    "dockRole": {
+      "role": null,
+      "aria": null
+    }
+  },
+  "clickPath": {
+    "display": "none"
+  },
+  "tabSeq": [
+    {
+      "tag": "DIV",
+      "cls": "",
+      "text": "最近使用粉丝钓鱼全民星推任务",
+      "inDock": false,
+      "inPanel": false
+    },
+    {
+      "tag": "DIV",
+      "cls": "",
+      "text": "5.4倍亲密了解 >1陪伴豆",
+      "inDock": false,
+      "inPanel": false
+    },
+    {
+      "tag": "A",
+      "cls": "FansMedalWrap  js-fans-dysclick",
+      "text": "",
+      "inDock": false,
+      "inPanel": false
+    },
+    {
+      "tag": "A",
+      "cls": "FansMedalWrap  js-fans-dysclick",
+      "text": "",
+      "inDock": false,
+      "inPanel": false
+    },
+    {
+      "tag": "A",
+      "cls": "FansMedalWrap  js-fans-dysclick",
+      "text": "",
+      "inDock": false,
+      "inPanel": false
+    },
+    {
+      "tag": "A",
+      "cls": "FansMedalWrap  js-fans-dysclick",
+      "text": "",
+      "inDock": false,
+      "inPanel": false
+    },
+    {
+      "tag": "A",
+      "cls": "FansMedalWrap  ",
+      "text": "",
+      "inDock": false,
+      "inPanel": false
+    },
+    {
+      "tag": "A",
+      "cls": "FansMedalWrap js-fans-hover js-fan",
+      "text": "",
+      "inDock": false,
+      "inPanel": false
+    },
+    {
+      "tag": "A",
+      "cls": "FansMedalWrap js-fans-hover js-fan",
+      "text": "",
+      "inDock": false,
+      "inPanel": false
+    },
+    {
+      "tag": "A",
+      "cls": "FansMedalWrap js-fans-hover js-fan",
+      "text": "",
+      "inDock": false,
+      "inPanel": false
+    },
+    {
+      "tag": "BUTTON",
+      "cls": "ChatSend-button",
+      "text": "发送",
+      "inDock": false,
+      "inPanel": false
+    },
+    {
+      "tag": "BUTTON",
+      "cls": "ActivityPkRank202610-Pk",
+      "text": "S2赛季暂无段位暂无段位PK",
+      "inDock": false,
+      "inPanel": false
+    },
+    {
+      "tag": "A",
+      "cls": "RelatedGroups-module__relatedGroup",
+      "text": "主播鱼吧yyfyyf20.8",
+      "inDock": false,
+      "inPanel": false
+    },
+    {
+      "tag": "A",
+      "cls": "RelatedGroups-module__relatedGroup",
+      "text": "相关鱼吧DOTA253.1w",
+      "inDock": false,
+      "inPanel": false
+    },
+    {
+      "tag": "BUTTON",
+      "cls": "HotTopicList-module__tab-oI09g",
+      "text": "最近热门",
+      "inDock": false,
+      "inPanel": false
+    },
+    {
+      "tag": "BUTTON",
+      "cls": "HotTopicList-module__tab-oI09g",
+      "text": "最新发布",
+      "inDock": false,
+      "inPanel": false
+    },
+    {
+      "tag": "BUTTON",
+      "cls": "HotTopicList-module__tab-oI09g Hot",
+      "text": "最新回复",
+      "inDock": false,
+      "inPanel": false
+    },
+    {
+      "tag": "BUTTON",
+      "cls": "HotTopicList-module__tab-oI09g",
+      "text": "推荐排序",
+      "inDock": false,
+      "inPanel": false
+    },
+    {
+      "tag": "A",
+      "cls": "UserAvatar-module__avatarLink-C9TZ",
+      "text": "",
+      "inDock": false,
+      "inPanel": false
+    },
+    {
+      "tag": "A",
+      "cls": "UserName-module__noline-ZcFCM",
+      "text": "斗鱼刀塔下饭局",
+      "inDock": false,
+      "inPanel": false
+    },
+    {
+      "tag": "A",
+      "cls": "PublishAt-module__linkyuba-Rug9M",
+      "text": "DOTA2",
+      "inDock": false,
+      "inPanel": false
+    },
+    {
+      "tag": "A",
+      "cls": "PostCardContent-module__topic-v4pm",
+      "text": "叫我老陈就好了",
+      "inDock": false,
+      "inPanel": false
+    },
+    {
+      "tag": "A",
+      "cls": "PostCardContent-module__topic-v4pm",
+      "text": "趣味互动/整活",
+      "inDock": false,
+      "inPanel": false
+    },
+    {
+      "tag": "A",
+      "cls": "PostCardContent-module__topic-v4pm",
+      "text": "老陈",
+      "inDock": false,
+      "inPanel": false
+    },
+    {
+      "tag": "A",
+      "cls": "PostCardContent-module__topic-v4pm",
+      "text": "叶问残局",
+      "inDock": false,
+      "inPanel": false
+    },
+    {
+      "tag": "A",
+      "cls": "PostCardContent-module__topic-v4pm",
+      "text": "按错大药",
+      "inDock": false,
+      "inPanel": false
+    }
+  ],
+  "hits": [],
+  "esc": {
+    "before": "none",
+    "afterEsc": {
+      "extool": "none",
+      "dock": "flex",
+      "anyOpen": 0
+    }
+  },
+  "ringInfo": {
+    "activeIsBtn": false,
+    "outline": "rgb(71, 85, 105) none 3px",
+    "outlineWidth": "3px",
+    "boxShadow": "none"
+  }
+}

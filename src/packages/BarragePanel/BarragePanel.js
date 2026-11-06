@@ -210,8 +210,8 @@ function setMuteButton(dom) {
     let a = document.createElement("div");
     a.style = "display:flex;align-items:center;width:100%;gap:8px;";
     a.innerHTML = `
-        <div class="button-7e1395" id="barragePanel__mute" style="z-index:5">禁言</div>
-        <div class="barragePanel__muteTime" style="z-index:5">
+        <div class="button-7e1395 dx-z-5" id="barragePanel__mute" >禁言</div>
+        <div class="barragePanel__muteTime dx-z-5" >
             <select id="barragePanel__muteSelect" style='width:55px'>
                 <option value="1">1分钟</option>
                 <option value="10">10分钟</option>

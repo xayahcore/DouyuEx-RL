@@ -11,6 +11,7 @@ try {
 
 const ROOT = path.join(__dirname, "..");
 const read = (rel) => fs.readFileSync(path.join(ROOT, rel), "utf8");
+const EXUI_SRC = read("src/packages/ExUI/ExUI.js");
 
 const COMMON_SRC = read("src/common.js");
 const EXGUARD_SRC = read("src/require/ExGuard/ExGuard.js");
@@ -82,7 +83,8 @@ function makeClock() {
             const end = now + ms;
             let guard = 0;
             while (guard++ < 50000) {
-                let nextTask = null;
+                let nextTask = null
+null;
                 tasks.forEach(function (task) {
                     if (task.next <= end && (!nextTask || task.next < nextTask.next)) nextTask = task;
                 });
@@ -246,7 +248,7 @@ function loadMenu(opts) {
     const factory = new Function(
         "document", "window", "console", "GM_registerMenuCommand",
         "showExRightPanel", "createExUpdatePanel", "showMessage",
-        EXGUARD_SRC + "\n" + MENU_SRC + "\nreturn { init: initPkg_Menu };"
+        EXGUARD_SRC + "\n" + EXUI_SRC + "\n" + MENU_SRC + "\nreturn { init: initPkg_Menu };"
     );
     const api = factory(
         win.document, win, log.console,
@@ -313,7 +315,7 @@ function loadDanmakuTail(opts) {
     const factory = new Function(
         "document", "window", "localStorage", "showMessage", "console", "Event",
         "setInterval", "clearInterval", "setTimeout", "clearTimeout",
-        EXGUARD_SRC + "\n" + DANMAKUTAIL_SRC + "\n" +
+        EXGUARD_SRC + "\n" + EXUI_SRC + "\n" + DANMAKUTAIL_SRC + "\n" +
         "return { init: initPkg_DanmakuTail, save: saveData_DanmakuTail, handle: initPkg_DanmakuTail_HandleFunc };"
     );
     const api = factory(
@@ -381,7 +383,7 @@ function loadFansBadgeList(html, opts) {
     const clock = options.clock || makeClock();
     const factory = new Function(
         "document", "window", "console", "setInterval", "clearInterval", "setTimeout", "clearTimeout",
-        EXGUARD_SRC + "\n" + DATEFORMAT_SRC + "\n" + FANSBADGE_SRC + "\nreturn { init: initPkg_FansBadgeList, annotate: FansBadgeList_annotateRows };"
+        EXGUARD_SRC + "\n" + EXUI_SRC + "\n" + DATEFORMAT_SRC + "\n" + FANSBADGE_SRC + "\nreturn { init: initPkg_FansBadgeList, annotate: FansBadgeList_annotateRows };"
     );
     const api = factory(win.document, win, log.console,
         clock.setInterval, clock.clearInterval, clock.setTimeout, clock.clearTimeout);
@@ -428,7 +430,7 @@ function loadRoomVip(opts) {
     const factory = new Function(
         "document", "window", "console", "fetch", "DOMParser", "rid",
         "setTimeout", "clearTimeout", "setInterval", "clearInterval",
-        EXGUARD_SRC + "\n" + GETVALIDDOM_SRC + "\n" + ROOMVIP_SRC +
+        EXGUARD_SRC + "\n" + EXUI_SRC + "\n" + GETVALIDDOM_SRC + "\n" + ROOMVIP_SRC +
         "\nreturn { run: setRoomVipExpireDays, insert: initPkg_RoomVip_Dom, show: RoomVip_showDays, " +
         "findAnchor: RoomVip_findAnchor, writeDays: RoomVip_writeDays };"
     );
@@ -516,7 +518,7 @@ function loadMonthCost(opts) {
     const factory = new Function(
         "document", "window", "localStorage", "my_uid", "fetch", "console", "Date",
         "setTimeout", "clearTimeout", "setInterval", "clearInterval",
-        EXGUARD_SRC + "\n" + GETVALIDDOM_SRC + "\n" + MONTHCOST_SRC +
+        EXGUARD_SRC + "\n" + EXUI_SRC + "\n" + GETVALIDDOM_SRC + "\n" + MONTHCOST_SRC +
         "\nreturn { init: initPkg_MonthCost, refresh: MonthCost_refreshCost, getCost: getMonthCost, " +
         "update: MonthCost_updateCost, money: MonthCost_getMoneyDom, isStale: MonthCost_isStale, " +
         "insertIcon: MonthCost_insertIcon, waitAnchor: MonthCost_waitAnchor, findAnchor: MonthCost_findAnchor, " +
@@ -630,7 +632,7 @@ function loadChatMemory(opts) {
     }
     const factory = new Function(
         "document", "window", "console", "setInterval", "clearInterval", "setTimeout", "clearTimeout",
-        EXGUARD_SRC + "\n" + TEXTAREA_POS_SRC + "\n" + CHATMEMORY_SRC +
+        EXGUARD_SRC + "\n" + EXUI_SRC + "\n" + TEXTAREA_POS_SRC + "\n" + CHATMEMORY_SRC +
         "\nreturn { init: initPkg_ChatMemory, push: chatMemory_pushBarrage, mem: function () { return barrageMemoryArr; }, " +
         "bound: function () { return chatMemory_isBound(); } };"
     );
@@ -930,7 +932,7 @@ function loadAutoFish(opts) {
     const factory = new Function(
         "document", "window", "localStorage", "console", "fetch", "showMessage", "rid", "getCCN", "sleep",
         "setTimeout", "clearTimeout", "setInterval", "clearInterval",
-        EXGUARD_SRC + "\n" + AUTOFISH_SRC +
+        EXGUARD_SRC + "\n" + EXUI_SRC + "\n" + AUTOFISH_SRC +
         "\nreturn { init: initPkg_ExpandTool_AutoFish, getFishInfo: AutoFish_getFishInfo, " +
         "getHomepageData: AutoFish_getHomepageData, startFish: AutoFish_startFish, endFish: AutoFish_endFish, " +
         "lockMode: AutoFish_lockMode };"
@@ -1013,7 +1015,7 @@ function loadSendGift(opts) {
     let fetchImpl = options.fetch || function () { return Promise.resolve({ json: function () { return Promise.resolve({ msg: "ok", data: { priceType: 1 } }); } }); };
     const factory = new Function(
         "document", "window", "localStorage", "console", "fetch", "showMessage", "rid", "sleep", "confirm", "Event",
-        EXGUARD_SRC + "\n" + SENDGIFT_SRC +
+        EXGUARD_SRC + "\n" + EXUI_SRC + "\n" + SENDGIFT_SRC +
         "\nreturn { insertDom: ExpandTool_SendGift_insertDom, insertFunc: ExpandTool_SendGift_insertFunc, " +
         "save: saveData_ExpandTool_SendGift };"
     );
@@ -1087,7 +1089,7 @@ function loadRedPacket(opts) {
     const factory = new Function(
         "document", "window", "localStorage", "console", "fetch", "verifyFans", "showMessage", "rid", "getCCN",
         "setTimeout", "clearTimeout", "setInterval", "clearInterval",
-        EXGUARD_SRC + "\n" + REDPACKET_SRC +
+        EXGUARD_SRC + "\n" + EXUI_SRC + "\n" + REDPACKET_SRC +
         "\nreturn { init: initPkg_ExpandTool_RedPacket_Room, list: getRoomRedPacketsList, grab: getRoomRedPacket, " +
         "stop: ExpandTool_RedPacket_Room_stop };"
     );
@@ -1173,7 +1175,7 @@ function loadTreasure(opts) {
     const factory = new Function(
         "document", "window", "localStorage", "console", "verifyFans", "showMessage", "getCookieValue", "getTreasure", "treasureNum",
         "unsafeWindow", "setTimeout", "clearTimeout", "setInterval", "clearInterval",
-        EXGUARD_SRC + "\n" + TREASURE_SRC +
+        EXGUARD_SRC + "\n" + EXUI_SRC + "\n" + TREASURE_SRC +
         "\nreturn { init: initPkg_ExpandTool_Treasure, delay: getTreasureDelay, set: ExpandTool_Treasure_Set, " +
         "save: saveData_Treasure, isOn: function () { return isGetTreasure; } };"
     );
@@ -1275,7 +1277,7 @@ function loadExPanel() {
     const clock = makeClock();
     const factory = new Function(
         "document", "window", "console", "setTimeout", "clearTimeout", "setInterval", "clearInterval",
-        EXGUARD_SRC + "\n" + EXPANEL_SRC +
+        EXGUARD_SRC + "\n" + EXUI_SRC + "\n" + EXPANEL_SRC +
         "\nreturn { insertDom: initPkg_ExPanel_insertDom, start: ExPanel_startSelfHeal, stop: ExPanel_stopSelfHeal, " +
         "ensure: ExPanel_ensureAttached, heal: ExPanel_healDock, chip: function () { return ExPanel_healCadence; }, " +
         "dock: function () { return ExPanel_dockNode; }, timer: function () { return ExPanel_healTimer; } };"
@@ -1372,7 +1374,7 @@ function loadFollowList() {
     const factory = new Function(
         "document", "window", "console", "fetch", "showMessage", "GM_getValue", "GM_setValue",
         "formatSeconds", "CClick", "openPage",
-        EXGUARD_SRC + "\n" + FOLLOWLIST_SRC +
+        EXGUARD_SRC + "\n" + EXUI_SRC + "\n" + FOLLOWLIST_SRC +
         "\nreturn { render: setNewFollowList };"
     );
     const api = factory(
@@ -1437,7 +1439,7 @@ function loadExpandToolInit() {
     ];
     const names = tops.concat(mods);
     const factory = new Function(names.join(", ") + ", console",
-        EXGUARD_SRC + "\n" + INIT_SRC + "\nreturn { init: initPkg_ExpandTool };");
+        EXGUARD_SRC + "\n" + EXUI_SRC + "\n" + INIT_SRC + "\nreturn { init: initPkg_ExpandTool };");
     return {
         names: names,
         build: function (log, throwOn) {
@@ -1562,7 +1564,7 @@ function loadLastLive(opts) {
     const TIMEAGO_SRC = sliceSource(COMMON_SRC, "function timeago(old) {", "function getRandom(min, max) {", "timeago");
     const factory = new Function(
         "document", "window", "unsafeWindow", "console", "setInterval", "clearInterval", "setTimeout", "clearTimeout",
-        EXGUARD_SRC + "\n" + DATEFORMAT_SRC + "\n" + TIMEAGO_SRC + "\n" + LASTLIVE_SRC +
+        EXGUARD_SRC + "\n" + EXUI_SRC + "\n" + DATEFORMAT_SRC + "\n" + TIMEAGO_SRC + "\n" + LASTLIVE_SRC +
         "\nreturn { read: LastLiveTime_readPageRoom, init: initPkg_LastLiveTime };"
     );
     const api = factory(
@@ -1669,7 +1671,7 @@ function loadRefresh(opts) {
         "document", "window", "localStorage", "console",
         "setTimeout", "clearTimeout", "setInterval", "clearInterval",
         "StyleHook_set", "StyleHook_remove", "DomHook", "showMessage", "getValidDom", "resizeWindow", "PostbirdAlertBox",
-        EXGUARD_SRC + "\n" + GETVALIDDOM_SRC + "\n" +
+        EXGUARD_SRC + "\n" + EXUI_SRC + "\n" + GETVALIDDOM_SRC + "\n" +
         REFRESH_SRC + "\n" + REFRESH_BARRAGE_SRC + "\n" + REFRESH_FRAME_SRC + "\n" + REFRESH_VIDEO_SRC +
         "\nreturn { initPkg: initPkg_Refresh, save: saveData_Refresh, readSave: Refresh_readSave, " +
         "initFrame: initPkg_Refresh_BarrageFrame, initVideo: initPkg_Refresh_Video, initBarrage: initPkg_Refresh_Barrage, " +
@@ -1927,7 +1929,7 @@ function testStaticGuardRails() {
     const TIMEAGO_SRC = sliceSource(COMMON_SRC, "function timeago(old) {", "function getRandom(min, max) {", "timeago");
     const factory = new Function(
         "document", "window", "console", "setInterval", "clearInterval", "setTimeout", "clearTimeout",
-        EXGUARD_SRC + "\n" + DATEFORMAT_SRC + "\n" + TIMEAGO_SRC + "\n" + LASTLIVETIME_SRC +
+        EXGUARD_SRC + "\n" + EXUI_SRC + "\n" + DATEFORMAT_SRC + "\n" + TIMEAGO_SRC + "\n" + LASTLIVETIME_SRC +
         "\nreturn { init: initPkg_LastLiveTime };"
     );
     const clock = makeClock();

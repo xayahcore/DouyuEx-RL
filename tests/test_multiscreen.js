@@ -116,7 +116,30 @@ function load(dom) {
 }
 
 // 从注入的样式表里按选择器取规则
+
+// ---- 令牌解析（设计系统）：断言比较"解析后的值"，允许样式写 var(--dx-*) ----
+function dxBuildTokenMap(rules) {
+  const map = {};
+  rules.forEach((r) => {
+    if (!r || !r.style) return;
+    const names = Array.from(r.style);
+    names.forEach((name) => {
+      if (name.indexOf("--dx-") === 0) map[name] = String(r.style.getPropertyValue(name)).trim();
+    });
+  });
+  return map;
+}
+function dxResolveVars(val, map) {
+  let out = String(val == null ? "" : val);
+  for (let i = 0; i < 8 && out.indexOf("var(--dx-") >= 0; i++) {
+    out = out.replace(/var\((--dx-[a-z0-9-]+)\)/g, (m, name) => (map[name] !== undefined ? map[name] : m));
+  }
+  return out;
+}
+
+let __lastWin = null;
 function cssRules(win, match) {
+  __lastWin = win;
   const out = [];
   Array.from(win.document.styleSheets).forEach((sheet) => {
     let rules;
@@ -156,8 +179,13 @@ function normVal(v) {
   return s.replace(/\s+/g, " ").trim();
 }
 
+// 令牌解析：样式表里已改成 var(--dx-*)，断言前先还原成具体值（值仍来自同一份 CSS）
+function resolveTokens(val) {
+  const map = dxBuildTokenMap(cssRules(__lastWin || win, () => true));
+  return dxResolveVars(val, map);
+}
 function assertCss(rules, prop, want, label) {
-  const got = cssValue(rules, prop);
+  const got = resolveTokens(cssValue(rules, prop));
   assert.strictEqual(normVal(got), normVal(want), `${label} 的 ${prop} 必须为 ${want}，实际 ${got}`);
 }
 
@@ -1026,7 +1054,7 @@ async function run() {
   );
 
   console.log("--> 27.2 面板：主按钮粘底（5 房内容高于面板时按钮仍在可视区）");
-  const actionWrapFx = panelFx.querySelector(".popup-panel__action-wrap");
+  const actionWrapFx = panelFx.querySelector(".ui-actions");
   assert.ok(actionWrapFx, "面板必须有底部操作区（主按钮常驻）");
   const awStyleFx = actionWrapFx.getAttribute("style") || "";
   assert.ok(/position:\s*sticky/.test(awStyleFx), "操作区必须 sticky 贴底，否则 5 房时「退出同屏」会被顶出可视区，实际: " + awStyleFx);

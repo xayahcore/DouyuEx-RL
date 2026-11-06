@@ -32,6 +32,7 @@ function readSrc(rel) {
 }
 
 const EXGUARD_SRC = readSrc("src/require/ExGuard/ExGuard.js");
+const EXUI_SRC = readSrc("src/packages/ExUI/ExUI.js");
 const LIVETOOL_SRC = readSrc("src/packages/LiveTool/LiveTool.js");
 const LOOP_SRC = readSrc("src/packages/BarrageLoop/BarrageLoop.js");
 const COMMON_SRC = readSrc("src/common.js");
@@ -76,7 +77,7 @@ function makeSandbox(sources, html, exposeExpr) {
         "rid", "my_uid", "getStrMiddle", "sendBarrage", "showMessage", "showMessageWindow",
         "GM_setClipboard", "GM_xmlhttpRequest", "getRandom", "dateFormat",
         "showExRightPanel", "PostbirdAlertBox", "addMuteUser", "deleteMuteUser", "getTreasureDelay", "getCookieValue",
-        EXGUARD_SRC + "\n" + GET_STR_MIDDLE_SRC + "\n" + sources.join("\n") + "\nreturn (" + exposeExpr + ");"
+        EXGUARD_SRC + "\n" + EXUI_SRC + "\n" + GET_STR_MIDDLE_SRC + "\n" + sources.join("\n") + "\nreturn (" + exposeExpr + ");"
     );
 
     const noop = function () {};
@@ -163,7 +164,7 @@ function testDrawerTitleGuards() {
         assert.deepStrictEqual(listenerErrors, [], name + " 点击标题时监听器内抛错：" + listenerErrors.join(" | "));
 
         const panel = env.win.document.getElementsByClassName(mod.panel)[0];
-        assert.strictEqual(panel.style.display, "block", name + " 点击标题后自己的面板必须展开");
+        assert.ok(panel.style.display === "flex" || panel.style.display === "block", name + " 点击标题后自己的面板必须展开（实际 " + panel.style.display + "）");
 
         // 再点一次必须能收起（回归保护：别把开关改成只能开）
         title.click();
@@ -196,7 +197,7 @@ function testHideDrawerPanelsExcept() {
         env.api.hideExcept("mute__panel");
     }, "收起其它抽屉时不得抛错");
     assert.strictEqual(enterPanel.style.display, "none", "非当前抽屉必须被收起");
-    assert.strictEqual(mutePanel.style.display, "block", "当前抽屉不得被自己收起");
+    assert.ok(mutePanel.style.display === "flex" || mutePanel.style.display === "block", "当前抽屉不得被自己收起");
 
     console.log("✓ ③ 通过: helper 只收别人");
     env.dom.window.close();
@@ -317,7 +318,7 @@ function makeFreeSandbox(extraNames, extraValues, sources, html, exposeExpr) {
     };
     const paramNames = ["window", "document", "localStorage", "console"].concat(extraNames);
     assert.strictEqual(paramNames.length, 4 + extraValues.length, "沙箱入参名字与取值数量不一致");
-    const factory = new Function(paramNames.join(","), EXGUARD_SRC + "\n" + sources.join("\n") + "\nreturn (" + exposeExpr + ");");
+    const factory = new Function(paramNames.join(","), EXGUARD_SRC + "\n" + EXUI_SRC + "\n" + sources.join("\n") + "\nreturn (" + exposeExpr + ");");
     const api = factory.apply(null, [win, win.document, win.localStorage, quietConsole].concat(extraValues));
     return { dom, win, api, warns, listenerErrors };
 }

@@ -29,6 +29,7 @@ function readSrc(rel) {
 
 const EXGUARD_SRC = readSrc("src/require/ExGuard/ExGuard.js");
 const YUBA_SRC = readSrc("src/packages/Sign/Sign_Yuba.js");
+const EXUI_SRC = readSrc("src/packages/ExUI/ExUI.js");
 const SIGN_SRC = readSrc("src/packages/Sign/Sign.js");
 const FANS_SRC = readSrc("src/packages/Sign/Sign_FansTree.js");
 const STAR_SRC = readSrc("src/packages/Sign/Sign_StarDiscover.js");
@@ -223,7 +224,7 @@ async function testClientSignTimeout() {
     const logs = [];
     const longTimers = [];
     const requests = [];
-    const env = makeSandbox([SIGN_SRC],
+    const env = makeSandbox([EXUI_SRC, SIGN_SRC],
         ["GM_xmlhttpRequest", "showMessage", "dyToken", "getToken", "sleep"],
         [makeGm(requests), function () {}, "TOKEN", function () { return "TOKEN"; }, function () { return Promise.resolve(); }],
         "({ engine: executeSignEngine })",
@@ -303,7 +304,7 @@ async function testEngineAwaitsSubtasks() {
     console.log("=== ⑧ executeSignEngine：批次没签完就不许宣布「已完成」 ===");
     const messages = [];
     const requests = [];
-    const env = makeSandbox([YUBA_SRC, SIGN_SRC],
+    const env = makeSandbox([YUBA_SRC, EXUI_SRC, SIGN_SRC],
         ["GM_xmlhttpRequest", "showMessage", "sleep", "dyToken", "getToken"],
         [makeGm(requests), function (m) { messages.push(String(m)); }, function () { return Promise.resolve(); }, "TOKEN", function () { return "TOKEN"; }],
         "({ engine: executeSignEngine })");

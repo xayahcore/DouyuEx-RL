@@ -1,0 +1,49 @@
+{
+  "darkFrames": [
+    {
+      "t": 0,
+      "why": "start",
+      "scheme": "no-html",
+      "bg": "n/a"
+    },
+    {
+      "t": 119,
+      "why": "frame",
+      "scheme": null,
+      "bg": "rgb(245, 246, 250)"
+    },
+    {
+      "t": 122,
+      "why": "frame",
+      "scheme": "dark",
+      "bg": "rgb(29, 30, 35)"
+    }
+  ],
+  "lightFrames": [
+    {
+      "t": 0,
+      "why": "start",
+      "scheme": "no-html",
+      "bg": "n/a"
+    },
+    {
+      "t": 120,
+      "why": "frame",
+      "scheme": null,
+      "bg": "rgb(245, 246, 250)"
+    },
+    {
+      "t": 142,
+      "why": "frame",
+      "scheme": "light",
+      "bg": "rgb(245, 246, 250)"
+    }
+  ],
+  "live": {
+    "before": "light",
+    "afterStorageEventDark": "dark",
+    "midBg": "rgb(29, 30, 35)",
+    "afterRestore": "light",
+    "finalBg": "rgb(245, 246, 250)"
+  }
+}

@@ -1,0 +1,313 @@
+{
+  "constants": {
+    "PANEL_D": "#abadae",
+    "CARD_D": "#cecfd0",
+    "ITEM_D": "#c9caca",
+    "SEG_D": "#a1a2a4",
+    "CLOSE_D": "#a1a2a4",
+    "DOCK_D": "#bcbdbe",
+    "TILE_D": "#dadbdb",
+    "PILL_D": "#9ea7b5",
+    "DRAWER_D": "#d9dadb",
+    "LOGBOX_D": "#ced1d4"
+  },
+  "claims": [
+    {
+      "id": "C01",
+      "fg": "#64748b",
+      "bg": "#c9caca",
+      "bgLabel": "四级 item 底(rgba255,0.35) over 面板0.65 over #101418",
+      "note": ".sign-option-desc 10.5px 说明文字",
+      "ratio": 2.89,
+      "aa_normal": false,
+      "aa_large": false,
+      "aaa_normal": false
+    },
+    {
+      "id": "C02",
+      "fg": "#64748b",
+      "bg": "#a1a2a4",
+      "bgLabel": "分段胶囊底 rgba(0,0,0,0.06) over 面板0.65 over #101418",
+      "note": ".miuix-seg__label 11.5px 未选中态",
+      "ratio": 1.87,
+      "aa_normal": false,
+      "aa_large": false,
+      "aaa_normal": false
+    },
+    {
+      "id": "C03",
+      "fg": "#0066ff",
+      "bg": "#a1a2a4",
+      "bgLabel": "同上",
+      "note": ".miuix-seg__label 选中态蓝字",
+      "ratio": 1.9,
+      "aa_normal": false,
+      "aa_large": false,
+      "aaa_normal": false
+    },
+    {
+      "id": "C04",
+      "fg": "#94a3b8",
+      "bg": "#abadae",
+      "bgLabel": "面板0.65 over #101418",
+      "note": ".ex-gift-picker__close / .DanmakuTail-close 图标色",
+      "ratio": 1.14,
+      "aa_normal": false,
+      "aa_large": false,
+      "aaa_normal": false
+    },
+    {
+      "id": "C05",
+      "fg": "#334155",
+      "bg": "#abadae",
+      "bgLabel": "面板0.65 over #101418",
+      "note": "Phosphor 图标层 .ex-panel__icon svg 基线",
+      "ratio": 4.59,
+      "aa_normal": true,
+      "aa_large": true,
+      "aaa_normal": false
+    },
+    {
+      "id": "C06",
+      "fg": "#0066ff",
+      "bg": "#abadae",
+      "bgLabel": "面板0.65 over #101418",
+      "note": "var(--miuix-blue) 作正文/图标色",
+      "ratio": 2.14,
+      "aa_normal": false,
+      "aa_large": false,
+      "aaa_normal": false
+    },
+    {
+      "id": "C07",
+      "fg": "#0066ff",
+      "bg": "#9ea7b5",
+      "bgLabel": "胶囊按钮底 rgba(0,102,255,0.08) over 面板0.65",
+      "note": ".ex-picker-btn / .popup-panel__paste-btn 文字",
+      "ratio": 1.99,
+      "aa_normal": false,
+      "aa_large": false,
+      "aaa_normal": false
+    },
+    {
+      "id": "C08",
+      "fg": "#475569",
+      "bg": "#a1a2a4",
+      "bgLabel": "关闭按钮底 rgba(0,0,0,0.06) over 面板0.65",
+      "note": ".miuix-modal__close 默认态",
+      "ratio": 2.98,
+      "aa_normal": false,
+      "aa_large": false,
+      "aaa_normal": false
+    },
+    {
+      "id": "C09",
+      "fg": "#ffffff",
+      "bg": "#2b7fff",
+      "bgLabel": "#2b7fff 纯色(渐变起点)",
+      "note": "主按钮白字最亮点",
+      "ratio": 3.76,
+      "aa_normal": false,
+      "aa_large": true,
+      "aaa_normal": false
+    },
+    {
+      "id": "C10",
+      "fg": "#ffffff",
+      "bg": "#166aff",
+      "bgLabel": "linear-gradient(135deg,#2b7fff,#0055ff) 中点",
+      "note": "主按钮白字平均值",
+      "ratio": 4.63,
+      "aa_normal": true,
+      "aa_large": true,
+      "aaa_normal": false
+    },
+    {
+      "id": "C11",
+      "fg": "#ffffff",
+      "bg": "#0055ff",
+      "bgLabel": "#0055ff 纯色(渐变终点)",
+      "note": "主按钮白字最暗点",
+      "ratio": 5.61,
+      "aa_normal": true,
+      "aa_large": true,
+      "aaa_normal": false
+    },
+    {
+      "id": "C12",
+      "fg": "#ffffff",
+      "bg": "#1f6cf3",
+      "bgLabel": "hover 渐变中点 #3d8bff→#004de6",
+      "note": "主按钮 hover 白字",
+      "ratio": 4.68,
+      "aa_normal": true,
+      "aa_large": true,
+      "aaa_normal": false
+    },
+    {
+      "id": "C13",
+      "fg": "#ffffff",
+      "bg": "#94a3b8",
+      "bgLabel": "#94a3b8 禁用底",
+      "note": "禁用主按钮白字",
+      "ratio": 2.56,
+      "aa_normal": false,
+      "aa_large": false,
+      "aaa_normal": false
+    },
+    {
+      "id": "C14",
+      "fg": "#ffffff",
+      "bg": "#f59e0b",
+      "bgLabel": "#f59e0b 升级按钮渐变起点",
+      "note": ".exupdate-state-btn--upgrade",
+      "ratio": 2.15,
+      "aa_normal": false,
+      "aa_large": false,
+      "aaa_normal": false
+    },
+    {
+      "id": "C15",
+      "fg": "#ffffff",
+      "bg": "#e78b09",
+      "bgLabel": "升级按钮渐变中点",
+      "note": ".exupdate-state-btn--upgrade 平均值",
+      "ratio": 2.6,
+      "aa_normal": false,
+      "aa_large": false,
+      "aaa_normal": false
+    },
+    {
+      "id": "C16",
+      "fg": "#ffffff",
+      "bg": "#d97706",
+      "bgLabel": "#d97706 升级按钮渐变终点",
+      "note": ".exupdate-state-btn--upgrade 最暗点",
+      "ratio": 3.19,
+      "aa_normal": false,
+      "aa_large": true,
+      "aaa_normal": false
+    },
+    {
+      "id": "C17",
+      "fg": "#ffffff",
+      "bg": "#ef4444",
+      "bgLabel": "#ef4444",
+      "note": "关闭按钮 hover / 删除按钮 hover 白字",
+      "ratio": 3.76,
+      "aa_normal": false,
+      "aa_large": true,
+      "aaa_normal": false
+    },
+    {
+      "id": "C18",
+      "fg": "#10b981",
+      "bg": "#cecfd0",
+      "bgLabel": "四级卡片底 over 面板 over #101418",
+      "note": ".sign-status-tag 11px 绿字",
+      "ratio": 1.63,
+      "aa_normal": false,
+      "aa_large": false,
+      "aaa_normal": false
+    },
+    {
+      "id": "C19",
+      "fg": "#334155",
+      "bg": "#ced1d4",
+      "bgLabel": "日志框 rgba(241,245,249,0.5) over 面板",
+      "note": ".sign-log-box 11px 正文",
+      "ratio": 6.75,
+      "aa_normal": true,
+      "aa_large": true,
+      "aaa_normal": false
+    },
+    {
+      "id": "C20",
+      "fg": "#ffffff",
+      "bg": "#bcbdbe",
+      "bgLabel": "Dock 0.72 over #101418",
+      "note": "Dock 内白字(若有)",
+      "ratio": 1.88,
+      "aa_normal": false,
+      "aa_large": false,
+      "aaa_normal": false
+    },
+    {
+      "id": "C21",
+      "fg": "#334155",
+      "bg": "#dadbdb",
+      "bgLabel": "Dock 磁贴 rgba255,0.45 over 0.72 over #101418",
+      "note": "磁贴图标色(旧 SVG 内联色)",
+      "ratio": 7.46,
+      "aa_normal": true,
+      "aa_large": true,
+      "aaa_normal": true
+    },
+    {
+      "id": "C22",
+      "fg": "#334155",
+      "bg": "#fcfcfc",
+      "bgLabel": "选中磁贴 rgba255,0.95",
+      "note": "选中态图标色",
+      "ratio": 10.07,
+      "aa_normal": true,
+      "aa_large": true,
+      "aaa_normal": true
+    },
+    {
+      "id": "C23",
+      "fg": "#0066ff",
+      "bg": "#fcfcfc",
+      "bgLabel": "选中磁贴",
+      "note": "选中态图标色 --miuix-blue",
+      "ratio": 4.7,
+      "aa_normal": true,
+      "aa_large": true,
+      "aaa_normal": false
+    },
+    {
+      "id": "C24",
+      "fg": "#0f172a",
+      "bg": "#abadae",
+      "bgLabel": "面板0.65 over #101418",
+      "note": "面板标题/正文主色",
+      "ratio": 7.91,
+      "aa_normal": true,
+      "aa_large": true,
+      "aaa_normal": true
+    },
+    {
+      "id": "C25",
+      "fg": "#0f172a",
+      "bg": "#c9caca",
+      "bgLabel": "item 底",
+      "note": "选项标题",
+      "ratio": 10.83,
+      "aa_normal": true,
+      "aa_large": true,
+      "aaa_normal": true
+    },
+    {
+      "id": "C26",
+      "fg": "#64748b",
+      "bg": "#d9dadb",
+      "bgLabel": "抽屉内部 rgba255,0.55 over 面板",
+      "note": "抽屉内弱文字",
+      "ratio": 3.4,
+      "aa_normal": false,
+      "aa_large": true,
+      "aaa_normal": false
+    },
+    {
+      "id": "C27",
+      "fg": "#0066ff",
+      "bg": "#d9dadb",
+      "bgLabel": "抽屉内底",
+      "note": "抽屉内蓝字",
+      "ratio": 3.45,
+      "aa_normal": false,
+      "aa_large": true,
+      "aaa_normal": false
+    }
+  ]
+}

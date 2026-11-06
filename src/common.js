@@ -592,7 +592,7 @@ function getTextareaPosition(element) {
 function ExUI_stickActionBar(root) {
   if (!root || typeof root.querySelectorAll !== "function") return 0;
   let wraps = root.querySelectorAll(
-    ".fans-panel__action-wrap, .popup-panel__action-wrap, .exupdate-panel__action-wrap"
+    ".ui-actions"
   );
   Array.prototype.forEach.call(wraps, function (wrap) {
     if (!wrap || !wrap.style) return;

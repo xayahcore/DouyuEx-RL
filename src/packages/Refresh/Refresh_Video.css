@@ -40,7 +40,7 @@
     width: 6px;
     height: 6px;
     margin-left: 6px;
-    border-radius: 999px;
+    border-radius: var(--dx-radius-full);
     background: rgba(255, 255, 255, .95);
     box-shadow: 0 0 0 2px rgba(255, 255, 255, .22);
 }

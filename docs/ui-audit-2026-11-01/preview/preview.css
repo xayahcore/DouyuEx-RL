@@ -1,0 +1,473 @@
+/* ==========================================================================
+   DouyuEx-RL UI 审计 · 预览台（页面框架层，不属于提案）
+   职责：排页面 / 画「直播画面」底图 / 标注排版。
+   不负责：任何组件观感 —— 组件观感全部来自 src/packages/ExPanel/ExPanel.css
+           与 after.css，这里只在极少处做「演示态镜像」（见文末，已逐条标注出处）。
+   ========================================================================== */
+
+* { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: #0b0e14;
+  color: #e2e8f0;
+  font: 13px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+}
+
+/* ---------- 页头 ---------- */
+.pg-head {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 30px 24px 6px;
+}
+.pg-head h1 {
+  margin: 0 0 6px;
+  font-size: 21px;
+  letter-spacing: -0.2px;
+}
+.pg-head .pg-sub {
+  margin: 0 0 4px;
+  color: #94a3b8;
+  font-size: 12.5px;
+}
+.pg-head .pg-sub code { color: #bfdbfe; }
+.pg-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 14px 0 4px;
+}
+.pg-toolbar button {
+  appearance: none;
+  border: 1px solid #24303f;
+  background: #131a24;
+  color: #cbd5e1;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color .15s ease, border-color .15s ease;
+}
+.pg-toolbar button:hover { background: #1a2432; border-color: #33465c; }
+.pg-toolbar button[aria-pressed="true"] {
+  background: #0d2a4d;
+  border-color: #1d6fd0;
+  color: #dbeafe;
+}
+
+/* ---------- 对照行 ---------- */
+.pg-wrap { max-width: 1000px; margin: 0 auto; padding: 8px 24px 60px; }
+
+.row { margin-top: 30px; }
+.row__head {
+  display: grid;
+  grid-template-columns: 420px 420px;
+  gap: 24px;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+.pane__tag {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .4px;
+}
+.pane__tag .tag-before { color: #f87171; }
+.pane__tag .tag-after { color: #60a5fa; }
+.pane__tag small { font-weight: 400; color: #7c8ba1; letter-spacing: 0; }
+
+.row__title {
+  margin: 0 0 2px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: #e2e8f0;
+}
+.row__note {
+  margin: 0 0 12px;
+  text-align: center;
+  font-size: 11.5px;
+  color: #7c8ba1;
+}
+
+.row__grid {
+  display: grid;
+  grid-template-columns: 420px 420px;
+  gap: 24px;
+  justify-content: center;
+  align-items: end;
+}
+.pane { min-width: 0; }
+
+/* ---------- 舞台 = 一块「直播画面」 ---------- */
+.stage {
+  position: relative;
+  width: 420px;
+  border-radius: 18px;
+  isolation: isolate;
+}
+.stage__video,
+.stage__danmaku {
+  position: absolute;
+  inset: 0;
+  border-radius: 18px;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* 底图 = 真机截图裁出来的两帧真实视频画面
+   （源：docs/ui-audit-2026-11-01/live/round02-baseline.png，1625×763 真房间截图）
+     frame-dark.png  x0   y330 560×330，亮度均值 82/255  —— 暗场
+     frame-light.png x165 y55  560×330，亮度均值 145/255 —— 亮场（含真实弹幕文字）
+   采样均值由 ego/frames.py 当场算出并回填；两帧都避开了面板与右侧聊天栏。
+   极限亮场（#f2f2f2 = 242）不在这张截图里，只在差分表的合成模型里覆盖。 */
+body[data-video="dark"] .stage__video {
+  background-image:
+    url("assets/frame-dark.png"),
+    linear-gradient(112deg, #0b1220 0%, #16243a 46%, #241a38 100%);
+  background-size: cover, cover;
+  background-position: center, center;
+  background-repeat: no-repeat;
+}
+body[data-video="light"] .stage__video {
+  background-image:
+    url("assets/frame-light.png"),
+    linear-gradient(112deg, #f8fbff 0%, #e6eef9 48%, #f4f8ff 100%);
+  background-size: cover, cover;
+  background-position: center, center;
+  background-repeat: no-repeat;
+}
+/* 近似纯白画面（?video=white）：深色薄玻璃的极限工况，用来看白字在纯白底上还剩多少 */
+body[data-video="white"] .stage__video {
+  background-image:
+    radial-gradient(120% 100% at 30% 18%, #ffffff 0%, rgba(255,255,255,0) 70%),
+    linear-gradient(112deg, #fdfdfd 0%, #f6f7f9 52%, #ffffff 100%);
+  background-size: cover, cover;
+  background-position: center, center;
+  background-repeat: no-repeat;
+}
+
+/* 真帧本身已经带弹幕文字与纹理，不再叠假纹理 */
+.stage__danmaku { display: none; }
+
+/* 入场动画在静态对照页里只会污染测量：getBoundingClientRect 会把 keyframe 的
+   scale(0.92) / translateY(14px) 算进去（实测 Dock 被量成 511.52×69.92 而不是 76 高）。
+   两侧一模一样地关掉，不改变任何对比结论。 */
+.stage .ex-panel.miuix-dock-in,
+.stage .ex-panel[style*="display: flex"],
+.stage .miuix-modal.miuix-modal-in,
+.stage .miuix-modal[style*="display: flex"],
+.stage .miuix-modal[style*="display:flex"] {
+  animation: none !important;
+}
+
+.stage--dock { height: 172px; }
+.stage--dock .stage__video, .stage--dock .stage__danmaku { border-radius: 16px; }
+.stage--panel {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  /* 顶部留 26px 给「深色画面」角标，避免它压在面板圆角上 */
+  padding: 26px 0 20px;
+  min-height: 416px;
+}
+.stage--controls { padding: 16px 0; }
+
+/* 舞台角标：亮/暗画面提示 */
+.stage__hint {
+  position: absolute;
+  left: 10px;
+  top: 8px;
+  z-index: 1;
+  font-size: 10px;
+  letter-spacing: .3px;
+  color: rgba(255,255,255,.85);
+  background: rgba(0,0,0,.45);
+  border-radius: 5px;
+  padding: 1px 6px;
+}
+body[data-video="light"] .stage__hint { color: rgba(255,255,255,.9); background: rgba(15,23,42,.5); }
+
+/* ---------- 上下叠放行（Dock 天然 620px 宽，双栏塞不下，改成一行一条） ---------- */
+.row--stack .row__grid {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+  align-items: stretch;
+}
+.row--stack .stage { width: 100%; }
+.row--stack .stage--dock { height: 168px; }
+.pane__tag { margin-bottom: 8px; }
+
+.pg-error {
+  margin: 24px auto;
+  max-width: 860px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px solid #5b2020;
+  background: #2a1214;
+  color: #fca5a5;
+  font-size: 12.5px;
+}
+
+/* ---------- 可调预设舞台：只画视频层，面板由 JS 注入 ---------- */
+.gx-stage .stage__video { z-index: 0; }
+.gx-stage .extool { position: relative; z-index: 1; }
+
+/* ---------- Dock 主题：第 9 个磁贴 + 跟随网页角标 + 宽度实测条 ---------- */
+.ex-panel__wrap > div.ex-theme { cursor: pointer; }
+.ex-theme .ex-ico svg { width: 30px; height: 30px; }
+.ex-theme[data-state="light"] .ex-ico { color: #e8a317; }
+.ex-theme[data-state="dark"] .ex-ico { color: #475569; }
+.ex-theme[data-state="auto"] .ex-ico { color: #64748b; }
+.after .ex-theme[data-state="light"] .ex-ico { color: #c78200; }
+.after .ex-theme[data-state="dark"] .ex-ico { color: #cbd5e1; }
+.after .ex-theme[data-state="auto"] .ex-ico { color: #94a3b8; }
+
+.ex-theme-badge {
+  position: absolute;
+  right: 12px;
+  bottom: 4px;
+  z-index: 2;
+  font-size: 10.5px;
+  line-height: 1.4;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, .55);
+  color: #e2e8f0;
+  border: 1px solid rgba(255, 255, 255, .22);
+  pointer-events: none;
+}
+
+.dock-metric {
+  max-width: 940px;
+  margin: 12px auto 0;
+  padding: 8px 12px;
+  border: 1px solid #1b2532;
+  border-radius: 8px;
+  background: #0d141c;
+  color: #8fa3bb;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.dock-metric b { color: #e2e8f0; }
+
+/* ---------- 数值差清单 ---------- */
+/* ---------- 2× 放大对照（?zoom=1 + deviceScaleFactor 2） ---------- */
+.zoom-banner { display: none; }
+body.zoom-mode .zoom-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px 16px;
+  max-width: 940px;
+  margin: 0 auto 14px;
+  padding: 10px 14px;
+  border: 1px solid #24405f;
+  border-radius: 10px;
+  background: #0d1a2a;
+  font-size: 13px;
+  color: #cbd5e1;
+}
+.zoom-banner b { color: #e2e8f0; font-size: 14px; }
+/* 放大视图下把标注压成一行，给 2× 卡片留出整屏高度 */
+body.zoom-mode .zoom-banner {
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  overflow-x: auto;
+  padding: 7px 12px;
+  font-size: 12px;
+  max-width: 1652px;
+  margin-bottom: 8px;
+}
+body.zoom-mode .pg-wrap { max-width: 1700px; padding-bottom: 12px; }
+body.zoom-mode .pane__tag { margin-bottom: 4px; }
+.zoom-banner code {
+  font: 12px/1.5 "Cascadia Mono", Consolas, monospace;
+  background: #111821;
+  border: 1px solid #1e2a38;
+  border-radius: 4px;
+  padding: 1px 5px;
+  color: #bfdbfe;
+}
+.zoom-banner__num { color: #93c5fd; }
+/* 只留扩展功能这一行，其余全部隐藏，避免画面里混进别的结论 */
+body.zoom-mode .pg-head,
+body.zoom-mode .row:not(#row-extool),
+body.zoom-mode #row-extool .row__title,
+body.zoom-mode #row-extool .row__note,
+body.zoom-mode #row-extool .delta { display: none; }
+
+/* 放大到 200%：zoom 会重排版并以 2× 字号栅格化，比 transform: scale 清晰得多。
+   这一屏是「读数视图」，所以允许把面板高度改成自适应（不参与 any 提案比对）。 */
+body.zoom-mode .pane--before .extool,
+body.zoom-mode .pane--after .extool { zoom: 2; }
+body.zoom-mode .miuix-modal__header { display: none !important; }
+body.zoom-mode .miuix-modal__body > *:not(:first-child) { display: none !important; }
+body.zoom-mode .miuix-modal {
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+}
+body.zoom-mode .miuix-modal__body { max-height: none !important; padding-bottom: 0 !important; overflow: visible !important; }
+body.zoom-mode .row__grid { grid-template-columns: 780px 780px; gap: 16px; align-items: start; }
+body.zoom-mode .stage { width: auto; }
+body.zoom-mode .stage--panel { padding: 4px 0; min-height: 0; }
+body.zoom-mode #pg-rows { padding-top: 4px; }
+body.zoom-mode .stage__hint { display: none; }
+
+/* 截图用：?delta=0 时隐藏数值差清单，让一行对照刚好落进一屏 */
+body.no-delta .delta { display: none; }
+
+.delta {
+  list-style: none;
+  margin: 14px auto 0;
+  padding: 0;
+  width: 864px;
+  max-width: 100%;
+  border-top: 1px solid #1b2532;
+}
+.delta__cap {
+  font-size: 11px;
+  letter-spacing: .5px;
+  color: #64748b;
+  padding: 10px 0 6px;
+  font-weight: 700;
+}
+.delta li {
+  display: grid;
+  grid-template-columns: 168px 1fr;
+  gap: 10px;
+  align-items: baseline;
+  padding: 5px 0;
+  border-bottom: 1px dashed #16202c;
+  font-size: 12px;
+}
+.delta .d-k { color: #8fa3bb; }
+.delta .d-v { color: #e2e8f0; display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; }
+.delta code {
+  font: 11.5px/1.5 "Cascadia Mono", Consolas, "Courier New", monospace;
+  background: #111821;
+  border: 1px solid #1e2a38;
+  border-radius: 4px;
+  padding: 1px 5px;
+  color: #9fb3c8;
+}
+.delta code.is-after { color: #93c5fd; border-color: #24405f; background: #0d1a2a; }
+.delta i.arrow { color: #475569; font-style: normal; }
+.delta .d-note { color: #64748b; font-size: 11px; }
+.delta .d-pass { color: #34d399; font-size: 11px; font-weight: 700; }
+.delta .d-fail { color: #f87171; font-size: 11px; font-weight: 700; }
+
+/* ---------- 差分表 / 说明 ---------- */
+.tbl-wrap {
+  max-width: 940px;
+  margin: 0 auto;
+  overflow-x: auto;
+  border: 1px solid #1b2532;
+  border-radius: 12px;
+}
+.tbl {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  line-height: 1.55;
+}
+.tbl th,
+.tbl td {
+  text-align: left;
+  vertical-align: top;
+  padding: 7px 10px;
+  border-bottom: 1px solid #141d28;
+}
+.tbl thead th {
+  position: sticky;
+  top: 0;
+  background: #0f151d;
+  color: #8fa3bb;
+  font-weight: 700;
+  font-size: 11.5px;
+  letter-spacing: .3px;
+  white-space: nowrap;
+}
+.tbl td { color: #c9d6e4; }
+.tbl td:first-child { color: #e2e8f0; font-weight: 600; }
+.tbl td:last-child { color: #93c5fd; font-weight: 700; text-align: center; }
+.tbl tr.tbl-group td {
+  background: #0d141c;
+  color: #60a5fa;
+  font-weight: 700;
+  font-size: 11.5px;
+  letter-spacing: .4px;
+  padding: 5px 10px;
+}
+.tbl code {
+  font: 11px/1.5 "Cascadia Mono", Consolas, "Courier New", monospace;
+  background: #111821;
+  border: 1px solid #1e2a38;
+  border-radius: 4px;
+  padding: 0 4px;
+  color: #a9bed3;
+}
+.tbl b { color: #e2e8f0; }
+.notes {
+  max-width: 940px;
+  margin: 0 auto;
+  padding-left: 18px;
+  color: #9fb0c4;
+  font-size: 12px;
+  line-height: 1.75;
+}
+.notes li { margin-bottom: 4px; }
+.notes code {
+  font: 11px/1.5 "Cascadia Mono", Consolas, "Courier New", monospace;
+  background: #111821;
+  border: 1px solid #1e2a38;
+  border-radius: 4px;
+  padding: 0 4px;
+  color: #bfdbfe;
+}
+
+/* ---------- 控件演示 ---------- */
+.demo-stack { display: flex; flex-direction: column; gap: 0; }
+.demo-hint {
+  font-size: 11px;
+  color: #64748b;
+  margin: 2px 0 10px;
+  padding: 0 12px;
+}
+
+/* 焦点环演示：before 侧不加任何自绘环 —— 源码里 .sign-checkbox / .ex-btn-primary
+   都写了 outline:none，UA 默认环被抹掉，键盘用户确实什么都看不到。 */
+body.dbg-hit .pane--after .miuix-modal__close::after,
+body.dbg-hit .pane--after .ex-panel__close::after {
+  background: rgba(0, 102, 255, .22) !important;
+  box-shadow: inset 0 0 0 1px rgba(0, 102, 255, .55) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pg-toolbar button { transition: none; }
+}
+
+/* ==========================================================================
+   演示态镜像（唯一的「非源码」组件样式，逐条抄自源码，不做任何取舍）
+   --------------------------------------------------------------------------
+   A) .is-demo-hover —— 静态截图里没法真的把鼠标停在两个并排的磁贴上，
+      所以把源码 ExPanel.css:140-145 的 :hover 声明原样镜像成类。
+      5 条声明一字不差：底色 0.92 / translateY(-2.5px) / 蓝描边 0.35 /
+      0 6px 18px rgba(0,102,255,.24) / inset 0 1px 1px #fff。
+   B) .is-demo-focus —— 不镜像任何东西。源码里 .sign-checkbox(:731) 与
+      .ex-btn-primary(:898) 都写了 outline:none，且全项目没有替代焦点环，
+      所以 before 侧「没有环」就是真实结果，after 侧的环来自 after.css。
+   ========================================================================== */
+.ex-panel__wrap > div.is-demo-hover {
+  background: rgba(255, 255, 255, 0.92) !important;
+  transform: translateY(-2.5px) !important;
+  border-color: rgba(0, 102, 255, 0.35) !important;
+  box-shadow: 0 6px 18px rgba(0, 102, 255, 0.24), inset 0 1px 1px #fff !important;
+}

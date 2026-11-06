@@ -1,0 +1,321 @@
+/* ==========================================================================
+   after-dark.css —— 「深色玻璃」：整套转深色，白字压在深玻璃上
+   --------------------------------------------------------------------------
+   用户 2026-11-01 指定的第四套路线。取值由全帧矩阵算出，照抄不要改。
+   与前面三档的根本差别：前三档靠「把字压在更实的浅色层上」，这一档靠「把底压深、字提亮」，
+   所以第一次能在「真玻璃」上放正文 —— 代价是整套转深色，与斗鱼亮色页面割裂。
+   墨色最坏帧（纯白帧）比值：--d-ink-1 6.83 / --d-ink-2 5.54 / --d-ink-3 4.60 /
+                            --d-ink-deco 2.66（只做装饰/图标，不许做文字）/
+                            --d-accent 3.10（图标、指示条、≥14px 强调，11px 小字不许）/
+                            --d-pill 白字 4.83。
+   ========================================================================== */
+
+.after {
+  /* 面 */
+  --d-shell: rgba(16, 20, 26, 0.55);    /* 面板外壳 / Dock 胶囊 —— 不承载文字，可更透 */
+  --d-surface: rgba(16, 20, 26, 0.70);  /* 卡片 / 面板头 / 选项行 —— 白字最坏帧 6.83 */
+  --d-blur: blur(28px) saturate(150%);
+  --d-edge-in: inset 0 0 0 0.5px rgba(255, 255, 255, 0.14);
+  --d-edge-out: 1px solid rgba(255, 255, 255, 0.10);
+  --d-shadow: 0 18px 44px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.10);
+
+  /* 字 */
+  --d-ink-1: #ffffff;      /* 暗场 18.5 / 纯白帧 6.83 */
+  --d-ink-2: #e2e8f0;      /* 最坏 5.54 */
+  --d-ink-3: #cbd5e1;      /* 最坏 4.60 */
+  --d-ink-deco: #94a3b8;   /* 最坏 2.66 —— 只做装饰/图标 */
+  --d-accent: #7db0ff;     /* 最坏 3.10 —— 图标、指示条、≥14px 强调 */
+  --d-pill: #0066ff;       /* 药丸底，白字 4.83（#1a6dff 只有 4.49，别用） */
+
+  --d-divider: rgba(255, 255, 255, 0.10);
+  --d-hit: 44px;
+}
+
+/* ---------- 外壳 0.55 ---------- */
+.after .miuix-modal,
+.after .sign-panel,
+.after .fans-continue-panel,
+.after .extool,
+.after .livetool,
+.after .bloop,
+.after .exlottery,
+.after .popup-player-panel,
+.after .exupdate-panel,
+.after .danmaku-history-panel {
+  background: var(--d-shell) !important;
+  backdrop-filter: var(--d-blur) !important;
+  -webkit-backdrop-filter: var(--d-blur) !important;
+  border: var(--d-edge-out) !important;
+  box-shadow: var(--d-shadow) !important;
+}
+
+/* ---------- 面板头 / 卡片 / 选项行：0.70 承载文字 ---------- */
+.after .miuix-modal__header {
+  background: var(--d-surface) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border-bottom: 1px solid var(--d-divider) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+}
+.after .miuix-modal__body {
+  background: transparent !important;
+  padding: 10px 0 14px 0 !important;
+  max-height: none !important;
+}
+
+.after .fans-panel__card,
+.after .popup-panel__card,
+.after .exupdate-panel__card,
+.after .miuix-card,
+.after .livetool__cell {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0) 42%),
+    var(--d-surface) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: none !important;
+  border-radius: 14px !important;
+  box-shadow: var(--d-edge-in), 0 6px 18px rgba(0, 0, 0, 0.28) !important;
+  margin: 0 12px 10px 12px !important;
+  padding: 12px 14px !important;
+}
+
+/* ---------- 字：深底上可以用浅灰做层级 ---------- */
+.after .sign-option-title,
+.after .fans-panel__card-title,
+.after .exupdate-panel__card-title,
+.after .popup-panel__card-title,
+.after .miuix-card__title,
+.after .miuix-modal__title,
+.after .livetool__cell_title > span[id$="__title"] {
+  color: var(--d-ink-1) !important;
+  font-weight: 600 !important;
+}
+.after .miuix-modal__title,
+.after .fans-panel__card-title,
+.after .exupdate-panel__card-title,
+.after .popup-panel__card-title,
+.after .miuix-card__title,
+.after .livetool__cell_title > span[id$="__title"] {
+  font-size: 14px !important;
+}
+.after .sign-option-title { font-size: 12.5px !important; }
+.after .sign-option-desc {
+  color: var(--d-ink-3) !important;   /* 4.60 最坏帧 */
+  font-size: 11.5px !important;
+  font-weight: 400 !important;
+  line-height: 1.4 !important;
+}
+.after .fans-panel__card-header > span:not(.fans-panel__card-title),
+.after .exupdate-panel__card-header > span:not(.exupdate-panel__card-title) {
+  color: var(--d-ink-3) !important;
+  font-size: 11.5px !important;
+}
+.after .exupdate-list { color: var(--d-ink-3) !important; font-size: 12px !important; }
+.after .sign-log-box {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid var(--d-divider) !important;
+  color: var(--d-ink-3) !important;
+  font-size: 11.5px !important;
+}
+.after .fans-panel__card-header,
+.after .exupdate-panel__card-header {
+  border-bottom: 1px solid var(--d-divider) !important;
+  margin-bottom: 10px !important;
+  padding-bottom: 6px !important;
+}
+
+/* ---------- 蓝色：小字永远走药丸，图形用提亮蓝 ---------- */
+.after .fans-panel__card-header > span[style*="0066ff"],
+.after .fans-panel__card-header > span[style*="0, 102, 255"] {
+  background: var(--d-pill) !important;
+  color: #ffffff !important;
+  border-radius: 999px !important;
+  padding: 1px 8px !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+}
+.after .livetool__cell_title span:not([id$="__title"]) {
+  background: var(--d-pill) !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+  border-radius: 8px !important;
+  font-size: 11.5px !important;
+}
+.after .livetool__cell_title span:not([id$="__title"]):hover { background: #0052d9 !important; }
+.after .ex-title-ico,
+.after .ex-title-ico svg { color: var(--d-accent) !important; }
+.after .ex-card-ico,
+.after .ex-card-ico svg { color: var(--d-ink-deco) !important; }
+
+/* ---------- 输入类 ---------- */
+.after .miuix-modal input[type="text"],
+.after .miuix-modal input[type="number"],
+.after .miuix-modal textarea,
+.after .miuix-modal select,
+.after .sign-panel input[type="text"],
+.after .sign-panel input[type="number"],
+.after .extool input[type="text"],
+.after .extool input[type="number"],
+.after .livetool select,
+.after .livetool input[type="text"] {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.16) !important;
+  color: #ffffff !important;
+}
+.after .miuix-modal input::placeholder,
+.after .livetool input::placeholder { color: var(--d-ink-3) !important; }
+
+/* ---------- 分段胶囊 ---------- */
+.after .miuix-seg { background: rgba(255, 255, 255, 0.06) !important; border-radius: 8px !important; }
+.after .miuix-seg__label {
+  background: transparent !important;
+  color: var(--d-ink-3) !important;
+  font-size: 11.5px !important;
+}
+.after .miuix-seg__item:hover > .miuix-seg__label { color: var(--d-ink-1) !important; }
+.after .miuix-seg__item > input[type="radio"]:checked + .miuix-seg__label {
+  background: rgba(255, 255, 255, 0.16) !important;
+  color: #ffffff !important;
+  box-shadow: none !important;
+}
+
+/* ---------- 行 ---------- */
+.after .sign-option-item,
+.after .miuix-item {
+  background: var(--d-surface) !important;
+  border: 1px solid var(--d-divider) !important;
+  border-radius: 10px !important;
+  padding: 8px 12px !important;
+  gap: 8px !important;
+  min-height: var(--d-hit) !important;
+}
+.after .sign-option-item:hover,
+.after .miuix-item:hover {
+  background: rgba(16, 20, 26, 0.78) !important;
+  border-color: rgba(125, 176, 255, 0.45) !important;
+  transform: none !important;
+}
+.after .sign-options-list { gap: 8px !important; }
+
+/* ---------- 开关：不重做造型，只把轨道从「黑 14%」反转成「白 22%」 ---------- */
+.after .sign-checkbox:not(:checked),
+.after .miuix-switch:not(:checked) {
+  background: rgba(255, 255, 255, 0.22) !important;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.28) !important;
+}
+.after .sign-checkbox:not(:checked)::before,
+.after .miuix-switch:not(:checked)::before {
+  background: #ffffff !important;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.45) !important;
+}
+.after .sign-checkbox:checked,
+.after .miuix-switch:checked {
+  background: var(--d-pill) !important;
+  box-shadow: 0 2px 8px rgba(0, 102, 255, 0.45) !important;
+}
+
+/* ---------- Dock ---------- */
+.after .ex-panel {
+  background: var(--d-shell) !important;
+  backdrop-filter: var(--d-blur) !important;
+  -webkit-backdrop-filter: var(--d-blur) !important;
+  border: var(--d-edge-out) !important;
+  box-shadow: var(--d-shadow) !important;
+  padding: 8px 16px !important;
+}
+.after .ex-panel__wrap { gap: 8px !important; }
+.after .ex-panel__wrap > div {
+  background: rgba(255, 255, 255, 0.08) !important;
+  border: 1px solid rgba(255, 255, 255, 0.10) !important;
+  transform: none !important;
+}
+.after .ex-panel__icon svg,
+.after .ex-ico { color: var(--d-ink-2) !important; }
+.after .ex-panel__wrap > div:hover,
+.after .ex-panel__wrap > div.is-demo-hover {
+  background: rgba(255, 255, 255, 0.14) !important;
+  transform: none !important;
+  border-color: rgba(125, 176, 255, 0.55) !important;
+  box-shadow: inset 0 0 0 1.5px rgba(125, 176, 255, 0.50) !important;
+}
+.after .ex-panel__wrap > div.is-active,
+.after .ex-panel__wrap > div.ex-dock-active {
+  background: rgba(125, 176, 255, 0.18) !important;
+  border-color: rgba(125, 176, 255, 0.45) !important;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.14) !important;
+  transform: translateY(-2px) !important;
+}
+.after .ex-panel__wrap > div.is-active .ex-panel__icon svg,
+.after .ex-panel__wrap > div.ex-dock-active .ex-panel__icon svg,
+.after .ex-panel__wrap > div.is-active .ex-ico,
+.after .ex-panel__wrap > div.ex-dock-active .ex-ico {
+  color: var(--d-accent) !important;
+  fill: currentColor !important;
+}
+
+/* ---------- 关闭按钮 / 命中区 / 焦点环 ---------- */
+.after .miuix-modal__close {
+  background: rgba(255, 255, 255, 0.12) !important;
+  color: var(--d-ink-2) !important;
+}
+.after .miuix-modal__close:hover {
+  background: #ef4444 !important;
+  color: #ffffff !important;
+}
+.after .miuix-modal__close::after,
+.after .ex-panel__close::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--d-hit);
+  height: var(--d-hit);
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+}
+.after .miuix-modal__close:focus-visible,
+.after .ex-panel__close:focus-visible,
+.after .sign-option-item:focus-visible,
+.after .miuix-item:focus-visible,
+.after .ex-panel__wrap > div:focus-visible,
+.after .ex-btn-primary:focus-visible,
+.after .fans-panel__submit-btn:focus-visible,
+.after .exupdate-panel__submit-btn:focus-visible,
+.after input.sign-checkbox:focus-visible,
+.after input.miuix-switch:focus-visible,
+.after .sign-checkbox.is-demo-focus,
+.after input.sign-checkbox.is-demo-focus {
+  outline: 2px solid var(--d-accent) !important;
+  outline-offset: 2px !important;
+}
+.after .ex-btn-primary,
+.after .fans-panel__submit-btn,
+.after .exupdate-panel__submit-btn {
+  height: var(--d-hit) !important;
+  border-radius: 8px !important;
+  font-size: 14px !important;
+  background: var(--d-pill) !important;
+  color: #ffffff !important;
+}
+
+/* ---------- 滚动条 ---------- */
+.after .miuix-modal__body::-webkit-scrollbar-thumb,
+.after .sign-log-box::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.22) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .after .ex-panel,
+  .after .ex-panel *,
+  .after .miuix-modal,
+  .after .miuix-modal * {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+  .after .ex-panel__wrap > div:hover,
+  .after .ex-panel__wrap > div.is-demo-hover,
+  .after .ex-panel__wrap > div.is-active,
+  .after .miuix-modal__close:hover,
+  .after .ex-panel__close:hover { transform: none !important; }
+}

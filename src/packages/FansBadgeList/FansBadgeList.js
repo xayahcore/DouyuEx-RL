@@ -76,10 +76,10 @@ function FansBadgeList_annotateRows() {
             }
             let ttStr = dateFormat("yyyy-MM-dd hh:mm:ss",new Date(tt)); // 获取日期
             let days = Math.floor((nowTime - tt) / 86400000); // 距今天数
-            let style = days >= 300 ? "font-weight:600;color:red;" : "";
+            let longTerm = days >= 300;   // 超过 300 天属长期牌：用类名表达，不再内联
 
             td.innerHTML += `
-        已获取 <span style="${style}">${days}</span> 天<br/>
+        已获取 <span class="${longTerm ? "is-long-term" : ""}">${days}</span> 天<br/>
         ${ttStr}`;
             if (item.dataset) item.dataset.exFansAnnotated = "1";
             annotated++;

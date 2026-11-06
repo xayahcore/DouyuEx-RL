@@ -102,7 +102,7 @@ function Update_insertIcon() {
   a.innerHTML =
     '<a class="ex-panel__icon" title="版本更新，当前版本' +
     curVersion +
-    '"><svg t="1578767541873" style="display:block;" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="23715" width="32" height="32"><path d="M768 810.7H512c-23.6 0-42.7-19.1-42.7-42.7s19.1-42.7 42.7-42.7h256c94.1 0 170.7-76.6 170.7-170.7 0-89.6-70.1-164.3-159.5-170.1L754 383l-10.7-22.7c-42.2-89.3-133-147-231.3-147s-189.1 57.7-231.3 147L270 383l-25.1 1.6c-89.5 5.8-159.5 80.5-159.5 170.1 0 94.1 76.6 170.7 170.7 170.7 23.6 0 42.7 19.1 42.7 42.7s-19.1 42.7-42.7 42.7c-141.2 0-256-114.8-256-256 0-126.1 92.5-232.5 214.7-252.4C274.8 195.7 388.9 128 512 128s237.2 67.7 297.3 174.2C931.5 322.1 1024 428.6 1024 554.7c0 141.1-114.8 256-256 256z" fill="#3688FF" p-id="23716"></path><path d="M554.7 938.7c-10.9 0-21.8-4.2-30.2-12.5l-128-128c-16.7-16.7-16.7-43.7 0-60.3l128-128c16.6-16.7 43.7-16.7 60.3 0 16.7 16.7 16.7 43.7 0 60.3L487 768l97.8 97.8c16.7 16.7 16.7 43.7 0 60.3-8.3 8.4-19.2 12.6-30.1 12.6z" fill="#5F6379" p-id="23717"></path></svg><i id="ex-update__tip" class="ex-panel__tip"></i></a>';
+    '"><svg t="1578767541873" class="icon dx-d-block" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="23715" width="32" height="32" ><path d="M768 810.7H512c-23.6 0-42.7-19.1-42.7-42.7s19.1-42.7 42.7-42.7h256c94.1 0 170.7-76.6 170.7-170.7 0-89.6-70.1-164.3-159.5-170.1L754 383l-10.7-22.7c-42.2-89.3-133-147-231.3-147s-189.1 57.7-231.3 147L270 383l-25.1 1.6c-89.5 5.8-159.5 80.5-159.5 170.1 0 94.1 76.6 170.7 170.7 170.7 23.6 0 42.7 19.1 42.7 42.7s-19.1 42.7-42.7 42.7c-141.2 0-256-114.8-256-256 0-126.1 92.5-232.5 214.7-252.4C274.8 195.7 388.9 128 512 128s237.2 67.7 297.3 174.2C931.5 322.1 1024 428.6 1024 554.7c0 141.1-114.8 256-256 256z" fill="#3688FF" p-id="23716"></path><path d="M554.7 938.7c-10.9 0-21.8-4.2-30.2-12.5l-128-128c-16.7-16.7-16.7-43.7 0-60.3l128-128c16.6-16.7 43.7-16.7 60.3 0 16.7 16.7 16.7 43.7 0 60.3L487 768l97.8 97.8c16.7 16.7 16.7 43.7 0 60.3-8.3 8.4-19.2 12.6-30.1 12.6z" fill="#5F6379" p-id="23717"></path></svg><i id="ex-update__tip" class="ex-panel__tip"></i></a>';
 
   let b = document.getElementsByClassName("ex-panel__wrap")[0];
   if (b) b.insertBefore(a, b.childNodes[0]);
@@ -288,22 +288,27 @@ function buildExUpdateCardsHtml() {
   var log = (typeof EX_UPDATE_LOG !== "undefined" && EX_UPDATE_LOG) ? EX_UPDATE_LOG : null;
   var isFallback = !(log && log[curVersion]);
   var note = isFallback
-    ? '<div class="exupdate-panel__note">当前版本 ' + escapeUpdateLogText(curVersion) + ' 暂无独立日志条目，以下为最近一条更新日志。</div>'
+    ? ExUI.prose("当前版本 " + escapeUpdateLogText(curVersion) + " 暂无独立日志条目，以下为最近一条更新日志。", "exupdate-panel__note")
     : "";
 
+  var firstCard = true;
   return note + sections.map(function (name) {
     var items = Array.isArray(entry[name]) ? entry[name] : [];
     var lis = items.map(function (text) {
-      return "<li>• " + escapeUpdateLogText(text) + "</li>";
+      return "<li>• " + formatUpdateLogItem(text) + "</li>";
     }).join("");
-    return (
-      '<div class="exupdate-panel__card">' +
-        '<div class="exupdate-panel__card-header">' +
-          '<span class="exupdate-panel__card-title">' + escapeUpdateLogText(name) + '</span>' +
-        '</div>' +
-        '<ul class="exupdate-list">' + lis + '</ul>' +
-      '</div>'
-    );
+    var asideHtml = firstCard ? '<span class="ui-card__aside">v' + escapeUpdateLogText(curVersion) + '</span>' : "";
+    firstCard = false;
+    return ExUI.card({
+      title: name,
+      asideHtml: asideHtml,
+      body: '<ul class="exupdate-list">' + lis + "</ul>",
+      legacy: {
+        card: ExUI.LG.updateCard,
+        head: ExUI.LG.updateHead,
+        title: ExUI.LG.updateTitle
+      }
+    });
   }).join("");
 }
 
@@ -317,12 +322,22 @@ function createExUpdatePanel() {
   var p = document.createElement("div");
   p.className = "exupdate-panel miuix-modal";
   p.dataset.version = curVersion;
+  /* S2 迁移：内容区仍由 .miuix-modal__body 承重（S0.5 关层实验：拆掉它内容整体上窜 973px），
+     卡片与操作区改由 ExUI 产出，旧类名一律走 legacy 影子。 */
+  var actionBtnHtml = ExUI.btn("我已收到", {
+    variant: "primary",
+    id: "exupdate-action-btn",
+    
+  });
+  // 两侧空白文本节点与迁移前同形：不只观感一致，连 textContent 也逐字一致
+  var actionBarHtml = ExUI.stack({
+    html: "\n        " + actionBtnHtml + "\n      ",
+    cls: "ui-actions"
+  });
   p.innerHTML = `
     <div class="miuix-modal__body">
       ${buildExUpdateCardsHtml()}
-      <div class="exupdate-panel__action-wrap">
-        <button type="button" class="ex-btn-primary exupdate-panel__submit-btn" id="exupdate-action-btn">我已收到</button>
-      </div>
+      ${actionBarHtml}
     </div>
   `;
   document.body.appendChild(p);
@@ -335,9 +350,12 @@ function createExUpdatePanel() {
 
   var btn = p.querySelector("#exupdate-action-btn");
   if (!btn) return;
+  /* 6 个状态是同一个按钮的 class 变体：每次复位到 ExUI 产出的基础类名（自带 legacy 影子），
+     再挂状态类。旧类名字符串只出现在上面 legacy 参数里，这里不再手写。 */
+  var btnBaseCls = btn.className;
 
   function setBtnState(state, text) {
-    btn.className = "ex-btn-primary exupdate-panel__submit-btn";
+    btn.className = btnBaseCls;
     btn.dataset.state = state;
     btn.disabled = false;
     if (state === "ack") {
@@ -437,4 +455,12 @@ function initVersionLifecycleNotice() {
 
 function Update_checkVersion() {
   // 保持空函数或兼容调用，彻底消除原版每次进房弹窗打扰
+}
+
+/** 版本日志条目增强：技术标识用等宽小标签、【分类】加粗，长中文说明更好扫读 */
+function formatUpdateLogItem(text) {
+  var html = escapeUpdateLogText(text);
+  html = html.replace(/\b([A-Za-z][A-Za-z0-9]*(?:_[A-Za-z0-9]+)+|[A-Za-z][A-Za-z0-9]*\.js)\b/g, '<code class="exupdate-code">$1</code>');
+  html = html.replace(/【([^】]{1,14})】/g, '<strong class="exupdate-tag">【$1】</strong>');
+  return html;
 }

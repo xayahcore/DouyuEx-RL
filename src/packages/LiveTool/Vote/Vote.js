@@ -13,37 +13,49 @@ function initPkg_LiveTool_Vote() {
 }
 
 function LiveTool_Vote_insertDom() {
-    let a = document.createElement("div");
-    a.className = "livetool__cell";
-    let cell = `
-        <div class='livetool__cell_title'>
-            <span id='vote__title'>弹幕投票</span><span id='vote__show-result'>面板</span>
-        </div>
-        <div class='livetool__cell_option'>
-            <label class="vote__repeat-label"><span>重复投票</span><input id="vote__repeat" type="checkbox" class="sign-checkbox"></label>
-            <div class="livetool__cell_switch">
+    // S1-E：抽屉单元格 DOM 改由 ExUI 产出；旧类名只以 legacy 影子挂在对应节点上，观感零差异
+    let cellTitle = ExUI.stack({
+        html: `
+            <span id='vote__title'>弹幕投票</span>
+            <span class='ui-cell__desc'>在直播间发起或参与弹幕投票</span>
+        `,
+        cls: "ui-cell__title"
+    });
+    let cellOption = ExUI.stack({
+        html: `
+            ` +
+        ExUI.stack({
+            html: `
                 <input type="checkbox" class="sign-checkbox" id="vote__switch" tabindex="0" checked>
-            </div>
-        </div>
-    `;
-    let panel = `
-        <div class='vote__panel'>
+            `,
+            cls: "ui-cell__switch"
+        }) + `
+        `,
+        cls: "ui-cell__option"
+    });
+    let panel = ExUI.stack({
+        html: `
             <select id='vote__select'>
             </select>
-            <input style="width:40px;margin-left:10px;" type="button" id="vote__add" value="添加"/>
-            <input style="width:40px;margin-left:10px;" type="button" id="vote__del" value="删除"/>
-            <label style="margin-left:5px">限时：<input id="vote__time" type="text" placeholder="秒" /></label>
+            <label class="dx-ml-5" >限时：<input id="vote__time" type="text" placeholder="秒" /></label>
             <div class="vote__option">
                 <label>主题：<input id="vote__theme" type="text"/></label>
                 <label>选项：<input id="vote__options" type="text" placeholder="用空格隔开每个选项"/></label>
             </div>
-        </div>
-    `;
-    a.innerHTML = cell + panel;
+        `,
+        legacy: "vote__panel"
+    });
+    /* 抽屉只是面板，不该继承 .ui-stack 的 display:flex —— 去掉该类，默认收起回到单类选择器 */
+    panel = panel.replace('class="ui-stack ', 'class="');
+    /* 抽屉底部：导入/导出等次级动作集中在这里，行内只保留标题+开关 */
+    panel = panel.replace(/<\/div>$/, "<label class='ui-cell__row-option'><span>允许重复投票</span><input id='vote__repeat' type='checkbox' class='sign-checkbox'></label><div class='ui-cell__actions'><input type='button' id='vote__add' value='添加' /><input type='button' id='vote__del' value='删除' /><button type='button' class='ui-btn ui-btn--quiet' id='vote__show-result'>面板</button></div><\/div>");
+    // 标题 + 开关槽与抽屉面板是兄弟节点：三者同挂到单元格 div 下（不是父子嵌套）
+    let a = ExUI.node(ExUI.stack({ html: cellTitle + cellOption + panel, cls: "ui-cell" }));
     
     let b = document.getElementsByClassName("livetool")[0];
     if (b) {
         b.insertBefore(a, b.childNodes[0]);
+        Vote_syncEmpty();
     } else {
         ExGuard_warn("弹幕投票", "未找到 .livetool 容器，面板未插入（该模块不启用）");
     }
@@ -102,8 +114,8 @@ function LiveTool_Vote_insertFunc() {
             ExGuard_warn("弹幕投票", "面板节点缺失，忽略本次展开");
             return;
         }
-        if (a.style.display != "block") {
-            a.style.display = "block";
+        if (a.style.display !== "block" && a.style.display !== "flex") {
+            a.style.display = "flex";
             // 其余抽屉统一收起：节点不在就跳过，不再逐个裸解引用
             LiveTool_hideDrawerPanelsExcept("vote__panel");
         } else {
@@ -130,6 +142,7 @@ function LiveTool_Vote_insertFunc() {
         let time = document.getElementById("vote__time").value;
 
         if (title == "" || options == "" || time == "") {
+            if (typeof showMessage === "function") showMessage("主题 / 选项 / 限时都要填", "warning");
             return;
         }
 
@@ -140,13 +153,19 @@ function LiveTool_Vote_insertFunc() {
         }
 
         // 添加到select中去
-        select_wordList.options.add(new Option(title, ""));
+        if (select_wordList.dataset.empty === "1") { select_wordList.remove(0); delete select_wordList.dataset.empty; }
+        var opt = document.createElement("option");
+        opt.textContent = title;
+        opt.value = "";
+        select_wordList.options.add(opt);
+        Vote_syncEmpty();
 
         saveDate_Vote();
     });
 
     document.getElementById("vote__del").addEventListener("click", () => {
         let select_wordList = document.getElementById("vote__select");
+        if (!select_wordList.options.length || select_wordList.selectedIndex < 0 || select_wordList.dataset.empty === "1") return;
         let title = select_wordList.options[select_wordList.selectedIndex].text;
 
         // 删除json内的对象
@@ -159,8 +178,8 @@ function LiveTool_Vote_insertFunc() {
 
     document.getElementById("vote__show-result").addEventListener("click", () => {
         let a = document.getElementsByClassName("vote__result")[0];
-		if (a.style.display != "block") {
-			a.style.display = "block";
+		if (a.style.display !== "block" && a.style.display !== "flex") {
+			a.style.display = "flex";
 		} else {
 			a.style.display = "none";
 		}
@@ -297,4 +316,21 @@ function changeOptionsData() {
         domNum.innerText = `${ item.num }（${ percent }）`;
         domBar.style.width = percent;
     }
+}
+/** 没有预设规则时给下拉一个占位项，并禁用「删除」（避免读 options[-1] 抛错） */
+function Vote_syncEmpty() {
+  var sel = document.getElementById("vote__select");
+  var del = document.getElementById("vote__del");
+  if (!sel) return;
+  var real = Array.prototype.filter.call(sel.options, function (o) { return o.value !== "" || !o.disabled; });
+  if (sel.options.length === 0) {
+    var o = document.createElement("option");
+    o.textContent = "暂无预设 · 填好后点添加";
+    o.value = "";
+    o.disabled = true;
+    sel.add(o);
+    sel.selectedIndex = 0;
+    sel.dataset.empty = "1";
+  }
+  if (del) del.disabled = sel.dataset.empty === "1";
 }

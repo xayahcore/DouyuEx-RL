@@ -7,34 +7,40 @@ function initPkg_LiveTool_Gift() {
 }
 
 function LiveTool_Gift_insertDom() {
-    let a = document.createElement("div");
-    a.className = "livetool__cell";
-    let cell = `
-        <div class='livetool__cell_title'>
+    // S1-E：抽屉单元格 DOM 改由 ExUI 产出；旧类名只以 legacy 影子挂在对应节点上，观感零差异
+    let cellTitle = ExUI.stack({
+        html: `
             <span id='gift__title'>自动谢礼物</span>
-            <span id='gift__export'>导出</span>
-            <span id='gift__import'>导入</span>
-        </div>
-        <div class='livetool__cell_option'>
-            <div class="livetool__cell_switch">
+            <span class='ui-cell__desc'>收到礼物后自动发送答谢弹幕</span>
+        `,
+        cls: "ui-cell__title"
+    });
+    let cellOption = ExUI.stack({
+        html: ExUI.stack({
+            html: `
                 <input type="checkbox" class="sign-checkbox" id="gift__switch" tabindex="0" checked>
-            </div>
-        </div>
-    `;
-    let panel = `
-        <div class='gift__panel'>
+            `,
+            cls: "ui-cell__switch"
+        }),
+        cls: "ui-cell__option"
+    });
+    let panel = ExUI.stack({
+        html: `
             <select id='gift__select'>
             </select>
-            <input style="width:40px;margin-left:10px;" type="button" id="gift__add" value="添加"/>
-            <input style="width:40px;margin-left:10px;" type="button" id="gift__del" value="删除"/>
-            <input style="width:64px;margin-left:10px;" type="button" id="gift__template" value="生成模板"/>
             <div class="gift__option">
-                <label><a id="reply__show_gid" style="color:blue;" href="javascript:void(0);">礼物id：</a><input id="gift__giftId" type="text"/></label>
+                <label><a class="dx-ink-blue" id="reply__show_gid" href="javascript:void(0);" >礼物id：</a><input id="gift__giftId" type="text"/></label>
                 <label>回复：<input id="gift__reply" type="text" placeholder="<id>=用户名 <cnt>个数"/></label>
             </div>
-        </div>
-    `;
-    a.innerHTML = cell + panel;
+        `,
+        legacy: "gift__panel"
+    });
+    /* 抽屉只是面板，不该继承 .ui-stack 的 display:flex —— 去掉该类，默认收起回到单类选择器 */
+    panel = panel.replace('class="ui-stack ', 'class="');
+    /* 抽屉底部：导入/导出等次级动作集中在这里，行内只保留标题+开关 */
+    panel = panel.replace(/<\/div>$/, "<div class='ui-cell__actions'><input type='button' id='gift__add' value='添加' /><input type='button' id='gift__del' value='删除' /><input type='button' id='gift__template' value='生成模板' /><button type='button' class='ui-btn ui-btn--quiet' id='gift__export'>导出</button><button type='button' class='ui-btn ui-btn--quiet' id='gift__import'>导入</button></div><\/div>");
+    // 标题 + 开关槽与抽屉面板是兄弟节点：三者同挂到单元格 div 下（不是父子嵌套）
+    let a = ExUI.node(ExUI.stack({ html: cellTitle + cellOption + panel, cls: "ui-cell" }));
     
     let b = document.getElementsByClassName("livetool")[0];
     if (b) {
@@ -71,8 +77,8 @@ function LiveTool_Gift_insertFunc() {
             ExGuard_warn("自动谢礼物", "面板节点缺失，忽略本次展开");
             return;
         }
-        if (a.style.display != "block") {
-            a.style.display = "block";
+        if (a.style.display !== "block" && a.style.display !== "flex") {
+            a.style.display = "flex";
             // 其余抽屉统一收起：节点不在就跳过，不再逐个裸解引用
             LiveTool_hideDrawerPanelsExcept("gift__panel");
         } else {

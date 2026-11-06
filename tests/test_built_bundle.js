@@ -330,9 +330,9 @@ async function testBuiltBundle() {
     win.createExUpdatePanel();
     const updateModal = win.document.querySelector(".exupdate-panel");
     assert.ok(updateModal, ".exupdate-panel 必须被创建");
-    const cards = updateModal.querySelectorAll(".exupdate-panel__card");
+    const cards = updateModal.querySelectorAll(".ui-card");
     assert.strictEqual(cards.length, 3, "版本更新面板必须包含 3 个标准分类卡片");
-    const titles = Array.from(cards).map(c => c.querySelector(".exupdate-panel__card-title")?.textContent.trim());
+    const titles = Array.from(cards).map(c => c.querySelector(".ui-card__title")?.textContent.trim());
     assert.deepStrictEqual(
         titles,
         ["新增功能", "改进与修复", "其它"],
@@ -349,7 +349,7 @@ async function testBuiltBundle() {
     });
     cards.forEach((card) => {
         const n = card.querySelectorAll(".exupdate-list li").length;
-        const name = card.querySelector(".exupdate-panel__card-title").textContent.trim();
+        const name = card.querySelector(".ui-card__title").textContent.trim();
         assert.ok(n > 0, `板块【${name}】不得为空`);
     });
     console.log(`✓ 测试场景 9 通过: 版本号 ${SRC_VERSION}、三大板块 新增功能/改进与修复/其它 与 ${logItems.length} 条 "• 【分类】" 格式日志校验通过`);
@@ -469,15 +469,36 @@ async function testBuiltBundle() {
 
     // === 测试 11: 三大面板操作区宽度一致性（统一 UI 引擎单一归属）===
     console.log("--> 测试场景 11: 验证 检查更新/开始签到/立即开始续牌 按钮宽度一致...");
+
+// ---- 令牌解析（设计系统）：断言比较"解析后的值"，允许样式写 var(--dx-*) ----
+function dxBuildTokenMap(rules) {
+  const map = {};
+  rules.forEach((r) => {
+    if (!r || !r.style) return;
+    const names = Array.from(r.style);
+    names.forEach((name) => {
+      if (name.indexOf("--dx-") === 0) map[name] = String(r.style.getPropertyValue(name)).trim();
+    });
+  });
+  return map;
+}
+function dxResolveVars(val, map) {
+  let out = String(val == null ? "" : val);
+  for (let i = 0; i < 8 && out.indexOf("var(--dx-") >= 0; i++) {
+    out = out.replace(/var\((--dx-[a-z0-9-]+)\)/g, (m, name) => (map[name] !== undefined ? map[name] : m));
+  }
+  return out;
+}
+
     const allRules = [];
     Array.from(win.document.styleSheets).forEach((sheet) => {
         try { Array.from(sheet.cssRules).forEach((r) => allRules.push(r)); } catch (e) {}
     });
 
     const ACTION_WRAPS = [
-        ".fans-panel__action-wrap",
-        ".popup-panel__action-wrap",
-        ".exupdate-panel__action-wrap",
+        ".ui-actions",
+        ".ui-actions",
+        ".ui-actions",
     ];
     const awRules = allRules.filter(
         (r) => r.selectorText && ACTION_WRAPS.some((c) => r.selectorText.includes(c))
@@ -495,12 +516,12 @@ async function testBuiltBundle() {
         );
     });
     assert.strictEqual(
-        awRules[0].style.getPropertyValue("padding-left"),
+        dxResolveVars(awRules[0].style.getPropertyValue("padding-left"), dxBuildTokenMap(allRules)),
         "12px",
         "操作区左右留白必须为 12px（与四级卡片侧边距对齐）"
     );
     assert.strictEqual(
-        awRules[0].style.getPropertyValue("padding-right"),
+        dxResolveVars(awRules[0].style.getPropertyValue("padding-right"), dxBuildTokenMap(allRules)),
         "12px",
         "操作区左右留白必须为 12px（与四级卡片侧边距对齐）"
     );
@@ -519,8 +540,8 @@ async function testBuiltBundle() {
         `三个提交按钮必须共用同一条基础规格规则（实际 ${submitRules.length} 条）: ` +
             submitRules.map((r) => r.selectorText).join(" | ")
     );
-    assert.strictEqual(submitRules[0].style.getPropertyValue("height"), "38px", "提交按钮高度必须统一为 38px");
-    assert.strictEqual(submitRules[0].style.getPropertyValue("font-size"), "14px", "提交按钮字号必须统一为 14px");
+    assert.strictEqual(dxResolveVars(submitRules[0].style.getPropertyValue("height"), dxBuildTokenMap(allRules)), "44px", "提交按钮高度必须统一为 44px（2026-11-01 用户拍板 38→44，命中区达标）");
+    assert.ok(["14px", "var(--dx-font-14)"].indexOf(submitRules[0].style.getPropertyValue("font-size")) >= 0, "提交按钮字号必须统一为 14px（可写令牌 var(--dx-font-14)）");
     console.log("✓ 测试场景 11 通过: 三大面板操作区与提交按钮均由统一 UI 引擎单条规则驱动，宽度一致");
 
     // === 测试 12: 统一分段胶囊控制器（三组 radio 圆点 → MIUIX）===
@@ -539,16 +560,15 @@ async function testBuiltBundle() {
 
         radios.forEach((r, i) => {
             const label = r.parentElement;
-            assert.strictEqual(
-                label && label.className,
-                "miuix-seg__item",
+            // ExUI 迁移后会多挂 ui-seg__item（仓库无 .ui-* CSS），判定改为「必须含 .miuix-seg__item」
+            assert.ok(
+                label && String(label.className).split(/\s+/).indexOf("miuix-seg__item") >= 0,
                 `[${g.owner}] 第 ${i + 1} 个选项必须被 .miuix-seg__item 包裹（当前: ${label && label.className}）`
             );
             const next = r.nextElementSibling;
             assert.ok(next, `[${g.owner}] 第 ${i + 1} 个选项的 radio 必须有相邻兄弟元素`);
-            assert.strictEqual(
-                next.className,
-                "miuix-seg__label",
+            assert.ok(
+                String(next.className).split(/\s+/).indexOf("miuix-seg__label") >= 0,
                 `[${g.owner}] radio 的相邻兄弟必须是 .miuix-seg__label（选中态依赖 input:checked + span）`
             );
             assert.ok(next.textContent.trim().length > 0, `[${g.owner}] 第 ${i + 1} 个选项文案不得为空`);
@@ -603,8 +623,8 @@ async function testBuiltBundle() {
     titleSpans.forEach((sp, i) => {
         assert.ok(sp, `抽屉标题 #${drawerKeys[i]}__title 必须存在`);
         assert.ok(
-            sp.parentElement && sp.parentElement.classList.contains("livetool__cell_title"),
-            `抽屉 ${drawerKeys[i]} 的标题必须位于 .livetool__cell_title 内`
+            sp.parentElement && sp.parentElement.classList.contains("ui-cell__title"),
+            `抽屉 ${drawerKeys[i]} 的标题必须位于 .ui-cell__title 内`
         );
     });
 
@@ -612,14 +632,14 @@ async function testBuiltBundle() {
     const titleColorRules = allRules.filter(
         (r) => r.selectorText &&
                r.selectorText.includes("__title") &&
-               r.selectorText.includes(".livetool__cell_title") &&
+               r.selectorText.includes(".ui-cell__title") &&
                r.style.getPropertyValue("color") &&
                !r.selectorText.includes(":hover") &&
                !r.selectorText.includes("is-open")
     );
     assert.ok(
         titleColorRules.length >= 1,
-        "必须存在统一引擎的抽屉标题色值规则（.livetool__cell_title > span[id$=__title]）"
+        "必须存在统一引擎的抽屉标题色值规则（.ui-cell__title > span[id$=__title]）"
     );
 
     // 2) 全项目 CSS 不得再出现遗留 royalblue

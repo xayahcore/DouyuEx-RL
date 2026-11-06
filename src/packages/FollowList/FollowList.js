@@ -57,9 +57,9 @@ async function setNewFollowList(panel) {
     const FOLLOWLIST_LIMIT = 10; // 关注列表最多显示个数
     let limit = 0;
     let html = `
-        <div id="refreshFollowList" style="color: grey; position: absolute; top: 0px; cursor: default; display: flex; align-items: center; justify-content: space-between; width: calc(100% - 10px); padding: 0 5px;">
-            <label style="display: flex; align-items: center; cursor: pointer; color: inherit;">
-                <input type="checkbox" id="loadInCurrentPageCheckbox" ${loadInCurrentPage ? 'checked' : ''} style="margin-right: 5px;">
+        <div class="dx-ink-grey dx-pos-absolute dx-top-0 dx-cur-default dx-d-flex dx-ai-center dx-jc-space-between dx-w-calc100-10 dx-p-05" id="refreshFollowList" >
+            <label class="dx-ink-inherit dx-d-flex dx-ai-center dx-cur-pointer" >
+                <input class="dx-mr-5" type="checkbox" id="loadInCurrentPageCheckbox" ${loadInCurrentPage ? 'checked' : ''} >
                 在当前页面加载
             </label>
             <span>长按弹出同屏播放</span>

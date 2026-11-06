@@ -1539,8 +1539,7 @@ const MS_OWN_UI_SELECTOR = [
   ".popup-player-panel",
   ".popup-player",
   ".ex-panel__wrap",
-  ".miuix-modal",
-  ".danmaku-history-panel"
+  ".miuix-modal"
 ].join(",");
 
 function MultiScreen_isOwnUi(target) {

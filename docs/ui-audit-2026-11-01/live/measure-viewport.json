@@ -1,0 +1,184 @@
+[
+  {
+    "vp": {
+      "name": "1280x720-dpr1",
+      "w": 1280,
+      "h": 720,
+      "dpr": 1
+    },
+    "base": {
+      "viewport": {
+        "w": 1280,
+        "h": 720,
+        "dpr": 1
+      },
+      "scrollY": 0,
+      "dock": {
+        "l": 289,
+        "t": 517.3,
+        "r": 845,
+        "b": 593.3,
+        "w": 556,
+        "h": 76
+      },
+      "dockBottomCss": "112px",
+      "toolbarH": 108,
+      "openPanels": [],
+      "overflowRight": [],
+      "overflowLeft": []
+    },
+    "p0": {
+      "viewport": {
+        "w": 1280,
+        "h": 720,
+        "dpr": 1
+      },
+      "scrollY": 0,
+      "dock": {
+        "l": 289,
+        "t": 517.3,
+        "r": 845,
+        "b": 593.3,
+        "w": 556,
+        "h": 76
+      },
+      "dockBottomCss": "112px",
+      "toolbarH": 108,
+      "openPanels": [
+        {
+          "cls": "sign-panel",
+          "l": 146,
+          "t": 145.3,
+          "r": 526,
+          "b": 515.3,
+          "w": 380,
+          "h": 370
+        }
+      ],
+      "overflowRight": [],
+      "overflowLeft": []
+    },
+    "p7": {
+      "viewport": {
+        "w": 1280,
+        "h": 720,
+        "dpr": 1
+      },
+      "scrollY": 0,
+      "dock": {
+        "l": 289,
+        "t": 517.3,
+        "r": 845,
+        "b": 593.3,
+        "w": 556,
+        "h": 76
+      },
+      "dockBottomCss": "112px",
+      "toolbarH": 108,
+      "openPanels": [
+        {
+          "cls": "exupdate-panel",
+          "l": 608,
+          "t": 145.3,
+          "r": 988,
+          "b": 515.3,
+          "w": 380,
+          "h": 370
+        }
+      ],
+      "overflowRight": [],
+      "overflowLeft": []
+    }
+  },
+  {
+    "vp": {
+      "name": "1024x576-dpr1.25",
+      "w": 1024,
+      "h": 576,
+      "dpr": 1.25
+    },
+    "base": {
+      "viewport": {
+        "w": 1024,
+        "h": 576,
+        "dpr": 1.25
+      },
+      "scrollY": 0,
+      "dock": {
+        "l": 134,
+        "t": 430.1,
+        "r": 690,
+        "b": 506.1,
+        "w": 556,
+        "h": 76
+      },
+      "dockBottomCss": "112px",
+      "toolbarH": 108,
+      "openPanels": [],
+      "overflowRight": [],
+      "overflowLeft": []
+    },
+    "p0": {
+      "viewport": {
+        "w": 1024,
+        "h": 576,
+        "dpr": 1.25
+      },
+      "scrollY": 0,
+      "dock": {
+        "l": 134,
+        "t": 430.1,
+        "r": 690,
+        "b": 506.1,
+        "w": 556,
+        "h": 76
+      },
+      "dockBottomCss": "112px",
+      "toolbarH": 108,
+      "openPanels": [
+        {
+          "cls": "sign-panel",
+          "l": 12,
+          "t": 43.1,
+          "r": 392,
+          "b": 413.1,
+          "w": 380,
+          "h": 370
+        }
+      ],
+      "overflowRight": [],
+      "overflowLeft": []
+    },
+    "p7": {
+      "viewport": {
+        "w": 1024,
+        "h": 576,
+        "dpr": 1.25
+      },
+      "scrollY": 0,
+      "dock": {
+        "l": 134,
+        "t": 430.1,
+        "r": 690,
+        "b": 506.1,
+        "w": 556,
+        "h": 76
+      },
+      "dockBottomCss": "112px",
+      "toolbarH": 108,
+      "openPanels": [
+        {
+          "cls": "exupdate-panel",
+          "l": 453,
+          "t": 43.1,
+          "r": 833,
+          "b": 413.1,
+          "w": 380,
+          "h": 370
+        }
+      ],
+      "overflowRight": [],
+      "overflowLeft": []
+    }
+  }
+]

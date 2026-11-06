@@ -114,7 +114,6 @@ function initPkg() {
   initPkg_Safe("FansContinue", initPkg_FansContinue);
   initPkg_Safe("Sign", initPkg_Sign);
   initPkg_Safe("BarragePanel", initPkg_BarragePanel);
-  initPkg_Safe("DanmakuHistory", initPkg_DanmakuHistory);
   initPkg_Safe("AccountList", initPkg_AccountList);
   initPkg_Safe("ChatTools", initPkg_ChatTools);
   initPkg_Safe("MonthCost", initPkg_MonthCost);

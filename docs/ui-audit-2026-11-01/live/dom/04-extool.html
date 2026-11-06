@@ -1,0 +1,212 @@
+<div class="extool miuix-modal miuix-modal-in" style="width: 380px; position: fixed; inset: auto auto 190px 744px; z-index: 100030; display: flex !important;"><div class="miuix-modal__header">
+      <div class="miuix-modal__title-box"><span class="ex-title-ico"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor"><path d="M104,40H56A16,16,0,0,0,40,56v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V56A16,16,0,0,0,104,40Zm0,64H56V56h48v48Zm96-64H152a16,16,0,0,0-16,16v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V56A16,16,0,0,0,200,40Zm0,64H152V56h48v48Zm-96,32H56a16,16,0,0,0-16,16v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V152A16,16,0,0,0,104,136Zm0,64H56V152h48v48Zm96-64H152a16,16,0,0,0-16,16v48a16,16,0,0,0,16,16h48a16,16,0,0,0,16-16V152A16,16,0,0,0,200,136Zm0,64H152V152h48v48Z"></path></svg></span>
+        <span class="miuix-modal__title">扩展功能</span>
+      </div>
+      <button type="button" class="miuix-modal__close" title="关闭面板" aria-label="关闭">×</button>
+    </div><div class="miuix-modal__body">
+      <!-- 卡片 1: 播放与性能 -->
+      <div class="fans-panel__card">
+        <div class="fans-panel__card-header">
+          <span class="fans-panel__card-title" data-ex-ico="gauge"><span class="ex-card-ico"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor"><path d="M207.06,72.67A111.24,111.24,0,0,0,128,40h-.4C66.07,40.21,16,91,16,153.13V176a16,16,0,0,0,16,16H224a16,16,0,0,0,16-16V152A111.25,111.25,0,0,0,207.06,72.67ZM224,176H119.71l54.76-75.3a8,8,0,0,0-12.94-9.42L99.92,176H32V153.13c0-3.08.15-6.12.43-9.13H56a8,8,0,0,0,0-16H35.27c10.32-38.86,44-68.24,84.73-71.66V80a8,8,0,0,0,16,0V56.33A96.14,96.14,0,0,1,221,128H200a8,8,0,0,0,0,16h23.67c.21,2.65.33,5.31.33,8Z"></path></svg></span>播放与性能</span>
+          <span style="font-size: 11px; color: #0066ff; font-weight: 600;">极速秒开</span>
+        </div>
+        <div class="sign-options-list">
+          <label class="sign-option-item" title="自动锁定最高原画画质，开播无缝秒开">
+            <div class="sign-option-text">
+              <span class="sign-option-title">自动最高画质</span>
+              <span class="sign-option-desc">源头锁定原画秒开，杜绝二次切流卡顿</span>
+            </div>
+            <input id="extool__highestvideoquality" class="sign-checkbox" type="checkbox">
+          </label>
+          <label class="sign-option-item" title="自动展开网页全屏观播">
+            <div class="sign-option-text">
+              <span class="sign-option-title">自动网页全屏</span>
+              <span class="sign-option-desc">进入直播间自动铺满网页全屏</span>
+            </div>
+            <input id="extool__fullscreen" class="sign-checkbox" type="checkbox">
+          </label>
+          <label class="sign-option-item" title="阻断 WebRTC P2P 后台上传带宽占用">
+            <div class="sign-option-text">
+              <span class="sign-option-title">阻止P2P上传</span>
+              <span class="sign-option-desc">阻止后台偷跑上行带宽，显著降低延迟</span>
+            </div>
+            <input id="extool__p2p" class="sign-checkbox" type="checkbox">
+          </label>
+          <label class="sign-option-item" title="后台播放保活，阻止浏览器页签睡眠冻结">
+            <div class="sign-option-text">
+              <span class="sign-option-title">防页签冻结</span>
+              <span class="sign-option-desc">阻止浏览器休眠后台挂机页签</span>
+            </div>
+            <input id="extool__tabSwitch" class="sign-checkbox" type="checkbox">
+          </label>
+          <label class="sign-option-item" title="进房后自动选择已解锁的最高档粉丝弹幕颜色">
+            <div class="sign-option-text">
+              <span class="sign-option-title">自动最高弹幕色</span>
+              <span class="sign-option-desc">自动匹配当前佩戴粉丝牌最高弹幕色</span>
+            </div>
+            <input id="extool__autobarragecolor" class="sign-checkbox" type="checkbox">
+          </label>
+        </div>
+      </div>
+
+      <!-- 卡片 1.5: 弹幕屏蔽 -->
+      <div class="fans-panel__card">
+        <div class="fans-panel__card-header">
+          <span class="fans-panel__card-title" data-ex-ico="chat-slash"><span class="ex-card-ico"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor"><path d="M53.92,34.62A8,8,0,1,0,42.08,45.38L44.46,48H40A16,16,0,0,0,24,64V224a15.85,15.85,0,0,0,9.24,14.5A16.13,16.13,0,0,0,40,240a15.94,15.94,0,0,0,10.26-3.78l.08-.07L83,208H189.92l12.16,13.38a8,8,0,1,0,11.84-10.76ZM80,192a8,8,0,0,0-5.23,1.95L40,224V64H59L175.37,192ZM232,64V186a8,8,0,0,1-16,0V64H105.79a8,8,0,0,1,0-16H216A16,16,0,0,1,232,64Z"></path></svg></span>弹幕屏蔽</span>
+          <span style="font-size: 11px; color: #64748b;">发言框上方那行「XXX 来了」也在这里关</span>
+        </div>
+        <div class="sign-options-list">
+          <label class="sign-option-item" title="隐藏发言框上方那行「XXX 来了」进场提示">
+            <div class="sign-option-text">
+              <span class="sign-option-title">屏蔽进场弹幕</span>
+              <span class="sign-option-desc">发言框上方的「XXX 来了」不再显示</span>
+            </div>
+            <input id="extool__removeEnter" class="sign-checkbox" type="checkbox">
+          </label>
+          <div class="sign-option-item" style="flex-direction: column; align-items: stretch; gap: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div class="sign-option-text">
+                <span class="sign-option-title">屏蔽重复弹幕</span>
+                <span class="sign-option-desc">同一条弹幕只留一条，并标出重复次数</span>
+              </div>
+              <input id="extool__removeRepeated" class="sign-checkbox" type="checkbox">
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: #64748b;">
+              <span>窗口：</span>
+              <input id="extool__repeatedSeconds" type="number" min="1" max="300" style="width: 65px; height: 26px; text-align: center;" value="5">
+              <span>秒（1-300）</span>
+              <label style="display:inline-flex;align-items:center;gap:4px;margin-left:6px;">
+                <input id="extool__enlargeDanmaku" type="checkbox"> 放大重复弹幕
+              </label>
+            </div>
+          </div>
+          <label class="sign-option-item" title="去掉弹幕黑底与描边背景">
+            <div class="sign-option-text">
+              <span class="sign-option-title">屏蔽弹幕背景</span>
+              <span class="sign-option-desc">去掉弹幕黑底与描边，画面更干净</span>
+            </div>
+            <input id="extool__removeDanmakuBg" class="sign-checkbox" type="checkbox">
+          </label>
+        </div>
+      </div>
+
+      <!-- 卡片 2: 挂机与福利 -->
+      <div class="fans-panel__card">
+        <div class="fans-panel__card-header">
+          <span class="fans-panel__card-title" data-ex-ico="hourglass"><span class="ex-card-ico"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor"><path d="M200,75.64V40a16,16,0,0,0-16-16H72A16,16,0,0,0,56,40V76a16.07,16.07,0,0,0,6.4,12.8L114.67,128,62.4,167.2A16.07,16.07,0,0,0,56,180v36a16,16,0,0,0,16,16H184a16,16,0,0,0,16-16V180.36a16.09,16.09,0,0,0-6.35-12.77L141.27,128l52.38-39.6A16.05,16.05,0,0,0,200,75.64ZM184,216H72V180l56-42,56,42.35Zm0-140.36L128,118,72,76V40H184Z"></path></svg></span>挂机与福利</span>
+          <span style="font-size: 11px; color: #64748b;">自动化活动</span>
+        </div>
+        <div class="sign-options-list">
+          <div class="sign-option-item" style="flex-direction: column; align-items: stretch; gap: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div class="sign-option-text">
+                <span class="sign-option-title">自动钓鱼</span>
+                <span class="sign-option-desc">自动抛竿收杆，智能避免风控重入</span>
+              </div>
+              <input id="extool__autofish_start" class="sign-checkbox" type="checkbox">
+            </div>
+            <div class="miuix-seg">
+              <label class="miuix-seg__item"><input name="autofish_mode" type="radio" value="all" checked=""><span class="miuix-seg__label">全天挂机</span></label>
+              <label class="miuix-seg__item"><input name="autofish_mode" type="radio" value="contest"><span class="miuix-seg__label">仅钓鱼大赛</span></label>
+            </div>
+          </div>
+
+          <div class="sign-option-item" style="flex-direction: column; align-items: stretch; gap: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div class="sign-option-text">
+                <span class="sign-option-title">半自动抢宝箱</span>
+                <span class="sign-option-desc">遇验证码自动弹出，手动完成后领取</span>
+              </div>
+              <input id="extool__treasure_start" class="sign-checkbox" type="checkbox">
+            </div>
+            <div style="display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: #64748b;">
+              <span>延迟补偿：</span>
+              <input id="extool__treasure_delay" type="number" style="width: 65px; height: 26px; text-align: center;" value="3200">
+              <span>ms</span>
+            </div>
+          </div>
+
+          <label class="sign-option-item">
+            <div class="sign-option-text">
+              <span class="sign-option-title">自动抢礼物红包</span>
+              <span class="sign-option-desc">实时监听房间红包广播并自动领取</span>
+            </div>
+            <input id="extool__redpacekt_room_start" class="sign-checkbox" type="checkbox">
+          </label>
+        </div>
+      </div>
+
+      <!-- 卡片 3: 送礼与背包 -->
+      <div class="fans-panel__card">
+        <div class="fans-panel__card-header">
+          <span class="fans-panel__card-title" data-ex-ico="backpack"><span class="ex-card-ico"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor"><path d="M168,40.58V32A24,24,0,0,0,144,8H112A24,24,0,0,0,88,32v8.58A56.09,56.09,0,0,0,40,96V216a16,16,0,0,0,16,16H200a16,16,0,0,0,16-16V96A56.09,56.09,0,0,0,168,40.58ZM112,24h32a8,8,0,0,1,8,8v8H104V32A8,8,0,0,1,112,24Zm56,136H88v-8a8,8,0,0,1,8-8h64a8,8,0,0,1,8,8ZM88,176h48v8a8,8,0,0,0,16,0v-8h16v40H88Zm112,40H184V152a24,24,0,0,0-24-24H96a24,24,0,0,0-24,24v64H56V96A40,40,0,0,1,96,56h64a40,40,0,0,1,40,40V216ZM152,88a8,8,0,0,1-8,8H112a8,8,0,0,1,0-16h32A8,8,0,0,1,152,88Z"></path></svg></span>送礼与背包</span>
+          <span style="font-size: 11px; color: #64748b;">点击图标更换</span>
+        </div>
+        <div class="sign-options-list">
+          <!-- 背包送礼 -->
+          <div class="sign-option-item" style="flex-direction: column; align-items: stretch; gap: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span class="sign-option-title">背包道具赠送</span>
+              <span style="font-size: 10.5px; color: #64748b;">支持道具一键拉取</span>
+            </div>
+            <div class="miuix-gift-row">
+              <div class="miuix-gift-badge" id="extool__clearbag_badge" title="点击选择背包道具">
+                <input type="hidden" id="extool__clearbag_id" value="268">
+                <img class="miuix-gift-badge__icon" id="extool__clearbag_icon" src="https://gfs-op.douyucdn.cn/dygift/1806/08/01/2fa7f551b9e54d310cae7992cb59ff0b.png" alt="荧光棒">
+                <span class="miuix-gift-badge__name" id="extool__clearbag_name">荧光棒</span>
+                <span class="miuix-gift-badge__arrow">›</span>
+              </div>
+              <div class="miuix-gift-action-wrap">
+                <span style="font-size: 11.5px; color: #475569;">数量:</span>
+                <input id="extool__clearbag_cnt" type="number" min="1" style="width: 44px; text-align: center;" value="1">
+                <button type="button" class="ex-send-btn" id="extool__clearbag_sendbtn">送出</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 打榜送礼 -->
+          <div class="sign-option-item" style="flex-direction: column; align-items: stretch; gap: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span class="sign-option-title">打榜批量送礼</span>
+              <span style="font-size: 10.5px; color: #64748b;">全站大盘礼物池</span>
+            </div>
+            <div class="miuix-gift-row">
+              <div class="miuix-gift-badge" id="extool__sendgift_badge" title="点击选择打榜礼物">
+                <input type="hidden" id="extool__sendgift_id" value="20000">
+                <img class="miuix-gift-badge__icon" id="extool__sendgift_icon" src="https://gfs-op.douyucdn.cn/dygift/2019/05/30/ed7b5926f169266173584bbd11139815.gif" alt="弱鸡">
+                <span class="miuix-gift-badge__name" id="extool__sendgift_name">弱鸡</span>
+                <span class="miuix-gift-badge__arrow">›</span>
+              </div>
+              <div class="miuix-gift-action-wrap">
+                <span style="font-size: 11.5px; color: #475569;">数量:</span>
+                <input id="extool__sendgift_cnt" type="number" min="1" style="width: 38px; text-align: center;" value="1">
+                <span style="font-size: 11.5px; color: #475569;">间隔:</span>
+                <input id="extool__sendgift_delay" type="number" min="0" style="width: 38px; text-align: center;" value="0" title="间隔毫秒数">
+                <button type="button" class="ex-send-btn" id="extool__sendgift_btn">送出</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 卡片 4: 在线工具（第三方站点）
+           胶囊条上的「在线弹幕助手」图标已按用户决定撤下且不恢复（见 src/packages/Monitor/Monitor.js），
+           "打开第三方数据站"这个能力搬到这里：用户主动点按钮才跳，不再让一个可能打不开的站点常驻在胶囊条上 -->
+      <div class="fans-panel__card" id="extool__monitor_card">
+        <div class="fans-panel__card-header">
+          <span class="fans-panel__card-title" data-ex-ico="wrench"><span class="ex-card-ico"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor"><path d="M226.76,69a8,8,0,0,0-12.84-2.88l-40.3,37.19-17.23-3.7-3.7-17.23,37.19-40.3A8,8,0,0,0,187,29.24,72,72,0,0,0,88,96,72.34,72.34,0,0,0,94,124.94L33.79,177c-.15.12-.29.26-.43.39a32,32,0,0,0,45.26,45.26c.13-.13.27-.28.39-.42L131.06,162A72,72,0,0,0,232,96,71.56,71.56,0,0,0,226.76,69ZM160,152a56.14,56.14,0,0,1-27.07-7,8,8,0,0,0-9.92,1.77L67.11,211.51a16,16,0,0,1-22.62-22.62L109.18,133a8,8,0,0,0,1.77-9.93,56,56,0,0,1,58.36-82.31l-31.2,33.81a8,8,0,0,0-1.94,7.1L141.83,108a8,8,0,0,0,6.14,6.14l26.35,5.66a8,8,0,0,0,7.1-1.94l33.81-31.2A56.06,56.06,0,0,1,160,152Z"></path></svg></span>在线工具</span>
+          <span style="font-size: 11px; color: #64748b;">第三方站点</span>
+        </div>
+        <div class="sign-options-list">
+          <div class="sign-option-item">
+            <div class="sign-option-text">
+              <span class="sign-option-title">在线弹幕助手</span>
+              <span style="font-size: 10.5px; color: #64748b; line-height: 1.35;">在单独网页查看本房间的弹幕数据（第三方数据站 douyuex.com）</span>
+            </div>
+            <button type="button" class="ex-picker-btn" id="extool__monitor_open" title="在新标签页打开在线弹幕助手" data-extool-monitor-bound="1">打开</button>
+          </div>
+        </div>
+      </div>
+    
+    
+  </div></div>

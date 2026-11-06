@@ -23,14 +23,14 @@ function AccountList_insertIcon() {
             <div class="public-DropMenu-drop-main">
                 <div id="ex-accountList-iframe"></div>
                 <div id="ex-accountList-iframe2"></div>
-                <div id="ex-accountList-content" style="width: 300px;font-size: 14px;padding: 10px;">
+                <div class="dx-fs-14 dx-w-300 dx-p-10" id="ex-accountList-content" >
                 </div>
             </div>
             <i></i>
         </div>
     `;
     a.innerHTML = svg_accountList + html;
-    // a.innerHTML = svg_accountList + `<div id="ex-accountList-wrap" class="public-DropMenu-drop"><div class="public-DropMenu-drop-main"><div style="width: 300px;font-size: 14px;"></div></div><i></i></div>`;
+    // a.innerHTML = svg_accountList + `<div id="ex-accountList-wrap" class="public-DropMenu-drop"><div class="public-DropMenu-drop-main"><div class="dx-fs-14 dx-w-300" ></div></div><i></i></div>`;
     // a.title = "账号列表";
     let b = document.getElementsByClassName("Header-right")[0] || document.querySelector("header") || document.body;
     if (b) b.appendChild(a);

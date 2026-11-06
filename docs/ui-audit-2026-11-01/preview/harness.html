@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DouyuEx-RL · UI 审计 before/after 预览台</title>
+
+<!-- ① 真源：仓库里那一份 ExPanel.css，未做任何改动（2890 行，:root 8-26 行是 token） -->
+<link rel="stylesheet" href="../../../src/packages/ExPanel/ExPanel.css">
+<!-- ② 预览台框架：只排页面、画「直播画面」底图、标注排版 -->
+<link rel="stylesheet" href="preview.css">
+<!-- ③ 两条路线互斥，由 <link data-skin> 的 media 开关切换（同一时刻只生效一张）
+        路线 G 玻璃托盘 + 内容岛（用户 2026-11-01 选择）＝ 默认
+        路线 B 磨砂白卡＝ 备查，?skin=card 切回 -->
+<link rel="stylesheet" href="after-glass.css" data-skin="glass" media="not all">
+<link rel="stylesheet" href="after-glass2.css" data-skin="glass2" media="not all">
+<link rel="stylesheet" href="after-glass3.css" data-skin="glass3" media="not all">
+<link rel="stylesheet" href="after-dark.css" data-skin="dark" media="not all">
+<link rel="stylesheet" href="after-dark2.css" data-skin="dark2" media="not all">
+<link rel="stylesheet" href="after.css" data-skin="card" media="not all">
+</head>
+
+<script>
+  /* 预览台自带的最小错误收集：截图前先确认这一页没有抛错，免得把半张坏图当成果 */
+  window.__PREVIEW_ERRORS__ = [];
+  addEventListener("error", (event) => window.__PREVIEW_ERRORS__.push(String(event.message || event.error)));
+  addEventListener("unhandledrejection", (event) => window.__PREVIEW_ERRORS__.push("rejection: " + String(event.reason)));
+</script>
+
+<body data-video="dark">
+
+<header class="pg-head">
+  <h1>DouyuEx-RL · 三级面板 / 二级 Dock 改造对照</h1>
+  <p class="pg-sub">
+    before = <code>ExPanel.css</code> @ main 2026.11.01.01 + 工作区未提交的 Phosphor 图标层（真实当前状态）；
+    after = <code>after.css</code> 单文件覆盖。两列注入的是<b>同一份真机 outerHTML</b>，
+    差别只有父节点的 <code>.after</code> 类与那张样式表 —— <code>src/</code> 一行未动。
+  </p>
+  <p class="pg-sub">
+    每一行的「数值差」都是这一页当场量出来的（<code>getBoundingClientRect</code> + 半透明底色逐层合成后的对比度）；
+    量不出来的（焦点环）就量它本身，量不出写「无」，不编。
+  </p>
+
+  <div class="pg-toolbar">
+    <button type="button" data-act="video" data-mode="dark" aria-pressed="true">深色画面</button>
+    <button type="button" data-act="video" data-mode="light" aria-pressed="false">亮色画面</button>
+    <button type="button" data-act="video" data-mode="white" aria-pressed="false">近似纯白</button>
+    <button type="button" data-act="hit" aria-pressed="false">显示 44px 命中区</button>
+    <button type="button" data-act="restore" aria-pressed="false">恢复被 Esc 关掉的面板</button>
+  </div>
+</header>
+
+<main class="pg-wrap">
+
+  <!-- 2× 放大对照时显示的标注条（?zoom=1） -->
+  <div class="zoom-banner">
+    <b>同一张四级卡片行 · 200%</b>
+    <span>before <code>#64748b</code> / 10.5px / 行高 1.2</span>
+    <span>→ after <code>#475569</code> / <b>11.5px</b> / 行高 1.35（墨色 + 字号成对改）</span>
+    <span class="zoom-banner__num">最坏帧（纯黑）<b>1.95:1 → 5.21:1</b> · 真机像素取样 2.11:1 · 本页真帧实测 3.89:1 → 7.01:1</span>
+  </div>
+
+  <div id="pg-rows"></div>
+
+  <!-- ==================================================================
+       可调旋钮：白瓷 ↔ 磨砂（只在路线 G 下出现）
+       ================================================================== -->
+  <section class="row" id="row-tunable" hidden>
+    <h2 class="row__title">可调旋钮 · 白瓷 ↔ 磨砂</h2>
+    <p class="row__note">同一份扩展功能 DOM，只改「岛的 alpha」与「说明文字墨色」，其余完全相同 —— 二选一用</p>
+    <div class="row__grid">
+      <article class="pane pane--after after">
+        <div class="pane__tag"><span class="tag-after">预设 A</span><small>岛 0.87 + 说明 #475569（白瓷感，纯黑帧 5.74:1）</small></div>
+        <div class="stage stage--panel gx-stage gx-preset-a"><div class="stage__video"></div></div>
+      </article>
+      <article class="pane pane--after after">
+        <div class="pane__tag"><span class="tag-after">预设 B</span><small>岛 0.78 + 说明 #334155（磨砂感，纯黑帧 6.13:1）</small></div>
+        <div class="stage stage--panel gx-stage gx-preset-b"><div class="stage__video"></div></div>
+      </article>
+    </div>
+  </section>
+
+  <!-- ==================================================================
+       「非法状态」对照：三个经常被跳过、但用户一定会碰到的状态
+       ================================================================== -->
+  <section class="row" id="row-illegal">
+    <h2 class="row__title">非法状态对照</h2>
+    <p class="row__note">键盘焦点 / 悬停与选中互斥 / reduced-motion —— 三个状态都不在静态截图里，但都会被按到</p>
+
+    <div class="tbl-wrap">
+      <table class="tbl">
+        <thead>
+          <tr><th style="width:118px">状态</th><th>before（现状）</th><th>after（提案）</th><th style="width:300px">怎么验</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>键盘焦点</td>
+            <td><code>ExPanel.css</code> 里 <code>outline: none</code> 共 <b>16 处</b>，<code>:focus-visible</code> 只有 <b>3 处</b>（且不含开关 / 主按钮 / 磁贴）—— 开关与主按钮的 UA 焦点环被抹掉、也没有替代品</td>
+            <td><code>2px solid #0066ff</code> + <code>outline-offset: 2px</code>，覆盖磁贴 / 关闭按钮 / 开关 / 主按钮（A6）</td>
+            <td>Tab 键走一遍；本页控件台右列第二枚关闭按钮就是 <code>:focus-visible</code> 的静态样子</td>
+          </tr>
+          <tr>
+            <td>悬停 vs 选中</td>
+            <td>底色 <code>rgba(255,255,255,.92)</code> vs <code>.95</code>（Δ 3%）、位移 <code>-2.5px</code> vs <code>-2px</code>（Δ 0.5px）、同一条蓝描边、同一组阴影 —— 两态在 100% 缩放下分不出来</td>
+            <td>悬停 = 蓝描边 + 不位移 + 底几乎不亮；选中 = 白底 + 上浮 <code>2px</code> + 图标填充 + 指示条（A3）</td>
+            <td>Dock 行第 3 位（选中）与第 7 位（悬停）并排</td>
+          </tr>
+          <tr>
+            <td>reduced-motion</td>
+            <td><code>prefers-reduced-motion</code> 在 <code>ExPanel.css</code> 出现 <b>0 次</b>；本文件管辖的组件带 <b>8 条 animation</b>、<b>6 组 @keyframes</b>、<b>39 条 transition</b></td>
+            <td>一条 <code>@media (prefers-reduced-motion: reduce)</code> 兜底：动画归零、位移取消，状态靠颜色区分（A8）</td>
+            <td><code>page.cdp("Emulation.setEmulatedMedia", {features:[{name:"prefers-reduced-motion",value:"reduce"}]})</code> 后截图，见 <code>shots/09-reduced-motion.png</code></td>
+          </tr>
+          <tr>
+            <td>ESC 关闭</td>
+            <td><code>ExPanel.js</code> 里 <code>Escape</code> 命中 <b>0 处</b>：三级面板只有「×」与「点菜单外面」两个出口</td>
+            <td><code>after.js</code> 绑 <code>keydown</code>（捕获阶段）+ 关闭按钮补 <code>aria-keyshortcuts="Escape"</code></td>
+            <td>本页按 Esc：右列面板会真的收起，左上「恢复」按钮可复原</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ==================================================================
+       选前 / 选后差分表
+       ================================================================== -->
+  <section class="row" id="row-diff">
+    <h2 class="row__title">选前 / 选后差分表</h2>
+    <p class="row__note">before 列取自真机实测（<code>live/*.json</code>）与 <code>ExPanel.css</code>；after 列是 <code>after.css</code> 里的落地值</p>
+
+    <div class="tbl-wrap">
+      <table class="tbl">
+        <thead>
+          <tr><th style="width:132px">属性</th><th style="width:230px">before</th><th style="width:230px">after</th><th>依据</th><th style="width:56px">级别</th></tr>
+        </thead>
+        <tbody>
+          <tr class="tbl-group"><td colspan="5">色彩</td></tr>
+          <tr><td>副标题文字（<b>墨色 + 字号必须成对改</b>）</td><td><code>#64748b</code> / 10.5px / 行高 1.2<br><b>最坏帧（纯黑）1.95:1</b></td><td><code>#475569</code> / <b>11.5px</b> / 行高 1.35<br><b>最坏帧（纯黑）5.21:1</b></td><td><b>最坏帧（纯黑，视频淡入黑场）1.95:1 → 5.21:1</b>：0.78 alpha 时只有 4.48:1（差 0.02 不过线），所以提到底 0.84。<br>本页底图实测值（真帧均值合成）：暗帧 3.89:1 → 7.01:1、亮帧 4.19:1 → 7.21:1，<b>这两组是本页底图实测，最坏帧见左</b>。<br>真机像素取样 2.11:1。<b>只换色不改字号实测只有 ~3.9:1，仍不过</b></td><td>P1</td></tr>
+          <tr><td>卡片头说明文字</td><td>内联 <code>color:#64748b</code> / 11px</td><td>跟随 <code>--a-text-2</code> / 11.5px</td><td>暗帧 3.52:1 → 6.72:1（ExpandTool.js 里 6 处内联样式不带 <code>!important</code>，一条规则可全部接管）</td><td>P1</td></tr>
+          <tr><td>抽屉药丸按钮（11.5px 小字）</td><td><code>#0066ff</code> 11px on 12% 蓝底</td><td><code>#0052d9</code> 11.5px on 同底</td><td>暗帧 3.52:1 → <b>5.80:1</b>。<b>#0066ff 只许用于 ≥14px 强调或纯图形</b>（0.84 白卡上 3.33:1，正文不过）</td><td>P1</td></tr>
+          <tr><td>更新日志正文</td><td><code>#334155</code> 11.5px</td><td><code>#334155</code> 12px（颜色不动）</td><td>暗帧 7.54:1 → 9.18:1；上一版误把它并入「次色」改成 <code>#475569</code>，实测掉到 6.10:1，已撤回</td><td>P2</td></tr>
+          <tr><td>面板玻璃底<br><small>（路线 B）</small></td><td><code>rgba(255,255,255,.65)</code></td><td><code>rgba(255,255,255,.84)</code></td><td>路线 B（磨砂白卡）的做法：0.78 时 <code>#475569</code> 压纯黑帧只有 4.48:1（差 0.02 不过线），0.84 才 5.21:1。<b>路线 G 不用这个值，见下节</b></td><td>P1</td></tr>
+          <tr><td>面板描边</td><td><code>1px rgba(255,255,255,.85)</code>（白对白）</td><td><code>0.5px rgba(15,23,42,.16)</code> 内描边 + 外扩阴影</td><td>边界对比从 1.02:1（结构性不存在）变成 1.45:1 的可见分隔线；面板不是可交互控件，所以不套 WCAG 1.4.11 的 3:1</td><td>P1</td></tr>
+          <tr><td>Dock 胶囊底</td><td><code>rgba(255,255,255,.72)</code></td><td><code>rgba(255,255,255,.84)</code></td><td>与面板对齐同一档，两处玻璃不再一深一浅</td><td>P1</td></tr>
+          <tr><td>开关关闭态</td><td><code>rgba(0,0,0,.14)</code>，合成 ≈ #939596，对卡片底 <b>1.26–1.35:1</b>（<code>live/README.md</code> P1-3 真机像素实测 1.26:1）</td><td>填充 <code>#828d9f</code> + <b><code>1px #475569</code> 描边</b> + 旋钮白底投影。三个数：<b>描边对卡片底 5.2:1</b>（本页实测 4.47，随卡片层级浮动）、<b>旋钮（白）对填充 3.32:1</b>（本页实测 3.35）、<b>填充自身对卡片底只有 ≈2.0:1</b>（本页实测 1.98；裁定口径 2.29，差异来自卡片底合成色取值）。<b>填充那条照实写：它不承担边界，边界由那 1px 描边承担</b> —— WCAG 1.4.11 判的正是控件边界与相邻颜色的对比，不是填充内部明暗。<br>另：<b>开态轨道 <code>#0066ff</code> 对卡片底本页实测 2.85:1</b>（略低于 3:1，纯图形边界不足；开 / 关的区分实际靠旋钮位置与蓝色语义，不靠轨道与背景的对比）</td><td><b>填色单换不够</b>（<code>#cbd5e1</code> 对 0.84 白卡只有 1.02:1，等于擦掉）；过 1.4.11 3:1 的是那圈描边。<b>开态</b>轨道对卡片 3.54:1（<code>#0066ff</code> 作纯图形刚好过线）</td><td>P1</td></tr>
+          <tr><td>图标配色链路（P3 脆弱点）</td><td><code>color</code> 只声明在 <code>svg</code> 上；<code>.ex-ico</code> 包装层没有 <code>color</code>，真机里它继承到的是斗鱼工具栏的 <code>rgb(255,119,0)</code>（屏幕上看不出来，但链路是断的）</td><td>把 <code>color</code> 同时钉在 <code>.ex-ico</code> 包装层与 <code>svg</code> 上</td><td>真机 CDP <code>CSS.getMatchedStylesForNode</code> 证明规则命中且生效，像素取样常态 <code>#324054</code> / 选中 <code>#0065fd</code> —— 屏幕上没有橙色，原「图标被染色」结论已撤回，只剩这条链路脆弱点</td><td>P3</td></tr>
+
+          <tr class="tbl-group"><td colspan="5">玻璃路线（路线 G · 玻璃托盘 + 内容岛 —— 用户 2026-11-01 选择）</td></tr>
+          <tr><td>算术事实 ①</td><td colspan="2">白玻璃只有 alpha ≤0.45 才叫「能看见后面」；而 alpha 0.42 时 <code>#0f172a</code> 在纯黑帧上只有 <b>3.35:1</b>、<code>#334155</code> 只有 <b>1.94:1</b></td><td><b>任何深墨文字压在真玻璃上都读不了</b> —— 全玻璃 + 文字这条路走不通</td><td>—</td></tr>
+          <tr><td>算术事实 ②</td><td colspan="2">深玻璃 <code>rgba(16,20,26,0.70)</code> + 白字，在纯黑 / 暗帧 / 亮帧 / 纯白四种帧上都过（<b>6.83–19.3</b>）</td><td>能过，但那是整体转深色 —— 用户要保留玻璃观感，不是深色模式</td><td>—</td></tr>
+          <tr><td>算术事实 ③</td><td colspan="2">所以唯一「既是玻璃、又有文字」的结构：<b>玻璃只做外壳，文字永远坐在自己的实心岛上</b></td><td>macOS 26 / iOS 控制中心同款结构；本文件即该结构的最小实现</td><td>—</td></tr>
+          <tr><td>玻璃壳</td><td><code>.65</code> 全幅磨砂（文字也在玻璃上）</td><td>alpha <b>0.46</b> + <code>blur(24px) saturate(180%)</code> + 1px 高光边</td><td>壳只出现在「没有文字的地方」：面板外框 / 头部留白 / 卡片缝 / Dock 胶囊。模糊半径 40 → 24px 落回真玻璃区间（10–20 上下）</td><td>P1</td></tr>
+          <tr><td>内容岛</td><td>无（文字直接坐在玻璃上）</td><td>alpha <b>0.87</b> + <code>inset 0 0 0 0.5px rgba(15,23,42,.10)</code> + <code>0 2px 10px rgba(15,23,42,.07)</code></td><td>所有文字、所有开关只在岛上；纯黑帧下 <code>#475569</code> = <b>5.74:1</b></td><td>P0</td></tr>
+          <tr><td>面板头</td><td>全幅 0.45 玻璃条</td><td>也做成岛：白 0.87 + 底部 0.5px hairline；顶部 8px 与左右 8px 仍是玻璃</td><td>视觉上「玻璃托盘里嵌着白瓷」；<code>margin: 8px 8px 0</code></td><td>P1</td></tr>
+          <tr><td>Dock 磁贴</td><td>磁贴 <code>.45</code> + 图标 <code>#334155</code>（纯黑帧 1.94:1）</td><td>磁贴保持玻璃 <b>0.42</b>，图标墨色 <code>#334155</code> → <b><code>#0f172a</code></b>（3.35:1）</td><td><b>磁贴真正的问题是「图形看不见」，不是文字</b>：WCAG 1.4.11 图形边界 3:1，1.94 不过、3.35 刚好过</td><td>P0</td></tr>
+          <tr><td>Dock 选中态</td><td>磁贴 0.95 + 图标被染（已撤回）</td><td>磁贴 <b>0.95 白瓷</b> + 图标 <code>#0066ff</code>（4.9:1）+ 填充图标 + 指示条</td><td>与悬停（蓝描边、不位移）区分开</td><td>P1</td></tr>
+          <tr><td>可调旋钮</td><td>—</td><td>A：岛 0.87 + 说明 <code>#475569</code>（白瓷感，5.74:1）<br>B：岛 0.78 + 说明 <code>#334155</code>（磨砂感，6.13:1）</td><td>两个预设都过 AA，差别只在「白瓷 / 磨砂」的手感，<a href="#row-tunable">第 23 号截图</a>并排给用户挑</td><td>—</td></tr>
+
+          <tr class="tbl-group"><td colspan="5">通透度梯度：G / G2 / G3（同一行内容，越往后越玻璃）</td></tr>
+          <tr><td>卡片 / 面板头 alpha</td><td><b>G</b>　卡片 0.87 / 头 0.87（岛）</td><td><b>G2</b>　卡片 0.62 / 头 0.62（单层）</td><td><b>G3</b>　卡片 0.16 / 头 0.72</td><td>透光率 = <b>13% / 38% / ≈80%</b></td></tr>
+          <tr><td>外壳 alpha / 模糊</td><td>0.46 · <code>blur(24px)</code></td><td>0.34 · <code>blur(28px)</code></td><td>0.22 · <code>blur(30px)</code></td><td>越透 → 外壳越薄、模糊略加，用来兜住「糊」</td></tr>
+          <tr><td>说明文字色</td><td><code>#475569</code>（岛上 5.74）</td><td><code>#1e293b</code>（<b>次级文字的下限</b>，5.46）</td><td><code>#475569</code>（文字托 0.90 上 6.07）</td><td>G2 上 <code>#334155</code> 只有 3.86，不够 4.5，所以只能压深</td></tr>
+          <tr><td>主 / 次怎么分</td><td>颜色 + 字号</td><td><b>只靠字号 + 字重</b>（标题 12.5px/600、说明 11.5px/400）</td><td>颜色 + 字号（有托撑着）</td><td>G2 把颜色的余量用光了，只能换层级手段</td></tr>
+          <tr><td>蓝色怎么用</td><td>图形可直接用 <code>#0066ff</code></td><td><b>一律自带底</b>：蓝底白字药丸（4.83）或白底蓝图标（4.83）</td><td>图形用亮蓝 <code>#4d94ff</code>（4.19），文字仍用药丸</td><td>裸蓝在 0.62 上只有 1.80 —— 「极速秒开」这类必须变药丸</td></tr>
+          <tr><td>开关怎么兜底</td><td colspan="3"><b>保持现状（用户 2026-11-01 定）</b>：轨道 <code>rgba(0,0,0,.14)</code> + 白旋钮 + 开态 <code>#0066ff</code>，G / G2 / G3 三档一字不改，只保留键盘 focus 环</td><td>试过 4px 白晕、也试过 1px 深色内环，两次都被判「肉眼还是有一圈」，作废。「深色玻璃」那一档例外 —— 深底上必须把轨道反成白 22%，否则看不见（见下节）</td></tr>
+          <tr><td>代价</td><td>透光最少，最像「白瓷」</td><td>次级文字被压深、蓝必须打包成药丸</td><td>每块文字都要带「托」，落地成本与视觉噪声最高</td><td>截图 <a href="#row-extool">34-tiers.png</a> 三档并排</td></tr>
+
+          <tr class="tbl-group"><td colspan="5">深色玻璃（路线 D · 整套转深色，白字压在深玻璃上）</td></tr>
+          <tr><td>面</td><td colspan="2">外壳 <code>rgba(16,20,26,.55)</code>（不承载文字，可更透）／卡片 · 面板头 · 选项行 <code>rgba(16,20,26,.70)</code></td><td><code>blur(28px) saturate(150%)</code> + <code>inset 0 0 0 0.5px rgba(255,255,255,.14)</code> 内边 + <code>1px rgba(255,255,255,.10)</code> 外边 + <code>0 18px 44px rgba(0,0,0,.55)</code></td><td>P1</td></tr>
+          <tr><td>三档墨色（最坏帧 = 纯白帧）</td><td colspan="2"><code>#ffffff</code> 6.83（暗场 18.5）／<code>#e2e8f0</code> 5.54／<code>#cbd5e1</code> 4.60</td><td>深底上浅灰做层级反而更清楚；装饰色 <code>#94a3b8</code> 只有 2.66，<b>只许做装饰与图标，不许做文字</b></td><td>P1</td></tr>
+          <tr><td>蓝</td><td colspan="2">图形 / 指示条 / ≥14px 强调 <code>#7db0ff</code>（3.10）；药丸底 <code>#0066ff</code>（白字 4.83）</td><td>11px 小字不许用 <code>#7db0ff</code>；<code>#1a6dff</code> 只有 4.49，也不许</td><td>P1</td></tr>
+          <tr><td>开关（唯一必须反转的一处）</td><td colspan="2">轨道 黑 14% → <b>白 22%</b>，旋钮白，开态仍 <code>#0066ff</code>；<b>不加描边不加白晕</b></td><td>深底上黑色轨道会消失，必须先反转底色；造型不动</td><td>P1</td></tr>
+          <tr><td>代价</td><td colspan="2">整套转深色</td><td><b>与斗鱼亮色页面割裂</b>：面板是深色玻璃，而聊天区 / 播放器工具条仍是浅色，交界处会出现硬接缝</td><td>—</td></tr>
+
+          <tr class="tbl-group"><td colspan="5">深色玻璃 v2（brightness 归一化 · 用户否掉 v1 的透度后重做）</td></tr>
+          <tr><td>原理</td><td colspan="2">旧版只靠 alpha 0.70 压暗 → 玻璃越实才越读得清；v2 把「压暗」交给 <code>backdrop-filter: brightness(0.45)</code>，面因此能薄到 <b>0.14 tint</b></td><td>等效厚度 1 − (1−0.18)(1−0.14) = <b>0.295 ≈ 0.30</b>，透光 <b>70%</b>（v1 是 30%）</td><td>P1</td></tr>
+          <tr><td>结构（关键）</td><td colspan="2"><b>只有面板外壳与 Dock 胶囊</b>带 filter：<code>blur(30px) saturate(130%) brightness(0.45)</code></td><td>卡片 / 面板头 / 选项行 / 磁贴一律 <code>backdrop-filter: none</code> + 只叠 <code>rgba(16,20,26,0.14)</code>。<b>给卡片也写 brightness 会压暗两次</b>，画面黑到发闷</td><td>P0</td></tr>
+          <tr><td>filter 层数</td><td>同屏 10 层（外壳 1 + 卡片 6 + 其它）</td><td><b>2 层</b>：面板外壳 1 + Dock 胶囊 1</td><td><code>after-dark2.css</code> grep：<code>backdrop-filter</code> 共 12 行 = <b>4 行真滤镜</b>（2 处声明 × 2 家厂商）+ 8 行显式 <code>none</code>（专门压掉源码里卡片上的 <code>blur(12px)</code>）</td><td>P1</td></tr>
+          <tr><td>四个墨色（最坏帧 = 纯白画面）</td><td colspan="2"><code>#ffffff</code> <b>7.35</b>／<code>#e2e8f0</code> <b>5.96</b>／<code>#cbd5e1</code> <b>4.95</b>／<code>#7db0ff</code> <b>3.33</b></td><td>四个全过线；见 <a href="#row-extool">58-dark2-pure-white.png</a>（近似纯白底图实拍）</td><td>P1</td></tr>
+          <tr><td>防回退校验</td><td colspan="2">读 <code>.fans-panel__card</code> 的 <code>getComputedStyle</code></td><td>必须 <code>background === rgba(16, 20, 26, 0.14)</code> 且 <code>backdropFilter === "none"</code> —— 两条都要对，防止以后有人「顺手加回 blur」</td><td>P0</td></tr>
+
+          <tr class="tbl-group"><td colspan="5">Dock 主题三态（新增「外观」磁贴）</td></tr>
+          <tr><td>磁贴数 / 胶囊宽</td><td>8 磁贴 = <b>556px</b></td><td>9 磁贴 = <b>602px</b></td><td>+1 个「外观」磁贴（56px + 8px 间距 = +64px，另因 G2 内边距 8/16 与源码 10/18 的差，实测两者都取本页值）</td><td>P2</td></tr>
+          <tr><td>三态</td><td colspan="2">白天 = G2 浅色玻璃 · 太阳图标　／　黑夜 = D2 深色薄玻璃 · 月亮　／　跟随网页 = 继承当前皮肤 + 角标</td><td>单击第 9 个磁贴循环；tooltip 写「外观：跟随网页（点击切换）」；三态对照见 <a href="#row-dock">55-dock-theme-3states.png</a></td><td>P2</td></tr>
+          <tr><td>1024 宽检查</td><td colspan="2">视口 1024×640：胶囊 602px，所在工具条区域 952px</td><td><b>放得下但贴死右边</b>：右间隙 0px（源码 <code>right: 0</code>），页面无横向滚动（scrollWidth 1009 ≤ 1024）</td><td>P3</td></tr>
+
+          <tr class="tbl-group"><td colspan="5">字号（13 档 → 5 档）</td></tr>
+          <tr><td>S1 辅助</td><td>10.5 / 10 / 9.5</td><td><b>11.5</b></td><td>副标题、药丸、日志框（<code>metrics/css-typography.json</code>：13 档从 9.5 到 20）</td><td>P2</td></tr>
+          <tr><td>S2 正文</td><td>11.5 / 12 / 12.5</td><td>12</td><td>选项正文、分段标签、更新日志</td><td>P2</td></tr>
+          <tr><td>S3 标题</td><td>13 / 13.5 / 14 / 16</td><td>14</td><td>面板标题、卡片标题、抽屉标题、主按钮</td><td>P2</td></tr>
+          <tr><td>S4 / S5</td><td>16 / 18 / 20</td><td>18 / 20</td><td>关闭符号 × / 大号数字</td><td>P3</td></tr>
+
+          <tr class="tbl-group"><td colspan="5">间距（4 的倍数刻度）</td></tr>
+          <tr><td>Dock 内边距 / 间距</td><td><code>10px 18px</code> / <code>gap 10px</code></td><td><code>8px 16px</code> / <code>gap 8px</code></td><td>胶囊宽 <b>556 → 538px</b>（−18px），8 枚 56px 磁贴不变</td><td>P2</td></tr>
+          <tr><td>四级卡片</td><td><code>margin 0 12px 10px</code> / <code>padding 10px 14px</code></td><td><code>margin 0 12px 12px</code> / <code>padding 12px 16px</code></td><td><code>live/measure-extool.json</code> 实测卡片 padding 10/14、header 51px、body 317px</td><td>P2</td></tr>
+          <tr><td>选项行</td><td><code>padding 7px 10px</code>、列表 <code>gap 6px</code>、实测行高 <b>45.19px</b></td><td><code>padding 8px 12px</code>、<code>gap 8px</code>、行高 <b>50.70px</b></td><td>起点清单里的「40→44px 触控行」与真机不符：现状已经 45.19px（≥44），真问题是 10.5px 字号与 6px 节奏</td><td>P2</td></tr>
+          <tr><td>粘底操作条</td><td colspan="2"><b>设计如此（用户 2026-11-01 确认）</b>：操作条常驻面板底部、内容从其后面滚过，是刻意选择</td><td><b>本提案不动</b>。路线 G / 路线 B 都不改 <code>position: sticky</code>，也不改 <code>common.js:592</code> 的 <code>ExUI_stickActionBar</code></td><td>—</td></tr>
+
+          <tr class="tbl-group"><td colspan="5">圆角（17 档 → 4 档）</td></tr>
+          <tr><td>小控件</td><td>6 / 5 / 4 / 7 / 9 / 10 / 12 / 2</td><td>8</td><td>药丸、输入框、分段、主按钮（17 档统计见 <code>after.css</code> A12 注释）</td><td>P2</td></tr>
+          <tr><td>卡片 / 面板 / 胶囊</td><td>14 / 22 / 38</td><td>14 / 22 / 38（不变）</td><td>已经是 token，本轮不动</td><td>—</td></tr>
+
+          <tr class="tbl-group"><td colspan="5">动效（6 档 → 3 档）</td></tr>
+          <tr><td>过渡时长</td><td>160 / 180 / 200 / 220 / 280ms + 散值，共 39 条声明</td><td>120ms 反馈 / 200ms 状态 / 320ms 位移</td><td><code>metrics</code> 统计口径：<code>transition:</code> 出现 39 次</td><td>P2</td></tr>
+          <tr><td>降级</td><td><code>prefers-reduced-motion</code> 0 处</td><td>1 条兜底块</td><td>8 <code>animation</code> + 6 组 <code>@keyframes</code> + 39 <code>transition</code></td><td>P2</td></tr>
+
+          <tr class="tbl-group"><td colspan="5">层级与合成</td></tr>
+          <tr><td>模糊分层</td><td>Dock 40px / 面板 40px / header 28px / 卡片 12px</td><td>32 / 28 / 20 / 8px</td><td>同屏 4 层 <code>backdrop-filter</code>，半径和 120 → 88px（−27%）</td><td>P2</td></tr>
+          <tr><td>z-index</td><td>13 档：1/2/3/50/99/10000/10001/100010…100090</td><td>5 档：1 / 3 / 50 / 1000 / 2000</td><td><b>本轮只出表不改值</b>：与斗鱼宿主页面的层叠关系必须真机复验</td><td>P3</td></tr>
+
+          <tr class="tbl-group"><td colspan="5">触控与命中</td></tr>
+          <tr><td>关闭按钮命中区</td><td>视觉 26×26px，命中区 = 26×26px</td><td>视觉 26×26px，命中区 <b>44×44px</b>（<code>::after</code> 铺开，不吃布局）</td><td>676px² → 1936px²（×2.9）；WCAG 2.5.8 要求 24×24 且 2.5.5 建议 44×44</td><td>P1</td></tr>
+          <tr><td>主按钮高度</td><td>38px</td><td>44px</td><td>WCAG 2.5.5 触控目标</td><td>P2</td></tr>
+          <tr><td>Dock 磁贴</td><td>56×56px</td><td>56×56px（不变）</td><td>已达标</td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="row" id="row-notes">
+    <h2 class="row__title">说明与边界</h2>
+    <ul class="notes">
+      <li>本页只写 <code>docs/ui-audit-2026-11-01/preview/</code>；<code>src/**</code> 一行未改，也没有 git commit / checkout。</li>
+      <li>面板宽 / 高那两个像素字面量在产物里的唯一出现点仍是 <code>ExPanel.css:7-8</code> 的 <code>:root</code>；本目录任何文件都不再新增它们，需要尺寸一律引用 <code>var(--miuix-modal-width/height)</code> 或直接继承真机 DOM 的内联宽度。</li>
+      <li>「直播画面」是 CSS 合成的底图（深色 <code>#202020</code> / 亮色 <code>#f2f2f2</code> 两个取样点），不是真机截图；对比度按 WCAG 相对亮度公式逐层合成玻璃后计算。</li>
+      <li>Dock 行改成上下叠放：真机胶囊宽 620px，双栏（各 420px）塞不下，缩放会破坏 1:1 像素，所以宁可换布局也不改比例。</li>
+      <li>悬停态用 <code>.is-demo-hover</code> 镜像：静态截图无法把鼠标同时停在两列上，镜像的 5 条声明逐字抄自 <code>ExPanel.css:140-145</code>，写在 <code>preview.css</code> 末尾。</li>
+    </ul>
+  </section>
+
+</main>
+
+<!-- 真机图标池：直接引用源文件，after / before 用的都是仓库里那 21 枚 Phosphor 图标 -->
+<script src="../../../src/packages/ExIcon/ExIcons.js"></script>
+<script type="module" src="harness.js"></script>
+</body>
+</html>

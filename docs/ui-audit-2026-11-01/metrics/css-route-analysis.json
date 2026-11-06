@@ -1,0 +1,440 @@
+{
+  "whiteGlassMinAlpha": {
+    "#0f172a": {
+      "worstFrameBlack": {
+        "pass": true,
+        "min": 0.505,
+        "max": 1,
+        "kind": "needsAtLeast"
+      },
+      "worstFrameDark": {
+        "pass": true,
+        "min": 0.46,
+        "max": 1,
+        "kind": "needsAtLeast"
+      },
+      "onWhiteOpaque": 17.85
+    },
+    "#334155": {
+      "worstFrameBlack": {
+        "pass": true,
+        "min": 0.67,
+        "max": 1,
+        "kind": "needsAtLeast"
+      },
+      "worstFrameDark": {
+        "pass": true,
+        "min": 0.645,
+        "max": 1,
+        "kind": "needsAtLeast"
+      },
+      "onWhiteOpaque": 10.35
+    },
+    "#475569": {
+      "worstFrameBlack": {
+        "pass": true,
+        "min": 0.785,
+        "max": 1,
+        "kind": "needsAtLeast"
+      },
+      "worstFrameDark": {
+        "pass": true,
+        "min": 0.765,
+        "max": 1,
+        "kind": "needsAtLeast"
+      },
+      "onWhiteOpaque": 7.58
+    },
+    "#64748b": {
+      "worstFrameBlack": {
+        "pass": true,
+        "min": 0.975,
+        "max": 1,
+        "kind": "needsAtLeast"
+      },
+      "worstFrameDark": {
+        "pass": true,
+        "min": 0.975,
+        "max": 1,
+        "kind": "needsAtLeast"
+      },
+      "onWhiteOpaque": 4.76
+    },
+    "#94a3b8": {
+      "worstFrameBlack": {
+        "pass": true,
+        "min": 0,
+        "max": 0.22,
+        "kind": "needsAtMost"
+      },
+      "worstFrameDark": {
+        "pass": true,
+        "min": 0,
+        "max": 0.155,
+        "kind": "needsAtMost"
+      },
+      "onWhiteOpaque": 2.56
+    },
+    "#0066ff": {
+      "worstFrameBlack": {
+        "pass": true,
+        "min": 0.97,
+        "max": 1,
+        "kind": "needsAtLeast"
+      },
+      "worstFrameDark": {
+        "pass": true,
+        "min": 0.965,
+        "max": 1,
+        "kind": "needsAtLeast"
+      },
+      "onWhiteOpaque": 4.83
+    }
+  },
+  "darkGlassMinAlpha": {
+    "#ffffff": {
+      "worstFrameWhite": {
+        "pass": true,
+        "min": 0.58,
+        "max": 1,
+        "kind": "needsAtLeast"
+      },
+      "worstFrameDark": {
+        "pass": true,
+        "min": 0,
+        "max": 1,
+        "kind": "needsAtLeast"
+      }
+    },
+    "#f8fafc": {
+      "worstFrameWhite": {
+        "pass": true,
+        "min": 0.595,
+        "max": 1,
+        "kind": "needsAtLeast"
+      },
+      "worstFrameDark": {
+        "pass": true,
+        "min": 0,
+        "max": 1,
+        "kind": "needsAtLeast"
+      }
+    },
+    "#cbd5e1": {
+      "worstFrameWhite": {
+        "pass": true,
+        "min": 0.695,
+        "max": 1,
+        "kind": "needsAtLeast"
+      },
+      "worstFrameDark": {
+        "pass": true,
+        "min": 0,
+        "max": 1,
+        "kind": "needsAtLeast"
+      }
+    },
+    "#94a3b8": {
+      "worstFrameWhite": {
+        "pass": true,
+        "min": 0.845,
+        "max": 1,
+        "kind": "needsAtLeast"
+      },
+      "worstFrameDark": {
+        "pass": true,
+        "min": 0,
+        "max": 1,
+        "kind": "needsAtLeast"
+      }
+    },
+    "#7db0ff": {
+      "worstFrameWhite": {
+        "pass": true,
+        "min": 0.8,
+        "max": 1,
+        "kind": "needsAtLeast"
+      },
+      "worstFrameDark": {
+        "pass": true,
+        "min": 0,
+        "max": 1,
+        "kind": "needsAtLeast"
+      }
+    }
+  },
+  "cardInkTable": [
+    {
+      "hex": "#0f172a",
+      "byAlpha": {
+        "0.85": {
+          "bg": "#d9d9d9",
+          "ratio": 12.62
+        },
+        "0.88": {
+          "bg": "#e0e0e0",
+          "ratio": 13.57
+        },
+        "0.9": {
+          "bg": "#e6e6e6",
+          "ratio": 14.24
+        },
+        "0.92": {
+          "bg": "#ebebeb",
+          "ratio": 14.92
+        },
+        "0.95": {
+          "bg": "#f2f2f2",
+          "ratio": 15.98
+        }
+      }
+    },
+    {
+      "hex": "#1e293b",
+      "byAlpha": {
+        "0.85": {
+          "bg": "#d9d9d9",
+          "ratio": 10.34
+        },
+        "0.88": {
+          "bg": "#e0e0e0",
+          "ratio": 11.12
+        },
+        "0.9": {
+          "bg": "#e6e6e6",
+          "ratio": 11.67
+        },
+        "0.92": {
+          "bg": "#ebebeb",
+          "ratio": 12.23
+        },
+        "0.95": {
+          "bg": "#f2f2f2",
+          "ratio": 13.1
+        }
+      }
+    },
+    {
+      "hex": "#334155",
+      "byAlpha": {
+        "0.85": {
+          "bg": "#d9d9d9",
+          "ratio": 7.32
+        },
+        "0.88": {
+          "bg": "#e0e0e0",
+          "ratio": 7.87
+        },
+        "0.9": {
+          "bg": "#e6e6e6",
+          "ratio": 8.26
+        },
+        "0.92": {
+          "bg": "#ebebeb",
+          "ratio": 8.65
+        },
+        "0.95": {
+          "bg": "#f2f2f2",
+          "ratio": 9.27
+        }
+      }
+    },
+    {
+      "hex": "#3f4a5f",
+      "byAlpha": {
+        "0.85": {
+          "bg": "#d9d9d9",
+          "ratio": 6.3
+        },
+        "0.88": {
+          "bg": "#e0e0e0",
+          "ratio": 6.78
+        },
+        "0.9": {
+          "bg": "#e6e6e6",
+          "ratio": 7.11
+        },
+        "0.92": {
+          "bg": "#ebebeb",
+          "ratio": 7.45
+        },
+        "0.95": {
+          "bg": "#f2f2f2",
+          "ratio": 7.98
+        }
+      }
+    },
+    {
+      "hex": "#475569",
+      "byAlpha": {
+        "0.85": {
+          "bg": "#d9d9d9",
+          "ratio": 5.36
+        },
+        "0.88": {
+          "bg": "#e0e0e0",
+          "ratio": 5.76
+        },
+        "0.9": {
+          "bg": "#e6e6e6",
+          "ratio": 6.04
+        },
+        "0.92": {
+          "bg": "#ebebeb",
+          "ratio": 6.33
+        },
+        "0.95": {
+          "bg": "#f2f2f2",
+          "ratio": 6.78
+        }
+      }
+    },
+    {
+      "hex": "#44506b",
+      "byAlpha": {
+        "0.85": {
+          "bg": "#d9d9d9",
+          "ratio": 5.7
+        },
+        "0.88": {
+          "bg": "#e0e0e0",
+          "ratio": 6.13
+        },
+        "0.9": {
+          "bg": "#e6e6e6",
+          "ratio": 6.43
+        },
+        "0.92": {
+          "bg": "#ebebeb",
+          "ratio": 6.74
+        },
+        "0.95": {
+          "bg": "#f2f2f2",
+          "ratio": 7.22
+        }
+      }
+    },
+    {
+      "hex": "#64748b",
+      "byAlpha": {
+        "0.85": {
+          "bg": "#d9d9d9",
+          "ratio": 3.36
+        },
+        "0.88": {
+          "bg": "#e0e0e0",
+          "ratio": 3.62
+        },
+        "0.9": {
+          "bg": "#e6e6e6",
+          "ratio": 3.8
+        },
+        "0.92": {
+          "bg": "#ebebeb",
+          "ratio": 3.98
+        },
+        "0.95": {
+          "bg": "#f2f2f2",
+          "ratio": 4.26
+        }
+      }
+    },
+    {
+      "hex": "#0066ff",
+      "byAlpha": {
+        "0.85": {
+          "bg": "#d9d9d9",
+          "ratio": 3.42
+        },
+        "0.88": {
+          "bg": "#e0e0e0",
+          "ratio": 3.68
+        },
+        "0.9": {
+          "bg": "#e6e6e6",
+          "ratio": 3.86
+        },
+        "0.92": {
+          "bg": "#ebebeb",
+          "ratio": 4.04
+        },
+        "0.95": {
+          "bg": "#f2f2f2",
+          "ratio": 4.33
+        }
+      }
+    },
+    {
+      "hex": "#0047b3",
+      "byAlpha": {
+        "0.85": {
+          "bg": "#d9d9d9",
+          "ratio": 5.82
+        },
+        "0.88": {
+          "bg": "#e0e0e0",
+          "ratio": 6.26
+        },
+        "0.9": {
+          "bg": "#e6e6e6",
+          "ratio": 6.56
+        },
+        "0.92": {
+          "bg": "#ebebeb",
+          "ratio": 6.88
+        },
+        "0.95": {
+          "bg": "#f2f2f2",
+          "ratio": 7.37
+        }
+      }
+    },
+    {
+      "hex": "#003482",
+      "byAlpha": {
+        "0.85": {
+          "bg": "#d9d9d9",
+          "ratio": 8.18
+        },
+        "0.88": {
+          "bg": "#e0e0e0",
+          "ratio": 8.81
+        },
+        "0.9": {
+          "bg": "#e6e6e6",
+          "ratio": 9.24
+        },
+        "0.92": {
+          "bg": "#ebebeb",
+          "ratio": 9.68
+        },
+        "0.95": {
+          "bg": "#f2f2f2",
+          "ratio": 10.37
+        }
+      }
+    }
+  ],
+  "blueSolve90": {
+    "on90BlackFrame": "#005ce7",
+    "on90D8Frame": "#0066ff"
+  },
+  "verify": {
+    "#0047b3": {
+      "on90Black": 6.56
+    },
+    "#004dbf": {
+      "on90Black": 5.95
+    },
+    "#003482": {
+      "on90Black": 9.24
+    },
+    "#0050cc": {
+      "on90Black": 5.55
+    },
+    "#0057e0": {
+      "on90Black": 4.87
+    }
+  },
+  "note": "minAlpha = 该墨色在指定最坏帧上达到 4.5:1 所需的最小玻璃 alpha"
+}

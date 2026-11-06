@@ -113,7 +113,7 @@ async function main() {
     assert.doesNotThrow(function () { win.createPopupPlayerPanel(); }, "同屏面板必须能建出来");
     const popPanel = win.document.querySelector(".popup-player-panel");
     assert.ok(popPanel, "同屏面板必须存在（前置）");
-    const popWrap = popPanel.querySelector(".popup-panel__action-wrap");
+    const popWrap = popPanel.querySelector(".ui-actions");
     assert.ok(popWrap, "同屏面板必须有主操作区");
     const popStyle = popWrap.getAttribute("style") || "";
     assert.strictEqual(popWrap.style.position, "sticky", "同屏主操作区必须 sticky，实际 " + popStyle);
@@ -125,9 +125,9 @@ async function main() {
 
     /* ---------- ③ 检查更新 / 开始签到 / 立即开始续牌：同样的粘底主按钮 ---------- */
     const CASE3 = [
-        { label: "版本更新", create: function () { win.createExUpdatePanel(); }, panel: ".exupdate-panel", wrap: ".exupdate-panel__action-wrap", btn: "#exupdate-action-btn" },
-        { label: "一键签到", create: function () { win.createSignPanel(); }, panel: ".sign-panel", wrap: ".fans-panel__action-wrap", btn: "#sign-panel-start-btn" },
-        { label: "一键续牌", create: function () { win.createFansContinuePanel(); }, panel: ".fans-continue-panel", wrap: ".fans-panel__action-wrap", btn: "#fans-panel-start-btn" },
+        { label: "版本更新", create: function () { win.createExUpdatePanel(); }, panel: ".exupdate-panel", wrap: ".ui-actions", btn: "#exupdate-action-btn" },
+        { label: "一键签到", create: function () { win.createSignPanel(); }, panel: ".sign-panel", wrap: ".ui-actions", btn: "#sign-panel-start-btn" },
+        { label: "一键续牌", create: function () { win.createFansContinuePanel(); }, panel: ".fans-continue-panel", wrap: ".ui-actions", btn: "#fans-panel-start-btn" },
     ];
     CASE3.forEach(function (item) {
         assert.doesNotThrow(item.create, item.label + "面板必须能建出来");

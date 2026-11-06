@@ -10,12 +10,6 @@
     user-select: none;
 }
 
-#vote__show-result {
-    cursor: pointer;
-    color: #0066ff !important;
-    margin-left: 8px;
-    font-size: 11px;
-}
 
 /* 投票浮动结果视窗 */
 .vote__result {

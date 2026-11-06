@@ -1,0 +1,185 @@
+{
+  "method": "WCAG 2.x 相对亮度；前景取 CSS 声明色或实测像素众数，背景取实测像素众数（玻璃拟态下随视频画面浮动 ±0.3）",
+  "rows": [
+    {
+      "name": "卡片副标题 #64748b / 卡片底 #f4f4f5",
+      "fg": "#64748b",
+      "bg": "#f4f4f5",
+      "kind": "text",
+      "ratio": 4.33,
+      "pass_text_AA": false,
+      "pass_nontext_3_1": null
+    },
+    {
+      "name": "卡片副标题 像素采样 p05 #8591a3 / #f4f4f5",
+      "fg": "#8591a3",
+      "bg": "#f4f4f5",
+      "kind": "text",
+      "ratio": 2.91,
+      "pass_text_AA": false,
+      "pass_nontext_3_1": null
+    },
+    {
+      "name": "卡片标题 #0f172a / #efeff0",
+      "fg": "#0f172a",
+      "bg": "#efeff0",
+      "kind": "text",
+      "ratio": 15.54,
+      "pass_text_AA": true,
+      "pass_nontext_3_1": null
+    },
+    {
+      "name": "面板标题 #0f172a / 头部底 #f9fbfa",
+      "fg": "#0f172a",
+      "bg": "#f9fbfa",
+      "kind": "text",
+      "ratio": 17.18,
+      "pass_text_AA": true,
+      "pass_nontext_3_1": null
+    },
+    {
+      "name": "蓝色徽标 #0066ff / 面板头底 #efeeef",
+      "fg": "#0066ff",
+      "bg": "#efeeef",
+      "kind": "text",
+      "ratio": 4.18,
+      "pass_text_AA": false,
+      "pass_nontext_3_1": null
+    },
+    {
+      "name": "switch OFF 轨道 #d6d6d6 / 条目底 #f8f9f9",
+      "fg": "#d6d6d6",
+      "bg": "#f8f9f9",
+      "kind": "nontext",
+      "ratio": 1.38,
+      "pass_text_AA": null,
+      "pass_nontext_3_1": false
+    },
+    {
+      "name": "switch OFF 轨道 #d6d6d6 / 卡片底 #efeff0",
+      "fg": "#d6d6d6",
+      "bg": "#efeff0",
+      "kind": "nontext",
+      "ratio": 1.26,
+      "pass_text_AA": null,
+      "pass_nontext_3_1": false
+    },
+    {
+      "name": "switch OFF 旋钮 #ffffff / 轨道 #d6d6d6",
+      "fg": "#ffffff",
+      "bg": "#d6d6d6",
+      "kind": "nontext",
+      "ratio": 1.45,
+      "pass_text_AA": null,
+      "pass_nontext_3_1": false
+    },
+    {
+      "name": "switch ON 轨道 #0066ff / 条目底 #f8f9f9",
+      "fg": "#0066ff",
+      "bg": "#f8f9f9",
+      "kind": "nontext",
+      "ratio": 4.58,
+      "pass_text_AA": null,
+      "pass_nontext_3_1": true
+    },
+    {
+      "name": "switch ON 旋钮 #ffffff / 轨道 #0066ff",
+      "fg": "#ffffff",
+      "bg": "#0066ff",
+      "kind": "nontext",
+      "ratio": 4.83,
+      "pass_text_AA": null,
+      "pass_nontext_3_1": true
+    },
+    {
+      "name": "面板关闭 × #475569 / 按钮底 #e6e7e7",
+      "fg": "#475569",
+      "bg": "#e6e7e7",
+      "kind": "text",
+      "ratio": 6.12,
+      "pass_text_AA": true,
+      "pass_nontext_3_1": null
+    },
+    {
+      "name": "Dock 图标 #334155 / 磁贴底 #eaf0ee",
+      "fg": "#334155",
+      "bg": "#eaf0ee",
+      "kind": "nontext",
+      "ratio": 8.97,
+      "pass_text_AA": null,
+      "pass_nontext_3_1": true
+    },
+    {
+      "name": "Dock 图标(选中) #0066ff / 白底 #ffffff",
+      "fg": "#0066ff",
+      "bg": "#ffffff",
+      "kind": "nontext",
+      "ratio": 4.83,
+      "pass_text_AA": null,
+      "pass_nontext_3_1": true
+    },
+    {
+      "name": "主按钮白字 #ffffff / 蓝底 #0066ff",
+      "fg": "#ffffff",
+      "bg": "#0066ff",
+      "kind": "text",
+      "ratio": 4.83,
+      "pass_text_AA": true,
+      "pass_nontext_3_1": null
+    },
+    {
+      "name": "主按钮 disabled 白字 #ffffff / #94a3b8",
+      "fg": "#ffffff",
+      "bg": "#94a3b8",
+      "kind": "text",
+      "ratio": 2.56,
+      "pass_text_AA": false,
+      "pass_nontext_3_1": null
+    },
+    {
+      "name": "条目底 #f8f9f9 / 卡片底 #efeff0（层级）",
+      "fg": "#f8f9f9",
+      "bg": "#efeff0",
+      "kind": "surface",
+      "ratio": 1.09,
+      "pass_text_AA": null,
+      "pass_nontext_3_1": null
+    },
+    {
+      "name": "卡片底 #f4f4f5 / 面板正文底 #f9fbfa（层级）",
+      "fg": "#f4f4f5",
+      "bg": "#f9fbfa",
+      "kind": "surface",
+      "ratio": 1.06,
+      "pass_text_AA": null,
+      "pass_nontext_3_1": null
+    },
+    {
+      "name": "建议：switch OFF 边界 rgba(15,23,42,0.55)→#787d87 / #f8f9f9",
+      "fg": "#787d87",
+      "bg": "#f8f9f9",
+      "kind": "nontext",
+      "ratio": 3.92,
+      "pass_text_AA": null,
+      "pass_nontext_3_1": true
+    },
+    {
+      "name": "建议：副标题 #475569 / #f4f4f5",
+      "fg": "#475569",
+      "bg": "#f4f4f5",
+      "kind": "text",
+      "ratio": 6.89,
+      "pass_text_AA": true,
+      "pass_nontext_3_1": null
+    },
+    {
+      "name": "建议：徽标 #0052cc / #efeeef",
+      "fg": "#0052cc",
+      "bg": "#efeeef",
+      "kind": "text",
+      "ratio": 5.89,
+      "pass_text_AA": true,
+      "pass_nontext_3_1": null
+    }
+  ]
+}

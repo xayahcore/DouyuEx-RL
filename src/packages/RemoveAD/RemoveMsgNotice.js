@@ -9,7 +9,7 @@ function initPkg_RemoveMsgNotice_Dom() {
 	let a = document.createElement("div");
     a.style = "position: absolute;right: 5px;top: 40px;cursor: pointer;"
     a.id = "ex-removeMsgNotice";
-    a.innerHTML = `<label id="msg-removeNotice" style="cursor: pointer;"><input type="checkbox" />关闭角标提醒</label>`;
+    a.innerHTML = `<label class="dx-cur-pointer" id="msg-removeNotice" ><input type="checkbox" />关闭角标提醒</label>`;
     a.title = "关闭角标提醒";
 	let b = document.getElementsByClassName("PrivateLetter-frame")[0];
     if (b) {

@@ -1,0 +1,78 @@
+<div class="bloop miuix-modal miuix-modal-in" style="width: 380px; position: fixed; inset: auto auto 190px 678px; z-index: 100030; display: flex !important;"><div class="miuix-modal__header">
+      <div class="miuix-modal__title-box"><span class="ex-title-ico"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor"><path d="M88,104a8,8,0,0,1,8-8h64a8,8,0,0,1,0,16H96A8,8,0,0,1,88,104Zm8,40h64a8,8,0,0,0,0-16H96a8,8,0,0,0,0,16ZM232,56V184a16,16,0,0,1-16,16H155.57l-13.68,23.94a16,16,0,0,1-27.78,0L100.43,200H40a16,16,0,0,1-16-16V56A16,16,0,0,1,40,40H216A16,16,0,0,1,232,56Zm-16,0H40V184h65.07a8,8,0,0,1,7,4l16,28,16-28a8,8,0,0,1,7-4H216Z"></path></svg></span>
+        <span class="miuix-modal__title">弹幕发送小助手</span>
+      </div>
+      <button type="button" class="miuix-modal__close" title="关闭面板" aria-label="关闭">×</button>
+    </div><div class="miuix-modal__body">
+			<!-- 卡片 1: 预设弹幕库与内容 -->
+			<div class="fans-panel__card">
+				<div class="fans-panel__card-header">
+					<span class="fans-panel__card-title" data-ex-ico="list-bullets"><span class="ex-card-ico"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor"><path d="M80,64a8,8,0,0,1,8-8H216a8,8,0,0,1,0,16H88A8,8,0,0,1,80,64Zm136,56H88a8,8,0,0,0,0,16H216a8,8,0,0,0,0-16Zm0,64H88a8,8,0,0,0,0,16H216a8,8,0,0,0,0-16ZM44,52A12,12,0,1,0,56,64,12,12,0,0,0,44,52Zm0,64a12,12,0,1,0,12,12A12,12,0,0,0,44,116Zm0,64a12,12,0,1,0,12,12A12,12,0,0,0,44,180Z"></path></svg></span>弹幕词库</span>
+					<span style="font-size: 11px; color: #64748b;">一行一条</span>
+				</div>
+				<div class="bloop__preset_row">
+					<select id="bloop__select"></select>
+					<input type="button" id="bloop__save" value="保存">
+					<input type="button" id="bloop__delete" value="删除">
+				</div>
+				<textarea placeholder="一行一个，开启舔狗模式后此处不需要输入" id="bloop__textarea" rows="4"></textarea>
+			</div>
+
+			<!-- 卡片 2: 发送速率与限时 -->
+			<div class="fans-panel__card">
+				<div class="fans-panel__card-header">
+					<span class="fans-panel__card-title" data-ex-ico="timer"><span class="ex-card-ico"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor"><path d="M128,40a96,96,0,1,0,96,96A96.11,96.11,0,0,0,128,40Zm0,176a80,80,0,1,1,80-80A80.09,80.09,0,0,1,128,216ZM173.66,90.34a8,8,0,0,1,0,11.32l-40,40a8,8,0,0,1-11.32-11.32l40-40A8,8,0,0,1,173.66,90.34ZM96,16a8,8,0,0,1,8-8h48a8,8,0,0,1,0,16H104A8,8,0,0,1,96,16Z"></path></svg></span>速率与限时</span>
+				</div>
+				<div class="bloop__param_grid">
+					<div class="bloop__param_item">
+						<span>速度：</span>
+						<input id="bloop__text_speed1" type="text" style="width:46px;text-align:center;" value="2000">~<input id="bloop__text_speed2" type="text" style="width:46px;text-align:center;" value="3000">
+						<span>ms</span>
+					</div>
+					<div class="bloop__param_item">
+						<span>限时：</span>
+						<input id="bloop__text_stoptime" type="text" style="width:46px;text-align:center;" value="1">
+						<span>min</span>
+					</div>
+				</div>
+			</div>
+
+			<!-- 卡片 3: 发送策略与开关 -->
+			<div class="fans-panel__card">
+				<div class="fans-panel__card-header">
+					<span class="fans-panel__card-title" data-ex-ico="sliders"><span class="ex-card-ico"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor"><path d="M64,105V40a8,8,0,0,0-16,0v65a32,32,0,0,0,0,62v49a8,8,0,0,0,16,0V167a32,32,0,0,0,0-62Zm-8,47a16,16,0,1,1,16-16A16,16,0,0,1,56,152Zm80-95V40a8,8,0,0,0-16,0V57a32,32,0,0,0,0,62v97a8,8,0,0,0,16,0V119a32,32,0,0,0,0-62Zm-8,47a16,16,0,1,1,16-16A16,16,0,0,1,128,104Zm104,64a32.06,32.06,0,0,0-24-31V40a8,8,0,0,0-16,0v97a32,32,0,0,0,0,62v17a8,8,0,0,0,16,0V199A32.06,32.06,0,0,0,232,168Zm-32,16a16,16,0,1,1,16-16A16,16,0,0,1,200,184Z"></path></svg></span>发送策略与开关</span>
+				</div>
+				<div class="sign-options-list">
+					<label class="sign-option-item">
+						<div class="sign-option-text">
+							<span class="sign-option-title">自动变色</span>
+							<span class="sign-option-desc">发送时随机切换已解锁的粉丝弹幕色</span>
+						</div>
+						<input id="bloop__checkbox_changeColor" class="sign-checkbox" type="checkbox" name="checkbox_changeColor" checked="">
+					</label>
+					<label class="sign-option-item">
+						<div class="sign-option-text">
+							<span class="sign-option-title">舔狗模式</span>
+							<span class="sign-option-desc">自动拉取土味情话/舔狗语录循环发送</span>
+						</div>
+						<input id="bloop__checkbox_tiangou" class="sign-checkbox" type="checkbox">
+					</label>
+					<label class="sign-option-item">
+						<div class="sign-option-text">
+							<span class="sign-option-title">随机发送</span>
+							<span class="sign-option-desc">打乱弹幕文本顺序随机轮换发送</span>
+						</div>
+						<input id="bloop__checkbox_random" class="sign-checkbox" type="checkbox">
+					</label>
+					<label class="sign-option-item" style="background: rgba(0, 102, 255, 0.08); border-color: rgba(0, 102, 255, 0.25); margin-top: 2px;">
+						<div class="sign-option-text">
+							<span class="sign-option-title" style="color: #0066ff; font-size: 13px;">循环发送弹幕</span>
+							<span class="sign-option-desc">开启后按设定速度与限时循环自动发送</span>
+						</div>
+						<input id="bloop__checkbox_startSend" class="sign-checkbox" type="checkbox">
+					</label>
+				</div>
+			</div>
+		
+		
+	</div></div>

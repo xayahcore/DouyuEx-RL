@@ -29,10 +29,10 @@ function Refresh_Video_insertIcon() {
         a = document.createElement("div");
         a.id = "refresh-video3";
         a.title = "点击隐藏礼物栏";
-        a.innerHTML = `<div style="display:flex;align-items:center;gap:6px;">
-            <div style="font-size:12px;">隐藏礼物栏</div>
-            <div id="ex-refresh-switch" style="width:26px;height:14px;background:rgba(255,255,255,0.3);border-radius:7px;position:relative;transition:background 0.3s;">
-                <div id="ex-refresh-switch-circle" style="width:10px;height:10px;background:#fff;border-radius:50%;position:absolute;top:2px;left:2px;transition:left 0.3s, background 0.3s;"></div>
+        a.innerHTML = `<div class="dx-d-flex dx-ai-center dx-gap-6" >
+            <div class="dx-fs-12"  >隐藏礼物栏</div>
+            <div class="dx-w-26 dx-h-14 dx-bg-rgba2552552550_3 dx-br-8 dx-pos-relative dx-tr-background0_3s" id="ex-refresh-switch" >
+                <div class="dx-w-10 dx-h-10 dx-bg-fff dx-br-50 dx-pos-absolute dx-top-2 dx-left-2 dx-tr-left0_3sbackground0_3s" id="ex-refresh-switch-circle" ></div>
             </div>
         </div>`;
         a.style = "position:absolute;left:18px;bottom:58px;padding:0 10px;height:28px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.55);color:#fff;z-index:9999;cursor:pointer;user-select:none;opacity:0;transform:scale(.9);transition:opacity .15s ease,transform .15s ease,background-color .15s ease,box-shadow .3s ease;pointer-events:none;";

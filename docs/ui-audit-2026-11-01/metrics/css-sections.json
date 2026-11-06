@@ -1,0 +1,119 @@
+{
+  "sections": [
+    {
+      "line": 29,
+      "num": "1",
+      "title": "二级 Dock 启动坞 (76px 晶透微胶囊 - 38px 圆角 - 56px 底座)"
+    },
+    {
+      "line": 213,
+      "num": "2",
+      "title": "全量 8 个三级控制台统一尺寸与通透磨砂 (380×370 齐平三维铁壁)"
+    },
+    {
+      "line": 279,
+      "num": "3",
+      "title": "Level 3 模态吸顶 Header (顶栏满幅左右贴合，绝无漏缝)"
+    },
+    {
+      "line": 349,
+      "num": "4",
+      "title": "滚动条起始点统一在顶栏正下方：内容承载容器 (.miuix-modal__body)"
+    },
+    {
+      "line": 403,
+      "num": "5",
+      "title": "通用四级卡片规范 (.fans-panel__card, .miuix-card, .livetool__cell)"
+    },
+    {
+      "line": 659,
+      "num": "6",
+      "title": "选项列表与选项项 (.sign-options-list, .sign-option-item, .miuix-item)"
+    },
+    {
+      "line": 717,
+      "num": "7",
+      "title": "统一澎湃蓝弹簧开关规范 (Switch: 宽 38px / 高 22px / 圆角 22px)"
+    },
+    {
+      "line": 870,
+      "num": "8",
+      "title": "通用按钮微质感 (大弹簧操作按钮、胶囊操作按钮、送出按钮)"
+    },
+    {
+      "line": 975,
+      "num": "9",
+      "title": "通用输入框、下拉选单与文本域样式隔离 (绝不污染斗鱼原生播放器)"
+    },
+    {
+      "line": 1051,
+      "num": "10",
+      "title": "MIUIX 礼物徽章选择组件 (可点击礼物徽章替代繁琐 ID 输入)"
+    },
+    {
+      "line": 1120,
+      "num": "11",
+      "title": "Level 5 模态大选择器 (礼物大盘与背包双流资产选择器)"
+    },
+    {
+      "line": 1327,
+      "num": "12",
+      "title": "弹幕小尾巴（聊天栏按钮 / 独立微悬浮面板 / 面板内控件）"
+    },
+    {
+      "line": 1451,
+      "num": "13",
+      "title": "PostbirdAlertBox 通用提示/确认/输入弹框 (MIUIX 统一居中模态设计系统)"
+    },
+    {
+      "line": 1616,
+      "num": "14",
+      "title": "版本更新控制台多态操作按钮状态微交互"
+    },
+    {
+      "line": 1672,
+      "num": "15",
+      "title": "面板专有控件（原 ExpandTool.css / BarrageLoopStyle.css 独有声明上收）"
+    },
+    {
+      "line": 1784,
+      "num": "16",
+      "title": "全站抽奖信息房间卡片（原 Lottery.css 独有声明上收）"
+    },
+    {
+      "line": 1880,
+      "num": "17",
+      "title": "下拉框与数字输入框的原生外观抹除（MIUIX 自绘控件）"
+    },
+    {
+      "line": 1950,
+      "num": "18",
+      "title": "主播配置信息悬浮卡（原 MetaData.css 独有声明上收 + MIUIX 重制）"
+    },
+    {
+      "line": 2011,
+      "num": "19",
+      "title": "历史弹幕弹窗（用户卡片入口）"
+    },
+    {
+      "line": 2180,
+      "num": "20",
+      "title": "多屏（1:1 复刻斗鱼原生「多屏」）"
+    },
+    {
+      "line": 2361,
+      "num": "22",
+      "title": "同屏播放面板的「多屏观看」页"
+    },
+    {
+      "line": 2775,
+      "num": "23",
+      "title": "多屏弹幕合并的来源横条"
+    },
+    {
+      "line": 2816,
+      "num": "9",
+      "title": "Phosphor 图标层（二级 Dock / 三级面板头 / 四级卡片头） 2026-11-01"
+    }
+  ]
+}

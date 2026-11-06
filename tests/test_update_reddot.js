@@ -25,6 +25,7 @@ function readSrc(rel) {
 }
 
 const EXGUARD_SRC = readSrc("src/require/ExGuard/ExGuard.js");
+const EXUI_SRC = readSrc("src/packages/ExUI/ExUI.js");
 const UPDATE_SRC = readSrc("src/packages/Update/Update.js");
 const CUR = String(require("../package.json").version || "2026.09.29.01");
 function bump(v) {
@@ -88,7 +89,7 @@ function makeEnv(opts) {
         "GM_info", "GM_getValue", "GM_setValue", "GM_xmlhttpRequest", "fetch", "showMessage",
         "ensureMiuixPanelHeader", "openMiuixPanelCentered", "updateDockActiveIndicator",
         "GM_deleteValue", "EX_UPDATE_LOG", "EX_UPDATE_LOG_SECTIONS",
-        EXGUARD_SRC + "\n" + UPDATE_SRC + "\n" + expose
+        EXGUARD_SRC + "\n" + EXUI_SRC + "\n" + UPDATE_SRC + "\n" + expose
     );
     const api = factory(
         win, win.document, quietConsole,

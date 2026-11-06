@@ -86,7 +86,7 @@ function setAvatarVideo_Dom() {
 	a.className = hasAvatarBottom ? "" : "Title-anchorPic-bottom";
 	a.innerHTML = `
 	<div id="Ex_VideoReview" class="Title-anchorPic-bottomItem"><span>回看</span></div>
-	<i style="top: 28px"></i>
+	<i class="dx-top-28" ></i>
 	<div id="Ex_VideoSubmit" class="Title-anchorPic-bottomItem"><span>投稿</span></div>
 	`
 	let b = document.getElementsByClassName("Title-anchorPic-bottom")[0] || document.getElementsByClassName("Title-anchorPicBack")[0];

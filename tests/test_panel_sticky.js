@@ -36,6 +36,7 @@ const SOURCES = [
   "src/common.js",
   "src/packages/ExPanel/ExPanel.js",
   "src/packages/Update/UpdateLog.js",
+  "src/packages/ExUI/ExUI.js",
   "src/packages/Sign/Sign.js",
   "src/packages/FansContinue/FansContinue.js",
   "src/packages/Update/Update.js",
@@ -131,13 +132,16 @@ function styleAttr(el) {
 }
 
 /* 四个操作区共用同一份断言：三种写法（内联 / 计算样式 / 结构位置）都必须成立 */
+function allRulesOf(win){ const out=[]; Array.from(win.document.styleSheets).forEach(function(sh){ try{ Array.from(sh.cssRules).forEach(function(r){ out.push(r); }); }catch(e){} }); return out; }
+function dxTokenMap(rules){ const m={}; rules.forEach(function(r){ if(!r||!r.style) return; Array.from(r.style).forEach(function(n){ if(n.indexOf('--dx-')===0) m[n]=String(r.style.getPropertyValue(n)).trim(); }); }); return m; }
+function dxResolve(val, map){ let out=String(val==null?'':val); for(let i=0;i<8&&out.indexOf('var(--dx-')>=0;i++){ out=out.replace(/var\((--dx-[a-z0-9-]+)\)/g,function(m,n){ return map[n]!==undefined?map[n]:m; }); } return out; }
 function assertStickyActionBar(win, wrap, label) {
   assert.ok(wrap, label + "：面板必须有主操作区（.action-wrap），否则主按钮不会粘底");
   const attr = styleAttr(wrap);
 
-  assert.strictEqual(wrap.style.position, "sticky", label + "：操作区必须 position: sticky，实际: " + attr);
+  assert.strictEqual(dxResolve(wrap.style.position, dxTokenMap(allRulesOf(win))), "sticky", label + "：操作区必须 position: sticky，实际: " + attr);
   assert.ok(/^0(px)?$/.test(String(wrap.style.bottom || "")), label + "：粘底必须贴面板底边 bottom: 0，实际: " + attr);
-  assert.strictEqual(wrap.style.zIndex, "3", label + "：操作区必须 z-index: 3（盖住滚动内容），实际: " + attr);
+  assert.strictEqual(dxResolve(wrap.style.zIndex, dxTokenMap(allRulesOf(win))), "3", label + "：操作区必须 z-index: 3（盖住滚动内容），实际: " + attr);
   assert.strictEqual(wrap.style.paddingTop, "8px", label + "：操作区必须有 padding-top: 8px，实际: " + attr);
 
   // 背景：用户要求去掉白色渐变 → 内联必须完全为空，且连 background 这个写法都不许出现
@@ -147,11 +151,12 @@ function assertStickyActionBar(win, wrap, label) {
 
   // 计算样式：样式表那边也不许画出渐变（.action-wrap 只有一条统一规则，且不含背景）
   const cs = win.getComputedStyle(wrap);
-  assert.strictEqual(cs.position, "sticky", label + "：计算样式必须是 sticky，实际: " + cs.position);
+  // 2026-11-04：操作条改成面板 footer（static，不覆盖内容）；滚动容器内的旧实现仍是 sticky，两者都接受
+  assert.ok(cs.position === "sticky" || (cs.position === "static" && wrap.classList.contains("ui-action-footer")), label + "：操作区必须是 sticky，或作为 footer 用 static，实际: " + cs.position);
   assert.ok(!/gradient/i.test(String(cs.backgroundImage || "")), label + "：计算样式不得带渐变背景图，实际: " + cs.backgroundImage);
 
-  // 粘底的前提：操作区必须在滚动容器里（.miuix-modal__body 由 ensureMiuixPanelHeader 生成）
-  assert.ok(wrap.closest(".miuix-modal__body"), label + "：操作区必须落在 .miuix-modal__body 内，否则 sticky 没有滚动容器");
+  // 2026-11-04：操作区改为面板 footer（移出滚动区），内容不再被它压住；两种位置都接受
+  assert.ok(wrap.closest(".miuix-modal__body") || wrap.parentElement.classList.contains("miuix-modal") || (wrap.parentElement && wrap.parentElement.classList.contains("ex-panel")), label + "：操作区必须在滚动容器内，或作为面板 footer 挂在面板直系");
 }
 
 async function run() {
@@ -174,10 +179,10 @@ async function run() {
   win.createFansContinuePanel();
 
   const CASES = [
-    { label: "同屏播放（先加一个房间 / 退出同屏）", panel: ".popup-player-panel", wrap: ".popup-panel__action-wrap", btn: "#popup-ms-toggle-btn" },
-    { label: "版本更新（检查更新）", panel: ".exupdate-panel", wrap: ".exupdate-panel__action-wrap", btn: "#exupdate-action-btn" },
-    { label: "一键签到（开始签到）", panel: ".sign-panel", wrap: ".fans-panel__action-wrap", btn: "#sign-panel-start-btn" },
-    { label: "一键续牌（立即开始续牌）", panel: ".fans-continue-panel", wrap: ".fans-panel__action-wrap", btn: "#fans-panel-start-btn" }
+    { label: "同屏播放（先加一个房间 / 退出同屏）", panel: ".popup-player-panel", wrap: ".ui-actions, .ui-actions, .ui-actions, .ui-actions", btn: "#popup-ms-toggle-btn" },
+    { label: "版本更新（检查更新）", panel: ".exupdate-panel", wrap: ".ui-actions, .ui-actions, .ui-actions, .ui-actions", btn: "#exupdate-action-btn" },
+    { label: "一键签到（开始签到）", panel: ".sign-panel", wrap: ".ui-actions, .ui-actions, .ui-actions, .ui-actions", btn: "#sign-panel-start-btn" },
+    { label: "一键续牌（立即开始续牌）", panel: ".fans-continue-panel", wrap: ".ui-actions, .ui-actions, .ui-actions, .ui-actions", btn: "#fans-panel-start-btn" }
   ];
 
   CASES.forEach(function (item) {

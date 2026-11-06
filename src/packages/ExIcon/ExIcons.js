@@ -80,6 +80,11 @@ var EX_ICO_TITLE_MAP = {
 
 /** 四级卡片标题 → 图标名 */
 var EX_ICO_CARD_MAP = {
+    "新增功能": "list-checks",
+    "改进与修复": "wrench",
+    "其它": "list-bullets",
+    "抽奖提醒": "bell-ringing",
+    "在播抽奖房间": "list-bullets",
     "弹幕词库": "list-bullets",
     "速率与限时": "timer",
     "发送策略与开关": "sliders",
@@ -93,6 +98,8 @@ var EX_ICO_CARD_MAP = {
     "续牌赠送配置": "gift",
     "抽奖提醒": "bell-ringing",
     "在播抽奖房间": "broadcast",
+    "添加房间": "squares-four",
+    "同屏里的房间": "picture-in-picture",
     "签到选项": "list-checks",
     "执行状态": "pulse"
 };
@@ -101,13 +108,19 @@ var EX_ICO_CARD_MAP = {
 function ExIco_decorateCards(root) {
   if (!root || !root.querySelectorAll || typeof EX_ICO_CARD_MAP === "undefined") return 0;
   /* 迁移已收口（2026-11-02）：只剩组件层与 .miuix-card 两个真类名 */
-  var nodes = root.querySelectorAll(".ui-card__title, .miuix-card__title, .livetool__cell_title, .fans-panel__card-title");
+  var nodes = root.querySelectorAll(".ui-card__title, .miuix-card__title, .livetool__cell_title, .fans-panel__card-title, .popup-panel__card-title, .exupdate-panel__card-title");
   var done = 0;
   for (var i = 0; i < nodes.length; i++) {
     var el = nodes[i];
     if (!el || el.getAttribute("data-ex-ico")) continue;
     var key = (el.textContent || "").trim();
     var name = EX_ICO_CARD_MAP[key];
+    if (!name) {
+      // 标题里可能带动态内容（计数胶囊等）：退一步按前缀匹配
+      for (var k in EX_ICO_CARD_MAP) {
+        if (key.indexOf(k) === 0) { name = EX_ICO_CARD_MAP[k]; break; }
+      }
+    }
     if (!name) {
       el.setAttribute("data-ex-ico", "none");
       continue;

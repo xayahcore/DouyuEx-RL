@@ -46,12 +46,12 @@ function saveData_ExpandTool_SendGift() {
 function ExpandTool_SendGift_insertDom() {
     if (document.getElementById("extool__sendgift_id")) return;
     let html = "";
-    html += '<label>打榜送礼：</label><button type="button" id="extool__sendgift_picker_btn" style="border:1px solid #007aff;color:#007aff;background:#fff;border-radius:6px;padding:2px 8px;font-size:12px;cursor:pointer;margin-left:4px;">选择礼物</button><br />';
-    html += '<label>礼物ID：</label><input id="extool__sendgift_id" type="text" style="width:55px;text-align:center;margin-right:6px;" value="20000" />';
-    html += '<span id="extool__sendgift_selected_name" style="color:#007aff;font-size:12px;margin-right:8px;">(弱鸡)</span>';
-    html += '<label>数量：</label><input id="extool__sendgift_cnt" type="text" style="width:36px;text-align:center;margin-right:8px;" value="1" />';
-    html += '<label>间隔ms：</label><input id="extool__sendgift_delay" type="text" style="width:36px;text-align:center;" value="0" />';
-    html += '<input style="margin-left:10px;" type="button" id="extool__sendgift_btn" value="送出" />';
+    html += '<label>打榜送礼：</label><button class="dx-ink-007aff dx-fs-12 dx-bd-1solid007aff dx-bg-fff dx-br-6 dx-p-28px dx-cur-pointer dx-ml-4" type="button" id="extool__sendgift_picker_btn" >选择礼物</button><br />';
+    html += '<label>礼物ID：</label><input class="dx-w-55 dx-ta-center dx-mr-6" id="extool__sendgift_id" type="text" value="20000" />';
+    html += '<span class="dx-ink-007aff dx-fs-12 dx-mr-8" id="extool__sendgift_selected_name" >(弱鸡)</span>';
+    html += '<label>数量：</label><input class="dx-w-36 dx-ta-center dx-mr-8" id="extool__sendgift_cnt" type="text" value="1" />';
+    html += '<label>间隔ms：</label><input class="dx-w-36 dx-ta-center" id="extool__sendgift_delay" type="text" value="0" />';
+    html += '<input class="dx-ml-10" type="button" id="extool__sendgift_btn" value="送出" />';
     let a = document.createElement("div");
     a.className = "extool__sendgift";
     a.innerHTML = html;

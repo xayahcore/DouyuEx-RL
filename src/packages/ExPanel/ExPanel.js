@@ -3,7 +3,7 @@ let ExPanel_anchorNextSibling = null;
 
 /* 三级面板统一清单：× 收起、精灵球「全部收敛」、激活指示器都认这一份，
  * 以后新增面板只改这里，不会再出现"某个出口漏掉一个面板"。 */
-const EX_THIRD_LEVEL_PANELS = ".sign-panel, .fans-continue-panel, .fans-panel, .extool, .livetool, .bloop, .exlottery, .popup-player-panel, .exupdate-panel, .danmaku-history-panel";
+const EX_THIRD_LEVEL_PANELS = ".sign-panel, .fans-continue-panel, .extool, .livetool, .bloop, .exlottery, .popup-player-panel, .exupdate-panel";
 
 /* ==================== 点击菜单外部自动关闭 ====================
  * 用户要求（2026-11-01）：点菜单外面的任何位置，把二级 / 三级 / 子菜单一次性收掉。
@@ -19,7 +19,8 @@ const EX_MENU_SURFACE_EXTRA = [
   ".ex-gift-picker-modal",          /* 扩展功能里再打开的礼物选择器 */
   ".ex-gift-picker-mask",           /* 它的遮罩：点遮罩由选择器自己收，不连带收走原有面板 */
   ".ex-pip-menu-root",              /* 加强版画中画菜单 */
-  "[data-ex-menu-layer]"            /* 运行期追加的次级菜单层（ExPanel_markMenuLayer 打标记） */
+  "[data-ex-menu-layer]",           /* 运行期追加的次级菜单层（ExPanel_markMenuLayer 打标记） */
+  ".postbird-box-container"          /* PostbirdAlertBox 全屏遮罩（I-06）：点弹框内部不该把面板一起收掉 */
 ];
 
 /** 菜单面总清单：二级胶囊 + 全部三级面板 + 之后任何一层子菜单 */
@@ -78,6 +79,8 @@ function initPkg_ExPanel() {
 
   ExPanel_startSelfHeal();
   ExPanel_bindClickOutside();
+  ExPanel_bindEsc();
+  ExPanel_bindDockObserver();
 }
 
 /* ==================== 点击菜单外部自动关闭 ==================== */
@@ -179,6 +182,79 @@ function ExPanel_bindClickOutside() {
   if (typeof document === "undefined" || !document || !document.addEventListener) return;
   ExPanel_outsideClickBound = true;
   document.addEventListener("mousedown", ExPanel_onMenuOutsideMouseDown, true);
+}
+
+/* ==================== ESC 统一收口（S1-B / I-03） ====================
+ * 之前只有「同屏播放」自己绑了 ESC，其余 7 个面板按了没反应。
+ * 现在统一在 document 冒泡阶段收一次：先关最上层的三级面板；没有三级面板时收二级胶囊。
+ * 全屏看直播时 ESC 归浏览器（退出全屏），不拦。
+ */
+var ExPanel_escBound = false;
+
+function ExPanel_openThirdLevelPanels() {
+  if (typeof document === "undefined" || !document.querySelectorAll) return [];
+  const list = document.querySelectorAll(EX_THIRD_LEVEL_PANELS);
+  const out = [];
+  for (let i = 0; i < list.length; i++) {
+    const p = list[i];
+    const st = (p.style && p.style.display) || "";
+    if (st === "flex" || st === "block") out.push(p);
+  }
+  return out;
+}
+
+function ExPanel_onEscKeydown(e) {
+  if (!e) return;
+  if (e.key !== "Escape" && e.keyCode !== 27) return;
+  if (typeof document !== "undefined" && document.fullscreenElement) return;
+  const open = ExPanel_openThirdLevelPanels();
+  if (open.length) {
+    const top = open[open.length - 1];
+    top.style.removeProperty("display");
+    top.style.setProperty("display", "none", "important");
+    top.classList.remove("miuix-modal-in");
+    if (typeof updateDockActiveIndicator === "function") updateDockActiveIndicator();
+    e.stopPropagation();
+    return;
+  }
+  if (typeof ExPanel_hasOpenMenu === "function" && ExPanel_hasOpenMenu()) {
+    ExPanel_closeAllMenus();
+  }
+}
+
+function ExPanel_bindEsc() {
+  if (ExPanel_escBound) return;
+  if (typeof document === "undefined" || !document || !document.addEventListener) return;
+  ExPanel_escBound = true;
+  document.addEventListener("keydown", ExPanel_onEscKeydown);
+}
+
+/* ==================== Dock 子节点观察（S1-B / B-1） ====================
+ * 各包在自己的 init 里往 .ex-panel__wrap 插磁贴，都晚于 ExPanel 的 init ——
+ * 所以初始化那次 decorate 面对的是一个空 wrap（旧审计里"磁贴语义永远补不上"就是这个）。
+ * 这里挂一个 childList 观察器（30ms 去抖），磁贴一进来就补语义，且对自愈搬回同样有效。
+ */
+var ExPanel_dockObserver = null;
+var ExPanel_dockObserverTimer = 0;
+var ExPanel_dockObserverRetry = 0;
+
+function ExPanel_bindDockObserver() {
+  if (ExPanel_dockObserver) return;
+  if (typeof MutationObserver !== "function") return;
+  var wrap = document.querySelector(".ex-panel__wrap");
+  if (!wrap) {
+    if (ExPanel_dockObserverRetry++ < 40) setTimeout(ExPanel_bindDockObserver, 250);
+    return;
+  }
+  ExPanel_dockObserver = new MutationObserver(function () {
+    if (ExPanel_dockObserverTimer) return;
+    ExPanel_dockObserverTimer = setTimeout(function () {
+      ExPanel_dockObserverTimer = 0;
+      if (typeof ensureDockIndicators === "function") ensureDockIndicators();
+    }, 30);
+  });
+  ExPanel_dockObserver.observe(wrap, { childList: true });
+  if (typeof ensureDockIndicators === "function") ensureDockIndicators();
 }
 
 /* ==================== Dock 自愈 ====================
@@ -408,6 +484,7 @@ function ExPanel_onGiftBarShow() {
 function initPkg_ExPanel_insertDom() {
   let a = document.createElement("div");
   a.className = "ex-panel";
+  a.dataset.dxBuild = "dx4";   // 本构建标记：采集与调试据此认自己的实例（CSS 指纹会同时命中两套）
   a.innerHTML = `<button type="button" class="ex-panel__close" title="关闭工具条" aria-label="关闭 DouyuEx 工具条">×</button><div class="ex-panel__wrap"></div>`;
 
   let b = ExPanel_getGiftBarAnchor();
@@ -453,6 +530,31 @@ function ensureDockIndicators() {
       ind.className = "ex-panel__indicator";
       btn.appendChild(ind);
     }
+    // ===== 可达性（S1-B / B-1）：磁贴是 div，键盘与触屏原本完全进不来 =====
+    if (!btn.dataset.dxA11y) {
+      btn.dataset.dxA11y = "1";
+      btn.setAttribute("role", "button");
+      btn.setAttribute("tabindex", "0");
+      let a11yLabel = "";
+      for (let k in mapping) { if (btn.classList.contains(k)) { a11yLabel = mapping[k]; break; } }
+      if (a11yLabel) {
+        if (!btn.getAttribute("aria-label")) btn.setAttribute("aria-label", a11yLabel);
+        if (!btn.getAttribute("title")) btn.setAttribute("title", a11yLabel);
+      }
+      // Enter / Space = 走一次真实 click，各包自己的打开逻辑照旧生效
+      btn.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " " || e.keyCode === 13 || e.keyCode === 32) {
+          e.preventDefault();
+          this.click();
+        }
+      });
+      // 触屏只开不关：点按不应把已打开的面板收掉（与「点外面就关」不冲突）
+      btn.addEventListener("touchstart", function () {
+        const opened = this.classList.contains("is-active") || this.classList.contains("ex-dock-active");
+        if (!opened) this.dispatchEvent(new MouseEvent("mouseenter", { bubbles: true }));
+      }, { passive: true });
+    }
+
 
     // Phosphor 图标层：把各包自带的内联 SVG 换成统一的「线稿 + 选中填充」两份，
     // 切换只靠 CSS（.is-active / .ex-dock-active），不重建 DOM。
@@ -496,7 +598,7 @@ function ensureDockIndicators() {
  * 八个 Dock 按钮的「展开态」原先只有一半：openMiuixPanelCentered 会给当前按钮加上
  * is-active / ex-dock-active（CSS 据此点亮图标底部那枚 24×4 蓝色小条），但全项目没有任何地方
  * 把它摘下来；而所有关闭出口调用的 updateDockActiveIndicator() 根本没有定义 —— 那些调用
- * （Sign / DanmakuHistory / PopupPlayer / 二级菜单 ×、面板 ×）其实全是空操作。
+ * （Sign / PopupPlayer / 二级菜单 ×、面板 ×）其实全是空操作。
  * 于是图标底下的蓝条一旦亮起就永远亮着，看不出面板到底开没开。
  * 这里补齐：按「面板此刻是否真的显示着」逐个按钮复位，打开与关闭两侧都调它。
  */
@@ -510,7 +612,6 @@ const EX_DOCK_PANEL_MAP = [
   ["exlottery-icon", ".exlottery"],
   ["popup-player", ".popup-player-panel"],
   ["ex-update", ".exupdate-panel"],
-  ["danmaku-history", ".danmaku-history-panel"]
 ];
 
 function ExPanel_panelIsShown(el) {
@@ -583,6 +684,7 @@ function showExPanel() {
 function ensureMiuixPanelHeader(el, title) {
   if (!el) return;
   el.classList.add("miuix-modal");
+  el.dataset.dxBuild = "dx4";   // 本构建标记（面板侧），采集/调试据此区分两套实例
 
   var oldCloses = el.querySelectorAll(".extool__close, .livetool__close, .bloop__close, #vote__result-close, .lottery__func, .ChatToolBar-DanmakuTail-title");
   oldCloses.forEach((c) => {
@@ -638,6 +740,12 @@ function ensureMiuixPanelHeader(el, title) {
     body.appendChild(n);
   });
 
+  /* 主操作条做成面板 footer：移出滚动区，内容永远不被它压住，也不需要给它加底色 */
+  Array.prototype.forEach.call(body.querySelectorAll(".ui-actions"), (bar) => {
+    bar.classList.add("ui-action-footer");
+    el.appendChild(bar);
+  });
+
   // 四级卡片头图标：按标题文字匹配，插在标题 span 内部（保住 card-header 的 space-between 布局）
   if (typeof ExIco_decorateCards === "function") {
     ExIco_decorateCards(body);
@@ -666,7 +774,7 @@ function openMiuixPanelCentered(panel, btnEl) {
 
   // 互斥关闭所有其他三级面板
   var allPanels = document.querySelectorAll(
-    ".sign-panel, .fans-continue-panel, .fans-panel, .extool, .livetool, .bloop, .exlottery, .popup-player-panel, .exupdate-panel, .ChatToolBar-DanmakuTail-Panel, .danmaku-history-panel"
+    ".sign-panel, .fans-continue-panel, .extool, .livetool, .bloop, .exlottery, .popup-player-panel, .exupdate-panel, .ChatToolBar-DanmakuTail-Panel"
   );
   allPanels.forEach((p) => {
     if (p !== panel) {
@@ -687,7 +795,16 @@ function openMiuixPanelCentered(panel, btnEl) {
     }
   }
 
-  var panelWidth = 380;
+  // 宽度真源只有 CSS 一处（--miuix-modal-width）；这里只「量」，不再写第二份 380
+  var panelWidth = 0;
+  try {
+    panelWidth = parseFloat(getComputedStyle(panel).width) || 0;
+    if (!panelWidth) {
+      var cssW = getComputedStyle(document.documentElement).getPropertyValue("--miuix-modal-width");
+      panelWidth = parseFloat(cssW) || 0;
+    }
+  } catch (e) {}
+  if (!panelWidth) panelWidth = 380;
   panel.style.width = panelWidth + "px";
   var left = (window.innerWidth - panelWidth) / 2;
   var bottom = 90;

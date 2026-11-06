@@ -13,28 +13,27 @@ function initPkg_LiveTool_Mute() {
 }
 
 function LiveTool_Mute_insertDom() {
-    let a = document.createElement("div");
-    a.className = "livetool__cell";
-    let cell = `
-        <div class='livetool__cell_title'>
+    // S1-E：抽屉单元格 DOM 改由 ExUI 产出；旧类名只以 legacy 影子挂在对应节点上，观感零差异
+    let cellTitle = ExUI.stack({
+        html: `
             <span id='mute__title'>关键词禁言</span>
-            <span id='mute__idlist'>名单</span>
-            <span id='mute__export'>导出</span>
-            <span id='mute__import'>导入</span>
-        </div>
-        <div class='livetool__cell_option'>
-            <div class="livetool__cell_switch">
+            <span class='ui-cell__desc'>命中关键词的用户自动禁言</span>
+        `,
+        cls: "ui-cell__title"
+    });
+    let cellOption = ExUI.stack({
+        html: ExUI.stack({
+            html: `
                 <input type="checkbox" class="sign-checkbox" id="mute__switch" tabindex="0" checked>
-            </div>
-        </div>
-    `;
-    let panel = `
-        <div class='mute__panel'>
+            `,
+            cls: "ui-cell__switch"
+        }),
+        cls: "ui-cell__option"
+    });
+    let panel = ExUI.stack({
+        html: `
             <select id='mute__select'>
             </select>
-            <input style="width:40px;margin-left:10px;" type="button" id="mute__add" value="添加"/>
-            <input style="width:40px;margin-left:10px;" type="button" id="mute__del" value="删除"/>
-            <input style="width:65px;margin-left:10px;" type="button" id="mute__delmute" value="一键解禁"/>
             <div class="mute__option">
                 <label>词：<input id="mute__word" type="text" placeholder="re(正则)=期望匹配" title="普通词：弹幕包含即命中；re(正则)=期望匹配：用正则匹配弹幕，且首个匹配必须与「期望匹配」完全相等才算命中，例 re(^\\d+$)=666"/></label>
                 <label>次数：<input id="mute__count" type="number" value="5"/></label>
@@ -54,9 +53,15 @@ function LiveTool_Mute_insertDom() {
                     </select>
                 </label>
             </div>
-        </div>
-    `;
-    a.innerHTML = cell + panel;
+        `,
+        legacy: "mute__panel"
+    });
+    /* 抽屉只是面板，不该继承 .ui-stack 的 display:flex —— 去掉该类，默认收起回到单类选择器 */
+    panel = panel.replace('class="ui-stack ', 'class="');
+    /* 抽屉底部：导入/导出等次级动作集中在这里，行内只保留标题+开关 */
+    panel = panel.replace(/<\/div>$/, "<div class='ui-cell__actions'><input type='button' id='mute__add' value='添加' /><input type='button' id='mute__del' value='删除' /><input type='button' id='mute__delmute' value='一键解禁' /><button type='button' class='ui-btn ui-btn--quiet' id='mute__idlist'>名单</button><button type='button' class='ui-btn ui-btn--quiet' id='mute__export'>导出</button><button type='button' class='ui-btn ui-btn--quiet' id='mute__import'>导入</button></div><\/div>");
+    // 标题 + 开关槽与抽屉面板是兄弟节点：三者同挂到单元格 div 下（不是父子嵌套）
+    let a = ExUI.node(ExUI.stack({ html: cellTitle + cellOption + panel, cls: "ui-cell" }));
     
     let b = document.getElementsByClassName("livetool")[0];
     if (b) {
@@ -142,8 +147,8 @@ function LiveTool_Mute_insertFunc() {
             ExGuard_warn("关键词禁言", "面板节点缺失，忽略本次展开");
             return;
         }
-        if (a.style.display != "block") {
-            a.style.display = "block";
+        if (a.style.display !== "block" && a.style.display !== "flex") {
+            a.style.display = "flex";
             // 其余抽屉统一收起：节点不在就跳过，不再逐个裸解引用
             LiveTool_hideDrawerPanelsExcept("mute__panel");
         } else {

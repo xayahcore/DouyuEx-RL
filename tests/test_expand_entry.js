@@ -12,6 +12,7 @@ try {
 const ROOT = path.join(__dirname, "..");
 const read = (rel) => fs.readFileSync(path.join(ROOT, rel), "utf8");
 const EXPANDTOOL_SRC = read("src/packages/ExpandTool/ExpandTool.js");
+const EXUI_SRC = read("src/packages/ExUI/ExUI.js");
 const MONITOR_SRC = read("src/packages/Monitor/Monitor.js");
 
 // 与 test_dead_source 同一套思路：只禁"代码里还在用"，注释保留来龙去脉
@@ -79,7 +80,7 @@ function loadExpandTool(opts) {
         "document", "window", "localStorage", "console",
         "showMessage", "ExGuard_warn", "openPage", "rid", "showExRightPanel",
         SIBLING_MODULES.join(", "),
-        EXPANDTOOL_SRC + `
+        EXUI_SRC + "\n" + EXPANDTOOL_SRC + `
         return {
             dom: initPkg_ExpandTool_Dom,
             func: initPkg_ExpandTool_Func,
@@ -119,17 +120,17 @@ function testCardAndJump() {
     assert.strictEqual(btn.textContent.trim(), "打开", "按钮文案必须是「打开」，实际 " + btn.textContent);
     assert.ok(btn.classList.contains("ex-picker-btn"), "按钮必须复用现成小胶囊样式 ex-picker-btn");
 
-    // 卡片必须排在最后，且与其它卡片同构（.fans-panel__card + .fans-panel__card-header + .sign-options-list）
-    const cards = panel.querySelectorAll(".fans-panel__card");
+    // 卡片必须排在最后，且与其它卡片同构（.ui-card + .ui-card__head + .ui-card__body）
+    const cards = panel.querySelectorAll(".ui-card");
     assert.ok(cards.length >= 2, "面板至少要有两张卡片");
     const lastCard = cards[cards.length - 1];
     assert.strictEqual(lastCard.id, "extool__monitor_card", "在线工具卡必须是最后一张卡片");
     assert.ok(lastCard.contains(btn), "按钮必须挂在最后一张卡片里");
-    assert.ok(lastCard.querySelector(".fans-panel__card-header"), "卡片必须有 header（与其它卡片同构）");
-    assert.ok(lastCard.querySelector(".fans-panel__card-title"), "卡片必须有标题元素");
-    assert.ok(lastCard.querySelector(".sign-option-item"), "卡片内容必须用 .sign-option-item，风格与其它卡片一致");
+    assert.ok(lastCard.querySelector(".ui-card__head"), "卡片必须有 header（与其它卡片同构）");
+    assert.ok(lastCard.querySelector(".ui-card__title"), "卡片必须有标题元素");
+    assert.ok(lastCard.querySelector(".ui-row"), "卡片内容必须用 .ui-row，风格与其它卡片一致");
 
-    const headText = lastCard.querySelector(".fans-panel__card-title").textContent;
+    const headText = lastCard.querySelector(".ui-card__title").textContent;
     assert.ok(headText.indexOf("在线工具") !== -1, "卡片标题应是「在线工具」，实际 " + headText);
     const cardText = lastCard.textContent.replace(/\s+/g, "");
     assert.ok(cardText.indexOf("在线弹幕助手") !== -1, "卡片里必须有标题「在线弹幕助手」");

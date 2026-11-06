@@ -7,33 +7,39 @@ function initPkg_LiveTool_Enter() {
 }
 
 function LiveTool_Enter_insertDom() {
-    let a = document.createElement("div");
-    a.className = "livetool__cell";
-    let cell = `
-        <div class='livetool__cell_title'>
+    // S1-E：抽屉单元格 DOM 改由 ExUI 产出；旧类名只以 legacy 影子挂在对应节点上，观感零差异
+    let cellTitle = ExUI.stack({
+        html: `
             <span id='enter__title'>进场欢迎</span>
-            <span id='enter__export'>导出</span>
-            <span id='enter__import'>导入</span>
-        </div>
-        <div class='livetool__cell_option'>
-            <div class="livetool__cell_switch">
+            <span class='ui-cell__desc'>有人进直播间时自动发欢迎语</span>
+        `,
+        cls: "ui-cell__title"
+    });
+    let cellOption = ExUI.stack({
+        html: ExUI.stack({
+            html: `
                 <input type="checkbox" class="sign-checkbox" id="enter__switch" tabindex="0" checked>
-            </div>
-        </div>
-    `;
-    let panel = `
-        <div class='enter__panel'>
+            `,
+            cls: "ui-cell__switch"
+        }),
+        cls: "ui-cell__option"
+    });
+    let panel = ExUI.stack({
+        html: `
             <select id='enter__select'>
             </select>
-            <input style="width:40px;margin-left:10px;" type="button" id="enter__add" value="添加"/>
-            <input style="width:40px;margin-left:10px;" type="button" id="enter__del" value="删除"/>
             <div class="enter__option">
                 <label>等级≥<input id="enter__level" type="text" value="1"/></label>
                 <label>当前欢迎词：<input id="enter__word" type="text" placeholder="欢迎<id>光临直播间"/></label>
             </div>
-        </div>
-    `;
-    a.innerHTML = cell + panel;
+            <div class='ui-cell__actions'><input type='button' id='enter__add' value='添加' /><input type='button' id='enter__del' value='删除' /><button type='button' class='ui-btn ui-btn--quiet' id='enter__export'>导出</button><button type='button' class='ui-btn ui-btn--quiet' id='enter__import'>导入</button></div>
+        `,
+        legacy: "enter__panel"
+    });
+    /* 抽屉只是面板，不该继承 .ui-stack 的 display:flex —— 去掉该类，默认收起回到单类选择器 */
+    panel = panel.replace('class="ui-stack ', 'class="');
+    // 标题 + 开关槽与抽屉面板是兄弟节点：三者同挂到单元格 div 下（不是父子嵌套）
+    let a = ExUI.node(ExUI.stack({ html: cellTitle + cellOption + panel, cls: "ui-cell" }));
     
     let b = document.getElementsByClassName("livetool")[0];
     if (b) {
@@ -97,8 +103,8 @@ function LiveTool_Enter_insertFunc() {
             ExGuard_warn("自动欢迎", "面板节点缺失，忽略本次展开");
             return;
         }
-        if (a.style.display != "block") {
-            a.style.display = "block";
+        if (a.style.display !== "block" && a.style.display !== "flex") {
+            a.style.display = "flex";
             // 其余抽屉统一收起：节点不在就跳过，不再逐个裸解引用
             LiveTool_hideDrawerPanelsExcept("enter__panel");
         } else {
@@ -180,7 +186,8 @@ function saveData_isEnter() {
             ridArr.push(rid);
         }
     } else {
-        ridArr.splice(index, 1);
+        // index === -1 时 splice(-1,1) 会删掉数组最后一项 —— 把别的房间记录顶掉（S1-C / A-1）
+        if (index > -1) ridArr.splice(index, 1);
     }
 	let data = {
         rooms: ridArr,

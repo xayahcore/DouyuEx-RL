@@ -1,0 +1,86 @@
+{
+  "updHit": [
+    {
+      "scrollTop": 0,
+      "max": 1017,
+      "coveredLines": 2,
+      "coveredSample": [
+        "• 【工具条】点菜单外面的判定放在鼠",
+        "• 【工具条】只认左键：右键按下不会"
+      ],
+      "gutterLines": 0,
+      "lastVisibleBottom": 527,
+      "btnTop": 510,
+      "barTop": 510,
+      "bodyBottom": 564,
+      "lastLineVsBtnTop": 17
+    },
+    {
+      "scrollTop": 509,
+      "max": 1017,
+      "coveredLines": 1,
+      "coveredSample": [
+        "• 【粉丝牌页】房间加载不再白等 1"
+      ],
+      "gutterLines": 0,
+      "lastVisibleBottom": 558,
+      "btnTop": 510,
+      "barTop": 510,
+      "bodyBottom": 564,
+      "lastLineVsBtnTop": 48
+    },
+    {
+      "scrollTop": 1017,
+      "max": 1017,
+      "coveredLines": 0,
+      "coveredSample": [],
+      "gutterLines": 0,
+      "lastVisibleBottom": 480.5,
+      "btnTop": 501.5,
+      "barTop": 501.5,
+      "bodyBottom": 564,
+      "lastLineVsBtnTop": -21
+    }
+  ],
+  "signHit": [
+    {
+      "scrollTop": 0,
+      "max": 237,
+      "coveredLines": 2,
+      "coveredSample": [
+        "活动中心签到领积分",
+        "每日签到并领取签到礼包（需登录）"
+      ],
+      "gutterLines": 0,
+      "lastVisibleBottom": 542.4,
+      "btnTop": 510,
+      "barTop": 510,
+      "bodyBottom": 564,
+      "lastLineVsBtnTop": 32.4
+    },
+    {
+      "scrollTop": 119,
+      "max": 237,
+      "coveredLines": 0,
+      "coveredSample": [],
+      "gutterLines": 0,
+      "lastVisibleBottom": 474.6,
+      "btnTop": 510,
+      "barTop": 510,
+      "bodyBottom": 564,
+      "lastLineVsBtnTop": -35.4
+    },
+    {
+      "scrollTop": 237,
+      "max": 237,
+      "coveredLines": 0,
+      "coveredSample": [],
+      "gutterLines": 0,
+      "lastVisibleBottom": 481.1,
+      "btnTop": 502.1,
+      "barTop": 502.1,
+      "bodyBottom": 564,
+      "lastLineVsBtnTop": -21
+    }
+  ]
+}

@@ -1,26 +1,92 @@
 /* ==========================================================================
+   文件地图（2026-11-05 整理）
+   1) L1/L2 令牌        —— 间距/尺寸/圆角/字号/颜色，唯一数值来源
+   2) 面板外壳          —— .miuix-modal / __body / __header / 滚动与遮罩
+   3) 旧版组件类        —— fans-panel__* / popup-panel__* / livetool__* 等
+   4) L3 组件层 .ui-*   —— 卡片 / 行 / 按钮 / 单元格 / 操作条
+   5) 面板内定制        —— 各面板的内容级类名（登录态/资源格等）
+   6) 清理批次 A–E      —— 2026-11 的统一化与债务清理（按主题归并）
+   ⚠ 顺序即层叠：同权重下越靠后越优先。改顺序前先跑 tools/ui-diff.mjs 比对。
+   ========================================================================== */
+
+/* ==========================================================================
    DouyuEx-RL MIUIX 统一设计系统 (Single Source of Truth)
    涵盖 8 个三级控制台面板、二级 Dock 胶囊与全局控件，全量 1:1 复刻工业质感
    ========================================================================== */
+
+/* ==========================================================================
+   L1 · 刻度（primitive）：只放数字与色值，不含语义、不被面板直接引用
+   L2 · 语义（semantic）：面板与组件只认这一层，改语义不用碰像素
+   L3 · 组件（component）：.ui-* 只消费 L2
+   ========================================================================== */
+:root {
+    /* ---- L1 间距刻度（4px 基准，2px 细分） ---- */
+    --dx-space-0: 0px;   --dx-space-1: 2px;   --dx-space-2: 4px;   --dx-space-3: 6px;
+    --dx-space-4: 8px;   --dx-space-5: 10px;  --dx-space-6: 12px;  --dx-space-8: 16px;
+    --dx-space-10: 20px; --dx-space-20: 40px;
+    /* ---- L1 尺寸刻度 ---- */
+    --dx-size-2: 2px;  --dx-size-4: 4px;   --dx-size-6: 6px;   --dx-size-8: 8px;
+    --dx-size-10: 10px; --dx-size-12: 12px; --dx-size-14: 14px; --dx-size-18: 18px;
+    --dx-size-20: 20px; --dx-size-26: 26px; --dx-size-32: 32px; --dx-size-38: 38px;
+    --dx-size-40: 40px; --dx-size-44: 44px; --dx-size-46: 46px; --dx-size-56: 56px;
+    /* ---- L1 圆角刻度 ---- */
+    --dx-radius-4: 4px; --dx-radius-6: 6px; --dx-radius-8: 8px; --dx-radius-10: 10px;
+    --dx-radius-14: 14px; --dx-radius-22: 22px; --dx-radius-full: 50%;
+    /* ---- L1 字阶 / 字重 / 行高 ---- */
+    --dx-font-11: 11px; --dx-font-115: 11.5px; --dx-font-12: 12px; --dx-font-14: 14px; --dx-font-16: 16px;
+    --dx-weight-400: 400; --dx-weight-500: 500; --dx-weight-600: 600; --dx-weight-700: 700;
+    --dx-leading-tight: 1.3; --dx-leading-normal: 1.5;
+    /* ---- L1 层级 / 动效 ---- */
+    --dx-z-sticky: 3; --dx-z-menu: 50; --dx-z-dock: 10000; --dx-z-panel: 100030;
+    --dx-dur-fast: 0.18s; --dx-dur-base: 0.2s; --dx-dur-slow: 0.3s;
+    --dx-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    /* ---- L1 颜色（墨 / 面 / 强调 / 状态） ---- */
+    --dx-ink-1: #0f172a; --dx-ink-2: #1e293b; --dx-ink-muted: #334155;
+    --dx-ink-inverse: #ffffff; --dx-accent: #0066ff; --dx-accent-deep: #0047b3;
+    --dx-state-ok: #047857; --dx-state-warn: #92400e; --dx-state-danger: #b91c1c;
+    --dx-tint: 255, 255, 255;   /* 白片基色（改深浅只动这里） */
+
+    /* ---- L2 语义：表面 ---- */
+    --dx-surface-panel: rgba(var(--dx-tint), 0.65);
+    --dx-surface-card: rgba(var(--dx-tint), 0.42);
+    --dx-surface-row: rgba(var(--dx-tint), 0.82);
+    --dx-surface-bar: rgba(var(--dx-tint), 0.94);
+    --dx-surface-row-hover: rgba(var(--dx-tint), 0.97);
+    --dx-border-card: 1px solid rgba(var(--dx-tint), 0.75);
+    --dx-border-row: 1px solid rgba(var(--dx-tint), 0.95);
+    --dx-border-panel: 1px solid rgba(var(--dx-tint), 0.85);
+    /* ---- L2 语义：文字 ---- */
+    --dx-text-title: var(--dx-ink-1);
+    --dx-text-body: var(--dx-ink-2);
+    --dx-text-muted: var(--dx-ink-2);
+    --dx-text-on-accent: var(--dx-ink-inverse);
+    /* ---- L2 语义：间距/尺寸（组件只认这些） ---- */
+    --dx-space-row-gap: var(--dx-space-3);
+    --dx-space-card-pad-y: var(--dx-space-4);
+    --dx-space-card-pad-x: var(--dx-space-6);
+    --dx-space-card-gap: var(--dx-space-4);
+    --dx-size-icon: var(--dx-size-38);
+    --dx-size-control: var(--dx-size-44);
+}
 
 :root {
     --miuix-modal-width: 380px;
     --miuix-modal-height: 370px;
     --miuix-modal-radius: 22px;
-    --miuix-modal-bg: rgba(255, 255, 255, 0.65);
+    --miuix-modal-bg: var(--dx-surface-panel);
     --miuix-modal-blur: blur(40px) saturate(220%);
-    --miuix-modal-border: 1px solid rgba(255, 255, 255, 0.85);
+    --miuix-modal-border: var(--dx-border-panel);
     --miuix-modal-shadow: inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.95), 0 16px 40px rgba(15, 23, 42, 0.14), 0 2px 8px rgba(15, 23, 42, 0.06);
     
-    --miuix-card-bg: rgba(255, 255, 255, 0.42);
-    --miuix-card-border: 1px solid rgba(255, 255, 255, 0.75);
+    --miuix-card-bg: var(--dx-surface-card);
+    --miuix-card-border: var(--dx-border-card);
     --miuix-card-radius: 14px;
     
-    --miuix-item-bg: rgba(255, 255, 255, 0.35);
-    --miuix-item-hover: rgba(255, 255, 255, 0.75);
-    --miuix-item-border: 1px solid rgba(255, 255, 255, 0.6);
+    --miuix-item-bg: var(--dx-surface-row);
+    --miuix-item-hover: var(--dx-surface-row-hover);
+    --miuix-item-border: var(--dx-border-row);
     
-    --miuix-blue: #0066ff;
+    --miuix-blue: var(--dx-accent);
     --miuix-blue-glow: rgba(0, 102, 255, 0.4);
     --miuix-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
@@ -38,7 +104,7 @@
     border-radius: 38px !important;
     padding: 10px 18px !important;
     box-sizing: border-box !important;
-    background: rgba(255, 255, 255, 0.72) !important;
+    background: var(--miuix-modal-bg) !important;
     backdrop-filter: var(--miuix-modal-blur) !important;
     -webkit-backdrop-filter: var(--miuix-modal-blur) !important;
     border: 1px solid rgba(255, 255, 255, 0.88) !important;
@@ -85,8 +151,8 @@
     border: 1px solid rgba(0, 0, 0, 0.08) !important;
     border-radius: 50% !important;
     background: #ffffff !important;
-    color: #64748b !important;
-    font-size: 16px !important;
+    color: var(--dx-text-body) !important;
+    font-size: var(--dx-font-16) !important;
     font-weight: 700 !important;
     line-height: 24px !important;
     text-align: center !important;
@@ -125,7 +191,7 @@
 .ex-panel__wrap > div {
     width: 56px !important;
     height: 56px !important;
-    border-radius: 14px !important;
+    border-radius: var(--dx-radius-14) !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -230,7 +296,7 @@
     min-height: var(--miuix-modal-height) !important;
     box-sizing: border-box !important;
     padding: 0 !important;
-    overflow: hidden !important;
+    overflow: clip !important;   /* 不创建滚动容器：否则点内部单选/输入会被 scrollIntoView 把整块面板滚走（白板 bug） */
     display: none;
     z-index: 100030 !important;
     border-radius: var(--miuix-modal-radius) !important;
@@ -239,7 +305,7 @@
     -webkit-backdrop-filter: var(--miuix-modal-blur) !important;
     border: var(--miuix-modal-border) !important;
     box-shadow: var(--miuix-modal-shadow) !important;
-    color: #0f172a !important;
+    color: var(--dx-text-title) !important;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif !important;
     flex-direction: column !important;
 }
@@ -295,8 +361,8 @@
     border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
     box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.95), 0 2px 6px rgba(0, 0, 0, 0.03) !important;
     z-index: 50 !important;
-    border-top-left-radius: 21px !important;
-    border-top-right-radius: 21px !important;
+    border-top-left-radius: var(--dx-radius-22) !important;
+    border-top-right-radius: var(--dx-radius-22) !important;
     border-bottom-left-radius: 0 !important;
     border-bottom-right-radius: 0 !important;
 }
@@ -307,9 +373,9 @@
 }
 
 .miuix-modal__title {
-    font-size: 14px !important;
+    font-size: var(--dx-font-14) !important;
     font-weight: 700 !important;
-    color: #0f172a !important;
+    color: var(--dx-text-title) !important;
     letter-spacing: -0.2px !important;
 }
 
@@ -317,7 +383,7 @@
     position: relative !important;
     width: 26px !important;
     height: 26px !important;
-    border-radius: 8px !important;
+    border-radius: var(--dx-radius-8) !important;
     background: rgba(0, 0, 0, 0.06) !important;
     border: none !important;
     color: #475569 !important;
@@ -325,7 +391,7 @@
     align-items: center !important;
     justify-content: center !important;
     cursor: pointer !important;
-    font-size: 18px !important;
+    font-size: var(--dx-font-16) !important;
     font-weight: 600 !important;
     line-height: 1 !important;
     text-align: center !important;
@@ -352,15 +418,15 @@
    ========================================================================== */
 .miuix-modal__body {
     display: block !important;
+    padding-bottom: 0 !important;   /* 粘底栏自己盖到下沿，body 不再留缝 */
     flex: 1 1 auto !important;
     min-height: 0 !important;
     max-height: calc(var(--miuix-modal-height) - 52px) !important;
     width: 100% !important;
-    overflow-y: auto !important;
     overflow-y: overlay !important;
     overflow-x: hidden !important;
     box-sizing: border-box !important;
-    padding: 10px 0 16px 0 !important;
+    padding: 10px 0 0 0 !important;   /* 底部交给粘底栏，bar 与面板下沿齐平 */   /* 底部留白必须小：sticky 相对 padding box 定位，留大会把按钮顶到内容中间 */   /* 底部让出粘底栏：滚到底时最后一行不被压 */
 }
 
 /* 统一 4px 极细微质感滚动条 */
@@ -386,7 +452,7 @@
 .popup-player-panel::-webkit-scrollbar-thumb,
 .exupdate-panel::-webkit-scrollbar-thumb {
     background: rgba(0, 0, 0, 0.18) !important;
-    border-radius: 4px !important;
+    border-radius: var(--dx-radius-6) !important;
 }
 
 .miuix-modal__body::-webkit-scrollbar-track,
@@ -448,9 +514,9 @@
 .popup-panel__card-title,
 .exupdate-panel__card-title,
 .miuix-card__title {
-    font-size: 13px !important;
+    font-size: var(--dx-font-14) !important;
     font-weight: 700 !important;
-    color: #0f172a !important;
+    color: var(--dx-text-title) !important;
 }
 
 /* ==========================================================================
@@ -482,10 +548,10 @@
     display: inline-flex !important;
     align-items: center !important;
     gap: 6px !important;
-    font-size: 13px !important;
+    font-size: var(--dx-font-14) !important;
     font-weight: 600 !important;
     line-height: 1.3 !important;
-    color: #0f172a !important;
+    color: var(--dx-text-title) !important;
     transition: color 0.18s ease !important;
 }
 
@@ -507,23 +573,23 @@
 }
 
 .livetool__cell_title.is-open > span[id$="__title"] {
-    color: var(--miuix-blue) !important;
+    color: var(--dx-accent-deep) !important;   /* S4：深蓝墨（玻璃上 ≈5.9:1），亮蓝不再当文字 */
 }
 
 .livetool__cell_title.is-open > span[id$="__title"]::after {
     transform: rotate(45deg) !important;
-    border-color: var(--miuix-blue) !important;
+    border-color: var(--dx-accent-deep) !important;   /* S4：深蓝墨（玻璃上 ≈5.9:1），亮蓝不再当文字 */
 }
 
 /* 标题旁的小胶囊操作按钮 (导出 / 导入 / 名单 / 面板) */
 .livetool__cell_title span:not([id$="__title"]) {
-    font-size: 11px !important;
+    font-size: var(--dx-font-11) !important;
     font-weight: 600 !important;
-    color: var(--miuix-blue) !important;
+    color: var(--dx-accent-deep) !important;   /* S4：深蓝墨（玻璃上 ≈5.9:1），亮蓝不再当文字 */
     background: rgba(0, 102, 255, 0.12) !important;
     border: 1px solid rgba(0, 102, 255, 0.25) !important;
     padding: 2px 7px !important;
-    border-radius: 6px !important;
+    border-radius: var(--dx-radius-6) !important;
     cursor: pointer !important;
     box-shadow: 0 1px 3px rgba(0, 102, 255, 0.08) !important;
     transition: all 0.18s var(--miuix-spring) !important;
@@ -562,7 +628,7 @@
     align-items: center !important;
     gap: 6px !important;
     margin-right: 10px !important;
-    font-size: 11.5px !important;
+    font-size: var(--dx-font-115) !important;
     font-weight: 600 !important;
     color: #334155 !important;
     cursor: pointer !important;
@@ -586,7 +652,7 @@
     box-sizing: border-box !important;
     margin: 8px 0 2px 0 !important;
     padding: 10px 12px !important;
-    border-radius: 10px !important;
+    border-radius: var(--dx-radius-10) !important;
     background: rgba(255, 255, 255, 0.55) !important;
     border: 1px solid rgba(255, 255, 255, 0.75) !important;
     backdrop-filter: blur(8px) !important;
@@ -597,19 +663,19 @@
 .livetool select {
     background: rgba(255, 255, 255, 0.85) !important;
     border: 1px solid rgba(0, 0, 0, 0.12) !important;
-    border-radius: 6px !important;
+    border-radius: var(--dx-radius-6) !important;
     padding: 2px 6px !important;
-    font-size: 12px !important;
+    font-size: var(--dx-font-12) !important;
     outline: none !important;
-    color: #0f172a !important;
+    color: var(--dx-text-title) !important;
 }
 
 /* 抽屉内的按钮微质感（含删除操作的危险红态） */
 .livetool input[type="button"] {
     border: none !important;
-    border-radius: 6px !important;
+    border-radius: var(--dx-radius-6) !important;
     padding: 3px 10px !important;
-    font-size: 11.5px !important;
+    font-size: var(--dx-font-115) !important;
     font-weight: 600 !important;
     cursor: pointer !important;
     color: #ffffff !important;
@@ -643,14 +709,14 @@
     margin: 0 !important;
     padding: 0 !important;
     list-style: none !important;
-    font-size: 11.5px !important;
+    font-size: var(--dx-font-115) !important;
     line-height: 18px !important;
     color: #334155 !important;
-}
-
-.exupdate-list li {
-    margin-bottom: 6px !important;
+}.exupdate-list li {
+    margin-bottom: var(--dx-space-4) !important;
     word-break: break-word !important;
+    padding-left: 1.1em !important;
+    text-indent: -1.1em !important;
 }
 
 .exupdate-list li:last-child {
@@ -674,7 +740,7 @@
     justify-content: space-between !important;
     gap: 12px !important;
     padding: 7px 10px !important;
-    border-radius: 10px !important;
+    border-radius: var(--dx-radius-10) !important;
     background: var(--miuix-item-bg) !important;
     border: var(--miuix-item-border) !important;
     cursor: pointer !important;
@@ -699,15 +765,15 @@
 }
 
 .sign-option-title {
-    font-size: 12px !important;
+    font-size: var(--dx-font-12) !important;
     font-weight: 600 !important;
-    color: #0f172a !important;
+    color: var(--dx-text-title) !important;
     line-height: 1.3 !important;
 }
 
 .sign-option-desc {
-    font-size: 10.5px !important;
-    color: #64748b !important;
+    font-size: var(--dx-font-115) !important;
+    color: var(--dx-text-body) !important;
     line-height: 1.2 !important;
     margin-top: 1px !important;
     white-space: nowrap !important;
@@ -724,11 +790,11 @@ input[type="checkbox"].sign-checkbox {
     -webkit-appearance: none !important;
     appearance: none !important;
     position: relative !important;
-    width: 38px !important;
-    min-width: 38px !important;
-    height: 22px !important;
+    width: 36px !important;
+    min-width: 36px !important;
+    height: 20px !important;
     background: rgba(0, 0, 0, 0.14) !important;
-    border-radius: 22px !important;
+    border-radius: var(--dx-radius-22) !important;
     cursor: pointer !important;
     outline: none !important;
     border: none !important;
@@ -749,18 +815,18 @@ input[type="checkbox"].sign-checkbox::before {
     position: absolute !important;
     top: 2px !important;
     left: 2px !important;
-    width: 18px !important;
-    height: 18px !important;
+    width: 16px !important;
+    height: 16px !important;
     background: #ffffff !important;
     border-radius: 50% !important;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.24) !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.22) !important;
     transition: transform 0.32s var(--miuix-spring), width 0.2s ease !important;
 }
 
 .sign-checkbox:active::before,
 .miuix-switch:active::before,
 input[type="checkbox"].sign-checkbox:active::before {
-    width: 22px !important;
+    width: 19px !important;
 }
 
 .sign-checkbox:checked,
@@ -795,7 +861,7 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
     padding: 2px !important;
     margin-top: 2px !important;
     background: rgba(0, 0, 0, 0.06) !important;
-    border-radius: 9px !important;
+    border-radius: var(--dx-radius-8) !important;
     box-sizing: border-box !important;
 }
 
@@ -809,7 +875,7 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
     padding: 0 !important;
     cursor: pointer !important;
     user-select: none !important;
-    border-radius: 7px !important;
+    border-radius: var(--dx-radius-8) !important;
 }
 
 /* 原生圆点彻底隐藏（不用 display:none，保留键盘可聚焦与语义） */
@@ -833,11 +899,11 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
     padding: 5px 10px !important;
     box-sizing: border-box !important;
     text-align: center !important;
-    font-size: 11.5px !important;
+    font-size: var(--dx-font-115) !important;
     font-weight: 600 !important;
     line-height: 1.4 !important;
-    color: #64748b !important;
-    border-radius: 7px !important;
+    color: var(--dx-text-body) !important;
+    border-radius: var(--dx-radius-8) !important;
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
@@ -845,12 +911,12 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
 }
 
 .miuix-seg__item:hover > .miuix-seg__label {
-    color: #0f172a !important;
+    color: var(--dx-text-title) !important;
 }
 
 .miuix-seg__item > input[type="radio"]:checked + .miuix-seg__label {
     background: #ffffff !important;
-    color: var(--miuix-blue) !important;
+    color: var(--dx-accent-deep) !important;   /* S4：深蓝墨（玻璃上 ≈5.9:1），亮蓝不再当文字 */
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12) !important;
 }
 
@@ -887,9 +953,9 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
 .popup-panel__submit-btn,
 .exupdate-panel__submit-btn {
     width: 100% !important;
-    height: 38px !important;
-    border-radius: 10px !important;
-    font-size: 14px !important;
+    height: 44px !important;
+    border-radius: var(--dx-radius-10) !important;
+    font-size: var(--dx-font-14) !important;
     font-weight: 600 !important;
     color: #ffffff !important;
     background: linear-gradient(135deg, #2b7fff, #0055ff) !important;
@@ -930,16 +996,23 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
 /* 胶囊辅助小按钮 (选择道具/选择礼物/粘贴) */
 .ex-picker-btn,
 .popup-panel__paste-btn {
-    border: 1px solid rgba(0, 102, 255, 0.3) !important;
-    background: rgba(0, 102, 255, 0.08) !important;
-    color: var(--miuix-blue) !important;
-    border-radius: 6px !important;
-    padding: 3px 8px !important;
-    font-size: 11px !important;
+    /* 2026-11-05 债务清理：本体直接就是次级胶囊，不再靠外部 !important 覆盖 */
+    border: 1px solid rgba(15, 23, 42, 0.14) !important;
+    background: rgba(255, 255, 255, 0.92) !important;
+    color: var(--dx-accent-deep) !important;
+    border-radius: var(--dx-radius-8) !important;
+    height: 28px !important;
+    padding: 0 12px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    font-size: var(--dx-font-115) !important;
     font-weight: 600 !important;
+    line-height: 1 !important;
     cursor: pointer !important;
     outline: none !important;
-    transition: all 0.18s ease !important;
+    box-shadow: none !important;
+    transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease !important;
 }
 
 .ex-picker-btn:hover,
@@ -950,12 +1023,12 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
 
 /* 送出/执行小按钮 */
 .ex-send-btn {
-    border: none !important;
-    background: linear-gradient(135deg, #2b7fff, #0055ff) !important;
-    color: #ffffff !important;
-    border-radius: 6px !important;
+    border: 1px solid rgba(15, 23, 42, 0.14) !important;
+    background: rgba(255, 255, 255, 0.92) !important;
+    color: var(--dx-accent-deep) !important;
+    border-radius: var(--dx-radius-6) !important;
     padding: 4px 12px !important;
-    font-size: 11.5px !important;
+    font-size: var(--dx-font-115) !important;
     font-weight: 600 !important;
     cursor: pointer !important;
     outline: none !important;
@@ -990,12 +1063,12 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
 .bloop input[type="text"],
 .popup-player-panel input[type="text"] {
     border: 1px solid rgba(0, 0, 0, 0.12) !important;
-    border-radius: 6px !important;
+    border-radius: var(--dx-radius-6) !important;
     background: rgba(255, 255, 255, 0.8) !important;
     padding: 3px 6px !important;
-    font-size: 11.5px !important;
+    font-size: var(--dx-font-115) !important;
     outline: none !important;
-    color: #0f172a !important;
+    color: var(--dx-text-title) !important;
     box-sizing: border-box !important;
     transition: all 0.18s ease !important;
 }
@@ -1009,13 +1082,13 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
 .livetool input[type="text"]:focus,
 .bloop input[type="text"]:focus,
 .popup-player-panel input[type="text"]:focus {
-    border-color: var(--miuix-blue) !important;
+    border-color: var(--dx-accent-deep) !important;   /* S4：深蓝墨（玻璃上 ≈5.9:1），亮蓝不再当文字 */
     box-shadow: 0 0 0 2px var(--miuix-blue-glow) !important;
 }
 
 /* 状态标签与任务日志终端 */
 .sign-status-tag {
-    font-size: 11px !important;
+    font-size: var(--dx-font-11) !important;
     color: #10b981 !important;
     font-weight: 600 !important;
 }
@@ -1025,11 +1098,11 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
     max-height: 72px !important;
     margin-top: 4px !important;
     overflow-y: auto !important;
-    font-size: 11px !important;
+    font-size: var(--dx-font-11) !important;
     color: #334155 !important;
     background: rgba(241, 245, 249, 0.5) !important;
     border: 1px solid rgba(0, 0, 0, 0.04) !important;
-    border-radius: 8px !important;
+    border-radius: var(--dx-radius-8) !important;
     padding: 6px 10px !important;
     line-height: 1.45 !important;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
@@ -1042,7 +1115,7 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
 
 .sign-log-box::-webkit-scrollbar-thumb {
     background: rgba(0, 0, 0, 0.2) !important;
-    border-radius: 4px !important;
+    border-radius: var(--dx-radius-6) !important;
 }
 
 .sign-log-box::-webkit-scrollbar-track {
@@ -1066,7 +1139,7 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
     gap: 6px !important;
     background: rgba(255, 255, 255, 0.75) !important;
     border: 1px solid rgba(0, 102, 255, 0.25) !important;
-    border-radius: 8px !important;
+    border-radius: var(--dx-radius-8) !important;
     padding: 3px 8px !important;
     cursor: pointer !important;
     user-select: none !important;
@@ -1077,7 +1150,7 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
 
 .miuix-gift-badge:hover {
     background: rgba(255, 255, 255, 0.95) !important;
-    border-color: var(--miuix-blue) !important;
+    border-color: var(--dx-accent-deep) !important;   /* S4：深蓝墨（玻璃上 ≈5.9:1），亮蓝不再当文字 */
     transform: translateY(-1px) !important;
     box-shadow: 0 3px 8px var(--miuix-blue-glow) !important;
 }
@@ -1090,32 +1163,32 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
     width: 24px !important;
     height: 24px !important;
     object-fit: contain !important;
-    border-radius: 4px !important;
+    border-radius: var(--dx-radius-6) !important;
     flex-shrink: 0 !important;
 }
 
 .miuix-gift-badge__name {
-    font-size: 11.5px !important;
+    font-size: var(--dx-font-115) !important;
     font-weight: 600 !important;
-    color: #0f172a !important;
+    color: var(--dx-text-title) !important;
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
 }
 
 .miuix-gift-badge__arrow {
-    font-size: 13px !important;
-    color: var(--miuix-blue) !important;
+    font-size: var(--dx-font-14) !important;
+    color: var(--dx-accent-deep) !important;   /* S4：深蓝墨（玻璃上 ≈5.9:1），亮蓝不再当文字 */
     font-weight: bold !important;
     line-height: 1 !important;
     margin-left: 2px !important;
-}
-
-.miuix-gift-action-wrap {
+}.miuix-gift-action-wrap {
     display: flex !important;
     align-items: center !important;
     gap: 6px !important;
     margin-left: auto !important;
+    flex: 1 0 100%;
+    justify-content: flex-end;
 }
 
 /* ==========================================================================
@@ -1143,7 +1216,7 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
     max-width: 92vw !important;
     height: 420px !important;
     max-height: 85vh !important;
-    border-radius: 20px !important;
+    border-radius: var(--dx-radius-22) !important;
     background: rgba(255, 255, 255, 0.8) !important;
     backdrop-filter: blur(40px) saturate(220%) !important;
     -webkit-backdrop-filter: blur(40px) saturate(220%) !important;
@@ -1154,7 +1227,7 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
     overflow: hidden !important;
     z-index: 100090 !important;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
-    color: #0f172a !important;
+    color: var(--dx-text-title) !important;
     user-select: none !important;
 }
 
@@ -1190,7 +1263,7 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
 .ex-gift-picker__tabs {
     display: flex !important;
     background: rgba(0, 0, 0, 0.06) !important;
-    border-radius: 9px !important;
+    border-radius: var(--dx-radius-8) !important;
     padding: 2px !important;
     gap: 2px !important;
 }
@@ -1199,10 +1272,10 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
     border: none !important;
     background: transparent !important;
     padding: 4px 12px !important;
-    font-size: 12px !important;
+    font-size: var(--dx-font-12) !important;
     font-weight: 600 !important;
-    color: #64748b !important;
-    border-radius: 7px !important;
+    color: var(--dx-text-body) !important;
+    border-radius: var(--dx-radius-8) !important;
     cursor: pointer !important;
     transition: all 0.18s ease !important;
     outline: none !important;
@@ -1210,38 +1283,38 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
 
 .ex-gift-picker__tab.is-active {
     background: #ffffff !important;
-    color: var(--miuix-blue) !important;
+    color: var(--dx-accent-deep) !important;   /* S4：深蓝墨（玻璃上 ≈5.9:1），亮蓝不再当文字 */
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
 }
 
 .ex-gift-picker__search {
     flex: 1 1 auto !important;
     height: 32px !important;
-    border-radius: 8px !important;
+    border-radius: var(--dx-radius-8) !important;
     border: 1px solid rgba(0, 0, 0, 0.12) !important;
     background: rgba(255, 255, 255, 0.85) !important;
     padding: 4px 10px !important;
-    font-size: 12px !important;
-    color: #0f172a !important;
+    font-size: var(--dx-font-12) !important;
+    color: var(--dx-text-title) !important;
     outline: none !important;
     transition: all 0.18s ease !important;
 }
 
 .ex-gift-picker__search:focus {
-    border-color: var(--miuix-blue) !important;
+    border-color: var(--dx-accent-deep) !important;   /* S4：深蓝墨（玻璃上 ≈5.9:1），亮蓝不再当文字 */
     box-shadow: 0 0 0 2px var(--miuix-blue-glow) !important;
 }
 
 .ex-gift-picker__close {
     border: none !important;
     background: transparent !important;
-    font-size: 20px !important;
+    font-size: var(--dx-font-16) !important;
     line-height: 1 !important;
-    color: #94a3b8 !important;
+    color: var(--dx-text-body) !important;
     cursor: pointer !important;
     width: 28px !important;
     height: 28px !important;
-    border-radius: 6px !important;
+    border-radius: var(--dx-radius-6) !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -1250,7 +1323,7 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
 
 .ex-gift-picker__close:hover {
     background: rgba(0, 0, 0, 0.08) !important;
-    color: #0f172a !important;
+    color: var(--dx-text-title) !important;
 }
 
 .ex-gift-picker__body {
@@ -1266,7 +1339,7 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
 
 .ex-gift-picker__body::-webkit-scrollbar-thumb {
     background: rgba(0, 0, 0, 0.2) !important;
-    border-radius: 4px !important;
+    border-radius: var(--dx-radius-6) !important;
 }
 
 .ex-gift-grid {
@@ -1281,7 +1354,7 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
     align-items: center !important;
     justify-content: center !important;
     padding: 10px 8px !important;
-    border-radius: 12px !important;
+    border-radius: var(--dx-radius-14) !important;
     background: rgba(255, 255, 255, 0.6) !important;
     border: 1px solid rgba(255, 255, 255, 0.9) !important;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
@@ -1309,9 +1382,9 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
 }
 
 .ex-gift-cell__name {
-    font-size: 11.5px !important;
+    font-size: var(--dx-font-115) !important;
     font-weight: 600 !important;
-    color: #0f172a !important;
+    color: var(--dx-text-title) !important;
     line-height: 1.25 !important;
     white-space: nowrap !important;
     overflow: hidden !important;
@@ -1320,8 +1393,8 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
 }
 
 .ex-gift-cell__price {
-    font-size: 10px !important;
-    color: #64748b !important;
+    font-size: var(--dx-font-11) !important;
+    color: var(--dx-text-body) !important;
     margin-top: 2px !important;
 }
 
@@ -1335,7 +1408,7 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
     vertical-align: middle !important;
     width: 18px !important;
     height: 18px !important;
-    border-radius: 4px !important;
+    border-radius: var(--dx-radius-6) !important;
     margin-right: 8px !important;
     color: #bbb !important;
     cursor: pointer !important;
@@ -1346,8 +1419,8 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
     height: 18px !important;
     text-align: center !important;
     line-height: 18px !important;
-    border-radius: 4px !important;
-    font-size: 12px !important;
+    border-radius: var(--dx-radius-6) !important;
+    font-size: var(--dx-font-12) !important;
     color: #fff !important;
     cursor: pointer !important;
     box-sizing: border-box !important;
@@ -1366,7 +1439,7 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
 .ChatToolBar-DanmakuTail-Panel {
     position: fixed !important;
     width: 270px !important;
-    border-radius: 16px !important;
+    border-radius: var(--dx-radius-14) !important;
     background: rgba(255, 255, 255, 0.78) !important;
     backdrop-filter: blur(36px) saturate(220%) !important;
     -webkit-backdrop-filter: blur(36px) saturate(220%) !important;
@@ -1376,7 +1449,7 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
     box-sizing: border-box !important;
     z-index: 100050 !important;
     display: none;
-    color: #0f172a !important;
+    color: var(--dx-text-title) !important;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
     user-select: none !important;
 }
@@ -1384,19 +1457,19 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
 .DanmakuTail-input {
     width: 100% !important;
     height: 32px !important;
-    border-radius: 8px !important;
+    border-radius: var(--dx-radius-8) !important;
     border: 1px solid rgba(0, 0, 0, 0.12) !important;
     background: rgba(255, 255, 255, 0.85) !important;
     padding: 4px 8px !important;
-    font-size: 12px !important;
-    color: #0f172a !important;
+    font-size: var(--dx-font-12) !important;
+    color: var(--dx-text-title) !important;
     outline: none !important;
     box-sizing: border-box !important;
     margin-bottom: 8px !important;
 }
 
 .DanmakuTail-input:focus {
-    border-color: var(--miuix-blue) !important;
+    border-color: var(--dx-accent-deep) !important;   /* S4：深蓝墨（玻璃上 ≈5.9:1），亮蓝不再当文字 */
     box-shadow: 0 0 0 2px var(--miuix-blue-glow) !important;
 }
 
@@ -1404,9 +1477,9 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
     display: flex !important;
     align-items: center !important;
     justify-content: space-between !important;
-    font-size: 12.5px !important;
+    font-size: var(--dx-font-12) !important;
     font-weight: 600 !important;
-    color: #0f172a !important;
+    color: var(--dx-text-title) !important;
     cursor: pointer !important;
     border-top: 1px solid rgba(0, 0, 0, 0.05) !important;
     padding-top: 8px !important;
@@ -1424,20 +1497,20 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
 }
 
 .DanmakuTail-title {
-    font-size: 13px !important;
+    font-size: var(--dx-font-14) !important;
     font-weight: 700 !important;
-    color: #0f172a !important;
+    color: var(--dx-text-title) !important;
     letter-spacing: -0.2px !important;
 }
 
 .DanmakuTail-close {
-    font-size: 16px !important;
+    font-size: var(--dx-font-16) !important;
     line-height: 1 !important;
-    color: #94a3b8 !important;
+    color: var(--dx-text-body) !important;
     cursor: pointer !important;
     width: 20px !important;
     height: 20px !important;
-    border-radius: 4px !important;
+    border-radius: var(--dx-radius-6) !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -1446,7 +1519,7 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
 
 .DanmakuTail-close:hover {
     background: rgba(0, 0, 0, 0.08) !important;
-    color: #0f172a !important;
+    color: var(--dx-text-title) !important;
 }
 
 /* ==========================================================================
@@ -1483,7 +1556,7 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
 .postbird-box-content {
     min-width: 360px !important;
     max-width: 440px !important;
-    border-radius: 20px !important;
+    border-radius: var(--dx-radius-22) !important;
     background: rgba(255, 255, 255, 0.78) !important;
     backdrop-filter: blur(40px) saturate(220%) !important;
     -webkit-backdrop-filter: blur(40px) saturate(220%) !important;
@@ -1513,20 +1586,20 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
 }
 
 .postbird-box-title {
-    font-size: 13.5px !important;
+    font-size: var(--dx-font-14) !important;
     font-weight: 700 !important;
-    color: #0f172a !important;
+    color: var(--dx-text-title) !important;
     letter-spacing: -0.2px !important;
 }
 
 .postbird-box-close-btn {
     cursor: pointer !important;
-    font-size: 16px !important;
+    font-size: var(--dx-font-16) !important;
     line-height: 1 !important;
-    color: #64748b !important;
+    color: var(--dx-text-body) !important;
     width: 24px !important;
     height: 24px !important;
-    border-radius: 6px !important;
+    border-radius: var(--dx-radius-6) !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -1535,12 +1608,12 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
 
 .postbird-box-close-btn:hover {
     background: rgba(0, 0, 0, 0.08) !important;
-    color: #0f172a !important;
+    color: var(--dx-text-title) !important;
 }
 
 .postbird-box-text {
     padding: 16px 20px !important;
-    font-size: 13px !important;
+    font-size: var(--dx-font-14) !important;
     color: #334155 !important;
     line-height: 1.5 !important;
     text-align: left !important;
@@ -1550,12 +1623,12 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
 .postbird-prompt-input {
     width: 100% !important;
     height: 36px !important;
-    border-radius: 8px !important;
+    border-radius: var(--dx-radius-8) !important;
     border: 1px solid rgba(0, 0, 0, 0.14) !important;
     background: rgba(255, 255, 255, 0.9) !important;
     padding: 6px 10px !important;
-    font-size: 12.5px !important;
-    color: #0f172a !important;
+    font-size: var(--dx-font-12) !important;
+    color: var(--dx-text-title) !important;
     outline: none !important;
     box-sizing: border-box !important;
     margin-top: 8px !important;
@@ -1563,7 +1636,7 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
 }
 
 .postbird-prompt-input:focus {
-    border-color: var(--miuix-blue) !important;
+    border-color: var(--dx-accent-deep) !important;   /* S4：深蓝墨（玻璃上 ≈5.9:1），亮蓝不再当文字 */
     box-shadow: 0 0 0 2px var(--miuix-blue-glow) !important;
 }
 
@@ -1583,9 +1656,9 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
 
 .postbird-box-footer .btn-footer {
     height: 32px !important;
-    border-radius: 8px !important;
+    border-radius: var(--dx-radius-8) !important;
     padding: 0 14px !important;
-    font-size: 12px !important;
+    font-size: var(--dx-font-12) !important;
     font-weight: 600 !important;
     cursor: pointer !important;
     border: none !important;
@@ -1611,7 +1684,7 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
 
 .postbird-box-footer .btn-footer-cancel:hover {
     background: rgba(0, 0, 0, 0.1) !important;
-    color: #0f172a !important;
+    color: var(--dx-text-title) !important;
 }
 
 /* ==========================================================================
@@ -1619,54 +1692,55 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
    ========================================================================== */
 .exupdate-state-btn--ack,
 .exupdate-state-btn--check {
-    background: linear-gradient(135deg, #2b7fff, #0055ff) !important;
+    background: linear-gradient(135deg, #1d5fd1, #0047b3) !important;   /* S4：白字 5.9–7.6 */
     color: #ffffff !important;
     box-shadow: 0 4px 14px rgba(0, 102, 255, 0.35) !important;
 }
 
 .exupdate-state-btn--ack:hover,
 .exupdate-state-btn--check:hover {
-    background: linear-gradient(135deg, #3d8bff, #004de6) !important;
+    background: linear-gradient(135deg, #174fb0, #003d99) !important;
     box-shadow: 0 6px 18px rgba(0, 102, 255, 0.45) !important;
     transform: translateY(-1px) !important;
 }
 
 .exupdate-state-btn--checking {
-    background: #94a3b8 !important;
+    background: #475569 !important;   /* S4：白字 5.6 */
+    color: #ffffff !important;
     box-shadow: none !important;
     cursor: wait !important;
 }
 
 .exupdate-state-btn--latest {
-    background: linear-gradient(135deg, #10b981, #059669) !important;
+    background: linear-gradient(135deg, #0b7a57, #047857) !important;   /* S4：白字 ≥4.6 */
     color: #ffffff !important;
     box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3) !important;
 }
 
 .exupdate-state-btn--latest:hover {
-    background: linear-gradient(135deg, #059669, #047857) !important;
+    background: linear-gradient(135deg, #06654a, #065f46) !important;
     transform: translateY(-1px) !important;
 }
 
 .exupdate-state-btn--upgrade {
-    background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+    background: linear-gradient(135deg, #a14a08, #92400e) !important;   /* S4：白字 ≥5.3 */
     color: #ffffff !important;
     box-shadow: 0 4px 14px rgba(245, 158, 11, 0.4) !important;
 }
 
 .exupdate-state-btn--upgrade:hover {
-    background: linear-gradient(135deg, #d97706, #b45309) !important;
+    background: linear-gradient(135deg, #92400e, #7c2d12) !important;
     transform: translateY(-1px) !important;
 }
 
 .exupdate-state-btn--error {
-    background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+    background: linear-gradient(135deg, #b91c1c, #991b1b) !important;   /* S4：白字 ≥4.5 */
     color: #ffffff !important;
     box-shadow: 0 4px 14px rgba(239, 68, 68, 0.3) !important;
 }
 
 .exupdate-state-btn--error:hover {
-    background: linear-gradient(135deg, #dc2626, #b91c1c) !important;
+    background: linear-gradient(135deg, #991b1b, #7f1d1d) !important;
     transform: translateY(-1px) !important;
 }
 
@@ -1675,7 +1749,7 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
    ========================================================================== */
 .extool input[type="text"]:focus,
 .extool input[type="number"]:focus {
-    border-color: var(--miuix-blue) !important;
+    border-color: var(--dx-accent-deep) !important;   /* S4：深蓝墨（玻璃上 ≈5.9:1），亮蓝不再当文字 */
     box-shadow: 0 0 0 2px var(--miuix-blue-glow) !important;
 }
 
@@ -1689,12 +1763,12 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
 .bloop__preset_row select#bloop__select {
     flex: 1 1 auto !important;
     height: 28px !important;
-    border-radius: 8px !important;
+    border-radius: var(--dx-radius-8) !important;
     border: 1px solid rgba(0, 0, 0, 0.12) !important;
     /* 用 background-color 而非 background 简写，避免重置统一引擎自绘的下拉箭头 */
     background-color: rgba(255, 255, 255, 0.85) !important;
-    font-size: 12px !important;
-    color: #0f172a !important;
+    font-size: var(--dx-font-12) !important;
+    color: var(--dx-text-title) !important;
     outline: none !important;
     padding: 0 8px !important;
 }
@@ -1703,34 +1777,34 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
     flex-shrink: 0 !important;
     height: 28px !important;
     padding: 0 10px !important;
-    font-size: 11.5px !important;
+    font-size: var(--dx-font-115) !important;
     font-weight: 600 !important;
-    color: #ffffff !important;
-    background: linear-gradient(135deg, #2b7fff, #0055ff) !important;
-    border: none !important;
-    border-radius: 6px !important;
+    color: var(--dx-accent-deep) !important;
+    background: rgba(255, 255, 255, 0.92) !important;
+    border: 1px solid rgba(15, 23, 42, 0.14) !important;
+    border-radius: var(--dx-radius-6) !important;
     cursor: pointer !important;
     box-shadow: 0 2px 6px rgba(0, 102, 255, 0.28) !important;
     transition: all 0.16s ease !important;
-}
-
-.bloop__preset_row input[type="button"]#bloop__save:hover {
-    background: linear-gradient(135deg, #3d8bff, #004de6) !important;
-    transform: translateY(-1px) !important;
-}
-
-.bloop__preset_row input[type="button"]#bloop__delete {
+}.bloop__preset_row input[type="button"]#bloop__save:hover {
+    background: #ffffff !important;
+    transform: none !important;
+    background-image: none !important;
+    border-color: rgba(0, 71, 179, 0.35) !important;
+}.bloop__preset_row input[type="button"]#bloop__delete {
     flex-shrink: 0 !important;
     height: 28px !important;
     padding: 0 10px !important;
-    font-size: 11.5px !important;
+    font-size: var(--dx-font-115) !important;
     font-weight: 600 !important;
-    color: #ef4444 !important;
-    background: rgba(239, 68, 68, 0.12) !important;
-    border: 1px solid rgba(239, 68, 68, 0.25) !important;
-    border-radius: 6px !important;
+    color: var(--dx-state-danger) !important;
+    background: rgba(255, 255, 255, 0.92) !important;
+    border: 1px solid rgba(185, 28, 28, 0.28) !important;
+    border-radius: var(--dx-radius-8) !important;
     cursor: pointer !important;
     transition: all 0.16s ease !important;
+    background-image: none !important;
+    box-shadow: none !important;
 }
 
 .bloop__preset_row input[type="button"]#bloop__delete:hover {
@@ -1743,12 +1817,12 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
     width: 100% !important;
     height: 72px !important;
     box-sizing: border-box !important;
-    border-radius: 8px !important;
+    border-radius: var(--dx-radius-8) !important;
     border: 1px solid rgba(0, 0, 0, 0.12) !important;
     background: rgba(255, 255, 255, 0.75) !important;
     padding: 6px 8px !important;
-    font-size: 12px !important;
-    color: #0f172a !important;
+    font-size: var(--dx-font-12) !important;
+    color: var(--dx-text-title) !important;
     line-height: 1.4 !important;
     outline: none !important;
     resize: none !important;
@@ -1757,14 +1831,14 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
 }
 
 .bloop textarea#bloop__textarea:focus {
-    border-color: var(--miuix-blue) !important;
+    border-color: var(--dx-accent-deep) !important;   /* S4：深蓝墨（玻璃上 ≈5.9:1），亮蓝不再当文字 */
     background: rgba(255, 255, 255, 0.95) !important;
     box-shadow: 0 0 0 2px var(--miuix-blue-glow) !important;
 }
 
 .bloop textarea#bloop__textarea:disabled {
     background: rgba(0, 0, 0, 0.05) !important;
-    color: #94a3b8 !important;
+    color: var(--dx-text-body) !important;
     cursor: not-allowed !important;
 }
 
@@ -1772,14 +1846,14 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
     display: grid !important;
     grid-template-columns: 1fr 1fr !important;
     gap: 8px 12px !important;
-}
-
-.bloop__param_item {
+}.bloop__param_item {
     display: flex !important;
     align-items: center !important;
     gap: 6px !important;
-    font-size: 11.5px !important;
+    font-size: var(--dx-font-115) !important;
     color: #334155 !important;
+    flex-wrap: nowrap !important;
+    row-gap: var(--dx-space-2);
 }
 
 /* ==========================================================================
@@ -1789,7 +1863,7 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
     display: flex !important;
     padding: 8px 6px !important;
     border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
-    color: #0f172a !important;
+    color: var(--dx-text-title) !important;
     align-items: center !important;
     gap: 8px !important;
     text-decoration: none !important;
@@ -1803,7 +1877,7 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
 
 .lottery__a:hover .lottery__item {
     background: rgba(255, 255, 255, 0.7) !important;
-    border-radius: 8px !important;
+    border-radius: var(--dx-radius-8) !important;
     transform: translateY(-1px) !important;
 }
 
@@ -1818,7 +1892,7 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
     width: 90px !important;
     height: 54px !important;
     object-fit: cover !important;
-    border-radius: 6px !important;
+    border-radius: var(--dx-radius-6) !important;
     display: block !important;
 }
 
@@ -1828,9 +1902,9 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
     left: 2px !important;
     background: rgba(0, 0, 0, 0.55) !important;
     color: #fff !important;
-    font-size: 10px !important;
+    font-size: var(--dx-font-11) !important;
     padding: 1px 4px !important;
-    border-radius: 4px !important;
+    border-radius: var(--dx-radius-6) !important;
     max-width: 80px !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
@@ -1843,9 +1917,9 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
     right: 2px !important;
     background: rgba(0, 0, 0, 0.55) !important;
     color: #fff !important;
-    font-size: 9.5px !important;
+    font-size: var(--dx-font-11) !important;
     padding: 1px 4px !important;
-    border-radius: 4px !important;
+    border-radius: var(--dx-radius-6) !important;
 }
 
 .lottery__info {
@@ -1857,24 +1931,24 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
 }
 
 .lottery__prize {
-    font-size: 12px !important;
+    font-size: var(--dx-font-12) !important;
     font-weight: 700 !important;
-    color: #0f172a !important;
+    color: var(--dx-text-title) !important;
     white-space: nowrap !important;
     text-overflow: ellipsis !important;
     overflow: hidden !important;
 }
 
 .lottery__jointext {
-    font-size: 11px !important;
-    color: #64748b !important;
+    font-size: var(--dx-font-11) !important;
+    color: var(--dx-text-body) !important;
     white-space: nowrap !important;
     text-overflow: ellipsis !important;
     overflow: hidden !important;
 }
 
 .lottery__condition {
-    font-size: 10.5px !important;
+    font-size: var(--dx-font-115) !important;
     font-weight: 600 !important;
 }
 
@@ -1921,7 +1995,7 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
 .popup-player-panel select:focus,
 .exlottery select:focus,
 .exupdate-panel select:focus {
-    border-color: var(--miuix-blue) !important;
+    border-color: var(--dx-accent-deep) !important;   /* S4：深蓝墨（玻璃上 ≈5.9:1），亮蓝不再当文字 */
     box-shadow: 0 0 0 2px var(--miuix-blue-glow) !important;
     background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%230066ff' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
 }
@@ -1976,15 +2050,15 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
     max-width: 240px !important;
     box-sizing: border-box !important;
     list-style: none !important;
-    border-radius: 12px !important;
+    border-radius: var(--dx-radius-14) !important;
     background: rgba(255, 255, 255, 0.78) !important;
     backdrop-filter: blur(28px) saturate(200%) !important;
     -webkit-backdrop-filter: blur(28px) saturate(200%) !important;
     border: 1px solid rgba(255, 255, 255, 0.95) !important;
     box-shadow: inset 0 1px 1.5px rgba(255, 255, 255, 0.95), 0 12px 30px rgba(15, 23, 42, 0.18) !important;
     z-index: 100010 !important;
-    color: #0f172a !important;
-    font-size: 11.5px !important;
+    color: var(--dx-text-title) !important;
+    font-size: var(--dx-font-115) !important;
     line-height: 1.45 !important;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif !important;
     white-space: normal !important;
@@ -1994,7 +2068,7 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
 
 .metadata__wrap > li {
     padding: 3px 0 !important;
-    color: #0f172a !important;
+    color: var(--dx-text-title) !important;
 }
 
 .metadata__wrap > li + li {
@@ -2006,176 +2080,7 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
     font-style: normal !important;
     margin-left: 4px !important;
     font-weight: 600 !important;
-    color: var(--miuix-blue) !important;
-}
-
-/* ==========================================================================
-   19. 历史弹幕弹窗（用户卡片入口）
-   .miuix-modal__body 是 10 个面板共用的滚动容器，直接改会波及全部；此处只在
-   自己的面板上做作用域覆盖，把 body 变成三段式：工具栏与状态行固定、仅中间列表滚动。
-   面板同时挂着 .miuix-modal 类，因此尺寸与打开态自动继承第 2 节铁壁组，无需重复声明。
-   ========================================================================== */
-.danmaku-history-panel.miuix-modal > .miuix-modal__body {
-    display: flex !important;
-    flex-direction: column !important;
-    overflow: hidden !important;
-    padding: 0 !important;
-}
-
-/* 顶部：日期切换 + 已加载条数 */
-.danmaku-history-panel__toolbar {
-    flex: 0 0 auto !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 6px !important;
-    padding: 8px 12px !important;
-    box-sizing: border-box !important;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
-}
-
-.danmaku-history-panel__date-btn {
-    width: 24px !important;
-    min-width: 24px !important;
-    height: 24px !important;
-    padding: 0 !important;
-    border-radius: 8px !important;
-    border: 1px solid rgba(0, 0, 0, 0.08) !important;
-    background: rgba(255, 255, 255, 0.7) !important;
-    color: #0f172a !important;
-    font-size: 14px !important;
-    line-height: 1 !important;
-    cursor: pointer !important;
-    outline: none !important;
-    transition: all 0.18s ease !important;
-}
-
-.danmaku-history-panel__date-btn:hover:not(.is-disabled) {
-    background: rgba(0, 102, 255, 0.12) !important;
-    border-color: rgba(0, 102, 255, 0.3) !important;
-    color: var(--miuix-blue) !important;
-}
-
-.danmaku-history-panel__date-btn.is-disabled {
-    opacity: 0.35 !important;
-    cursor: default !important;
-}
-
-.danmaku-history-panel__date {
-    font-size: 12px !important;
-    font-weight: 600 !important;
-    color: #0f172a !important;
-    font-variant-numeric: tabular-nums !important;
-}
-
-.danmaku-history-panel__count {
-    margin-left: auto !important;
-    font-size: 10.5px !important;
-    color: #64748b !important;
-}
-
-/* 中间：唯一滚动区（仅此处滚动，工具栏与状态行常驻可见） */
-.danmaku-history-panel__list {
-    flex: 1 1 auto !important;
-    min-height: 0 !important;
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-    padding: 8px 12px !important;
-    box-sizing: border-box !important;
-}
-
-.danmaku-history-panel__list::-webkit-scrollbar {
-    width: 4px !important;
-}
-
-.danmaku-history-panel__list::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0.18) !important;
-    border-radius: 4px !important;
-}
-
-.danmaku-history-panel__list::-webkit-scrollbar-track {
-    background: transparent !important;
-}
-
-/* 行：基底复用 .sign-option-item，这里只收紧内边距并补上单行省略 */
-.danmaku-history-panel__row {
-    padding: 5px 8px !important;
-}
-
-.danmaku-history-panel__row .sign-option-title {
-    white-space: nowrap !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-}
-
-.danmaku-history-panel__badge {
-    flex: 0 0 auto !important;
-    width: 22px !important;
-    height: 22px !important;
-    border-radius: 6px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    font-size: 10px !important;
-    font-weight: 700 !important;
-    overflow: hidden !important;
-}
-
-.danmaku-history-panel__badge.is-chat {
-    background: rgba(0, 102, 255, 0.12) !important;
-    color: var(--miuix-blue) !important;
-}
-
-.danmaku-history-panel__badge.is-gift {
-    background: rgba(255, 149, 0, 0.14) !important;
-    color: #b26a00 !important;
-}
-
-.danmaku-history-panel__gift-img {
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: contain !important;
-    display: block !important;
-}
-
-.danmaku-history-panel__room {
-    flex: 0 0 auto !important;
-    padding: 2px 6px !important;
-}
-
-/* 底部：状态行（加载中 / 未登录可跳转 / 失败可重试 / 没有更多了） */
-.danmaku-history-panel__status {
-    flex: 0 0 auto !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 8px !important;
-    min-height: 26px !important;
-    padding: 4px 12px 8px 12px !important;
-    box-sizing: border-box !important;
-}
-
-.danmaku-history-panel__status-text {
-    font-size: 10.5px !important;
-    color: #64748b !important;
-    line-height: 1.3 !important;
-}
-
-.danmaku-history-panel__status-text.is-error {
-    color: #d60909 !important;
-    font-weight: 600 !important;
-    cursor: pointer !important;
-}
-
-.danmaku-history-panel__status-text.is-error:hover {
-    text-decoration: underline !important;
-}
-
-.danmaku-history-panel__more {
-    margin-left: auto !important;
-    display: none !important;
-}
-
-.danmaku-history-panel__more.is-visible {
-    display: inline-block !important;
+    color: var(--dx-accent-deep) !important;   /* S4：深蓝墨（玻璃上 ≈5.9:1），亮蓝不再当文字 */
 }
 
 /* ==========================================================================
@@ -2226,8 +2131,8 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
     max-width: calc(100% - 20px) !important;
     padding: 2px !important;
     background: rgba(0, 0, 0, 0.6) !important;
-    border-radius: 14px !important;
-    font-size: 14px !important;
+    border-radius: var(--dx-radius-14) !important;
+    font-size: var(--dx-font-14) !important;
     color: #fff !important;
     cursor: pointer !important;
 }
@@ -2236,7 +2141,7 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
     flex: 0 0 auto !important;
     width: 20px !important;
     height: 20px !important;
-    border-radius: 20px !important;
+    border-radius: var(--dx-radius-22) !important;
     background-repeat: no-repeat !important;
     background-size: cover !important;
     background-position: center !important;
@@ -2303,7 +2208,7 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
 .layout-Player-multiContainer .ms-slot__tip {
     margin: auto !important;
     color: #ccc !important;
-    font-size: 14px !important;
+    font-size: var(--dx-font-14) !important;
     text-align: center !important;
 }
 
@@ -2314,11 +2219,11 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
     height: 34px !important;
     margin: 20px auto 0 !important;
     line-height: 34px !important;
-    font-size: 14px !important;
+    font-size: var(--dx-font-14) !important;
     color: #ff5d23 !important;
     background: transparent !important;
     border: 2px solid #ff5d23 !important;
-    border-radius: 8px !important;
+    border-radius: var(--dx-radius-8) !important;
     cursor: pointer !important;
     user-select: none !important;
     transition: none !important;
@@ -2374,11 +2279,11 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
     margin-left: 6px !important;
     padding: 1px 6px !important;
     font-style: normal !important;
-    font-size: 12px !important;
+    font-size: var(--dx-font-12) !important;
     font-weight: 700 !important;
-    color: var(--miuix-blue) !important;
+    color: var(--dx-accent-deep) !important;   /* S4：深蓝墨（玻璃上 ≈5.9:1），亮蓝不再当文字 */
     background: rgba(0, 102, 255, 0.1) !important;
-    border-radius: 6px !important;
+    border-radius: var(--dx-radius-6) !important;
 }
 
 /* 页面整体可滚：房间多时不会把内容顶出面板；纵向 flex 让底部操作区能粘住 */
@@ -2395,11 +2300,9 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
     display: flex !important;
     flex-direction: column !important;
     min-height: 0 !important;
-}
-
-.popup-player-panel .popup-panel__page {
-    flex: 1 1 auto !important;
-    min-height: 0 !important;
+}.popup-player-panel .popup-panel__page {
+    flex: 1 1 auto;
+    min-height: 0;
 }
 
 
@@ -2414,7 +2317,7 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
 .popup-ms__rooms::-webkit-scrollbar-thumb,
 .popup-ms__results::-webkit-scrollbar-thumb {
     background: rgba(0, 0, 0, 0.18) !important;
-    border-radius: 4px !important;
+    border-radius: var(--dx-radius-6) !important;
 }
 
 /* 已加入多屏的列表自己滚，页面其余部分保持不动（外房两行 ≈ 58px/个，五房时滚动看全） */
@@ -2446,7 +2349,7 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
 .popup-ms__restore-text {
     flex: 1 1 auto !important;
     min-width: 0 !important;
-    font-size: 11px !important;
+    font-size: var(--dx-font-11) !important;
     color: rgba(15, 23, 42, 0.6) !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
@@ -2479,7 +2382,7 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
     box-sizing: border-box !important;
     background: var(--miuix-item-bg) !important;
     border: var(--miuix-item-border) !important;
-    border-radius: 8px !important;
+    border-radius: var(--dx-radius-8) !important;
 }
 
 .popup-ms__room-main {
@@ -2504,12 +2407,12 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
     flex: 0 0 auto !important;
     height: 20px !important;
     padding: 0 8px !important;
-    font-size: 11px !important;
+    font-size: var(--dx-font-11) !important;
     line-height: 18px !important;
     color: rgba(15, 23, 42, 0.55) !important;
     background: rgba(15, 23, 42, 0.04) !important;
     border: 1px solid rgba(15, 23, 42, 0.12) !important;
-    border-radius: 10px !important;
+    border-radius: var(--dx-radius-10) !important;
     cursor: pointer !important;
     white-space: nowrap !important;
     transition: color 0.18s ease, background-color 0.18s ease, border-color 0.18s ease, transform 0.18s var(--miuix-spring) !important;
@@ -2528,7 +2431,7 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
 }
 
 .popup-ms__chip[aria-pressed="true"] {
-    color: var(--miuix-blue) !important;
+    color: var(--dx-accent-deep) !important;   /* S4：深蓝墨（玻璃上 ≈5.9:1），亮蓝不再当文字 */
     background: rgba(0, 102, 255, 0.1) !important;
     border-color: rgba(0, 102, 255, 0.35) !important;
 }
@@ -2538,12 +2441,12 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
 }
 
 .popup-ms__chip:hover {
-    color: #0f172a !important;
+    color: var(--dx-text-title) !important;
     border-color: rgba(15, 23, 42, 0.24) !important;
 }
 
 .popup-ms__chip[aria-pressed="true"]:hover {
-    color: var(--miuix-blue) !important;
+    color: var(--dx-accent-deep) !important;   /* S4：深蓝墨（玻璃上 ≈5.9:1），亮蓝不再当文字 */
 }
 
 .popup-ms__chip:active {
@@ -2554,10 +2457,10 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
 .popup-ms__room-qn {
     flex: 0 0 auto !important;
     padding: 1px 6px !important;
-    font-size: 11px !important;
-    color: var(--miuix-blue) !important;
+    font-size: var(--dx-font-11) !important;
+    color: var(--dx-accent-deep) !important;   /* S4：深蓝墨（玻璃上 ≈5.9:1），亮蓝不再当文字 */
     background: rgba(0, 102, 255, 0.08) !important;
-    border-radius: 6px !important;
+    border-radius: var(--dx-radius-6) !important;
     white-space: nowrap !important;
 }
 
@@ -2571,7 +2474,7 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
 
 .popup-ms__qlabel {
     flex: 0 0 auto !important;
-    font-size: 11px !important;
+    font-size: var(--dx-font-11) !important;
     color: rgba(15, 23, 42, 0.6) !important;
     white-space: nowrap !important;
 }
@@ -2583,14 +2486,14 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
 
 .popup-ms__quality .miuix-seg__label {
     padding: 4px 4px !important;
-    font-size: 11px !important;
+    font-size: var(--dx-font-11) !important;
 }
 
 .popup-ms__room-name {
     flex: 1 1 auto !important;
     min-width: 0 !important;
-    font-size: 12px !important;
-    color: #0f172a !important;
+    font-size: var(--dx-font-12) !important;
+    color: var(--dx-text-title) !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
     white-space: nowrap !important;
@@ -2598,7 +2501,7 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
 
 .popup-ms__room-rid {
     flex: 0 0 auto !important;
-    font-size: 11px !important;
+    font-size: var(--dx-font-11) !important;
     color: rgba(15, 23, 42, 0.55) !important;
 }
 
@@ -2607,7 +2510,7 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
     width: 20px !important;
     height: 20px !important;
     padding: 0 !important;
-    font-size: 14px !important;
+    font-size: var(--dx-font-14) !important;
     line-height: 1 !important;
     color: rgba(15, 23, 42, 0.5) !important;
     background: transparent !important;
@@ -2662,7 +2565,7 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
 .popup-ms__room-volnum {
     flex: 0 0 auto !important;
     width: 24px !important;
-    font-size: 11px !important;
+    font-size: var(--dx-font-11) !important;
     text-align: right !important;
     color: rgba(15, 23, 42, 0.55) !important;
     font-variant-numeric: tabular-nums !important;
@@ -2675,16 +2578,16 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
     display: flex !important;
     align-items: center !important;
     margin-top: 6px !important;
-}
-
-.popup-panel__input-box input[type="text"] {
+}.popup-panel__input-box input[type="text"] {
     width: 100% !important;
     height: 28px !important;
     padding: 4px 10px !important;
-    border-radius: 8px !important;
+    border-radius: var(--dx-radius-8) !important;
     background: rgba(255, 255, 255, 0.85) !important;
-    font-size: 12px !important;
+    font-size: var(--dx-font-12) !important;
     box-sizing: border-box !important;
+    flex: 1 1 auto;
+    min-width: 0;
 }
 
 /* 快捷来源按钮并排 */
@@ -2711,8 +2614,8 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
     box-sizing: border-box !important;
     background: var(--miuix-item-bg) !important;
     border: var(--miuix-item-border) !important;
-    border-radius: 8px !important;
-    color: #0f172a !important;
+    border-radius: var(--dx-radius-8) !important;
+    color: var(--dx-text-title) !important;
     font: inherit !important;
     letter-spacing: inherit !important;
     text-align: left !important;
@@ -2739,8 +2642,8 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
 .popup-ms__result-name {
     flex: 1 1 auto !important;
     min-width: 0 !important;
-    font-size: 12px !important;
-    color: #0f172a !important;
+    font-size: var(--dx-font-12) !important;
+    color: var(--dx-text-title) !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
     white-space: nowrap !important;
@@ -2748,27 +2651,27 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
 
 .popup-ms__result-meta {
     flex: 0 0 auto !important;
-    font-size: 11px !important;
+    font-size: var(--dx-font-11) !important;
     color: rgba(15, 23, 42, 0.55) !important;
 }
 
 .popup-ms__flag {
     flex: 0 0 auto !important;
     padding: 1px 5px !important;
-    font-size: 10px !important;
+    font-size: var(--dx-font-11) !important;
     color: #ff5d23 !important;
     background: rgba(255, 93, 35, 0.12) !important;
-    border-radius: 5px !important;
+    border-radius: var(--dx-radius-6) !important;
 }
 
 .popup-ms__flag.is-on {
-    color: var(--miuix-blue) !important;
+    color: var(--dx-accent-deep) !important;   /* S4：深蓝墨（玻璃上 ≈5.9:1），亮蓝不再当文字 */
     background: rgba(0, 102, 255, 0.12) !important;
 }
 
 .popup-ms__empty {
     padding: 8px 0 !important;
-    font-size: 11px !important;
+    font-size: var(--dx-font-11) !important;
     color: rgba(15, 23, 42, 0.5) !important;
     text-align: center !important;
 }
@@ -2784,12 +2687,12 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
     display: inline-block !important;
     margin-right: 6px !important;
     padding: 0 6px !important;
-    font-size: 12px !important;
+    font-size: var(--dx-font-12) !important;
     font-weight: 400 !important;
     line-height: 18px !important;
     color: #fff !important;
     background: rgba(255, 255, 255, 0.22) !important;
-    border-radius: 9px !important;
+    border-radius: var(--dx-radius-8) !important;
     vertical-align: middle !important;
     white-space: nowrap !important;
     pointer-events: none !important;
@@ -2801,11 +2704,11 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
    来源显示**全名**（用户 2026-10-06 定），所以宽度完全由字数 + 内边距决定：
    flex: 0 0 auto 保证在 flex 行里不被压缩、也不去挤后面的等级与昵称。 */
 .ex-ms-badge--chat {
-    font-size: 10px !important;
+    font-size: var(--dx-font-11) !important;
     line-height: 15px !important;
     padding: 0 5px !important;
     margin-right: 4px !important;
-    border-radius: 8px !important;
+    border-radius: var(--dx-radius-8) !important;
     background: rgba(127, 127, 127, 0.28) !important;
     color: rgba(255, 255, 255, 0.9) !important;
     vertical-align: 1px !important;
@@ -2842,7 +2745,7 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
 /* 选中态统一走产品蓝：填充版图标 + 底部指示条，图标层本身不带任何彩色 */
 .ex-panel__wrap > div.is-active .ex-panel__icon svg,
 .ex-panel__wrap > div.ex-dock-active .ex-panel__icon svg {
-    color: var(--miuix-blue) !important;
+    color: var(--dx-accent-deep) !important;   /* S4：深蓝墨（玻璃上 ≈5.9:1），亮蓝不再当文字 */
 }
 
 /* 三级面板头图标 */
@@ -2873,3 +2776,1404 @@ input[type="checkbox"].sign-checkbox:checked:active::before {
     height: 15px;
     display: block;
 }
+
+/* ==========================================================================
+   S1-B 可达性（2026-11-01）：键盘焦点可见 + 关闭钮 44 命中区
+   本块只做「看不见的」可达性，不改变任何静态观感（C1 铁律）。
+   ========================================================================== */
+.ex-panel__close::after {
+    content: "";
+    position: absolute;
+    inset: -9px;
+    border-radius: 50%;
+}
+
+.ex-panel__wrap > div:focus-visible,
+.ex-panel__close:focus-visible,
+.miuix-modal :focus-visible,
+.ex-icon a:focus-visible {
+    outline: 2px solid #0066ff !important;
+    outline-offset: 2px !important;
+}
+
+/* ==========================================================================
+   S4 · 构建指纹（2026-11-01）
+   用途：ego 演示环境里可能同时存在「本构建」与「常驻旧版」两套面板；
+   采集工具按这个自定义属性认自己那份，避免量到别人的面板。
+   ========================================================================== */
+.miuix-modal,
+.ex-panel {
+    --dx-build: dx4;
+}
+
+
+/* ==========================================================================
+   S4.5-b · 排版与墨色工具类（设计系统层；只收颜色/字号/字重/行高/字距）
+   几何（宽高/margin/display/flex）仍留在内联，那属于组件自身，不该进系统层。
+   ========================================================================== */
+.dx-fs-11 {
+    font-size: var(--dx-font-11) !important;
+}
+.dx-fs-11.5 {
+    font-size: var(--dx-font-115) !important;
+}
+.dx-fs-12 {
+    font-size: var(--dx-font-12) !important;
+}
+.dx-fs-14 {
+    font-size: var(--dx-font-14) !important;
+}
+.dx-fw-600 {
+    font-weight: 600 !important;
+}
+.dx-ink-007aff {
+    color: #007aff !important;
+}
+.dx-ink-2 {
+    color: var(--dx-text-body) !important;
+}
+.dx-ink-475569 {
+    color: #475569 !important;
+}
+.dx-ink-blue {
+    color: blue !important;
+}
+.dx-ink-ff7700 {
+    color: #ff7700 !important;
+}
+.dx-ink-grey {
+    color: grey !important;
+}
+.dx-ink-inherit {
+    color: inherit !important;
+}
+.dx-ink-white!important {
+    color: white !important !important;
+}
+.dx-ink-white {
+    color: white !important;
+}
+.dx-lh-20 {
+    line-height: 20px !important;
+}
+
+/* ==========================================================================
+   
+/* S4.5-c · 刻度令牌（几何值唯一真源；工具类只引用这里） */
+:root {
+    --dx-accent-soft: rgb(70, 171, 255);
+    --dx-r-full: 50%;
+    --dx-r-6: 6px;
+    --dx-r-8: 8px;
+    --dx-sp-4: 4px;
+    --dx-sp-5: 5px;
+    --dx-sp-6: 6px;
+    --dx-sp-8: 8px;
+    --dx-size-10: 10px;
+    --dx-size-12: 12px;
+    --dx-size-14: 14px;
+    --dx-size-18: 18px;
+    --dx-size-20: 20px;
+    --dx-size-26: 26px;
+    --dx-size-38: 38px;
+    --dx-sp-10: 10px;
+    --dx-sp-12: 12px;
+    --dx-sp-20: 20px;
+    --dx-sp-0: 0;
+    --dx-sp-40: 40px;
+    --dx-size-300: 300px;
+    --dx-size-32: 32px;
+    --dx-size-36: 36px;
+    --dx-size-40: 40px;
+    --dx-size-44: 44px;
+    --dx-size-46: 46px;
+    --dx-size-55: 55px;
+    --dx-size-64: 64px;
+    --dx-size-65: 65px;
+    --dx-z-5: 5;
+}
+S4.5-b · 单属性工具类（自描述：类名 = 属性 + 值）
+   由 77 处内联样式折出；动态值（含插值）仍留在内联。
+   ========================================================================== */
+.dx-ai-center {
+    align-items: center !important;
+}
+.dx-bd-1solid007aff {
+    border: 1px solid #007aff !important;
+}
+.dx-bd-none {
+    border: none !important;
+}
+.dx-bg-fff {
+    background: #fff !important;
+}
+.dx-bg-rgb70171255 {
+    background: var(--dx-accent-soft) !important;
+}
+.dx-bg-rgba2552552550_3 {
+    background: rgba(255,255,255,0.3) !important;
+}
+.dx-br-50 {
+    border-radius: var(--dx-r-full) !important;
+}
+.dx-br-6 {
+    border-radius: var(--dx-r-6) !important;
+}
+.dx-br-8 {
+    border-radius: var(--dx-r-8) !important;
+}
+.dx-clear-both {
+    clear: both !important;
+}
+.dx-col-1-1 {
+    grid-column: 1 / -1 !important;
+}
+.dx-cur-default {
+    cursor: default !important;
+}
+.dx-cur-pointer {
+    cursor: pointer !important;
+}
+.dx-d-block {
+    display: block !important;
+}
+.dx-d-flex {
+    display: flex !important;
+}
+.dx-d-inline-flex {
+    display: inline-flex !important;
+}
+.dx-d-none {
+    display: none !important;
+}
+.dx-fill-currentcolor {
+    fill: currentColor !important;
+}
+.dx-flex-1 {
+    flex: 1 !important;
+}
+.dx-float-left {
+    float: left !important;
+}
+.dx-gap-4 {
+    gap: var(--dx-sp-4) !important;
+}
+.dx-gap-6 {
+    gap: var(--dx-sp-6) !important;
+}
+.dx-gap-8 {
+    gap: var(--dx-sp-8) !important;
+}
+.dx-h-10 {
+    height: var(--dx-size-10) !important;
+}
+.dx-h-100 {
+    height: 100% !important;
+}
+.dx-h-12 {
+    height: var(--dx-size-12) !important;
+}
+.dx-h-14 {
+    height: var(--dx-size-14) !important;
+}
+.dx-h-18 {
+    height: var(--dx-size-18) !important;
+}
+.dx-h-20 {
+    height: var(--dx-size-20) !important;
+}
+.dx-h-26 {
+    height: var(--dx-size-26) !important;
+}
+.dx-h-38 {
+    height: var(--dx-size-38) !important;
+}
+.dx-jc-space-between {
+    justify-content: space-between !important;
+}
+.dx-left-2 {
+    left: 2px !important;
+}
+.dx-ml-10 {
+    margin-left: var(--dx-sp-10) !important;
+}
+.dx-ml-12 {
+    margin-left: var(--dx-sp-12) !important;
+}
+.dx-ml-4 {
+    margin-left: var(--dx-sp-4) !important;
+}
+.dx-ml-5 {
+    margin-left: var(--dx-sp-5) !important;
+}
+.dx-ml-6 {
+    margin-left: var(--dx-sp-6) !important;
+}
+.dx-mr-4 {
+    margin-right: var(--dx-sp-4) !important;
+}
+.dx-mr-5 {
+    margin-right: var(--dx-sp-5) !important;
+}
+.dx-mr-6 {
+    margin-right: var(--dx-sp-6) !important;
+}
+.dx-mr-8 {
+    margin-right: var(--dx-sp-8) !important;
+}
+.dx-mt-4 {
+    margin-top: var(--dx-sp-4) !important;
+}
+.dx-p-05 {
+    padding: 0 var(--dx-sp-4) !important;
+}
+.dx-p-10 {
+    padding: var(--dx-sp-10) !important;
+}
+.dx-p-200 {
+    padding: var(--dx-sp-20) 0 !important;
+}
+.dx-p-28px {
+    padding: var(--dx-sp-0) var(--dx-sp-8) !important;
+}
+.dx-p-400 {
+    padding: var(--dx-sp-40) 0 !important;
+}
+.dx-pos-absolute {
+    position: absolute !important;
+}
+.dx-pos-relative {
+    position: relative !important;
+}
+.dx-ta-center {
+    text-align: center !important;
+}
+.dx-top-0 {
+    top: 0px !important;
+}
+.dx-top-2 {
+    top: 2px !important;
+}
+.dx-top-28 {
+    top: 28px !important;
+}
+.dx-tr-background0_3s {
+    transition: background 0.3s !important;
+}
+.dx-tr-left0_3sbackground0_3s {
+    transition: left 0.3s, background 0.3s !important;
+}
+.dx-w-10 {
+    width: var(--dx-size-10) !important;
+}
+.dx-w-100 {
+    width: 100% !important;
+}
+.dx-w-12 {
+    width: var(--dx-size-12) !important;
+}
+.dx-w-18 {
+    width: var(--dx-size-18) !important;
+}
+.dx-w-20 {
+    width: var(--dx-size-20) !important;
+}
+.dx-w-26 {
+    width: var(--dx-size-26) !important;
+}
+.dx-w-300 {
+    width: var(--dx-size-300) !important;
+}
+.dx-w-32 {
+    width: var(--dx-size-32) !important;
+}
+.dx-w-36 {
+    width: var(--dx-size-36) !important;
+}
+.dx-w-38 {
+    width: var(--dx-size-38) !important;
+}
+.dx-w-40 {
+    width: var(--dx-size-40) !important;
+}
+.dx-w-44 {
+    width: var(--dx-size-44) !important;
+}
+.dx-w-46 {
+    width: var(--dx-size-46) !important;
+}
+.dx-w-55 {
+    width: var(--dx-size-55) !important;
+}
+.dx-w-64 {
+    width: var(--dx-size-64) !important;
+}
+.dx-w-65 {
+    width: var(--dx-size-65) !important;
+}
+.dx-w-calc100-10 {
+    width: calc(100% - 10px) !important;
+}
+.dx-z-5 {
+    z-index: var(--dx-z-5) !important;
+}
+
+/* ==========================================================================
+   L3 · 组件层（2026-11-01 从零写，统一风格）
+   规矩：只读 L2 语义令牌；不写字面量；面板只声明用哪个组件。
+   ========================================================================== */
+
+/* ---------- 卡片 ---------- */
+.ui-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--dx-space-4);
+    margin: 0 var(--dx-space-6) var(--dx-space-4);
+    padding: var(--dx-space-6) var(--dx-space-6);
+    background: var(--dx-surface-card);
+    border: var(--dx-border-card);
+    border-radius: var(--dx-radius-14);
+    box-sizing: border-box;
+}
+
+.ui-card__head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--dx-space-2);
+    min-height: var(--dx-size-20);
+}
+
+.ui-card__title {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--dx-space-2);
+    font-size: var(--dx-font-12);
+    font-weight: var(--dx-weight-600);
+    line-height: var(--dx-leading-tight);
+    color: var(--dx-text-title);
+}
+
+.ui-card__aside {
+    font-size: var(--dx-font-11);
+    font-weight: var(--dx-weight-400);
+    line-height: var(--dx-leading-tight);
+    color: var(--dx-text-body);
+}
+
+.ui-card__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--dx-space-3);
+    min-width: 0;
+}
+
+/* ---------- 行 ---------- */
+.ui-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--dx-space-3);
+    padding: var(--dx-space-4) var(--dx-space-6);
+    background: var(--dx-surface-row);
+    border: var(--dx-border-row);
+    border-radius: var(--dx-radius-10);
+    box-sizing: border-box;
+    cursor: pointer;
+    user-select: none;
+    transition: background-color var(--dx-dur-base) ease, border-color var(--dx-dur-base) ease;
+}
+
+.ui-row:hover {
+    background: var(--dx-surface-row-hover);
+}
+
+.ui-row__text {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-width: 0;
+    gap: var(--dx-space-1);
+}
+
+.ui-row__title {
+    font-size: var(--dx-font-12);
+    font-weight: var(--dx-weight-600);
+    line-height: var(--dx-leading-tight);
+    color: var(--dx-text-title);
+}
+
+.ui-row__desc {
+    font-size: var(--dx-font-115);
+    font-weight: var(--dx-weight-400);
+    line-height: var(--dx-leading-tight);
+    color: var(--dx-text-body);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ---------- 按钮 ---------- */
+.ui-btn {
+    display: inline-flex;
+    flex: 1 1 auto;
+    align-items: center;
+    justify-content: center;
+    height: var(--dx-size-44);
+    padding: 0 var(--dx-space-6);
+    border: 1px solid transparent;
+    border-radius: var(--dx-radius-10);
+    font-size: var(--dx-font-14);
+    font-weight: var(--dx-weight-600);
+    line-height: 1;
+    cursor: pointer;
+    box-sizing: border-box;
+    transition: background-color var(--dx-dur-fast) ease, border-color var(--dx-dur-fast) ease;
+}
+
+.ui-btn--primary {
+    width: 100%;   /* 主按钮固定占满操作区（2026-11-02：以前是固定大小，不是包文字） */
+    background: linear-gradient(135deg, #1d5fd1, #0047b3);   /* 与「检查更新」按钮同一档深蓝 */
+    color: var(--dx-text-on-accent);
+}
+
+.ui-btn--accent {
+    background: var(--dx-accent);
+    color: var(--dx-text-on-accent);
+    border-radius: var(--dx-radius-full);
+    height: var(--dx-size-26);
+    font-size: var(--dx-font-11);
+    padding: 0 var(--dx-space-4);
+}
+
+.ui-btn--quiet {
+    background: var(--dx-surface-row);
+    border-color: transparent;
+    color: var(--dx-accent-deep);
+    height: var(--dx-size-26);
+    font-size: var(--dx-font-11);
+    padding: 0 var(--dx-space-4);
+}
+
+.ui-btn--danger {
+    background: var(--dx-state-danger);
+    color: var(--dx-text-on-accent);
+}
+
+/* ---------- 输入行 / 分段 / 统计 / 空态 ---------- */
+.ui-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--dx-space-2);
+    min-width: 0;
+}
+
+.ui-field__label {
+    font-size: var(--dx-font-11);
+    color: var(--dx-text-body);
+}
+
+.ui-field__hint {
+    font-size: var(--dx-font-11);
+    color: var(--dx-text-body);
+}
+
+.ui-seg {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--dx-space-1);
+    padding: var(--dx-space-1);
+    background: var(--dx-surface-row);
+    border-radius: var(--dx-radius-8);
+}
+
+.ui-seg__item {
+    display: inline-flex;
+    align-items: center;
+}
+
+.ui-seg__label {
+    padding: var(--dx-space-1) var(--dx-space-4);
+    border-radius: var(--dx-radius-6);
+    font-size: var(--dx-font-115);
+    font-weight: var(--dx-weight-600);
+    color: var(--dx-text-body);
+    cursor: pointer;
+}
+
+.ui-stat {
+    display: flex;
+    flex-direction: column;
+    gap: var(--dx-space-1);
+    align-items: flex-start;
+}
+
+.ui-stat__value {
+    font-size: var(--dx-font-14);
+    font-weight: var(--dx-weight-700);
+    color: var(--dx-text-title);
+}
+
+.ui-stat__label {
+    font-size: var(--dx-font-11);
+    color: var(--dx-text-body);
+}
+
+.ui-empty {
+    padding: var(--dx-space-4) 0;
+    text-align: center;
+    font-size: var(--dx-font-115);
+    color: var(--dx-text-body);
+}
+
+.ui-prose {
+    font-size: var(--dx-font-12);
+    line-height: var(--dx-leading-normal);
+    color: var(--dx-text-body);
+}
+
+.ui-stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--dx-space-3);
+    min-width: 0;
+}
+
+/* ---------- 操作条（粘底） ---------- */
+.ui-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: var(--dx-z-sticky);
+    display: flex;
+    align-items: center;
+    gap: var(--dx-space-6);
+    margin-top: var(--dx-space-5);
+    padding: var(--dx-space-4) var(--dx-space-6) var(--dx-space-2) var(--dx-space-6);
+    padding-left: var(--dx-space-6);
+    padding-right: var(--dx-space-6);
+    padding-top: var(--dx-space-4);
+    padding-bottom: var(--dx-space-4);
+}
+
+
+/* 状态类（替代内联表达式：状态必须是类名，样式归 CSS） */
+.lottery__condition { color: var(--dx-state-ok); }
+.lottery__condition.is-blocked { color: var(--dx-state-danger); }
+.is-long-term { font-weight: var(--dx-weight-600); color: var(--dx-state-danger); }
+
+/* ---------- 单元格（直播工具：标题 + 开关 / 抽屉触发行） ---------- */
+.ui-cell {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    column-gap: var(--dx-space-6);
+    row-gap: var(--dx-space-3);
+    padding: var(--dx-space-3) var(--dx-space-4);
+    background: var(--dx-surface-row);
+    border: var(--dx-border-row);
+    border-radius: var(--dx-radius-10);
+    box-sizing: border-box;
+}
+/* 标题占左列、开关占右列，抽屉（第三个孩子）整行落到下一行 */
+.ui-cell > .ui-cell__title {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    text-align: left;
+    gap: var(--dx-space-3);
+    font-size: var(--dx-font-12);
+    font-weight: var(--dx-weight-600);
+    color: var(--dx-text-title);
+}
+.ui-cell__option { display: flex; align-items: center; gap: var(--dx-space-2); }
+.ui-cell__switch { display: flex; align-items: center; }
+
+.ui-row--column {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--dx-space-2);
+}
+
+/* 参数行：标签不换行（弹幕小助手的 速度/限时） */
+.bloop__param_item {
+    display: flex;
+    align-items: center;
+    gap: var(--dx-space-2);
+}
+.bloop__param_item > :first-child {
+    flex: 0 0 auto;
+    white-space: nowrap;
+}
+
+/* 命中区扩展（视觉不变，可点范围 ≥ 44×44）：把 label 的点击面撑到整行 */
+.miuix-seg__item {
+    min-height: 32px;
+    align-items: center;
+}
+/* 命中区外扩（视觉零变化：padding 撑开、负 margin 拉回） */
+.miuix-seg__item {
+    padding: 10px 0;
+    margin: -10px 0;
+}
+.vote__repeat-label,
+.fans-panel__input-label {
+    padding: 11px 0;
+    margin: -11px 0;
+    display: inline-flex;
+    align-items: center;
+}
+.popup-ms__room-vol {
+    padding: 14px 0;
+    margin: -14px 0;
+}
+
+/* 搜索行：输入框占满剩余空间，「搜索」按钮吸附在右侧（同一行） */
+.popup-panel__input-box {
+    gap: var(--dx-space-4);
+}
+.popup-ms__search-btn {
+    flex: 0 0 auto;
+    width: auto;
+    height: var(--dx-size-32);
+    padding: 0 var(--dx-space-6);
+    font-size: var(--dx-font-12);
+}
+
+/* 卡片头必须是横排：.ui-stack 的 column 会覆盖单类选择器，这里提高特异性 */
+.ui-card .ui-card__head {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+}
+/* 次级来源按钮不抢主按钮：浅底 + 蓝字 */
+.popup-ms__src-btn {
+    background: var(--dx-surface-row) !important;
+    color: var(--dx-accent-deep) !important;
+    border: var(--dx-border-row) !important;
+    height: var(--dx-size-32) !important;
+    font-size: var(--dx-font-12) !important;
+    font-weight: var(--dx-weight-600) !important;
+    border-radius: var(--dx-radius-8) !important;
+}
+
+/* 组件内需要横排的元素：提高特异性压过 .ui-stack 的 column */
+.ui-card .ui-card__head,
+.ui-card .ui-card__title {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--dx-space-2);
+}
+.ui-card .ui-card__head {
+    justify-content: space-between;
+    width: 100%;
+}
+.ui-row .ui-row__text {
+    flex-direction: column;
+}
+
+/* 搜索按钮：次级样式，不和主按钮抢焦点 */
+.popup-ms__search-btn {
+    background: var(--dx-surface-row) !important;
+    color: var(--dx-accent-deep) !important;
+    border: var(--dx-border-row) !important;
+}
+
+/* 词库行：加标签并让空下拉有明确含义（原来是孤零零一个空控件） */
+.bloop__preset_row {
+    display: flex;
+    align-items: center;
+    gap: var(--dx-space-3);
+}
+.bloop__preset_label {
+    flex: 0 0 auto;
+    font-size: var(--dx-font-115);
+    font-weight: var(--dx-weight-600);
+    color: var(--dx-text-body);
+    white-space: nowrap;
+}
+.bloop__preset_row select {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: var(--dx-size-32);
+    border-radius: var(--dx-radius-8);
+    border: var(--dx-border-row);
+    background: var(--dx-surface-row);
+    color: var(--dx-text-body);
+    font-size: var(--dx-font-12);
+    padding: 0 var(--dx-space-4);
+}
+
+/* 单元格右侧操作区：横向排列（原来是 column，导致「重复投票」标签压在开关上方） */
+.ui-cell .ui-cell__option {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--dx-space-4);
+}
+.vote__repeat-label {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--dx-space-2);
+    white-space: nowrap;
+}
+
+/* --- 清理批次 A · 表单与控件可见性 ------------------------------------- */
+/* 1) 单元格与卡片左右对齐，行间留 12px 节奏 */
+.miuix-modal__body > .ui-cell {
+    margin: 0 var(--dx-space-6) var(--dx-space-3);
+}
+/* 2) 抽屉里的字段改为纵向排列，避免「选项：」被挤出后裁掉 */
+.vote__option, .enter__option, .reply__option, .mute__option, .gift__option {
+    display: flex;
+    flex-direction: column;
+    gap: var(--dx-space-3);
+}
+.vote__option > label, .enter__option > label, .reply__option > label,
+.mute__option > label, .gift__option > label {
+    display: flex;
+    align-items: center;
+    gap: var(--dx-space-3);
+    white-space: nowrap;
+}
+/* 3) 小胶囊动作统一为次级样式（原来是主色蓝块，一屏 3~4 个抢焦点） */
+.ex-picker-btn {
+    background: var(--dx-surface-row) !important;
+    color: var(--dx-accent-deep) !important;
+    border: var(--dx-border-row) !important;
+}
+/* 4) 分段控件：选中/未选必须一眼可分 */
+.miuix-seg__label {
+    opacity: 0.72;
+}
+.miuix-seg__item > input:checked + .miuix-seg__label,
+.miuix-seg__label.is-active {
+    opacity: 1;
+    border: 1px solid rgba(0, 71, 179, 0.35) !important;
+    font-weight: var(--dx-weight-700) !important;
+}
+/* 5) 开关开态改用与主按钮同系的深蓝，亮蓝只留给 CTA */
+.sign-checkbox:checked, .miuix-switch:checked {
+    background: var(--dx-accent-deep) !important;
+}
+/* 6) 资产格/徽章行改走语义令牌，和其它面板同一套白片 */
+.fans-panel__asset-item, .fans-panel__badge-row {
+    background: var(--dx-surface-row) !important;
+    border: var(--dx-border-row) !important;
+}
+.fans-panel__badge-empty {
+    color: var(--dx-text-body) !important;
+    font-size: var(--dx-font-12) !important;
+}
+.fans-panel__status--ok {
+    color: #065f46 !important;
+}
+/* 7) 状态字对比度 */
+.sign-status-tag, .sign-status {
+    color: #065f46 !important;
+    font-size: var(--dx-font-115) !important;
+}
+/* 8) 续牌输入行：输入框定宽、单位不贴边 */
+.fans-panel__input-box {
+    display: flex;
+    align-items: center;
+    gap: var(--dx-space-3);
+}
+#fans-panel-stick-input {
+    width: var(--dx-size-56) !important;
+    text-align: center;
+}
+/* 9) 滚动到底时内容不被粘底按钮压住（不加底色，保持透明栏） */
+.miuix-modal__body {
+    scroll-padding-bottom: var(--dx-size-56);
+}
+
+/* --- 清理批次 B · 禁用态 / 焦点 / 命中区 ------------------------------- */
+/* 禁用态必须有明确视觉，否则「1/5 时的高饱和蓝按钮」看起来能点却没反应 */
+.ui-btn:disabled,
+.ui-btn[disabled] {
+    opacity: 0.45;
+    cursor: not-allowed;
+    box-shadow: none;
+    background: var(--dx-surface-row) !important;
+    color: var(--dx-text-body) !important;
+    border-color: var(--dx-border-row) !important;
+}
+/* 关闭按钮命中区补到 44（面板头那枚 × ） */
+.miuix-modal__close {
+    position: relative;
+}
+.miuix-modal__close::after {
+    content: "";
+    position: absolute;
+    inset: -9px;
+}
+/* 同屏播放的次级说明文字提深（原来 rgba(15,23,42,.55) 只有 3.9:1） */
+.popup-ms__room-rid,
+.popup-ms__room-volnum,
+.popup-ms__result-meta,
+.popup-ms__empty,
+.popup-ms__qlabel,
+.popup-ms__restore-text {
+    color: var(--dx-ink-muted) !important;
+}
+/* 搜索行：输入框与按钮同高，基线才齐 */
+.popup-panel__input-box input[type="text"],
+.popup-ms__search-btn {
+    height: var(--dx-size-32) !important;
+}
+/* 版本日志：正文提到 12px，条目留 8px，长条目悬挂缩进 */
+.exupdate-list {
+    font-size: var(--dx-font-12) !important;
+    line-height: var(--dx-leading-normal) !important;
+}
+
+/* 抽奖空态：不再写死 120px，空态在剩余空间里居中 */
+.exlottery .ui-card:last-child {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+}
+.lottery__nodata {
+    margin: auto;
+    padding: var(--dx-space-6) 0;
+}
+.lottery__wrap:empty {
+    display: none;
+}
+
+/* 强调行（替代原来的内联高亮） */
+.ui-row--primary {
+    border-left: 2px solid var(--dx-accent);
+    background: rgba(0, 102, 255, 0.05);
+}
+.ui-row__title--accent {
+    color: var(--dx-accent-deep);
+}
+/* 打榜送礼行：元素太多时换行，按钮独占一行右对齐 */
+.miuix-gift-row {
+    flex-wrap: wrap;
+}
+
+/* 数字输入框：26px 太小，抬到 32 并左对齐，读起来像输入框 */
+.extool input[type="number"],
+.miuix-gift-input {
+    height: var(--dx-size-32) !important;
+    min-width: var(--dx-size-56) !important;
+}
+/* 直播工具抽屉的折叠箭头太小，看不出可点 */
+.livetool__cell_title::after,
+.livetool__cell_title .livetool__arrow {
+    width: 7px !important;
+    height: 7px !important;
+    border-width: 2px !important;
+}
+
+/* 直播工具抽屉：字段统一成「标签 + 输入」一行，按钮变胶囊，选择框占满 */
+.vote__panel, .enter__panel, .reply__panel, .mute__panel, .gift__panel {
+    /* 不写 display：默认态由上面的 display:none 管，展开时由 JS 设 flex */
+    flex-direction: column;
+    gap: var(--dx-space-3);
+}
+.vote__panel label, .enter__panel label, .reply__panel label,
+.mute__panel label, .gift__panel label {
+    display: flex;
+    align-items: center;
+    gap: var(--dx-space-3);
+    white-space: nowrap;
+    margin: 0 !important;
+    font-size: var(--dx-font-115);
+    color: var(--dx-text-body);
+}
+.vote__panel label > input, .enter__panel label > input, .reply__panel label > input,
+.mute__panel label > input, .gift__panel label > input {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: var(--dx-size-32);
+    padding: 0 var(--dx-space-4);
+    border: var(--dx-border-row);
+    border-radius: var(--dx-radius-8);
+    background: var(--dx-surface-row);
+    color: var(--dx-text-body);
+    font-size: var(--dx-font-12);
+}.vote__panel select, .enter__panel select, .reply__panel select, .mute__panel select, .gift__panel select {
+    width: 100% !important;
+    height: var(--dx-size-32) !important;
+    padding: 0 var(--dx-space-4) !important;
+    border: var(--dx-border-row) !important;
+    border-radius: var(--dx-radius-8) !important;
+    background: var(--dx-surface-row) !important;
+    color: var(--dx-text-body) !important;
+    font-size: var(--dx-font-12);
+}
+/* 添加/删除：小胶囊，等宽，横排 */
+.vote__panel input[type="button"], .enter__panel input[type="button"],
+.reply__panel input[type="button"], .mute__panel input[type="button"],
+.gift__panel input[type="button"] {
+    width: auto !important;
+    min-width: var(--dx-size-56);
+    margin-left: 0 !important;
+    height: var(--dx-size-28, 28px);
+    padding: 0 var(--dx-space-4);
+    border-radius: var(--dx-radius-6);
+    background: var(--dx-surface-row);
+    border: var(--dx-border-row);
+    color: var(--dx-accent-deep);
+    font-weight: var(--dx-weight-600);
+    cursor: pointer;
+}
+
+/* 抽屉按钮/输入：压过 legacy 的蓝色填充（必须 !important） */
+.vote__panel input[type="button"], .enter__panel input[type="button"],
+.reply__panel input[type="button"], .mute__panel input[type="button"],
+.gift__panel input[type="button"] {
+    width: auto !important;
+    min-width: var(--dx-size-56) !important;
+    margin-left: 0 !important;
+    height: 28px !important;
+    padding: 0 var(--dx-space-4) !important;
+    border-radius: var(--dx-radius-6) !important;
+    background: var(--dx-surface-row) !important;
+    border: var(--dx-border-row) !important;
+    color: var(--dx-accent-deep) !important;
+    font-weight: var(--dx-weight-600) !important;
+    font-size: var(--dx-font-115) !important;
+    box-shadow: none !important;
+}
+.vote__panel input[type="text"], .enter__panel input[type="text"],
+.reply__panel input[type="text"], .mute__panel input[type="text"],
+.gift__panel input[type="text"] {
+    height: var(--dx-size-32) !important;
+    padding: 0 var(--dx-space-4) !important;
+    border: var(--dx-border-row) !important;
+    border-radius: var(--dx-radius-8) !important;
+    background: var(--dx-surface-row) !important;
+    color: var(--dx-text-body) !important;
+}
+
+/* --- 清理批次 C · 次级按钮统一（白底深蓝） ------------------------------ */
+/* A17：开关开态被更高特异性规则压住，这里用同款选择器接管 */
+input[type="checkbox"].sign-checkbox:checked,
+.sign-checkbox:checked,
+.miuix-switch:checked {
+    background: var(--dx-accent-deep) !important;
+}
+/* N1：行内按钮不许被压窄（「打开」曾被挤成两字竖排） */
+.ui-row .ui-btn {
+    flex: 0 0 auto;
+    white-space: nowrap;
+    padding: 0 var(--dx-space-6);
+}
+/* N6：左侧强调条改内阴影，避免圆角处露出方角 */
+.ui-row--primary {
+    border-left: none;
+    box-shadow: inset 2px 0 0 var(--dx-accent);
+}
+/* N5：词库下拉被旧规则架空，用 id 提权重写 */
+select#bloop__select {
+    height: var(--dx-size-32) !important;
+    padding: 0 var(--dx-space-4) !important;
+    border: var(--dx-border-row) !important;
+    border-radius: var(--dx-radius-8) !important;
+    background: var(--dx-surface-row) !important;
+    color: var(--dx-text-body) !important;
+    font-size: var(--dx-font-12) !important;
+}
+/* A15：续牌卡头的蓝药丸降为普通说明文字 */
+.fans-panel__badge-tag {
+    background: transparent !important;
+    border: none !important;
+    color: var(--dx-ink-2) !important;
+    font-weight: var(--dx-weight-400) !important;
+    padding: 0 !important;
+}
+
+/* 抽奖空态卡撑满剩余高度（body 是 block，需要显式 flex） */
+.exlottery .miuix-modal__body { display: flex !important; flex-direction: column; }
+.exlottery .miuix-modal__body > .ui-stack { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+.exlottery .ui-card:last-child { flex: 1 1 auto; min-height: 0; }
+.lottery__wrap { flex: 1 1 auto; display: flex; }
+/* 同屏播放：内容不足时操作条贴底，不留 70px 空带 */
+.popup-player-panel .miuix-modal__body { display: flex !important; flex-direction: column; }
+
+/* --- 清理批次 D · 抽屉布局与字段对齐 ----------------------------------- */
+/* 1) 小按钮命中区外扩到 44（视觉尺寸不变） */
+.ui-btn, .popup-ms__src-btn, .popup-ms__search-btn,
+.popup-panel__paste-btn, #lottery-refresh {
+    position: relative;
+}
+.ui-btn--quiet::after, .ui-btn--accent::after,
+.popup-ms__src-btn::after, .popup-ms__search-btn::after {
+    content: "";
+    position: absolute;
+    inset: -9px;
+}
+.popup-panel__paste-btn::after, #lottery-refresh::after {
+    content: "";
+    position: absolute;
+    inset: -6px;
+}
+/* 2) 开关关态加深：形状不动，只把轨道压深并加内环，1.3:1 → 约 3:1 */
+input[type="checkbox"].sign-checkbox,
+.sign-checkbox, .miuix-switch {
+    background: rgba(15, 23, 42, 0.26) !important;
+    box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.30), inset 0 1px 2px rgba(0, 0, 0, 0.08) !important;
+}
+input[type="checkbox"].sign-checkbox:checked,
+.sign-checkbox:checked, .miuix-switch:checked {
+    background: var(--dx-accent-deep) !important;
+    box-shadow: inset 0 0 0 1px rgba(0, 71, 179, 0.55) !important;
+}
+
+/* 行内子标题（统计块）：标题左、说明右，与卡片头同一语法 */
+.ui-row--column .ui-stat {
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: space-between;
+    width: 100%;
+    gap: var(--dx-space-3);
+}
+.ui-row--column .ui-stat__value {
+    font-size: var(--dx-font-12);
+    font-weight: var(--dx-weight-600);
+}
+.ui-row--column .ui-stat__label {
+    font-size: var(--dx-font-11);
+    color: var(--dx-text-body);
+}
+
+/* 版本日志：分类标签与代码标识 */
+.exupdate-tag {
+    color: var(--dx-accent-deep);
+    font-weight: var(--dx-weight-600);
+}
+.exupdate-code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 0.94em;
+    padding: 0 2px;
+    border-radius: 3px;
+    background: rgba(15, 23, 42, 0.06);
+    overflow-wrap: anywhere;
+}
+
+/* 主操作条作为面板 footer：不覆盖内容、不需要底色 */
+.miuix-modal {
+    flex-direction: column !important;
+}
+.ui-action-footer {
+    position: static !important;
+    bottom: auto !important;
+    flex: 0 0 auto !important;
+    margin: 0 var(--dx-space-6) var(--dx-space-4) !important;
+    padding: var(--dx-space-4) 0 var(--dx-space-2) !important;
+}
+
+/* 投票行横排（压过 .ui-stack 的 column） */
+.ui-cell .ui-cell__option { flex-direction: row !important; align-items: center !important; gap: var(--dx-space-3) !important; }
+/* 单元格左右与卡片对齐 + 行间留 8px */
+.miuix-modal__body > .ui-cell { margin-left: var(--dx-space-6) !important; margin-right: var(--dx-space-6) !important; margin-bottom: var(--dx-space-4) !important; }
+/* 循环发送行：只有开关打开时才高亮 */
+.ui-row.is-on { background: rgba(0, 102, 255, 0.05); box-shadow: inset 2px 0 0 var(--dx-accent); }
+
+/* 抽屉删除：危险色文字，与添加区分 */
+.vote__panel input#vote__del, .enter__panel input[id$="__del"], .reply__panel input[id$="__del"], .mute__panel input[id$="__del"], .gift__panel input[id$="__del"] {
+    color: var(--dx-state-danger) !important;
+    border-color: rgba(185, 28, 28, 0.35) !important;
+}
+
+/* 参数行单位不许竖排（毫秒/分钟改中文后变宽） */
+.bloop__param_item span, .bloop__param_grid span {
+    white-space: nowrap !important;
+    flex: 0 0 auto;
+}
+/* 词库保存/删除：压过 legacy 的蓝色填充 */
+.bloop__preset_row input[type="button"] {
+    width: auto !important;
+    min-width: var(--dx-size-56) !important;
+    margin-left: 0 !important;
+    height: 28px !important;
+    padding: 0 var(--dx-space-4) !important;
+    border-radius: var(--dx-radius-6) !important;
+    background: var(--dx-surface-row) !important;
+    border: var(--dx-border-row) !important;
+    color: var(--dx-accent-deep) !important;
+    font-weight: var(--dx-weight-600) !important;
+    font-size: var(--dx-font-115) !important;
+    box-shadow: none !important;
+}#bloop__delete {
+    color: var(--dx-state-danger) !important;
+    border-color: rgba(185, 28, 28, 0.35) !important;
+    background: rgba(255, 255, 255, 0.92) !important;
+    border: 1px solid rgba(185, 28, 28, 0.28) !important;
+}
+#bloop__delete:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+/* --- 清理批次 E · 终检收尾 -------------------------------------------- */
+/* 1) 抽屉输入框：白边白底在白色抽屉上等于隐形，改成可见描边 */
+.vote__panel label > input, .enter__panel label > input, .reply__panel label > input,
+.mute__panel label > input, .gift__panel label > input {
+    border: 1px solid rgba(15, 23, 42, 0.14) !important;
+    background: #ffffff !important;
+}
+/* 2) 抽屉字段占满宽度；添加/删除等宽 */
+.vote__option, .enter__option, .reply__option, .mute__option, .gift__option {
+    width: 100% !important;
+}
+.vote__panel input[type="button"], .enter__panel input[type="button"],
+.reply__panel input[type="button"], .mute__panel input[type="button"],
+.gift__panel input[type="button"] {
+    flex: 1 1 0 !important;
+    min-width: 0 !important;
+}
+/* 3) 重复投票开关降为次级 */
+.vote__repeat-label {
+    font-size: var(--dx-font-11) !important;
+    color: var(--dx-text-body) !important;
+}
+.vote__repeat-label .sign-checkbox {
+    width: 30px !important;
+    min-width: 30px !important;
+    height: 17px !important;
+}
+.vote__repeat-label .sign-checkbox::before {
+    width: 13px !important;
+    height: 13px !important;
+}
+.vote__repeat-label .sign-checkbox:checked::before {
+    transform: translateX(13px) !important;
+}
+/* 5) 扩展功能的信任说明允许两行，不截断域名 */
+.extool .ui-row__desc {
+    white-space: normal !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+}
+/* 6) 滚动区底边渐隐：提示下方还有内容，不再硬切整行 */
+.miuix-modal__body {
+    -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 18px), transparent 100%);
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 18px), transparent 100%);
+}
+
+
+/* ==========================================================================
+   统一次级按钮规格（2026-11-04 用户要求）
+   形状沿用「保存」那颗小胶囊；蓝色压到 --dx-accent-deep，与主按钮同一档
+   ========================================================================== */
+.ui-btn--quiet,
+.fans-panel__badge-wear,
+
+.popup-ms__src-btn,
+.popup-ms__search-btn,
+.popup-ms__restore-btn,
+#lottery-refresh,
+.vote__panel input[type="button"],
+.enter__panel input[type="button"],
+.reply__panel input[type="button"],
+.mute__panel input[type="button"],
+.gift__panel input[type="button"] {
+    height: 28px !important;
+    min-width: 0 !important;
+    padding: 0 var(--dx-space-5) !important;
+    border-radius: var(--dx-radius-8) !important;
+    background: rgba(255, 255, 255, 0.92) !important;
+    border: 1px solid rgba(15, 23, 42, 0.14) !important;
+    color: var(--dx-accent-deep) !important;
+    font-size: var(--dx-font-115) !important;
+    font-weight: var(--dx-weight-600) !important;
+    line-height: 1 !important;
+    box-shadow: none !important;
+}
+.ui-btn--quiet:hover,
+.fans-panel__badge-wear:hover,
+.ex-send-btn:hover,
+.popup-ms__src-btn:hover,
+.bloop__preset_row input[type="button"]:hover {
+    background: #ffffff !important;
+    border-color: rgba(0, 71, 179, 0.35) !important;
+}
+/* 危险动作（删除）保持同一形状，只换色 */
+#bloop__delete,
+.vote__panel input#vote__del,
+.enter__panel input[id$="__del"],
+.reply__panel input[id$="__del"],
+.mute__panel input[id$="__del"],
+.gift__panel input[id$="__del"] {
+    color: var(--dx-state-danger) !important;
+    border-color: rgba(185, 28, 28, 0.28) !important;
+}
+/* 单元格说明文字：标题下一行 */
+.ui-cell > .ui-cell__title {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 2px !important;
+}
+.ui-cell__desc {
+    font-size: var(--dx-font-11) !important;
+    font-weight: var(--dx-weight-400) !important;
+    color: var(--dx-text-body) !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+/* 抽屉底部动作行 */
+.ui-cell__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--dx-space-3);
+    padding-top: var(--dx-space-3);
+    border-top: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+/* 抽屉内的开关设置行（如「允许重复投票」） */
+.ui-cell__row-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--dx-space-3);
+    padding: var(--dx-space-2) 0;
+    font-size: var(--dx-font-115);
+    color: var(--dx-text-body);
+    white-space: nowrap;
+}
+
+/* 抽屉字段：标签定宽、控件占满，数字框不拉满整行 */
+.livetool [class$="__panel"] label {
+    display: grid !important;
+    grid-template-columns: 64px 1fr !important;
+    align-items: center !important;
+    gap: var(--dx-space-3) !important;
+    width: 100% !important;
+    white-space: normal !important;
+}
+.livetool [class$="__panel"] label > input,
+.livetool [class$="__panel"] label > select {
+    width: 100% !important;
+    min-width: 0 !important;
+    height: 28px !important;
+    border: 1px solid rgba(15, 23, 42, 0.16) !important;
+    background: #ffffff !important;
+    border-radius: var(--dx-radius-6) !important;
+    padding: 0 var(--dx-space-3) !important;
+    font-size: var(--dx-font-115) !important;
+    color: var(--dx-text-body) !important;
+}
+.livetool [class$="__panel"] label > input[type="number"] {
+    max-width: 88px !important;
+}
+/* 动作行：按钮与文字动作统一间距 */
+.ui-cell__actions input[type="button"] {
+    margin: 0 !important;
+}
+
+/* 抽屉动作行：按钮按内容取宽、允许换行，别被 flex 挤成单字 */
+.ui-cell__actions {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: var(--dx-space-3) !important;
+}
+.ui-cell__actions input[type="button"],
+.livetool [class$="__panel"] input[type="button"] {
+    flex: 0 0 auto !important;
+    width: auto !important;
+    min-width: 0 !important;
+    padding: 0 var(--dx-space-4) !important;
+    white-space: nowrap !important;
+}
+.ui-cell__actions span {
+    flex: 0 0 auto !important;
+    white-space: nowrap !important;
+}
+
+/* 没有规则时不要显示空下拉框（:empty 在 0 个 option 时命中），避免像个坏控件 */
+.livetool [class$="__panel"] select:empty {
+    display: none !important;
+}
+
+/* bloop 的保存/删除被 #id 规则压住，用同权重 id 选择器接管 */
+#bloop__save, #bloop__delete {
+    height: 28px !important;
+    padding: 0 var(--dx-space-5) !important;
+    border-radius: var(--dx-radius-8) !important;
+    font-size: var(--dx-font-115) !important;
+    font-weight: var(--dx-weight-600) !important;
+    box-shadow: none !important;
+    width: auto !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+}
+#bloop__save {
+    background: rgba(255, 255, 255, 0.92) !important;
+    border: 1px solid rgba(15, 23, 42, 0.14) !important;
+    color: var(--dx-accent-deep) !important;
+}
+
+/* 用与旧规则同特异性的选择器覆盖（否则 #id 单选择器压不过） */
+.bloop__preset_row input[type="button"]#bloop__save {
+    background: rgba(255, 255, 255, 0.92) !important;
+    background-image: none !important;
+    color: var(--dx-accent-deep) !important;
+    border: 1px solid rgba(15, 23, 42, 0.14) !important;
+    border-radius: var(--dx-radius-8) !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* 速率与限时：两组参数各占一行，别挤在同一行把单位挤掉 */
+.bloop__param_grid {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: var(--dx-space-3) !important;
+    align-items: stretch !important;
+}
+
+
+/* ===== 统一表单控件规格（2026-11-04）：输入框/下拉同高同圆角 ===== */
+.miuix-modal input[type="text"],
+.miuix-modal input[type="number"],
+.miuix-modal input[type="search"],
+.miuix-modal select {
+    height: 32px !important;
+    border-radius: var(--dx-radius-8) !important;
+    border: 1px solid rgba(15, 23, 42, 0.14) !important;
+    background: rgba(255, 255, 255, 0.92) !important;
+    color: var(--dx-text-body) !important;
+    font-size: var(--dx-font-115) !important;
+    padding: 0 var(--dx-space-4) !important;
+    box-sizing: border-box !important;
+}
+/* 多行文本框只统一边色与圆角，不锁高度 */
+.miuix-modal textarea {
+    border-radius: var(--dx-radius-8) !important;
+    border: 1px solid rgba(15, 23, 42, 0.14) !important;
+    background: rgba(255, 255, 255, 0.92) !important;
+    color: var(--dx-text-body) !important;
+}
+
+/* 原生 button 重置：保证与其它胶囊完全同源（不再靠 span 猜基线） */
+button.ui-btn {
+    -webkit-appearance: none;
+    appearance: none;
+    font-family: inherit;
+    margin: 0;
+    outline-offset: 2px;
+}
+button.ui-btn--quiet {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+/* 抽屉动作行：按钮与 input 用同一套过渡，观感与动画一致 */
+.ui-cell__actions > .ui-btn,
+.ui-cell__actions > input[type="button"] {
+    transition: background-color var(--dx-dur-fast) ease, border-color var(--dx-dur-fast) ease, color var(--dx-dur-fast) ease !important;
+}
+

@@ -1,0 +1,120 @@
+{
+ "boot": "ready",
+ "tiles": [
+  {
+   "cls": "ex-sign",
+   "role": "button",
+   "tabindex": "0",
+   "aria": "一键签到",
+   "title": "一键签到"
+  },
+  {
+   "cls": "fans-continue",
+   "role": "button",
+   "tabindex": "0",
+   "aria": "一键续牌",
+   "title": "一键续牌"
+  },
+  {
+   "cls": "bloop-icon",
+   "role": "button",
+   "tabindex": "0",
+   "aria": "弹幕发送小助手",
+   "title": "弹幕发送小助手"
+  },
+  {
+   "cls": "extool-icon",
+   "role": "button",
+   "tabindex": "0",
+   "aria": "扩展功能",
+   "title": "扩展功能"
+  },
+  {
+   "cls": "livetool-icon",
+   "role": "button",
+   "tabindex": "0",
+   "aria": "直播间工具",
+   "title": "直播间工具"
+  },
+  {
+   "cls": "popup-player",
+   "role": "button",
+   "tabindex": "0",
+   "aria": "同屏播放",
+   "title": "同屏播放"
+  },
+  {
+   "cls": "ex-lottery",
+   "role": "button",
+   "tabindex": "0",
+   "aria": "全站抽奖信息",
+   "title": "全站抽奖信息"
+  },
+  {
+   "cls": "ex-update",
+   "role": "button",
+   "tabindex": "0",
+   "aria": "版本更新",
+   "title": "版本更新"
+  }
+ ],
+ "keyboard": {
+  "tabIntoDock": {
+   "tag": "A",
+   "cls": "PublishAt-module__linkyuba-Rug9M",
+   "inDock": false,
+   "outlineW": "0px",
+   "outlineStyle": "none",
+   "outlineColor": "rgb(62, 122, 188)"
+  }
+ },
+ "esc": {
+  "sign": {
+   "open": true,
+   "closed": true
+  },
+  "fans-continue": {
+   "open": true,
+   "closed": true
+  },
+  "extool": {
+   "open": true,
+   "closed": true
+  },
+  "livetool": {
+   "open": true,
+   "closed": true
+  },
+  "bloop": {
+   "open": true,
+   "closed": true
+  },
+  "exlottery": {
+   "open": true,
+   "closed": true
+  },
+  "popup": {
+   "open": true,
+   "closed": true
+  },
+  "exupdate": {
+   "open": true,
+   "closed": true
+  }
+ },
+ "closeHit": {
+  "visual": [
+   26,
+   26
+  ],
+  "afterInset": "-9px",
+  "afterContent": "\"\""
+ },
+ "sprite": {
+  "tag": "A",
+  "href": null,
+  "role": null,
+  "tabindex": null,
+  "aria": null
+ }
+}

@@ -28,7 +28,7 @@ function FansContinue_insertIcon() {
   let a = document.createElement("div");
   a.className = "fans-continue";
   a.innerHTML =
-    '<a class="ex-panel__icon" title="一键续牌"><img style="width: 38px;height: 38px;" src="https://gfs-op.douyucdn.cn/dygift/1705/7db9beee246848252f1c7fe916259f4e.png"/><i id="fans-continue__tip" class="ex-panel__tip"></i></a>';
+    '<a class="ex-panel__icon" title="一键续牌"><img class="dx-w-38 dx-h-38" src="https://gfs-op.douyucdn.cn/dygift/1705/7db9beee246848252f1c7fe916259f4e.png" /><i id="fans-continue__tip" class="ex-panel__tip"></i></a>';
 
   let b = document.getElementsByClassName("ex-panel__wrap")[0];
   if (b) b.insertBefore(a, b.childNodes[0]);
@@ -68,7 +68,7 @@ function updateFansContinuePanel() {
   var listEl = document.getElementById("fans-panel-badge-list");
 
   if (badgeNameEl) badgeNameEl.textContent = "读取中…";
-  if (listEl) listEl.innerHTML = '<div class="fans-panel__badge-empty">正在读取粉丝牌…</div>';
+  if (listEl) listEl.innerHTML = ExUI.empty("正在读取粉丝牌…", "fans-panel__badge-empty");
 
   // 背包荧光棒（亲密度道具）：268 / 2358 都是荧光棒
   if (typeof fetchUserBackpackGifts === "function") {
@@ -110,7 +110,7 @@ function updateFansContinuePanel() {
       if (!badges.length) {
         if (badgeNameEl) badgeNameEl.textContent = "无粉丝牌";
         if (statusEl) statusEl.textContent = "无需续牌";
-        if (listEl) listEl.innerHTML = '<div class="fans-panel__badge-empty">当前没有粉丝牌</div>';
+        if (listEl) listEl.innerHTML = ExUI.empty("当前没有粉丝牌", "fans-panel__badge-empty");
         return;
       }
 
@@ -155,7 +155,7 @@ function updateFansContinuePanel() {
     })
     .catch(function () {
       if (badgeNameEl) badgeNameEl.textContent = "读取失败";
-      if (listEl) listEl.innerHTML = '<div class="fans-panel__badge-empty">粉丝牌列表请求失败</div>';
+      if (listEl) listEl.innerHTML = ExUI.empty("粉丝牌列表请求失败", "fans-panel__badge-empty");
     });
 }
 
@@ -247,59 +247,60 @@ function createFansContinuePanel() {
   if (document.querySelector(".fans-continue-panel")) return;
   var p = document.createElement("div");
   p.className = "fans-continue-panel miuix-modal";
-  p.innerHTML = `
-    <div class="miuix-modal__body">
-      <div class="fans-panel__card">
-        <div class="fans-panel__card-header">
-          <span class="fans-panel__card-title">徽章与资产</span>
-          <span class="fans-panel__badge-tag" id="fans-panel-badge-name">当前佩戴</span>
-        </div>
-        <div class="fans-panel__asset-grid">
-          <div class="fans-panel__asset-item">
-            <span class="fans-panel__asset-label">已有粉丝牌</span>
-            <span class="fans-panel__asset-value" id="fans-panel-badge-count">-</span>
-          </div>
-          <div class="fans-panel__asset-item">
-            <span class="fans-panel__asset-label">背包荧光棒</span>
-            <span class="fans-panel__asset-value" id="fans-panel-stick-count">-</span>
-          </div>
-          <div class="fans-panel__asset-item">
-            <span class="fans-panel__asset-label">牌子状态</span>
-            <span class="fans-panel__asset-value fans-panel__status--ok" id="fans-panel-badge-status">健康保活</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="fans-panel__card">
-        <div class="fans-panel__card-header">
-          <span class="fans-panel__card-title">粉丝牌明细</span>
-          <span class="fans-panel__badge-tag" id="fans-panel-badge-tip">亲密值 · 今日</span>
-        </div>
-        <div class="fans-panel__badge-list" id="fans-panel-badge-list">
-          <div class="fans-panel__badge-empty">打开面板时读取…</div>
-        </div>
-      </div>
-
-      <div class="fans-panel__card">
-        <div class="fans-panel__card-header">
-          <span class="fans-panel__card-title">续牌赠送配置</span>
-        </div>
-        <div class="fans-panel__input-group">
-          <label class="fans-panel__input-label">每个直播间赠送荧光棒数量：</label>
-          <div class="fans-panel__input-box">
-            <input type="number" id="fans-panel-stick-input" min="0" value="0" placeholder="0 表示全量平均赠送" />
-            <span class="fans-panel__input-hint">根 (输入 0 则平均分配背包余量)</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="fans-panel__action-wrap">
-        <button type="button" class="ex-btn-primary fans-panel__submit-btn" id="fans-panel-start-btn">
-          立即开始续牌
-        </button>
-      </div>
-    </div>
-  `;
+  /* S1 迁移：面板骨架（内容区外壳 / 三张卡片 / 卡片头 / 卡片标题 / 资产格 / 操作区 / 主按钮）
+     改由 ExUI 产出，旧类名只作为 legacy 影子挂回同一节点，让旧 CSS 继续命中。
+     结构、层级、文本、id、data-*、内联样式与事件绑定全部保持原样（目标逐像素一致）。
+     两处不套组件，因为套了必然改结构：
+       ① 资产格是「标签在上、数值在下」，ExUI.stat 是数值在上；
+       ② 赠送配置是 label 与输入盒并排，ExUI.field 会把控件再包一层 span。 */
+  var fcAssets = [
+    { label: "已有粉丝牌", value: "-", id: "fans-panel-badge-count", valueCls: "" },
+    { label: "背包荧光棒", value: "-", id: "fans-panel-stick-count", valueCls: "" },
+    { label: "今日亲密", value: "+0", id: "fans-panel-badge-status", valueCls: " fans-panel__status--ok" }   /* 标签与值口径统一：这一格放的是今日亲密度合计 */
+  ];
+  var fcAssetHtml = fcAssets.map(function (it) {
+    return ExUI.stack({
+      legacy: "fans-panel__asset-item",
+      html:
+        '<span class="fans-panel__asset-label">' + it.label + "</span>" +
+        '<span class="fans-panel__asset-value' + it.valueCls + '" id="' + it.id + '">' + it.value + "</span>"
+    });
+  }).join("");
+  p.innerHTML = ExUI.stack({
+    legacy: "miuix-modal__body",
+    html:
+      ExUI.card({
+        title: "徽章与资产",
+        asideHtml: '<span class="fans-panel__badge-tag" id="fans-panel-badge-name">当前佩戴</span>',
+        body: fcAssetHtml,
+        legacy: ExUI.lg("card", { body: "fans-panel__asset-grid" })
+      }) +
+      ExUI.card({
+        title: "粉丝牌明细",
+        asideHtml: '<span class="fans-panel__badge-tag" id="fans-panel-badge-tip">亲密值 · 今日</span>',
+        body: ExUI.empty("打开面板时读取…", "fans-panel__badge-empty"),
+        bodyId: "fans-panel-badge-list",
+        legacy: ExUI.lg("card", { body: "fans-panel__badge-list" })
+      }) +
+      ExUI.card({
+        title: "续牌赠送配置",
+        body:
+          '<label class="fans-panel__input-label">每个直播间赠送荧光棒数量：</label>' +
+          '<div class="fans-panel__input-box">' +
+            '<input type="number" id="fans-panel-stick-input" min="0" value="0" placeholder="0 表示全量平均赠送" />' +
+            '<span class="fans-panel__input-hint">根 （0 = 平均分配背包余量）</span>' +
+          "</div>",
+        legacy: ExUI.lg("card", { body: "fans-panel__input-group" })
+      }) +
+      ExUI.stack({
+        html: ExUI.btn("立即开始续牌", {
+          variant: "primary",
+          id: "fans-panel-start-btn",
+          legacy: ExUI.LG.submitBtn
+        }),
+        cls: "ui-actions"
+      })
+  });
   document.body.appendChild(p);
   if (typeof ensureMiuixPanelHeader === "function") {
     ensureMiuixPanelHeader(p, "一键续牌");

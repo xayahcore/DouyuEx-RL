@@ -11,6 +11,7 @@ try {
 
 const ROOT = path.join(__dirname, "..");
 const read = (rel) => fs.readFileSync(path.join(ROOT, rel), "utf8");
+const EXUI_SRC = read("src/packages/ExUI/ExUI.js");
 
 const EXGUARD_SRC = read("src/require/ExGuard/ExGuard.js");
 const DOMHOOK_SRC = read("src/require/DomHook/DomHook.js");
@@ -84,7 +85,8 @@ function makeClock() {
             const end = now + ms;
             let guard = 0;
             while (guard++ < 50000) {
-                let nextTask = null;
+                let nextTask = null
+null;
                 tasks.forEach(function (task) {
                     if (task.next <= end && (!nextTask || task.next < nextTask.next)) nextTask = task;
                 });
@@ -117,7 +119,7 @@ function loadLevelTask(clock) {
     const factory = new Function(
         "document", "window", "console", "fetch", "rid", "showMessage", "getCCN",
         "setInterval", "clearInterval", "setTimeout", "clearTimeout",
-        EXGUARD_SRC + "\n" + LEVELTASK_SRC + "\n" +
+        EXGUARD_SRC + "\n" + EXUI_SRC + "\n" + LEVELTASK_SRC + "\n" +
         "return { init: initPkg_LevelTask_Timer, check: checkLevelTask, warnCount: ExGuard_warnCount, timer: function () { return levelTaskTimer; } };"
     );
     const api = factory(
@@ -194,7 +196,7 @@ async function testDomHookSpeaksUp() {
     const log = collectConsole();
     const factory = new Function(
         "document", "window", "console", "MutationObserver",
-        EXGUARD_SRC + "\n" + DOMHOOK_SRC + "\nreturn { DomHook: DomHook };"
+        EXGUARD_SRC + "\n" + EXUI_SRC + "\n" + DOMHOOK_SRC + "\nreturn { DomHook: DomHook };"
     );
     const api = factory(win.document, win, log.console, win.MutationObserver);
 
@@ -268,7 +270,7 @@ async function testImageDanmakuBoundedAndUploadFallback() {
     const factory = new Function(
         "document", "window", "console", "setInterval", "clearInterval", "setTimeout", "clearTimeout",
         "GM_xmlhttpRequest", "XMLHttpRequest", "FormData", "Blob", "atob", "DOMPurify", "isValidImageFile", "dyToken",
-        EXGUARD_SRC + "\n" + DOMHOOK_SRC + "\n" + IMAGE_SRC + "\n" +
+        EXGUARD_SRC + "\n" + EXUI_SRC + "\n" + DOMHOOK_SRC + "\n" + IMAGE_SRC + "\n" +
         "return { init: initPkg_ImageDanmaku, upload: ImageDanmaku_uploadAndInsert, pollOpts: ImageDanmaku_pollOpts };"
     );
     const api = factory(
@@ -292,7 +294,7 @@ async function testImageDanmakuBoundedAndUploadFallback() {
     const factory2 = new Function(
         "document", "window", "console", "setInterval", "clearInterval", "setTimeout", "clearTimeout",
         "GM_xmlhttpRequest", "XMLHttpRequest", "FormData", "Blob", "atob", "DOMPurify", "isValidImageFile", "dyToken",
-        EXGUARD_SRC + "\n" + DOMHOOK_SRC + "\n" + IMAGE_SRC + "\n" +
+        EXGUARD_SRC + "\n" + EXUI_SRC + "\n" + DOMHOOK_SRC + "\n" + IMAGE_SRC + "\n" +
         "return { upload: ImageDanmaku_uploadAndInsert };"
     );
     const api2 = factory2(
@@ -324,7 +326,7 @@ function loadLottery() {
     const factory = new Function(
         "document", "window", "console", "localStorage", "fetch", "GM_xmlhttpRequest", "DOMParser",
         "showMessage", "getTimeDiff", "debounce", "showExRightPanel", "setInterval", "clearInterval", "setTimeout", "clearTimeout",
-        EXGUARD_SRC + "\n" + LOTTERY_SRC + "\n" +
+        EXGUARD_SRC + "\n" + EXUI_SRC + "\n" + LOTTERY_SRC + "\n" +
         "return { init: initPkg_Lottery, setFans: setFansBadgeList, timer: initPkg_Lottery_Timer, applySaved: Lottery_Set, " +
         "fans: function () { return myFansBadgeList; }, setFansRaw: function (v) { myFansBadgeList = v; }, setNotice: function (v) { isLotteryNotice = v; }, " +
         "html: function () { return lotteryHTML; }, warnCount: ExGuard_warnCount };"
@@ -456,7 +458,7 @@ function loadShield(savedRepeated) {
     const factory = new Function(
         "document", "window", "console", "localStorage", "MutationObserver",
         "setInterval", "clearInterval", "setTimeout", "clearTimeout", "StyleHook_set", "StyleHook_remove",
-        EXGUARD_SRC + "\n" + DOMHOOK_SRC + "\n" + REMOVE_ENTER_SRC + "\n" + REMOVE_BG_SRC + "\n" + SHIELD_SRC + "\n" + REPEATED_SRC + "\n" +
+        EXGUARD_SRC + "\n" + EXUI_SRC + "\n" + DOMHOOK_SRC + "\n" + REMOVE_ENTER_SRC + "\n" + REMOVE_BG_SRC + "\n" + SHIELD_SRC + "\n" + REPEATED_SRC + "\n" +
         "return { init: initPkg_Shield, removeRepeated: removeRepeatedDanmaku, " +
         "mapSize: function () { return Object.keys(repeatedDanmakuMap).length; } };"
     );
@@ -505,7 +507,7 @@ function loadBarrage(opts) {
         "document", "window", "console", "setInterval", "clearInterval", "setTimeout", "clearTimeout",
         "MutationObserver", "initPkg_BarragePanel_Tip", "getUserUid", "openPage", "getLocalDateStr",
         "addMuteUser", "rid", "showMessage", "getImageDanmakuHtml", "GM_xmlhttpRequest",
-        EXGUARD_SRC + "\n" + DOMHOOK_SRC + "\n" + BARRAGE_SRC + "\n" +
+        EXGUARD_SRC + "\n" + EXUI_SRC + "\n" + DOMHOOK_SRC + "\n" + BARRAGE_SRC + "\n" +
         "return { init: initPkg_BarragePanel, setFunc: setBarrgePanelFunc, recent: getUserRecentBarrage, withGuard: barragePanel__withGuard, pollOpts: barragePanel_pollOpts };"
     );
     const api = factory(

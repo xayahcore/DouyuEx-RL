@@ -53,11 +53,12 @@
 
 ## 六、环境与工具链
 
-- 本机 Windows + **Edge**（真机验证一律锁定 Edge）；工具链在仓库 `.zcode/`（探针脚本、无头测试浏览器四件套、截图/提取脚本等）。
-- **浏览器测试一律用 browser-skill（`bsk`）驱动用户已登录的 Edge**（2026-10-17 用户指令）：
-  - **不再使用 `.zcode/browser/` 的无头测试浏览器**——用户明确说"不好管理"，该目录仅作历史留档，脚本保留但默认不跑；
-  - 每次用完 `bsk session stop <id>`，别留着会话；
-  - **必须静音**：导航后立刻 `bsk evaluate` 把页面媒体静音（`document.querySelectorAll('video,audio').forEach(v=>{v.muted=true;v.volume=0})`），用户明确要求"关闭测试浏览器声音"；
-  - 需要登录态的数据（价格页、开通面板等）优先用 bsk 打开截图取证，而不是猜或扒 bundle。
+- 本机 Windows + **Edge**：**用户侧的真机验收仍以 Edge 为准**；**agent 自己的浏览器操作一律用 ego-browser（ego lite）**（2026-11-01 用户指令：它是专为 agent 生的浏览器，本机有完全权限，"以后你自己操作尽量不要用其它浏览器了，直接调用 ego"）。
+  - 调用形态：`ego-browser nodejs` 跑脚本，用 `taskSpace(name)` / `task.page(label)` / `page.goto` / `page.evaluate` / `page.screenshot`；DOM 只能在 `page.evaluate()` 里碰；每轮写新的 `round-XX.mjs`，结束调 `finish()`；先跑 `ego-browser skill` 看当前版本的用法。
+  - `bsk`（browser-skill）降为**备用**：仅当需要复用用户当前 Edge 的登录态、或 ego 空间不便时才用；用完 `bsk session stop <id>`。
+  - **必须静音**：导航后立刻把页面媒体静音（`document.querySelectorAll('video,audio').forEach(v=>{v.muted=true;v.volume=0})`），用户明确要求"关闭测试浏览器声音"。
+  - **不再使用 `.zcode/browser/` 的无头测试浏览器**（2026-10-17 用户指令）——该目录仅作历史留档，脚本保留但默认不跑。
+  - 需要登录态的数据（价格页、开通面板等）优先自己打开截图取证，而不是猜或扒 bundle。
+- 工具链在仓库 `.zcode/`（探针脚本、截图/提取脚本等）。
 - 本地网关：CPA `127.0.0.1:8317`（LLM 反代）· Clash `127.0.0.1:7897`（出口代理）。
 - 常用验收命令：`npm run build`、`npm test`、`.zcode/browser/` 的运行时探针。

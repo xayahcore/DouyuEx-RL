@@ -65,17 +65,17 @@ function initPkg_BagInfo_Func() {
                         if (!headerDom) return;
                         if (isBeta) {
                             headerDom.innerHTML = headerDom.innerHTML + 
-                            `<span style="width: 100%;display: flex;justify-content: space-between;align-items: center;flex: 1;margin-left: 12px;">
+                            `<span class="dx-w-100 dx-d-flex dx-jc-space-between dx-ai-center dx-flex-1 dx-ml-12" >
                                 <span>
                                     <span>总价值:</span>
                                     <span>￥${String(Number(totalPrice / 100).toFixed(2))}</span>
                                     <span>总亲密度:</span>
                                     <span>${String(totalIntimate)}</span>
                                 </span>
-                                <span class="bag-button" id="Backpack__clearbag" style="background: rgb(70, 171, 255) !important;color: white !important;">清空背包</span>
+                                <span class="bag-button dx-ink-white!important dx-bg-rgb70171255" id="Backpack__clearbag" >清空背包</span>
                             </span>`
                         } else {
-                            headerDom.innerHTML = `<span style="float: left">` + "总价值：" + String(Number(totalPrice / 100).toFixed(2)) + " 总亲密度：" + String(totalIntimate) + `<span class="bag-button" id="Backpack__clearbag">清空背包</span></span>` + headerDom.innerHTML;
+                            headerDom.innerHTML = `<span class="dx-float-left" >` + "总价值：" + String(Number(totalPrice / 100).toFixed(2)) + " 总亲密度：" + String(totalIntimate) + `<span class="bag-button" id="Backpack__clearbag">清空背包</span></span>` + headerDom.innerHTML;
                         }
                         
                         let clearBtn = document.getElementById("Backpack__clearbag");

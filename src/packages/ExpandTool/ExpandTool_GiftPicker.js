@@ -271,7 +271,7 @@ function openGiftPicker(type, onSelect) {
     </div>
     <div class="ex-gift-picker__body">
       <div class="ex-gift-grid" id="ex-gift-grid">
-        <div style="grid-column: 1 / -1; text-align: center; color: #94a3b8; padding: 40px 0; font-size: 13px;">正在加载礼物池...</div>
+        <div class="dx-ink-2 dx-fs-14 dx-col-1-1 dx-ta-center dx-p-400" >正在加载礼物池...</div>
       </div>
     </div>
   `;
@@ -318,7 +318,7 @@ function openGiftPicker(type, onSelect) {
     grid.innerHTML = "";
     if (!gifts || gifts.length === 0) {
       var emptyText = (tabBag && tabBag.classList.contains("is-active")) ? "当前背包暂无道具（可前往直播间完成任务领取）" : "暂无匹配礼物";
-      grid.innerHTML = `<div style="grid-column: 1 / -1; text-align: center; color: #94a3b8; padding: 40px 0; font-size: 13px;">${emptyText}</div>`;
+      grid.innerHTML = `<div class="dx-ink-2 dx-fs-14 dx-col-1-1 dx-ta-center dx-p-400" >${emptyText}</div>`;
       return;
     }
     var frag = document.createDocumentFragment();
@@ -363,7 +363,7 @@ function openGiftPicker(type, onSelect) {
 
   function loadRoomGifts() {
     if (!grid) return;
-    grid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: #94a3b8; padding: 40px 0; font-size: 13px;">正在加载房间官方礼物...</div>';
+    grid.innerHTML = '<div class="dx-ink-2 dx-fs-14 dx-col-1-1 dx-ta-center dx-p-400" >正在加载房间官方礼物...</div>';
     if (searchInput) searchInput.value = "";
     fetchCurrentRoomGifts(rid, (gifts) => {
       currentPool = gifts || [];
@@ -373,7 +373,7 @@ function openGiftPicker(type, onSelect) {
 
   function loadBackpackGifts() {
     if (!grid) return;
-    grid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: #94a3b8; padding: 40px 0; font-size: 13px;">正在加载背包资产礼物...</div>';
+    grid.innerHTML = '<div class="dx-ink-2 dx-fs-14 dx-col-1-1 dx-ta-center dx-p-400" >正在加载背包资产礼物...</div>';
     if (searchInput) searchInput.value = "";
     fetchUserBackpackGifts(rid, (gifts) => {
       currentPool = gifts || [];

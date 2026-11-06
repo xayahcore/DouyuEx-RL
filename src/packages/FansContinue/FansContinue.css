@@ -28,7 +28,7 @@
 }
 
 .fans-panel__status--ok {
-  font-size: 13px;
+  font-size: 14px;
   color: #10b981;
 }
 
@@ -36,7 +36,7 @@
   font-size: 11px;
   color: #0066ff;
   background: rgba(0, 102, 255, 0.08);
-  border-radius: 999px;
+  border-radius: var(--dx-radius-full);
   padding: 2px 8px;
   white-space: nowrap;
 }
@@ -76,7 +76,7 @@
   color: #0066ff;
   background: rgba(0, 102, 255, 0.08);
   border: 1px solid rgba(0, 102, 255, 0.2);
-  border-radius: 999px;
+  border-radius: var(--dx-radius-full);
   cursor: pointer;
 }
 
@@ -92,7 +92,7 @@
 }
 
 .fans-panel__badge-name {
-  font-size: 12.5px;
+  font-size: 12px;
   font-weight: 600;
   color: #0f172a;
   display: inline-flex;
@@ -103,11 +103,11 @@
 
 .fans-panel__badge-worn {
   font-style: normal;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
   color: #0066ff;
   background: rgba(0, 102, 255, 0.1);
-  border-radius: 999px;
+  border-radius: var(--dx-radius-full);
   padding: 1px 6px;
 }
 

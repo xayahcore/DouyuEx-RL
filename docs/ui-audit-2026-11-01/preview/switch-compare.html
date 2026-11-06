@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>开关：白晕 vs 无白晕（G2 · 1px 深色内环）</title>
+<link rel="stylesheet" href="../../../src/packages/ExPanel/ExPanel.css">
+<style>
+  body{margin:0;padding:20px 24px 26px;background:#11161c;color:#cbd5e1;
+       font:13px/1.55 -apple-system,"Segoe UI","Microsoft YaHei",sans-serif}
+  h1{font-size:15px;margin:0 0 2px;color:#f1f5f9}
+  .sub{color:#8b9bb0;font-size:12px;margin-bottom:16px}
+  .row{display:flex;gap:18px;align-items:flex-start;margin-bottom:16px}
+  .cell{position:relative;padding:14px 16px;border-radius:14px;min-width:250px;
+        background-image:linear-gradient(rgba(255,255,255,.62),rgba(255,255,255,.62)),url("assets/frame-dark.png");
+        background-size:cover;background-position:center;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.78),0 0 0 .5px rgba(15,23,42,.10),0 6px 16px rgba(15,23,42,.10)}
+  .cap{font-size:11.5px;color:#1e293b;margin-bottom:9px;font-weight:600}
+  .cap small{font-weight:400;color:#334155}
+  .pair{display:flex;gap:22px;align-items:center}
+  .tag{font-size:10.5px;color:#334155;margin-top:6px;text-align:center}
+  .zoom{zoom:2.4}
+  /* ===== after 侧：只在这页里复刻 G2 开关取值（无白晕，1px 深色内环） ===== */
+  .sw-after{ -webkit-appearance:none;appearance:none;position:relative;width:38px;min-width:38px;height:22px;
+             border-radius:22px;cursor:pointer;outline:none;border:none;margin:0;padding:0;
+             display:inline-block;vertical-align:middle;flex-shrink:0;
+             background:#828d9f;box-shadow:inset 0 0 0 1px rgba(15,23,42,.70);transition:background-color .28s ease}
+  .sw-after::before{content:"";display:block;position:absolute;top:2px;left:2px;width:18px;height:18px;
+             border-radius:50%;background:#fff;box-shadow:0 2px 5px rgba(0,0,0,.28),0 0 0 1px rgba(15,23,42,.10)}
+  .sw-after:checked{background:#0066ff;box-shadow:inset 0 0 0 1px rgba(15,23,42,.70)}
+  .sw-after:checked::before{transform:translateX(16px)}
+  .n{font-family:ui-monospace,Consolas,monospace;font-size:10.5px;color:#334155}
+</style></head>
+<body>
+<h1>开关两态：左边现状 / 右边 G2（用户指定：不加白晕）</h1>
+<div class="sub">同一张 0.62 白玻璃卡、同一块真视频底（assets/frame-dark.png）。右边用 1px <span class="n">rgba(15,23,42,.70)</span> 内环立边界。</div>
+<div class="row zoom">
+  <div class="cell">
+    <div class="cap">BEFORE 现状 <small>· 轨道 rgba(0,0,0,.14)，无边界</small></div>
+    <div class="pair">
+      <div><input class="sign-checkbox" type="checkbox"><div class="tag">关</div></div>
+      <div><input class="sign-checkbox" type="checkbox" checked><div class="tag">开</div></div>
+    </div>
+    <div class="tag" style="margin-top:10px;text-align:left">关态对卡片 <b>1.26:1</b>（要求 3:1）</div>
+  </div>
+  <div class="cell">
+    <div class="cap">AFTER G2 <small>· 无白晕，1px 深色内环</small></div>
+    <div class="pair">
+      <div><input class="sw-after" type="checkbox"><div class="tag">关</div></div>
+      <div><input class="sw-after" type="checkbox" checked><div class="tag">开</div></div>
+    </div>
+    <div class="tag" style="margin-top:10px;text-align:left">内环对卡片：关 <b>4.24:1</b> / 开 <b>4.81:1</b>　旋钮对填充：关 3.35 / 开 4.83</div>
+  </div>
+</div>
+<div class="sub" style="margin:0">说明：填充自身对卡片只有 1.25（关）/ 1.80（开），按 WCAG 1.4.11，控件边界由那 1px 内环承担；开关状态由「旋钮位置 + 填充明度差 1.44」共同传达。</div>
+</body></html>

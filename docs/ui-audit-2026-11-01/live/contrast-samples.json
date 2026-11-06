@@ -1,0 +1,132 @@
+[
+  {
+    "tag": "dock tile(normal) 图标区域",
+    "rect": {
+      "x": 614,
+      "y": 586,
+      "w": 38,
+      "h": 38
+    },
+    "bgMode": "#eaf0ee",
+    "darkest": "#324054",
+    "p05": "#334054",
+    "lightest": "#ebf0ef"
+  },
+  {
+    "tag": "dock tile(选中) 图标区域",
+    "rect": {
+      "x": 812,
+      "y": 584,
+      "w": 38,
+      "h": 38
+    },
+    "bgMode": "#0065fd",
+    "darkest": "#0063f7",
+    "p05": "#0064f8",
+    "lightest": "#fbfcfc"
+  },
+  {
+    "tag": "switch ON 左侧轨道",
+    "rect": {
+      "x": 943,
+      "y": 316,
+      "w": 6,
+      "h": 10
+    },
+    "bgMode": "#0066ff",
+    "darkest": "#0066ff",
+    "p05": "#0066ff",
+    "lightest": "#0066ff"
+  },
+  {
+    "tag": "switch OFF 右侧轨道",
+    "rect": {
+      "x": 967,
+      "y": 520,
+      "w": 8,
+      "h": 10
+    },
+    "bgMode": "#d6d6d6",
+    "darkest": "#d5d5d5",
+    "p05": "#d6d6d6",
+    "lightest": "#d6d6d6"
+  },
+  {
+    "tag": "switch ON 旋钮",
+    "rect": {
+      "x": 961,
+      "y": 316,
+      "w": 10,
+      "h": 10
+    },
+    "bgMode": "#ffffff",
+    "darkest": "#ffffff",
+    "p05": "#ffffff",
+    "lightest": "#ffffff"
+  },
+  {
+    "tag": "switch OFF 旋钮",
+    "rect": {
+      "x": 945,
+      "y": 520,
+      "w": 10,
+      "h": 10
+    },
+    "bgMode": "#ffffff",
+    "darkest": "#ffffff",
+    "p05": "#ffffff",
+    "lightest": "#ffffff"
+  },
+  {
+    "tag": "条目底(item) 空白",
+    "rect": {
+      "x": 919,
+      "y": 304,
+      "w": 24,
+      "h": 8
+    },
+    "bgMode": "#f8f9f9",
+    "darkest": "#e9f0f9",
+    "p05": "#f2f6f9",
+    "lightest": "#f8f9f9"
+  },
+  {
+    "tag": "面板头底色",
+    "rect": {
+      "x": 650,
+      "y": 200,
+      "w": 30,
+      "h": 8
+    },
+    "bgMode": "#f9fbfa",
+    "darkest": "#f9fbfa",
+    "p05": "#f9fbfa",
+    "lightest": "#fafbfb"
+  },
+  {
+    "tag": "面板正文底色",
+    "rect": {
+      "x": 648,
+      "y": 285,
+      "w": 12,
+      "h": 40
+    },
+    "bgMode": "#b8c2be",
+    "darkest": "#b8c2be",
+    "p05": "#b8c2be",
+    "lightest": "#fbfcfb"
+  },
+  {
+    "tag": "面板关闭按钮 ×",
+    "rect": {
+      "x": 978,
+      "y": 206,
+      "w": 26,
+      "h": 26
+    },
+    "bgMode": "#e6e7e7",
+    "darkest": "#475569",
+    "p05": "#677282",
+    "lightest": "#f5f6f6"
+  }
+]

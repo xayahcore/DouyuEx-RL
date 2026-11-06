@@ -1,0 +1,10 @@
+{
+ "total": 7,
+ "files": {
+  "src/common.js:595": 3,
+  "src/packages/DanmakuHistory/DanmakuHistory.js:281": 1,
+  "src/packages/DanmakuHistory/DanmakuHistory.js:299": 1,
+  "src/packages/DanmakuHistory/DanmakuHistory.js:302": 1,
+  "src/packages/DanmakuHistory/DanmakuHistory.js:313": 1
+ }
+}

@@ -187,7 +187,7 @@ function PictureInPictureControl_openSettingPanel() {
             }
 
             .pip-setting-reset {
-                font-size: 13px;
+                font-size: 14px;
                 color: #71717a;
                 cursor: pointer;
                 transition: color 0.2s;
@@ -227,7 +227,7 @@ function PictureInPictureControl_openSettingPanel() {
                 margin-bottom: 18px;
                 display: flex;
                 align-items: center;
-                font-size: 13px;
+                font-size: 14px;
             }
 
             .pip-setting-item.item-vertical {
@@ -280,7 +280,7 @@ function PictureInPictureControl_openSettingPanel() {
                 border-radius: 6px;
                 border: 1px solid #cdcdd6;
                 outline: none;
-                font-size: 13px;
+                font-size: 14px;
                 cursor: pointer;
                 transition: border-color 0.2s, background 0.2s;
                 font-weight: 500;

@@ -22,7 +22,6 @@ const REAL_AUDIENCE_SRC = read("src/packages/RealAudience/RealAudience.js");
 const REAL_AUDIENCE_CSS = read("src/packages/RealAudience/RealAudience.css");
 const MONTH_COST_SRC = read("src/packages/MonthCost/MonthCost.js");
 const LIVETOOL_SRC = read("src/packages/LiveTool/LiveTool.js");
-const DANMAKU_HISTORY_SRC = read("src/packages/DanmakuHistory/DanmakuHistory.js");
 const MONITOR_SRC = read("src/packages/Monitor/Monitor.js");
 
 /**
@@ -107,17 +106,15 @@ function testNoDoseeingDependency() {
         );
     });
 
-    // ② 历史弹幕：不得再引导用户去死站登录
-    const dhCode = stripComments(DANMAKU_HISTORY_SRC);
+    // ② 弹幕历史面板：2026-11-01 用户判定为无用功能，已整块移除 —— 这里改钉「不得复活」
     assert.ok(
-        dhCode.indexOf("doseeing.com/login") === -1,
-        "DanmakuHistory 不得再打开 doseeing 登录页（死链）"
+        !fs.existsSync(path.join(ROOT, "src/packages/DanmakuHistory/DanmakuHistory.js")),
+        "DanmakuHistory 面板已整块移除，不得把文件加回来"
     );
     assert.ok(
-        dhCode.indexOf("需先登录") === -1,
-        "DanmakuHistory 不得再把停服误报成「需先登录」"
+        MAIN_SRC.indexOf("initPkg_DanmakuHistory") === -1,
+        "main.js 不得再接线 initPkg_DanmakuHistory（包已删）"
     );
-
     console.log("✓ 场景 1 通过: 死源依赖已清零（@connect / 请求 / 节点 / 登录引导 / 统计条撤下 / 数据搬家）");
 }
 

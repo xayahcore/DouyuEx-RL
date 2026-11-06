@@ -13,7 +13,7 @@ function initPkg_Sign_Dom() {
 function Sign_insertIcon() {
   let a = document.createElement("div");
   a.className = "ex-sign";
-  a.innerHTML = '<a class="ex-panel__icon" title="一键签到"><svg style="display: block;" t="1578566545259" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="12959" width="32" height="32"><path d="M698.368 80.896v114.688c0 23.552 19.968 43.008 44.032 43.008s44.032-19.456 44.032-43.008V80.896c0-23.552-19.968-43.008-44.032-43.008s-44.032 18.944-44.032 43.008zM227.328 80.896v114.688c0 23.552 19.968 43.008 44.032 43.008 24.576 0 44.032-19.456 44.032-43.008V80.896c0-23.552-19.968-43.008-44.032-43.008-24.576 0-44.032 18.944-44.032 43.008z" fill="#F96C5D" p-id="12960"></path><path d="M977.92 195.584c0-23.552-19.968-43.008-44.032-43.008h-88.576v43.008c0 55.296-46.08 100.352-102.912 100.352s-102.912-45.056-102.912-100.352v-43.008H374.272v43.008c0 55.296-46.08 100.352-102.912 100.352-56.832 0-102.912-45.056-102.912-100.352v-43.008H79.872c-24.576 0-44.032 19.456-44.032 43.008v611.328l252.928-145.92-8.192-8.192c-10.24-9.728-16.384-23.552-16.384-38.4 0-29.696 25.088-54.272 55.808-54.272 15.36 0 29.184 6.144 39.424 15.872l28.16 27.648L977.92 263.168V195.584z" fill="#F96C5D" p-id="12961"></path><path d="M329.216 278.528c-5.632 3.584-11.264 6.656-17.408 9.216 5.632-2.56 11.776-5.632 17.408-9.216zM344.064 266.24c4.608-4.608 8.704-9.728 12.8-14.848-3.584 5.632-8.192 10.24-12.8 14.848zM329.216 278.528c5.632-3.584 10.752-7.68 15.36-12.288-5.12 4.608-10.24 8.704-15.36 12.288zM449.536 664.064l220.16-214.016c10.24-9.728 24.064-15.872 39.424-15.872 30.72 0 55.808 24.064 55.808 54.272 0 14.848-6.144 28.672-16.384 38.4l-259.072 252.416c-10.24 9.728-24.064 15.872-39.424 15.872s-29.184-6.144-39.424-15.872l-121.344-118.272L35.84 806.912v104.96c0 23.552 19.968 43.008 44.032 43.008h854.016c24.576 0 44.032-19.456 44.032-43.008V263.168L387.584 603.648l61.952 60.416zM350.72 569.856c-4.608-3.072-9.216-5.12-14.336-6.656 5.12 1.024 10.24 3.584 14.336 6.656zM271.36 295.936c14.336 0 27.648-2.56 39.936-7.68-12.288 4.608-25.6 7.68-39.936 7.68z" fill="#F15A4A" p-id="12962"></path></svg><i id="ex-sign__tip" class="ex-panel__tip"></i></a>';
+  a.innerHTML = '<a class="ex-panel__icon" title="一键签到"><svg t="1578566545259" class="icon dx-d-block" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="12959" width="32" height="32" ><path d="M698.368 80.896v114.688c0 23.552 19.968 43.008 44.032 43.008s44.032-19.456 44.032-43.008V80.896c0-23.552-19.968-43.008-44.032-43.008s-44.032 18.944-44.032 43.008zM227.328 80.896v114.688c0 23.552 19.968 43.008 44.032 43.008 24.576 0 44.032-19.456 44.032-43.008V80.896c0-23.552-19.968-43.008-44.032-43.008-24.576 0-44.032 18.944-44.032 43.008z" fill="#F96C5D" p-id="12960"></path><path d="M977.92 195.584c0-23.552-19.968-43.008-44.032-43.008h-88.576v43.008c0 55.296-46.08 100.352-102.912 100.352s-102.912-45.056-102.912-100.352v-43.008H374.272v43.008c0 55.296-46.08 100.352-102.912 100.352-56.832 0-102.912-45.056-102.912-100.352v-43.008H79.872c-24.576 0-44.032 19.456-44.032 43.008v611.328l252.928-145.92-8.192-8.192c-10.24-9.728-16.384-23.552-16.384-38.4 0-29.696 25.088-54.272 55.808-54.272 15.36 0 29.184 6.144 39.424 15.872l28.16 27.648L977.92 263.168V195.584z" fill="#F96C5D" p-id="12961"></path><path d="M329.216 278.528c-5.632 3.584-11.264 6.656-17.408 9.216 5.632-2.56 11.776-5.632 17.408-9.216zM344.064 266.24c4.608-4.608 8.704-9.728 12.8-14.848-3.584 5.632-8.192 10.24-12.8 14.848zM329.216 278.528c5.632-3.584 10.752-7.68 15.36-12.288-5.12 4.608-10.24 8.704-15.36 12.288zM449.536 664.064l220.16-214.016c10.24-9.728 24.064-15.872 39.424-15.872 30.72 0 55.808 24.064 55.808 54.272 0 14.848-6.144 28.672-16.384 38.4l-259.072 252.416c-10.24 9.728-24.064 15.872-39.424 15.872s-29.184-6.144-39.424-15.872l-121.344-118.272L35.84 806.912v104.96c0 23.552 19.968 43.008 44.032 43.008h854.016c24.576 0 44.032-19.456 44.032-43.008V263.168L387.584 603.648l61.952 60.416zM350.72 569.856c-4.608-3.072-9.216-5.12-14.336-6.656 5.12 1.024 10.24 3.584 14.336 6.656zM271.36 295.936c14.336 0 27.648-2.56 39.936-7.68-12.288 4.608-25.6 7.68-39.936 7.68z" fill="#F15A4A" p-id="12962"></path></svg><i id="ex-sign__tip" class="ex-panel__tip"></i></a>';
   let b = document.getElementsByClassName("ex-panel__wrap")[0];
   if (b) b.insertBefore(a, b.childNodes[0]);
 }
@@ -53,74 +53,41 @@ function createSignPanel() {
 
   var p = document.createElement("div");
   p.className = "sign-panel miuix-modal";
-  p.innerHTML = `
-      <div class="fans-panel__card">
-        <div class="fans-panel__card-header">
-          <span class="fans-panel__card-title">签到选项</span>
-          <span style="font-size: 11px; color: #64748b;">按需勾选日常任务</span>
-        </div>
-        <div class="sign-options-list">
-          <label class="sign-option-item">
-            <input type="checkbox" id="sign_opt_client" class="sign-checkbox" data-key="client">
-            <div class="sign-option-text">
-              <span class="sign-option-title">客户端模拟签到</span>
-              <span class="sign-option-desc">模拟手机客户端领取每日免费礼盒</span>
-            </div>
-          </label>
-          <label class="sign-option-item">
-            <input type="checkbox" id="sign_opt_yuba" class="sign-checkbox" data-key="yuba">
-            <div class="sign-option-text">
-              <span class="sign-option-title">关注鱼吧签到</span>
-              <span class="sign-option-desc">关注的所有鱼吧一键打卡领经验</span>
-            </div>
-          </label>
-          <label class="sign-option-item">
-            <input type="checkbox" id="sign_opt_stardiscover" class="sign-checkbox" data-key="stardiscover">
-            <div class="sign-option-text">
-              <span class="sign-option-title">星推日常任务</span>
-              <span class="sign-option-desc">打卡/口令弹幕/关注任务(自动安全取关)</span>
-            </div>
-          </label>
-          <label class="sign-option-item">
-            <input type="checkbox" id="sign_opt_fanshome" class="sign-checkbox" data-key="fanshome">
-            <div class="sign-option-text">
-              <span class="sign-option-title">粉丝家园与日常</span>
-              <span class="sign-option-desc">粉丝家园打卡与钻粉日常领奖</span>
-            </div>
-          </label>
-          <label class="sign-option-item">
-            <input type="checkbox" id="sign_opt_points" class="sign-checkbox" data-key="points">
-            <div class="sign-option-text">
-              <span class="sign-option-title">活动中心签到领积分</span>
-              <span class="sign-option-desc">每日签到并领取签到礼包（需登录）</span>
-            </div>
-          </label>
-          <label class="sign-option-item">
-            <input type="checkbox" id="sign_opt_watchpoints" class="sign-checkbox" data-key="watchpoints">
-            <div class="sign-option-text">
-              <span class="sign-option-title">看直播领积分（自动）</span>
-              <span class="sign-option-desc">本页观看时长达标后自动领取，仅页面可见时计时</span>
-            </div>
-          </label>
-        </div>
-      </div>
-
-      <div class="fans-panel__card">
-        <div class="fans-panel__card-header">
-          <span class="fans-panel__card-title">执行状态</span>
-          <span class="sign-status-tag" id="sign-status-tag">就绪</span>
-        </div>
-        <div class="sign-log-box" id="sign-log-box">
-          勾选上方选项后，点击下方按钮开始签到。
-        </div>
-      </div>
-
-      <div class="fans-panel__action-wrap">
-        <button type="button" class="ex-btn-primary fans-panel__submit-btn" id="sign-panel-start-btn">
-          开始签到
-        </button>
-      </div>
-  `;
+  // S1-D 样板：面板 DOM 改由 ExUI 产出；类名影子保证观感零差异（旧类名只出现在 ExUI 里）
+  var signRows = [
+    { key: "client", title: "客户端模拟签到", desc: "模拟手机客户端领取每日免费礼盒" },
+    { key: "yuba", title: "关注鱼吧签到", desc: "关注的所有鱼吧一键打卡领经验" },
+    { key: "stardiscover", title: "星推日常任务", desc: "打卡、口令弹幕、关注任务（自动安全取关）" },
+    { key: "fanshome", title: "粉丝家园与日常", desc: "粉丝家园打卡与钻粉日常领奖" },
+    { key: "points", title: "活动中心签到领积分", desc: "每日签到并领取签到礼包（需登录）" },
+    { key: "watchpoints", title: "看直播领积分（自动）", desc: "本页观看时长达标后自动领取，仅页面可见时计时" }
+  ];
+  var signRowsHtml = signRows.map(function (r) {
+    return ExUI.row({
+      title: r.title,
+      desc: r.desc,
+      trail: '<input type="checkbox" id="sign_opt_' + r.key + '" class="sign-checkbox" data-key="' + r.key + '">',
+      legacy: ExUI.lg("row")
+    });
+  }).join("");
+  p.innerHTML =
+    ExUI.card({
+      title: "签到选项",
+      asideHtml: '<span class="dx-fs-11 dx-ink-2"  >按需勾选日常任务</span>',
+      body: signRowsHtml,
+      legacy: ExUI.lg("card", { body: "sign-options-list" })
+    }) +
+    ExUI.card({
+      title: "执行状态",
+      asideHtml: '<span class="sign-status-tag" id="sign-status-tag">就绪</span>',
+      body: "勾选上方选项后，点击下方按钮开始签到。",
+      bodyId: "sign-log-box",
+      legacy: ExUI.lg("card", { body: "sign-log-box" })
+    }) +
+    ExUI.stack({
+      html: ExUI.btn("开始签到", { variant: "primary", id: "sign-panel-start-btn", legacy: ExUI.LG.submitBtn }),
+      cls: "ui-actions"
+    });
   document.body.appendChild(p);
   if (typeof ensureMiuixPanelHeader === "function") {
     ensureMiuixPanelHeader(p, "一键签到");

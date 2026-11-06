@@ -36,80 +36,82 @@ function BarrageLoop_insertModal() {
 
 	let a = document.createElement("div");
 	a.className = "bloop miuix-modal";
-	a.innerHTML = `
-		<div class="miuix-modal__body">
-			<!-- 卡片 1: 预设弹幕库与内容 -->
-			<div class="fans-panel__card">
-				<div class="fans-panel__card-header">
-					<span class="fans-panel__card-title">弹幕词库</span>
-					<span style="font-size: 11px; color: #64748b;">一行一条</span>
-				</div>
-				<div class="bloop__preset_row">
-					<select id="bloop__select"></select>
-					<input type="button" id="bloop__save" value="保存"/>
-					<input type="button" id="bloop__delete" value="删除"/>
-				</div>
-				<textarea placeholder="一行一个，开启舔狗模式后此处不需要输入" id="bloop__textarea" rows="4"></textarea>
-			</div>
+	// S1-E 迁移：面板 DOM 改由 ExUI 产出，旧类名只以 legacy 影子挂回去，观感零差异。
+	// .bloop__* 是内容级专用类名，按约定原样保留；.fans-panel__card* 与 .sign-option-* 一律走 legacy。
+	let presetRowHtml =
+		'<div class="bloop__preset_row">' +
+			'<span class="bloop__preset_label">词库</span>' +
+			'<select id="bloop__select"></select>' +
+			'<input type="button" id="bloop__save" value="保存"/>' +
+			'<input type="button" id="bloop__delete" value="删除"/>' +
+		"</div>" +
+		'<textarea placeholder="一行一个，开启舔狗模式后此处不需要输入" id="bloop__textarea" rows="4"></textarea>';
+	// 两个参数的 label/输入框/单位在同一 flex 行里，`~` 必须是紧贴的两个 input 之间的非空白文本节点，
+	// 否则 flex 的 gap: 6px 会少算一个间距（逐像素一致的硬要求）。
+	let paramsHtml =
+		'<div class="bloop__param_item">' +
+			"<span>速度：</span>" +
+			'<input class="dx-w-46 dx-ta-center" id="bloop__text_speed1" type="text" value="2000" />~<input class="dx-w-46 dx-ta-center" id="bloop__text_speed2" type="text" value="3000" />' +
+			"<span>毫秒</span>" +
+		"</div>" +
+		'<div class="bloop__param_item">' +
+			"<span>限时：</span>" +
+			'<input class="dx-w-46 dx-ta-center" id="bloop__text_stoptime" type="text" value="1" />' +
+			"<span>分钟</span>" +
+		"</div>";
+	// 四行开关：只有「自动变色」带 name 且默认勾选，其余三行与原模板一致（无 name、初始不勾）
+	let switchRows = [
+		{ key: "changeColor", name: "checkbox_changeColor", title: "自动变色", desc: "发送时随机切换已解锁的粉丝弹幕色", checked: true },
+		{ key: "tiangou", title: "舔狗模式", desc: "自动拉取土味情话/舔狗语录循环发送" },
+		{ key: "random", title: "随机发送", desc: "打乱弹幕文本顺序随机轮换发送" },
+		{ key: "startSend", title: "循环发送弹幕", desc: "开启后按设定速度与限时循环自动发送" }
+	];
+	// 开关控件原样用 input（旧 CSS 按 .sign-checkbox + id 命中，换 <button> 会掉样式与事件）
+	let switchRowsHtml = switchRows.map(function (r) {
+		let trail = '<input id="bloop__checkbox_' + r.key + '" class="sign-checkbox" type="checkbox"' +
+			(r.name ? ' name="' + r.name + '"' : "") +
+			(r.checked ? " checked" : "") + ">";
+		return ExUI.row({
+			title: r.title,
+			desc: r.desc,
+			trail: trail,
+			legacy: ExUI.lg("row")
+		});
+	}).join("");
 
-			<!-- 卡片 2: 发送速率与限时 -->
-			<div class="fans-panel__card">
-				<div class="fans-panel__card-header">
-					<span class="fans-panel__card-title">速率与限时</span>
-				</div>
-				<div class="bloop__param_grid">
-					<div class="bloop__param_item">
-						<span>速度：</span>
-						<input id="bloop__text_speed1" type="text" style="width:46px;text-align:center;" value="2000" />~<input id="bloop__text_speed2" type="text" style="width:46px;text-align:center;" value="3000" />
-						<span>ms</span>
-					</div>
-					<div class="bloop__param_item">
-						<span>限时：</span>
-						<input id="bloop__text_stoptime" type="text" style="width:46px;text-align:center;" value="1" />
-						<span>min</span>
-					</div>
-				</div>
-			</div>
+	a.innerHTML = ExUI.stack({
+		legacy: "miuix-modal__body",
+		html:
+			ExUI.card({
+				title: "弹幕词库",
+				asideHtml: '<span class="dx-fs-11 dx-ink-2"  >一行一条</span>',
+				body: presetRowHtml,
+				legacy: ExUI.lg("card")
+			}) +
+			ExUI.card({
+				title: "速率与限时",
+				body: paramsHtml,
+				legacy: ExUI.lg("card", { body: "bloop__param_grid" })
+			}) +
+			ExUI.card({
+				title: "发送策略与开关",
+				body: switchRowsHtml,
+				legacy: ExUI.lg("card", { body: "sign-options-list" })
+			})
+	});
+	// 第 4 行是主开关：旧模板在 label 与标题 span 上带内联样式，ExUI.row 不接管内联样式，
+	// 这里按原值贴回（值必须与旧模板逐字一致，否则会掉高亮底色与蓝字）。
+	let startSendBox = a.querySelector("#bloop__checkbox_startSend");
+	if (startSendBox && startSendBox.parentNode) {
+		var sendRow = startSendBox.closest(".ui-row");
+		if (sendRow) {
+			sendRow.classList.toggle("is-on", !!startSendBox.checked);
+			startSendBox.addEventListener("change", function () { sendRow.classList.toggle("is-on", !!this.checked); });
+		}
+		let startSendTitle = startSendBox.parentNode.querySelector(".ui-row__title");
+		
+	}
 
-			<!-- 卡片 3: 发送策略与开关 -->
-			<div class="fans-panel__card">
-				<div class="fans-panel__card-header">
-					<span class="fans-panel__card-title">发送策略与开关</span>
-				</div>
-				<div class="sign-options-list">
-					<label class="sign-option-item">
-						<div class="sign-option-text">
-							<span class="sign-option-title">自动变色</span>
-							<span class="sign-option-desc">发送时随机切换已解锁的粉丝弹幕色</span>
-						</div>
-						<input id="bloop__checkbox_changeColor" class="sign-checkbox" type="checkbox" name="checkbox_changeColor" checked>
-					</label>
-					<label class="sign-option-item">
-						<div class="sign-option-text">
-							<span class="sign-option-title">舔狗模式</span>
-							<span class="sign-option-desc">自动拉取土味情话/舔狗语录循环发送</span>
-						</div>
-						<input id="bloop__checkbox_tiangou" class="sign-checkbox" type="checkbox">
-					</label>
-					<label class="sign-option-item">
-						<div class="sign-option-text">
-							<span class="sign-option-title">随机发送</span>
-							<span class="sign-option-desc">打乱弹幕文本顺序随机轮换发送</span>
-						</div>
-						<input id="bloop__checkbox_random" class="sign-checkbox" type="checkbox">
-					</label>
-					<label class="sign-option-item" style="background: rgba(0, 102, 255, 0.08); border-color: rgba(0, 102, 255, 0.25); margin-top: 2px;">
-						<div class="sign-option-text">
-							<span class="sign-option-title" style="color: #0066ff; font-size: 13px;">循环发送弹幕</span>
-							<span class="sign-option-desc">开启后按设定速度与限时循环自动发送</span>
-						</div>
-						<input id="bloop__checkbox_startSend" class="sign-checkbox" type="checkbox">
-					</label>
-				</div>
-			</div>
-		</div>
-	`;
-	
 	let b = document.getElementsByClassName("layout-Player-chat")[0] || document.querySelector(".Barrage-main") || document.body;
 	if (b) b.insertBefore(a, b.childNodes[0]);
 	if (typeof ensureMiuixPanelHeader === "function") {
@@ -119,7 +121,7 @@ function BarrageLoop_insertModal() {
 function BarrageLoop_insertIcon() {
 	let a = document.createElement("div");
 	a.className = "bloop-icon";
-	a.innerHTML = '<a class="ex-panel__icon" title="弹幕发送小助手"><svg t="1578572568198" style="display: block;" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="55445" width="32" height="32"><path d="M511.99883605 1020.07740302c-68.78771655 0-135.53209458-13.47788003-198.38074083-40.06106453-60.69004402-25.67037725-115.18953131-62.41203655-161.98371328-109.20738247-46.79418197-46.79301803-83.53700523-101.29366926-109.20621853-161.98371328C15.84497778 645.97776043 2.36709774 579.23105337 2.36709774 510.4445019s13.47904398-135.53209458 40.06106453-198.38074083c25.6692133-60.69004402 62.41203655-115.18953131 109.20621853-161.98371328 46.79534706-46.79418197 101.29366926-83.53700523 161.98371328-109.20621853 62.84864739-26.5831845 129.59418937-40.06106453 198.38074083-40.06106453 68.78771655 0 135.53209458 13.47904398 198.38190592 40.06106453 60.69004402 25.6692133 115.18953131 62.41203655 161.98487723 109.20621853 46.79301803 46.79418197 83.53584128 101.29366926 109.20621853 161.98371328 26.5831845 62.84864739 40.06106453 129.59418937 40.06106453 198.38074083s-13.47788003 135.53325853-40.06106453 198.38074084c-25.67037725 60.69004402-62.41203655 115.19069525-109.20621853 161.98371328-46.79534706 46.79418197-101.29483435 83.53817031-161.98487723 109.20738247C647.53092949 1006.59952413 580.78655147 1020.07740302 511.99883605 1020.07740302zM511.99883605 57.86089358c-249.55500203 0-452.58244437 203.02744235-452.58244437 452.58244437s203.02744235 452.58244437 452.58244437 452.58244438c249.55616597 0 452.58360832-203.02744235 452.58360832-452.58244438C964.58244437 260.88949987 761.55500203 57.86089358 511.99883605 57.86089358z" p-id="55446" fill="#1296db" data-spm-anchor-id="a313x.7781069.0.i24"></path><path d="M322.42598685 461.65355293l-8.51099648 74.46598314 97.86947811 0c-2.85950862 76.59314973-4.9866752 127.6556379-6.38266595 153.18746454-1.42975431 51.06132423-27.65899321 75.16339541-78.72148139 72.33881542-18.45058333 1.39598962-35.47024839 2.12716658-51.06248818 2.12716658-2.85950862-17.02082901-6.38266595-34.77283613-10.63816419-53.19081984 18.41681863 0 35.43764878 0 51.06248817 0 25.53066155 2.82574393 38.99456967-7.77981952 40.42432399-31.9133275 1.39598962-9.9069861 2.12833166-25.53182663 2.12833166-46.80698994 1.39598962-21.27632725 2.12716658-36.86740309 2.12716658-46.80698994l-99.9966447 0 14.89366244-172.33546126 89.3584805 0 0-78.72148138-102.12497636 0 0-48.9353216 151.05913287 0 0 176.5909595L322.42598685 461.65355293zM450.08162475 580.79819435l0-242.54594504 74.46598314 0c-17.0219941-24.10090723-31.91449145-43.25006791-44.67982222-57.44515413l46.80698994-21.27632725c4.25433429 4.25549824 10.63699911 12.06675342 19.14799673 23.40349497 15.5910747 18.45058333 24.79948459 30.51733789 27.65899321 36.16882574l-42.5514917 19.14799673 80.84864796 0c25.53066155-38.29715741 41.8203136-64.5263963 48.93415652-78.72031744l53.19081984 14.89366244c-5.68525255 8.50983253-15.62483939 22.70491762-29.78732487 42.55149169-7.11384291 9.93958685-12.06675342 17.02082901-14.89249849 21.27516331l70.20931982 0 0 242.54594503L620.28991829 580.7970304l0 51.06248818 144.67646806 0 0 48.93415651L620.28991829 680.79367509l0 87.23131392-51.06132423 0 0-87.23131392L428.80646144 680.79367509l0-48.93415651 140.42213376 0 0-51.06248818L450.08162475 580.7970304zM501.14411293 385.0604032l0 53.18965475 68.08331718 0 0-53.18965475L501.14411293 385.0604032zM501.14411293 480.80154965l0 55.31682248 68.08331718 0L569.22743011 480.80154965 501.14411293 480.80154965zM688.37323549 385.0604032l-68.0833172 0 0 53.18965475 68.0833172 0L688.37323549 385.0604032zM620.28991829 480.80154965l0 55.31682248 68.0833172 0L688.37323549 480.80154965 620.28991829 480.80154965z" p-id="55447" fill="#1296db"></path></svg><i id="bloop__tip" class="ex-panel__tip"></i></a>';
+	a.innerHTML = '<a class="ex-panel__icon" title="弹幕发送小助手"><svg t="1578572568198" class="icon dx-d-block" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="55445" width="32" height="32" ><path d="M511.99883605 1020.07740302c-68.78771655 0-135.53209458-13.47788003-198.38074083-40.06106453-60.69004402-25.67037725-115.18953131-62.41203655-161.98371328-109.20738247-46.79418197-46.79301803-83.53700523-101.29366926-109.20621853-161.98371328C15.84497778 645.97776043 2.36709774 579.23105337 2.36709774 510.4445019s13.47904398-135.53209458 40.06106453-198.38074083c25.6692133-60.69004402 62.41203655-115.18953131 109.20621853-161.98371328 46.79534706-46.79418197 101.29366926-83.53700523 161.98371328-109.20621853 62.84864739-26.5831845 129.59418937-40.06106453 198.38074083-40.06106453 68.78771655 0 135.53209458 13.47904398 198.38190592 40.06106453 60.69004402 25.6692133 115.18953131 62.41203655 161.98487723 109.20621853 46.79301803 46.79418197 83.53584128 101.29366926 109.20621853 161.98371328 26.5831845 62.84864739 40.06106453 129.59418937 40.06106453 198.38074083s-13.47788003 135.53325853-40.06106453 198.38074084c-25.67037725 60.69004402-62.41203655 115.19069525-109.20621853 161.98371328-46.79534706 46.79418197-101.29483435 83.53817031-161.98487723 109.20738247C647.53092949 1006.59952413 580.78655147 1020.07740302 511.99883605 1020.07740302zM511.99883605 57.86089358c-249.55500203 0-452.58244437 203.02744235-452.58244437 452.58244437s203.02744235 452.58244437 452.58244437 452.58244438c249.55616597 0 452.58360832-203.02744235 452.58360832-452.58244438C964.58244437 260.88949987 761.55500203 57.86089358 511.99883605 57.86089358z" p-id="55446" fill="#1296db" data-spm-anchor-id="a313x.7781069.0.i24"></path><path d="M322.42598685 461.65355293l-8.51099648 74.46598314 97.86947811 0c-2.85950862 76.59314973-4.9866752 127.6556379-6.38266595 153.18746454-1.42975431 51.06132423-27.65899321 75.16339541-78.72148139 72.33881542-18.45058333 1.39598962-35.47024839 2.12716658-51.06248818 2.12716658-2.85950862-17.02082901-6.38266595-34.77283613-10.63816419-53.19081984 18.41681863 0 35.43764878 0 51.06248817 0 25.53066155 2.82574393 38.99456967-7.77981952 40.42432399-31.9133275 1.39598962-9.9069861 2.12833166-25.53182663 2.12833166-46.80698994 1.39598962-21.27632725 2.12716658-36.86740309 2.12716658-46.80698994l-99.9966447 0 14.89366244-172.33546126 89.3584805 0 0-78.72148138-102.12497636 0 0-48.9353216 151.05913287 0 0 176.5909595L322.42598685 461.65355293zM450.08162475 580.79819435l0-242.54594504 74.46598314 0c-17.0219941-24.10090723-31.91449145-43.25006791-44.67982222-57.44515413l46.80698994-21.27632725c4.25433429 4.25549824 10.63699911 12.06675342 19.14799673 23.40349497 15.5910747 18.45058333 24.79948459 30.51733789 27.65899321 36.16882574l-42.5514917 19.14799673 80.84864796 0c25.53066155-38.29715741 41.8203136-64.5263963 48.93415652-78.72031744l53.19081984 14.89366244c-5.68525255 8.50983253-15.62483939 22.70491762-29.78732487 42.55149169-7.11384291 9.93958685-12.06675342 17.02082901-14.89249849 21.27516331l70.20931982 0 0 242.54594503L620.28991829 580.7970304l0 51.06248818 144.67646806 0 0 48.93415651L620.28991829 680.79367509l0 87.23131392-51.06132423 0 0-87.23131392L428.80646144 680.79367509l0-48.93415651 140.42213376 0 0-51.06248818L450.08162475 580.7970304zM501.14411293 385.0604032l0 53.18965475 68.08331718 0 0-53.18965475L501.14411293 385.0604032zM501.14411293 480.80154965l0 55.31682248 68.08331718 0L569.22743011 480.80154965 501.14411293 480.80154965zM688.37323549 385.0604032l-68.0833172 0 0 53.18965475 68.0833172 0L688.37323549 385.0604032zM620.28991829 480.80154965l0 55.31682248 68.0833172 0L688.37323549 480.80154965 620.28991829 480.80154965z" p-id="55447" fill="#1296db"></path></svg><i id="bloop__tip" class="ex-panel__tip"></i></a>';
 	
 	let b = document.getElementsByClassName("ex-panel__wrap")[0];
 	if (b) {
@@ -370,7 +372,9 @@ function initPkg_BarrageLoop_Func() {
 		saveData_BarrageLoop();
 	});
 
+  BarrageLoop_markEmpty(document.getElementById("bloop__select"));
   document.getElementById("bloop__select").onclick = function() {
+    if (this.dataset.empty === "1") return;
     if (this.options.length == 0) {
       return;
     }
@@ -385,6 +389,7 @@ function initPkg_BarrageLoop_Func() {
     let select_bloop = document.getElementById("bloop__select");
     let text = document.getElementById("bloop__textarea").value;
     if (text == "") return;
+    BarrageLoop_clearEmpty(select_bloop);
     barrageOptions.push(text);
     select_bloop.options.add(new Option(text.replace(/\n/g, "\\r"), true));
     saveData_BarrageLoop();
@@ -392,6 +397,7 @@ function initPkg_BarrageLoop_Func() {
 
 	document.getElementById("bloop__delete").addEventListener("click", () => {
 		let select_bloop = document.getElementById("bloop__select");
+    if (select_bloop.dataset.empty === "1") return;
     let index = select_bloop.options[select_bloop.selectedIndex];
     if (!index) return;
     let text = index.text.replace(/\\r/g, "\n");
@@ -431,6 +437,7 @@ function initPkg_BarrageLoop_Set() {
       select_bloop.options.add(new Option(item.replace(/\r/g, "\\r"), ""));
     });
     barrageOptions = retJson.text;
+    BarrageLoop_markEmpty(select_bloop);
 		document.getElementById("bloop__checkbox_changeColor").checked = retJson.isChangeColor;
 		isChangeColor = Boolean(retJson.isChangeColor);
 		document.getElementById("bloop__text_speed1").value = retJson.speed1;
@@ -490,4 +497,22 @@ function getBarrageTxt_Tiangou() {
 			finish("");
 		}
 	})
+}
+/** 空词库：给下拉一个明确占位项，避免「一个字都没有的白框」 */
+function BarrageLoop_markEmpty(sel) {
+  if (!sel || sel.options.length > 0) return;
+  var o = new Option("暂无词库 · 输入后点保存新建", "");
+  o.disabled = true;
+  sel.add(o);
+  sel.selectedIndex = 0;
+  sel.dataset.empty = "1";
+  var del = document.getElementById("bloop__delete");
+  if (del) del.disabled = true;
+}
+function BarrageLoop_clearEmpty(sel) {
+  if (!sel || sel.dataset.empty !== "1") return;
+  if (sel.options.length) sel.remove(0);
+  delete sel.dataset.empty;
+  var del = document.getElementById("bloop__delete");
+  if (del) del.disabled = false;
 }
