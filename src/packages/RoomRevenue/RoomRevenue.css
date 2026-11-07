@@ -1,0 +1,124 @@
+.ex-room-revenue {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    height: 33px;
+    padding: 0 7px;
+    min-width: 0;
+    color: #999;
+    font-size: 12px;
+    line-height: 33px;
+    white-space: nowrap;
+}
+
+.ex-room-revenue__metrics {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.ex-room-revenue__metric {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    min-width: 0;
+}
+
+.ex-room-revenue__value,
+.ex-room-revenue__donors,
+.ex-room-revenue__speakers {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ex-room-revenue__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 15px;
+    height: 15px;
+    flex: none;
+    line-height: 0;
+}
+
+.ex-room-revenue__icon svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+    fill: none;
+    stroke: currentColor;
+}
+
+.ex-room-revenue__icon--donors {
+    color: #ed5a65;
+}
+
+.ex-room-revenue__icon--speakers {
+    color: #1296db;
+}
+
+.ex-room-revenue__icon--income {
+    color: #f5a623;
+}
+
+.layout-Player-rank.ex-room-revenue-rank-offset {
+    top: 34px !important;
+}
+
+.ex-room-revenue__refresh,
+.ex-room-revenue__source {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    flex: none;
+    color: inherit;
+    font: inherit;
+    line-height: 0;
+    opacity: 0.75;
+}
+
+.ex-room-revenue__refresh svg,
+.ex-room-revenue__source svg {
+    width: 13px;
+    height: 13px;
+    display: block;
+    fill: none;
+    stroke: currentColor;
+}
+
+.ex-room-revenue__refresh {
+    border: 0;
+    background: transparent;
+    padding: 0;
+    cursor: pointer;
+}
+
+.ex-room-revenue__refresh:hover,
+.ex-room-revenue__source:hover {
+    opacity: 1;
+}
+
+.ex-room-revenue__refresh:disabled {
+    cursor: wait;
+    opacity: 0.5;
+}
+
+.ex-room-revenue__source {
+    text-decoration: none;
+}
+
+.ex-room-revenue__refresh:focus-visible,
+.ex-room-revenue__source:focus-visible {
+    outline: 2px solid #f60;
+    outline-offset: 2px;
+}

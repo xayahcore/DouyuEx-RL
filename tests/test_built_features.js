@@ -41,6 +41,7 @@ async function main() {
         <div class="layout-Player-videoEntity"><video></video></div>
         <div class="Barrage-main"><ul id="js-barrage-list" class="Barrage-list"></ul></div>
         <div class="BackpackButton"></div>
+        <div class="layout-Player-asideMainTop"><div class="layout-Player-rankAll"><span id="native-sidebar-item">原生侧栏</span></div><div class="layout-Player-rank"></div></div>
         <div class="Title">
             <div class="Title-col"><span class="Title-row-text">c1</span></div>
             <div class="Title-col"><span class="Title-row-text">c2</span></div>
@@ -51,6 +52,7 @@ async function main() {
     </body></html>`, {
         url: "https://www.douyu.com/9999",
         runScripts: "dangerously",
+        pretendToBeVisual: true,
     });
     const win = dom.window;
 
@@ -76,7 +78,16 @@ async function main() {
     win.GM_deleteValue = function () {};
     win.GM_openInTab = function () {};
     win.GM_setClipboard = function () {};
-    win.GM_xmlhttpRequest = function () {};
+    const revenueRequests = [];
+    win.GM_xmlhttpRequest = function (options) {
+        if (options.url.indexOf("https://dy.roozj.com/api/ranking/anchors?") === 0) {
+            revenueRequests.push(options);
+            const timer = win.setTimeout(function () {
+                options.onload({ status: 200, responseText: JSON.stringify({ code: 0, data: [{ room_id: "9999", total_income: 123.45, total_fans: 7, paid_fans: 3 }] }) });
+            }, 0);
+            return { abort: function () { win.clearTimeout(timer); } };
+        }
+    };
     win.GM_cookie = function () {};
     win.GM_registerMenuCommand = function () {};
     win.room_id = "9999";
@@ -108,6 +119,24 @@ async function main() {
         "两个前缀文案必须都在，实际 " + JSON.stringify(titleTime.textContent));
     assert.ok(String(titleTime.title).indexOf("2026-10-27 18:30") !== -1, "悬停必须给完整开播时间，实际 " + JSON.stringify(titleTime.title));
     console.log("✓ ① 标题栏：复制直播流右边是观看时间 + 开播时间，数据来自官方接口");
+
+    // 流水回包是异步的（GM 请求 + 渲染）：等值落地再断言，不用固定等待赌时序
+    for (let i = 0; i < 80; i++) {
+        const bar = win.document.querySelector(".ex-room-revenue");
+        const val = bar && bar.querySelector(".ex-room-revenue__value");
+        if (val && String(val.textContent).indexOf("123.45") !== -1) break;
+        await wait(50);
+    }
+    const revenue = win.document.querySelector(".ex-room-revenue");
+    assert.ok(revenue, "流水模块必须接入构建产物并真正挂载");
+    assert.strictEqual(revenue.parentNode, win.document.querySelector(".layout-Player-rankAll"), "沿用原版右侧rankAll挂载位置");
+    assert.strictEqual(revenue.parentNode.firstElementChild, revenue, "统计条应位于右侧容器首位");
+    assert.notStrictEqual(titleTime.nextElementSibling, revenue, "标题栏不得遗留流水入口");
+    assert.strictEqual(win.document.querySelectorAll(".ex-room-revenue").length, 1);
+    assert.ok(revenue.textContent.includes("123.45"), "金额沿用来源鱼翅单位，不能除以100（实际 " + JSON.stringify(revenue.textContent) + "，请求数 " + revenueRequests.length + "）");
+    assert.strictEqual(revenueRequests.length, 1, "首次挂载仅发起一次公开汇总请求");
+    assert.strictEqual(revenueRequests[0].anonymous, true, "第三方汇总请求不携带登录凭据");
+    assert.strictEqual(revenue.querySelector(".ex-room-revenue__source").href, "https://dy.roozj.com/");
 
     /* ---------- ② 同屏面板：主按钮粘底且没有白色渐变 ---------- */
     assert.doesNotThrow(function () { win.createPopupPlayerPanel(); }, "同屏面板必须能建出来");
