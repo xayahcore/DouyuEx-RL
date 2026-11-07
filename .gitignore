@@ -6,9 +6,24 @@ rules.txt
 CICD.bat.lnk
 .cursor
 
-# 采集产物：体积大、可再生（2026-11-05 清理，855 个文件已从索引移除）
-docs/**/*.png
+# 采集产物：体积大、可再生
+# 2026-11-05：855 个 PNG / snapshot 移出索引；2026-11-08：262 个执行产物移出索引
+# 只针对两个取证目录 —— README 引用的 docs/images/*.png 不在忽略范围内
+docs/ui-audit-2026-11-01/**/*.png
+docs/ui-audit-2026-11-01/**/*.mjs
+docs/ui-audit-2026-11-01/**/*.py
+docs/ui-audit-2026-11-01/**/*.html
+docs/ui-audit-2026-11-01/**/*.css
+docs/ui-audit-2026-11-01/**/*.json
+docs/ui-migration/**/*.png
+docs/ui-migration/**/*.json
 docs/**/snapshot-*.json
+# 例外：复跑参数是 tools/ui-snap.mjs 与 tools/ui-nest-probe.mjs 的输入，入库
+!docs/ui-migration/_run.json
+!docs/ui-migration/_probe.json
 
-# 子智能体定义：本机工具配置，不进仓库（2026-11-07）
-.zcode/agents/
+# 本机工具链：探针脚本与采集产物（含 .zcode/agents/，约 366 MB），不进仓库
+.zcode/
+
+# 可复用 skill：本机 agent 施工手册，不进仓库（2026-11-08）
+.agents/

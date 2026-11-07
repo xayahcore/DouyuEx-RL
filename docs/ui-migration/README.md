@@ -59,4 +59,6 @@ python tools/ui-pixel.py docs/ui-migration/baseline docs/ui-migration/after --vp
 
 ## 未入库说明
 
-`.json`（326KB）与本文入库；**`.png`（15MB）不入库** —— 一条命令可复现，放进 git 只会撑大仓库（见 PLAN §7 R7）。
+**`.png`（15MB）与探针输出 `.json` 都不入库** —— 一条 `tools/ui-snap.mjs` 可复现，放进 git 只会撑大仓库（见 PLAN §7 R7）。2026-11-08 已把当时入库的 326KB 输出 JSON（`*/_dock/dock-*.json`、`nest/**/*.json`、`_shell-verify.json`）移出索引。
+
+库内保留：本文、`DESIGN-SYSTEM.md`、`nest/SUMMARY.md`、`nest/_metrics.md`（决策与结论记录），以及复跑参数 `_run.json` / `_probe.json`。**复跑前先按上节重采对应批次**，否则 `tools/ui-diff.mjs` / `tools/ui-nest-report.mjs` 找不到输入。

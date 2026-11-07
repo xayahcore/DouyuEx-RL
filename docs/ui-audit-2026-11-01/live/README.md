@@ -3,6 +3,7 @@
 > 取证方式：ego-browser（ego-lite Chromium）任务空间 `dyex-icon-ego`，注入 `DouyuEx_RL.user.js`（构建于 2026-11-01 05:02，含 Phosphor 图标层未提交改动），打开 `https://www.douyu.com/9999`（斗鱼 9999 真实直播间）。
 > 全部数字均为**浏览器内实测**（getBoundingClientRect / getComputedStyle / CDP CSS.getMatchedStylesForNode / PNG 像素解码采样），非估算。
 > 只读 src/，未修改任何源码，未 commit。
+> **库内范围（2026-11-08 清理）**：本文与同目录其余 `.md` 是记录；`round-*.mjs` / `theme-*.mjs` 与截图已移出仓库（脚本可再生，截图从未入库），需要时从 git 历史取回。
 
 ---
 
