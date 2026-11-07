@@ -12,7 +12,7 @@
 ## 一、分支口径（2026-09-25 用户指令，长期有效）
 
 - **大改动 / 待实机验收的功能 → 提交并推送 `DYEXRL-NEXT`**，用户实机测试后再定版本号与合并。
-- **`preview` 是发布基线**，平时不动；**`main` 是发版分支**，发版时从基线合入并推送。
+- **`main` 是唯一的发布基线兼发版分支**：`DYEXRL-NEXT` 验收通过后合入 main 并推送。`preview` 与 `preview-backup-20261026` 已于 2026-11-08 删除（前者当时是 main 的子集，0 领先 / 落后 12，删除不丢提交）。
 - 重置或强推任何分支前**先留备份分支**（`git branch <名>-backup-<日期> <分支>`），确认备份后再动。
 - 用户对「回退 / 移除某功能」的指令是**明确决定：收到即执行，不要再论证**。
 - **NEXT 验收版构建不升版本号**（只改功能），篡改猴里会并存同名的"原版 + NEXT"两条，用户自行开关切换——**不要替他动那两条条目**；装好即交给用户验收，他说"我弄好了"就停手。
@@ -22,7 +22,7 @@
 - 版本号格式 **`YYYY.MM.DD.NN`**：前四段年月日，`NN` 是**当日第几次发版**（从 `01` 起）。用户说「同步正式版 / 更新版本」一律按此取号，不用问。
 - **版本号必升**：检查更新与更新日志是客户端代码，用户靠版本号变化拿到新代码；不升则改动对已安装用户完全无效。
   - **唯一例外**：用户明确说"先不要更新版本号"——此时必须把改动**补进当前版本条目的更新日志**，并在提交信息与回复里说明版本号未变。
-- **发版执行顺序**（一次跑完）：① 推发布基线分支 → ② 全套版本落点同步（更新日志 SSOT 为 `src/packages/Update/` 的 UpdateLog.js；build.js 会强校验一致性）→ ③ `npm run build` 过门禁 + `npm test` 全绿 → ④ `git checkout main && git merge <基线分支>` → **在 main 上再跑一遍 build+test** → `git push origin main`。
+- **发版执行顺序**（一次跑完）：① 推 `DYEXRL-NEXT`（验收分支）→ ② 全套版本落点同步（更新日志 SSOT 为 `src/packages/Update/` 的 UpdateLog.js；build.js 会强校验一致性）→ ③ `npm run build` 过门禁 + `npm test` 全绿 → ④ `git checkout main && git merge DYEXRL-NEXT` → **在 main 上再跑一遍 build+test** → `git push origin main`。
   - 不推 main，用户检测不到新版本（更新检查权威源之一是 GitHub main 上的 package.json）。
   - 合并后若 `DouyuEx_RL.user.js`（构建产物）显示被修改，先确认是否只有行尾差异，只差行尾就 `git checkout --` 还原，别把噪声提交进去。
 
