@@ -20,7 +20,7 @@
 DouyuEx-RL/
 ├── src/
 │   ├── core/                           # 核心底层原生拦截层 (最早期注入主页面上下文)
-│   │   ├── quality.js                  # 极速无缝最高画质拦截强锁 (12s 起播保护窗口、截断预载流)
+│   │   ├── quality.js                  # 极速无缝最高画质基线 (12s 起播保护窗口、按房间记基线、截断预载流)
 │   │   └── rank_engine.js              # 现代哈希混淆排行榜贡献值实时注入引擎 (DYRankFix, 1332 行原生明文)
 │   ├── packages/                       # 50+ 个语义化独立业务组件
 │   │   ├── Sign/                       # 一键签到 (含 createSignPanel 三级控制台与 Sign_StarDiscover)
@@ -58,11 +58,12 @@ DouyuEx-RL/
 
 ## 三、 核心底层机制与协议拦截原理
 
-### 3.1 极速无缝最高画质强锁 (`src/core/quality.js`)
-1. **起播 12 秒黄金保护窗口**：通过 `isInitialLoad()` 记录 `_roomEnterTime`，配合 `location.pathname` 变化自感知重置；
-2. **斩断官方低码率预载流**：在 `window` 上通过 `Object.defineProperty` 劫持 `preloadStreamUrlPromise` 与 `getLegacyFirstStream`，彻底废除官方预载流下载；
-3. **拦截 `/betard/{rid}` 响应**：在 XMLHttpRequest 与 fetch 层面精准截获房间配置，将下发的首选清晰度硬改锁定为原画（`rate: 0`）；
-4. **本地存储 6 大偏好 Key 镜像硬化**：对齐斗鱼底层包装格式，预先将 `rateRecordTime_h5p_room` 等 6 个本地键全部锁定为原画 `0`，有效期设为 365 天。
+### 3.1 极速无缝最高画质基线 (`src/core/quality.js`)
+1. **起播 12 秒黄金保护窗口**：通过 `isInitialLoad()` 记录 `_roomEnterTime`，配合 `location.pathname` 变化自感知重置；换房时同时重读基线、复位补取标记；
+2. **按房间记基线**：基线 = 该房间上次实测到的最高档，存 `ExSave_QualityBaseline`（按房间号记 7 天，最多 30 间，最久未用的先淘汰）。起播直接按基线取流，档位对得上就只有一条流、零切流；房间新加 / 取消了 2K 时补取一次并纠正基线；
+3. **斩断官方低码率预载流**：在 `window` 上通过 `Object.defineProperty` 劫持 `preloadStreamUrlPromise` 与 `getLegacyFirstStream`，彻底废除官方预载流下载；
+4. **拦截取流响应并用正确档位补取一次**：fetch 层截获 `getH5Play` / `/betard/` 响应里的 `multirates`，与基线比对后以正确档位补取并替换响应体（预算 2200ms，失败或超时保留原响应，不把能播的流弄没）；XHR 层无法替换响应体，只改发包 `rate` 并用响应刷新基线；
+5. **本地存储 6 大偏好 Key 镜像**：对齐斗鱼底层包装格式，把 `rateRecordTime_h5p_room` 等 6 个本地键预先写成基线档位，有效期 365 天（附带手段，主路径是请求层）。
 
 ### 3.2 活跃榜贡献值实时注入 (`src/core/rank_engine.js`)
 1. **主上下文 WebSocket 原型劫持**：在页面初始化最早期劫持原生 WebSocket，截获 `ranklist`、`dayrk`、`weekrk`、`monthrk`、`totalrk` 数据包；
@@ -127,6 +128,7 @@ DouyuEx-RL/
 | :--- | :--- | :--- | :--- |
 | **`ExSave_SignConfig`** | LocalStorage | JSON Object | 一键签到 5 大日常子任务勾选记忆配置 |
 | `ExSave_HighestVideoQuality` | LocalStorage | JSON `{isHighestVideoQuality: bool}` | 自动最高画质强锁开关 |
+| `ExSave_QualityBaseline` | LocalStorage | JSON `{房间号: {rate, fp, at}}` | 最高画质按房间记的起播基线（7 天 TTL，最多 30 间，最久未用先淘汰） |
 | `ExSave_FullScreen` | LocalStorage | JSON `{isFullScreen: bool}` | 自动网页全屏开关 |
 | `ExSave_P2P` | LocalStorage | JSON `{isKillP2P: bool}` | 阻止 WebRTC P2P 上传开关 |
 | `ExSave_DanmakuTail` | LocalStorage | JSON `{isTailEnabled, tailContent, type}` | 弹幕小尾巴配置 |
