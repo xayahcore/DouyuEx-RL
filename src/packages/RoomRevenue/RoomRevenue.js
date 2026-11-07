@@ -113,18 +113,24 @@ function RoomRevenue_render() {
     }
 }
 
+/* 指标图标：QingIcon（asorn/qingicon-open 的 Line 档，24 网格线稿，stroke 统一走 currentColor）。
+ * 只嵌入这 5 枚，不引整库；缺图标时退回文字符号，数据条不会因此消失。 */
+const ROOM_REVENUE_ICONS = {
+    donors: "<svg viewBox=\"0 0 24 24\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M17.2738 5.35083C18.5555 5.69213 19.4998 6.86081 19.4998 8.25004C19.4998 9.90689 18.1566 11.25 16.4998 11.25C16.4764 11.25 16.453 11.2498 16.4297 11.2492M17.98 14.5845C19.3737 15.0018 20.4714 15.8111 21.0924 17.0193C21.316 17.4543 21.4347 17.863 21.4854 18.2337C21.6457 19.405 20.5625 20.1025 19.3868 20.2291M13.5 7.25C13.5 9.45914 11.7091 11.25 9.49999 11.25C7.29085 11.25 5.49999 9.45914 5.49999 7.25C5.49999 5.04086 7.29085 3.25 9.49999 3.25C11.7091 3.25 13.5 5.04086 13.5 7.25ZM3.00264 18.9225C3.02296 18.4323 3.16301 17.8655 3.52457 17.25C4.70487 15.2408 6.34704 14.25 9.49999 14.25C12.6529 14.25 14.2951 15.2408 15.4754 17.25C15.837 17.8655 15.977 18.4323 15.9973 18.9225C16.048 20.1437 14.7627 20.75 13.5404 20.75H5.45953C4.2373 20.75 2.95202 20.1437 3.00264 18.9225Z\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>",
+    speakers: "<svg viewBox=\"0 0 24 24\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M9 9H15M9 13H13M3.5 4H20.5V18H15L12 21L9 18H3.5V4Z\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>",
+    income: "<svg viewBox=\"0 0 24 24\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M20 6.25V17.75C20 19.4069 16.4183 20.75 12 20.75C7.58172 20.75 4 19.4069 4 17.75V6.25M20 6.25C20 7.90685 16.4183 9.25 12 9.25C7.58172 9.25 4 7.90685 4 6.25M20 6.25C20 4.59315 16.4183 3.25 12 3.25C7.58172 3.25 4 4.59315 4 6.25M20 12C20 13.6569 16.4183 15 12 15C7.58172 15 4 13.6569 4 12\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>",
+    refresh: "<svg viewBox=\"0 0 24 24\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M3.26404 12.5C3.52317 17.0998 7.33531 20.75 12 20.75C16.8325 20.75 20.75 16.8325 20.75 12C20.75 7.16751 16.8325 3.25 12 3.25C8.41193 3.25 5.32829 5.40967 3.97807 8.5M3.49999 4.5V8.5H7.49999\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>",
+    source: "<svg viewBox=\"0 0 24 24\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M11.5391 5.25H3.75V20.25H18.75V12.4609M11.25 12.75L20.25 3.75M15.25 3.75H20.25V8.75\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>",
+};
+
 function RoomRevenue_icon(kind) {
-    const icon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    icon.setAttribute("viewBox", "0 0 24 24");
-    icon.setAttribute("aria-hidden", "true");
-    icon.setAttribute("focusable", "false");
-    icon.setAttribute("class", "ex-room-revenue__icon ex-room-revenue__icon--" + kind);
-    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-    path.setAttribute("d", kind === "donors"
-        ? "M12 2a5 5 0 1 0 0 10 5 5 0 0 0 0-10ZM3 22v-2a9 9 0 0 1 18 0v2h-2v-2a7 7 0 0 0-14 0v2H3Z"
-        : "M4 3h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-9l-5 3v-3H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Zm2 5v2h2V8H6Zm5 0v2h7V8h-7Zm-5 5v2h12v-2H6Z");
-    icon.appendChild(path);
-    return icon;
+    const span = document.createElement("span");
+    span.className = "ex-room-revenue__icon ex-room-revenue__icon--" + kind;
+    span.setAttribute("aria-hidden", "true");
+    const svg = ROOM_REVENUE_ICONS[kind];
+    if (svg) span.innerHTML = svg;
+    else span.textContent = { donors: "礼", speakers: "言", income: "¥" }[kind] || "";
+    return span;
 }
 
 function RoomRevenue_reserveSpace(host) {
@@ -164,13 +170,7 @@ function RoomRevenue_mount() {
             const item = document.createElement("span");
             item.className = "ex-room-revenue__metric";
             item.dataset.revenueMetric = name;
-            if (name === "income") {
-                const icon = document.createElement("span");
-                icon.className = "ex-room-revenue__icon ex-room-revenue__icon--income";
-                icon.textContent = "¥";
-                icon.setAttribute("aria-hidden", "true");
-                item.appendChild(icon);
-            } else item.appendChild(RoomRevenue_icon(name));
+            item.appendChild(RoomRevenue_icon(name));
             const value = document.createElement("span");
             value.className = name === "income" ? "ex-room-revenue__value" : "ex-room-revenue__" + name;
             item.appendChild(value);
@@ -179,7 +179,7 @@ function RoomRevenue_mount() {
         const refresh = document.createElement("button");
         refresh.type = "button";
         refresh.className = "ex-room-revenue__refresh";
-        refresh.textContent = "↻";
+        refresh.innerHTML = ROOM_REVENUE_ICONS.refresh || "↻";
         refresh.title = "刷新今日流水";
         refresh.setAttribute("aria-label", "刷新今日流水");
         refresh.addEventListener("click", function(event) { event.stopPropagation(); RoomRevenue_refresh(true); });
@@ -188,7 +188,7 @@ function RoomRevenue_mount() {
         source.href = "https://dy.roozj.com/";
         source.target = "_blank";
         source.rel = "noopener noreferrer";
-        source.textContent = "↗";
+        source.innerHTML = ROOM_REVENUE_ICONS.source || "↗";
         source.title = "来源：dy.roozj.com 公开榜单";
         source.setAttribute("aria-label", "查看流水来源 dy.roozj.com");
         node.append(metrics, refresh, source);

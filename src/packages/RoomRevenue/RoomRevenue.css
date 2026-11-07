@@ -17,7 +17,7 @@
 .ex-room-revenue__metrics {
     display: flex;
     align-items: center;
-    gap: 7px;
+    gap: 10px;
     flex: 1;
     min-width: 0;
     overflow: hidden;
@@ -26,7 +26,7 @@
 .ex-room-revenue__metric {
     display: inline-flex;
     align-items: center;
-    gap: 2px;
+    gap: 3px;
     min-width: 0;
 }
 
@@ -40,15 +40,24 @@
 }
 
 .ex-room-revenue__icon {
-    width: 16px;
-    height: 16px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 15px;
+    height: 15px;
     flex: none;
-    fill: currentColor;
-    line-height: 16px;
-    text-align: center;
+    line-height: 0;
 }
 
-.ex-room-revenue__donors {
+.ex-room-revenue__icon svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+    fill: none;
+    stroke: currentColor;
+}
+
+.ex-room-revenue__icon--donors {
     color: #ed5a65;
 }
 
@@ -57,9 +66,7 @@
 }
 
 .ex-room-revenue__icon--income {
-    color: #f54330;
-    font-size: 17px;
-    font-weight: 600;
+    color: #f5a623;
 }
 
 .layout-Player-rank.ex-room-revenue-rank-offset {
@@ -68,16 +75,37 @@
 
 .ex-room-revenue__refresh,
 .ex-room-revenue__source {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
     flex: none;
     color: inherit;
     font: inherit;
+    line-height: 0;
+    opacity: 0.75;
+}
+
+.ex-room-revenue__refresh svg,
+.ex-room-revenue__source svg {
+    width: 13px;
+    height: 13px;
+    display: block;
+    fill: none;
+    stroke: currentColor;
 }
 
 .ex-room-revenue__refresh {
     border: 0;
     background: transparent;
-    padding: 0 2px;
+    padding: 0;
     cursor: pointer;
+}
+
+.ex-room-revenue__refresh:hover,
+.ex-room-revenue__source:hover {
+    opacity: 1;
 }
 
 .ex-room-revenue__refresh:disabled {
@@ -87,8 +115,6 @@
 
 .ex-room-revenue__source {
     text-decoration: none;
-    padding: 0 2px;
-    font-size: 14px;
 }
 
 .ex-room-revenue__refresh:focus-visible,
