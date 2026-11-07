@@ -56,6 +56,7 @@
                     for (var i = 0; i < keys.length - BASELINE_MAX_ROOMS; i++) delete all[keys[i]];
                 }
                 localStorage.setItem(BASELINE_KEY, JSON.stringify(all));
+                _stats.baselineWrites++;
             } catch (e) {}
         }
 
@@ -66,6 +67,11 @@
         }
 
         var currentBaseline = readBaseline();
+
+        /* 现场自证（2026-11-07）：线上报「进房几秒后卡住」时，光看代码猜不出来。
+         * 这里只记计数、不打印，报障时在控制台读 __exQualityStats 就能看出是改写、补取还是读档位表在跑。 */
+        var _stats = { rewrites: 0, replays: 0, replayOk: 0, replayFail: 0, ladderReads: 0, baselineWrites: 0 };
+        try { window.__exQualityStats = _stats; } catch (e) {}
 
         function dbg(msg) {
             try { (window.__exQualityDebug = window.__exQualityDebug || []).push(Math.round(performance.now()) + " " + msg); } catch (e) {}
@@ -194,10 +200,11 @@
                         if (init && typeof init.body === 'string') {
                             args[1] = Object.assign({}, init);
                             args[1].body = rewriteRate(init.body, currentBaseline);
+                            _stats.rewrites++;
                         } else if (typeof Request !== 'undefined' && input instanceof Request) {
                             var text = await input.clone().text();
                             var next = rewriteRate(text, currentBaseline);
-                            if (next !== text) { args[0] = new Request(input, { body: next }); dbg("rewrote request -> " + currentBaseline); }
+                            if (next !== text) { args[0] = new Request(input, { body: next }); _stats.rewrites++; dbg("rewrote request -> " + currentBaseline); }
                         }
                     }
                 } catch(e){}
@@ -211,17 +218,25 @@
                         var data = JSON.parse(text2);
                         var ladder = readLadder(data);
                         if (ladder) {
+                            _stats.ladderReads++;
                             var want = targetRate(ladder);
                             if (want !== null && !_replayed) {
                                 _replayed = true;
+                                _stats.replays++;
                                 var replayArgs = await buildReplay(input, init, args, want);
                                 if (replayArgs) {
                                     var replay = await replayWithBudget(this, replayArgs);
                                     if (replay && replay.ok && replay.data && Number((replay.data.data || {}).rate) === Number(want)) {
+                                        _stats.replayOk++;
                                         dbg("replay ok rate=" + want);
-                                        return new Response(replay.text, { status: replay.status, statusText: replay.statusText, headers: replay.headers });
+                                        var swapped = new Response(replay.text, { status: replay.status, statusText: replay.statusText, headers: replay.headers });
+                                        // 构造出来的 Response 默认 url 为空串；播放器/缓存若按 url 认流会踩坑，补回原请求地址
+                                        try { Object.defineProperty(swapped, "url", { value: urlOf(input), configurable: true }); } catch (e) {}
+                                        return swapped;
                                     }
+                                    _stats.replayFail++;
                                     dbg("replay failed, keep original");
+                                    try { console.warn("[DouyuEx] 画质补取失败，保留原流（不影响播放）"); } catch (e) {}
                                 }
                             }
                         }
@@ -297,13 +312,20 @@
 
             var xhr = this;
             try {
-                if (this._ex_h5_url && typeof this._ex_h5_url === 'string' && (this._ex_h5_url.indexOf('getH5Play') >= 0 || this._ex_h5_url.indexOf('/betard/') >= 0)) {
+                /* 每个 XHR 只挂一次监听，且只在 12 秒起播窗口里读档位表：
+                 * 原来每次 send 都挂新监听、整场都在解析响应，长会话里会越积越重。 */
+                if (!xhr._ex_qLadderBound) {
+                    xhr._ex_qLadderBound = true;
                     xhr.addEventListener("load", function () {
                         try {
+                            var xhrUrl = String(xhr._ex_h5_url || "");
+                            if (!isInitialLoad()) return;
+                            if (xhrUrl.indexOf('getH5Play') < 0 && xhrUrl.indexOf('/betard/') < 0) return;
                             var realText = xhr.responseType === "json" ? JSON.stringify(xhr.response) : xhr.responseText;
                             var d = JSON.parse(realText);
                             var ladder = readLadder(d);
                             if (ladder) {
+                                _stats.ladderReads++;
                                 dbg("xhr ladder top=" + ladder[0].rate);
                                 targetRate(ladder);
                             }
