@@ -98,7 +98,12 @@ function initPkg_LiveTool_Module() {
 		var body = document.querySelector(".livetool .miuix-modal__body");
 		if (!body || body.dataset.sortBound) return;
 		body.dataset.sortBound = "1";
-		var mo = new MutationObserver(function () { LiveTool_sortCells(); });
+		var mo = new MutationObserver(function () {
+			/* 排序期间先断开：排序本身就在改 childList，不摘掉会自己触发自己 */
+			mo.disconnect();
+			try { LiveTool_sortCells(); }
+			finally { mo.observe(body, { childList: true }); }
+		});
 		mo.observe(body, { childList: true });
 		LiveTool_sortCells();
 	}, 0);
@@ -288,6 +293,7 @@ function LiveTool_sortCells() {
   var cells = Array.prototype.slice.call(body.querySelectorAll(':scope > .ui-cell'));
   if (cells.length < 2) return;
   cells.forEach(function (c, i) { c.dataset.exIdx = String(i); });
+  var before = cells.slice();
   cells.sort(function (a, b) {
     var ta = LiveTool_cellHead(a);
     var tb = LiveTool_cellHead(b);
@@ -296,6 +302,14 @@ function LiveTool_sortCells() {
     if (ra !== rb) return ra - rb;
     return Number(a.dataset.exIdx) - Number(b.dataset.exIdx);
   });
+  /* 顺序没变就一个字都不要动：appendChild 哪怕位置不变也是「移出再插入」，属于 childList 变更，
+   * 会再次触发上面那个 MutationObserver —— 这正是「打开直播间工具面板即整页卡死」的死循环
+   * （微任务里自我重入，主线程永远不空转）。 */
+  var same = true;
+  for (var i = 0; i < cells.length; i++) {
+    if (cells[i] !== before[i]) { same = false; break; }
+  }
+  if (same) return;
   cells.forEach(function (c) { body.appendChild(c); });
 }
 
