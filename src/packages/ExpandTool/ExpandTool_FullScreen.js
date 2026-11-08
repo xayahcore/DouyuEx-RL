@@ -37,46 +37,82 @@ function initPkg_ExpandTool_FullScreen_Set() {
 
 function initFullScreen() {
 	let ret = localStorage.getItem("ExSave_FullScreen");
-	if (ret != null) {
-		let retJson = JSON.parse(ret);
-        if (retJson.isFullScreen) {
-            fullScreen();
-        }
+	if (ret == null) return;
+	let retJson = null;
+	try {
+		retJson = JSON.parse(ret);
+	} catch (e) {
+		return; // 存储被写坏按“没开”处理，不炸初始化
+	}
+	if (retJson && retJson.isFullScreen) {
+		ExpandTool_autoWebFullScreen();
 	}
 }
 
-function fullScreen() {
-    function tryClick() {
-        let dom = document.querySelector("div.wfs-2a8e83");
-        if (dom) {
-            dom.click();
-            return true;
-        }
-        let icons = document.querySelectorAll(".icon-c8be96");
-        if (icons.length >= 2) {
-            icons[icons.length - 2].click();
-            return true;
-        }
-        return false;
-    }
+/* ==================== 自动网页全屏（2026-11-08 重写） ====================
+ * 真机探针结论（房间 9999）：
+ *   ① 站点没有 setWebFullScreen / setFullScreen 之类可调 API
+ *      （window.__player.onFullScreen 是浏览器全屏的回调，不是网页全屏开关）；
+ *   ② 页面启动默认普通布局，网页全屏只能由播放器控制条上的按钮触发；
+ *   ③ 旧主选择器 div.wfs-2a8e83 已 0 命中；旧兜底靠 .icon-c8be96 的固定下标盲点，
+ *      而且 observe(document.body) 在 document-start 会是 null —— 重试链当场就死了。
+ * 现在：先用图标签名（“进入网页全屏”那枚 SVG 的 path 固定以 M20 25h6v-6 开头；
+ *   全屏态会换成退出图标，但那时函数已经直接 return，不需要匹配），
+ * 再退到旧选择器与控制条尾部候选；每点一个都校验 body.is-fullScreen，成功即停，
+ * 同一个按钮绝不点第二次（避免“进去又被自己点出来”）。
+ * ========================================================================= */
+const FULLSCREEN_ICON_SIGN = "M20 25h6v-6";
+const FULLSCREEN_WAIT_MS = 6000;     // 等控制条 + 逐个候选尝试的总预算
+const FULLSCREEN_VERIFY_MS = 400;    // 点完等站点把 class 写上
 
-    if (tryClick()) return;
+function ExpandTool_isWebFullScreen() {
+	return !!(document.body && document.body.classList.contains("is-fullScreen"));
+}
 
-    let obs = new MutationObserver(() => {
-        if (tryClick()) {
-            obs.disconnect();
-            obs = null;
-        }
-    });
+/** 候选按可信度排序：图标签名 → 旧选择器 → 控制条尾部两枚 */
+function ExpandTool_fullScreenCandidates() {
+	let list = [];
+	let icons = Array.prototype.slice.call(document.querySelectorAll(".icon-c8be96"));
+	icons.forEach(function (el) {
+		let svg = el.querySelector("svg");
+		if (svg && String(svg.innerHTML).indexOf(FULLSCREEN_ICON_SIGN) >= 0) list.push(el);
+	});
+	let legacy = document.querySelector("div.wfs-2a8e83");
+	if (legacy) list.push(legacy);
+	if (icons.length >= 2) list.push(icons[icons.length - 2]);
+	if (icons.length >= 3) list.push(icons[icons.length - 3]);
+	return list;
+}
 
-    let target = document.querySelector(".layout-Player") || document.body;
-    obs.observe(target, { childList: true, subtree: true });
-    setTimeout(() => {
-        if (obs) {
-            obs.disconnect();
-            obs = null;
-        }
-    }, 15000);
+function ExpandTool_autoWebFullScreen() {
+	let deadline = Date.now() + FULLSCREEN_WAIT_MS;
+	let tried = [];
+	(function tick() {
+		if (ExpandTool_isWebFullScreen()) {
+			console.info("[DouyuEx] 自动网页全屏：已进入");
+			return;
+		}
+		if (Date.now() > deadline) {
+			console.info("[DouyuEx] 自动网页全屏：等不到可用的控制条按钮，本次放弃");
+			return;
+		}
+		let candidate = ExpandTool_fullScreenCandidates().filter(function (el) {
+			if (!el || tried.indexOf(el) >= 0) return false;
+			let rect = el.getBoundingClientRect ? el.getBoundingClientRect() : null;
+			return !rect || rect.width > 0; // 收起态/隐藏按钮不点
+		})[0];
+		if (!candidate) {
+			setTimeout(tick, 300);
+			return;
+		}
+		tried.push(candidate);
+		try {
+			candidate.click();
+		} catch (e) {
+			// 单个候选点不动不算错，继续试下一个
+		}
+		setTimeout(tick, FULLSCREEN_VERIFY_MS);
+	})();
 }
 
 function getHighestVideoQuality() {
