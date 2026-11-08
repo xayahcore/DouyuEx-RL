@@ -1104,6 +1104,11 @@
 
     function injectCss() {
 
+        // document-start 阶段 head / documentElement 可能都还没创建：返回 false 交给调用方延后重试
+        var host = document.head || document.documentElement;
+        if (!host) return false;
+        if (document.getElementById("ex-dyrank-style")) return true;
+
         var st = document.createElement("style");
 
         st.id = "ex-dyrank-style";
@@ -1118,8 +1123,8 @@
 
         ].join("\n");
 
-        (document.head || document.documentElement).appendChild(st);
-
+        host.appendChild(st);
+        return true;
     }
 
 
@@ -1314,19 +1319,31 @@
 
     state._bootTs = Date.now();
     installWsHook();
-    injectCss();
+    if (!injectCss()) {
+        // 等 DOM 出现后补一次；失败时 5 秒兜底定时器仍然照常注册
+        document.addEventListener("DOMContentLoaded", injectCss, { once: true });
+    }
     checkAndInject();
     // 极轻量的兜底定时器（5000ms，且只在榜单列表真实存在时运行，0.01ms 开销）
     setInterval(checkAndInject, 5000);
 
 })();
     }
-    try {
-        var s = document.createElement("script");
-        s.textContent = "(" + runDYRankFix.toString() + ")();\n//# sourceURL=DouyuEx.DYRankFix.js";
-        (document.head || document.documentElement).appendChild(s);
-        s.remove();
-    } catch(e) {
-        console.error("[DouyuEx] 活跃榜模块注入失败:", e);
+    function injectRankFix() {
+        var host = document.head || document.documentElement;
+        if (!host) return false;
+        try {
+            var s = document.createElement("script");
+            s.textContent = "(" + runDYRankFix.toString() + ")();\n//# sourceURL=DouyuEx.DYRankFix.js";
+            host.appendChild(s);
+            s.remove();
+        } catch(e) {
+            console.error("[DouyuEx] 活跃榜模块注入失败:", e);
+        }
+        return true;
+    }
+    // 与 quality.js 同口径：document-start 早期 head/documentElement 都可能为 null，等 DOM 再注入
+    if (!injectRankFix()) {
+        document.addEventListener("DOMContentLoaded", injectRankFix, { once: true });
     }
 })();

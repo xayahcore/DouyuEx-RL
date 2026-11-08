@@ -47,13 +47,24 @@ function initRouter(href) {
 function initRouter_DouyuRoom_Popup() {
     // 画中画
     removeAD();
+    let tries = 0;
     let intID = setInterval(() => {
-        if (typeof (document.querySelector('div.wfs-2a8e83')) !== "undefined") {
-            document.querySelector('div.wfs-2a8e83').click();
-            document.querySelector('label.layout-Player-asidetoggleButton').click();
-            let l = document.querySelectorAll(".tip-e3420a > ul > li").length;
-            document.querySelectorAll(".tip-e3420a > ul > li")[l - 1].click();
+        /* 旧实现写成 `typeof querySelector(...) !== "undefined"` —— 恒真（null 的 typeof 是 "object"），
+           节点不存在时每秒对 null 调 click()，clearInterval 永远执行不到，形成永久报错循环。
+           现在三个节点都拿到才动手，并给等待设上限。 */
+        let wfs = document.querySelector("div.wfs-2a8e83");
+        let aside = document.querySelector("label.layout-Player-asidetoggleButton");
+        let items = document.querySelectorAll(".tip-e3420a > ul > li");
+        if (wfs && aside && items.length > 0) {
             clearInterval(intID);
+            wfs.click();
+            aside.click();
+            items[items.length - 1].click();
+            return;
+        }
+        if (++tries > 20) {
+            clearInterval(intID);
+            console.warn("[DouyuEx] 画中画入口等不到，本次放弃（不影响其它功能）");
         }
     }, 1000);
 }
