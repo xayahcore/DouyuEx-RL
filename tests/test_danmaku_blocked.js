@@ -299,7 +299,36 @@ async function runTests() {
         console.log("✓ Case 11 通过: 判定依据悬停可见 + 同步进控制台，弹幕区可见文案不变");
     }
 
-    console.log("=== 全部 12 项核心测试 100% 通过 ===");
+    // ---------- Case 12: 连发两条、上一条回执先到，不得把新一条标成失败 ----------
+    {
+        const { win, api } = loadRealModule({});
+        // 先把链路跑通：A 有正常回执
+        const a = addSelfDanmaku(win, "连发A");
+        api.checkAndTrackSelfDanmu(a);
+        api.handleChatmsgPacket("type@=chatmsg/rid@=9999/uid@=276064895/nn@=测试大神/txt@=连发A/cid@=c12a/");
+        await wait(500);
+        assertNotFlagged(a, "连发A");
+
+        // B、C 紧接着发出；B 的回执晚于 C 的节点到达
+        const b = addSelfDanmaku(win, "连发B");
+        api.checkAndTrackSelfDanmu(b);
+        const c = addSelfDanmaku(win, "连发C");
+        api.checkAndTrackSelfDanmu(c);
+        api.handleChatmsgPacket("type@=chatmsg/rid@=9999/uid@=276064895/nn@=测试大神/txt@=连发B/cid@=c12b/");
+
+        // 首次判定点（400ms 后）不得按 B 的回执把 C 判死
+        await wait(520);
+        assertNotFlagged(c, "C 的回执还在路上时");
+
+        // C 的回执在宽限窗口内到达 → 之后也不得标
+        api.handleChatmsgPacket("type@=chatmsg/rid@=9999/uid@=276064895/nn@=测试大神/txt@=连发C/cid@=c12c/");
+        await wait(1500);
+        assertNotFlagged(b, "连发B");
+        assertNotFlagged(c, "连发C（迟到回执在宽限内到达）");
+        console.log("✓ Case 12 通过: 连发时上一条回执先到，不再把新一条误标为发送失败");
+    }
+
+    console.log("=== 全部 13 项核心测试 100% 通过 ===");
 }
 
 runTests().catch((err) => {

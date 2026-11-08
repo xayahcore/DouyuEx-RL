@@ -27,6 +27,7 @@ function makeEnv(opts) {
             ${opts.barrage === false ? "" : '<div class="Barrage-main"></div>'}
             ${opts.backpackButton ? '<div class="BackpackButton"></div>' : ""}
             ${opts.backpackEnter ? '<div id="js-backpack-enter"></div>' : ""}
+            ${opts.popup ? '<div class="wfs-2a8e83"></div><label class="layout-Player-asidetoggleButton"></label><div class="tip-e3420a"><ul><li></li></ul></div>' : ""}
         </body></html>`,
         { url: "https://www.douyu.com/9999" }
     );
@@ -43,9 +44,9 @@ function makeEnv(opts) {
         "record",
         `function init(){ record("init"); } function initStyles(){ record("initStyles"); }
          function initPkg(){ record("initPkg"); } function initPkgSpecial(){ record("initPkgSpecial"); }
-         function initTimer(){ record("initTimer"); }`
+         function initTimer(){ record("initTimer"); } function removeAD(){ record("removeAD"); }`
         + "\n" + ROUTER_SRC + `
-        return { run: initRouter_DouyuRoom_Main };
+        return { run: initRouter_DouyuRoom_Main, popup: initRouter_DouyuRoom_Popup };
         `
     );
     const record = (n) => calls.push(n);
@@ -113,11 +114,29 @@ function testEmptyPageAlsoBounded() {
     console.log("✓ 场景 3 通过: 元素全缺时同样有界，不会把插件挂死");
 }
 
+function testPopupRouteBounded() {
+    // 旧实现：typeof querySelector 恒真 → 每秒对 null 调 click，且 clearInterval 永远执行不到
+    const missing = makeEnv({ barrage: false });
+    assert.doesNotThrow(() => missing.api.popup(), "缺少入口时不得抛错");
+    assert.doesNotThrow(() => missing.tick(21), "节点一直缺失时每拍都不得抛错");
+    assert.strictEqual(missing.liveIntervals(), 0, "等不到画中画入口必须清掉定时器");
+    assert.ok(missing.warnings.some((w) => /画中画/.test(w)), "放弃时必须留痕: " + missing.warnings.join("|"));
+    missing.dom.window.close();
+
+    const ready = makeEnv({ barrage: false, popup: true });
+    ready.api.popup();
+    ready.tick(1);
+    assert.strictEqual(ready.liveIntervals(), 0, "入口齐全时第一拍就收工");
+    ready.dom.window.close();
+    console.log("✓ 场景 4 通过: 画中画路由缺入口时有界退出，不再每秒空点 null");
+}
+
 (async function main() {
     testReadyPageInitializesFast();
     testMissingBackpackEventuallyInitializes();
     testEmptyPageAlsoBounded();
-    console.log("=== 初始化门槛回归测试 3 组场景全部通过 ===");
+    testPopupRouteBounded();
+    console.log("=== 初始化门槛回归测试 4 组场景全部通过 ===");
 })().catch((e) => {
     console.error("测试失败:", e && e.stack ? e.stack : e);
     process.exit(1);

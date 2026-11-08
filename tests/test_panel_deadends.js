@@ -693,10 +693,8 @@ function loadInit() {
         "initPkg_ShowDanmaku",
         "Update_checkVersion",
         "initKillP2P",
-        "initFullScreen",
         "initHighestVideoQuality",
         "initPkg_NoLogin",
-        "removeAD",
         "initPkg_Console",
         "initPkg_Menu",
         "initPkg_Reset",
@@ -737,12 +735,12 @@ function loadInit() {
 function testInitIsolation() {
     const page = loadInit();
 
-    // 绿：16 步全跑，顺序与改造前逐行一致
+    // 绿：14 步全跑，顺序与改造后逐行一致
     const clean = page.build(collectConsole());
     clean.api.init();
-    assert.deepStrictEqual(clean.order, page.names, "init() 必须按原顺序调用全部 16 步");
+    assert.deepStrictEqual(clean.order, page.names, "init() 必须按顺序调用全部 14 步");
 
-    // 红：旧实现是 16 句裸平铺直调 —— 第 6 句一抛，后面的 Console/Menu/Reset/FollowList
+    // 红：旧实现是裸平铺直调 —— 中途一抛，后面的 Console/Menu/Reset/FollowList
     //     全部不再执行（用户侧就是「某几个功能没了」）。现在必须照常往下走。
     const log = collectConsole();
     const broken = page.build(log, "initPkg_ShowDanmaku");
@@ -756,7 +754,7 @@ function testInitIsolation() {
     assert.ok(!/^\s*(?:initPkg_[A-Za-z0-9_]+|init[A-Z][A-Za-z0-9_]*|removeAD|Update_checkVersion)\(\);\s*$/m.test(page.INIT_SRC),
         "init() 不得再有裸平铺直调");
 
-    console.log("✓ 场景 10 通过: init() 16 步按原顺序逐项隔离，单步抛错不再连坐");
+    console.log("✓ 场景 10 通过: init() 14 步按顺序逐项隔离，单步抛错不再连坐");
 }
 
 /* ------------------------------------------------------------------ */
@@ -1342,10 +1340,12 @@ function testExPanelSelfHealBackoff() {
 
 const FOLLOWLIST_SRC = read("src/packages/FollowList/FollowList.js");
 
-function loadFollowList() {
+function loadFollowList(opts) {
+    opts = opts || {};
     const dom = makeDom("<!DOCTYPE html><html><body>" +
         "<div class='Header-follow-tab is-active'>全部</div>" +
-        "<div class='Header-follow-listWrap'><li class='DropPaneList page-own'>页面自带条目</li></div>" +
+        "<div class='Header-follow-listWrap'><li class='DropPaneList page-own'>页面自带条目</li>" +
+        "<ul class='Header-follow-listBox'><li>页面原生列表</li></ul></div>" +
         "</body></html>");
     const win = dom.window;
     const log = collectConsole();
@@ -1355,7 +1355,7 @@ function loadFollowList() {
         constructor(el) { this.el = el; this.handlers = []; cclicks.push(this); }
         click(fn) { this.handlers.push(fn); }
     }
-    const fetchImpl = function () {
+    const fetchImpl = opts.fetch || function () {
         return Promise.resolve({
             json: function () {
                 return Promise.resolve({
@@ -1396,6 +1396,8 @@ async function testFollowListNoDuplicate() {
     await page.api.render(panel);
     assert.strictEqual(panel.querySelectorAll(".ExFollowListItem").length, 2, "只有 2 个在播房间应渲染 2 条");
     assert.strictEqual(panel.querySelectorAll("#refreshFollowList").length, 1, "刷新条只该有一条");
+    assert.strictEqual(page.win.document.getElementsByClassName("Header-follow-listBox")[0].style.display, "none",
+        "渲染成功后才允许隐藏原生列表");
 
     // 红：DomHook 每次回调（切 tab）都会再走一遍，旧实现 innerHTML += 会追加
     await page.api.render(panel);
@@ -1413,6 +1415,50 @@ async function testFollowListNoDuplicate() {
     assert.strictEqual(page.cclicks.length, 2 * 3, "三次渲染各绑一次新节点（旧节点已移除），实际 " + page.cclicks.length);
 
     console.log("✓ 场景 20 通过: 关注列表改覆盖式渲染，切 tab 不再翻倍、页面自带节点不被重解析");
+}
+
+/* 场景 20b: 关注列表失败路径（P0：失败即永久空白 / error 静默 / 未转义） */
+async function testFollowListFailurePaths() {
+    // ① 请求失败：原生列表必须保持可见 + 有提示
+    const rejectPage = loadFollowList({ fetch: function () { return Promise.reject(new Error("blocked")); } });
+    const rejectPanel = rejectPage.win.document.getElementsByClassName("Header-follow-listWrap")[0];
+    const rejectBox = rejectPage.win.document.getElementsByClassName("Header-follow-listBox")[0];
+    await rejectPage.api.render(rejectPanel);
+    assert.strictEqual(rejectPage.win.document.querySelectorAll(".ExFollowListItem").length, 0, "失败时不应插入增强条目");
+    assert.notStrictEqual(rejectBox.style.display, "none", "失败时原生列表必须保持可见（旧实现在这里永久空白）");
+    assert.ok(rejectPage.messages.some(function (m) { return m.text.indexOf("读取失败") >= 0; }), "失败必须有提示");
+
+    // ② 接口 error != 0：旧实现静默 return，用户只看到空白
+    const errPage = loadFollowList({ fetch: function () { return Promise.resolve({ json: function () { return Promise.resolve({ error: "-1" }); } }); } });
+    const errPanel = errPage.win.document.getElementsByClassName("Header-follow-listWrap")[0];
+    const errBox = errPage.win.document.getElementsByClassName("Header-follow-listBox")[0];
+    await errPage.api.render(errPanel);
+    assert.notStrictEqual(errBox.style.display, "none", "error!=0 时原生列表必须保持可见");
+    assert.ok(errPage.messages.some(function (m) { return m.text.indexOf("接口返回异常") >= 0; }), "error!=0 必须有提示");
+
+    // ③ 特殊字符转义 + 字段缺失仍显示 + 缺 show_time 不输出 NaN
+    const evil = '<img src=x onerror="window.__xss=1">';
+    const escPage = loadFollowList({
+        fetch: function () {
+            return Promise.resolve({
+                json: function () {
+                    return Promise.resolve({
+                        error: 0,
+                        data: { list: [{ room_id: "9", nickname: evil, room_name: "<b>标题</b>", online: 1 }] },
+                    });
+                },
+            });
+        },
+    });
+    const escPanel = escPage.win.document.getElementsByClassName("Header-follow-listWrap")[0];
+    await escPage.api.render(escPanel);
+    assert.strictEqual(escPanel.querySelectorAll(".ExFollowListItem").length, 1, "字段缺失时也必须显示（旧白名单会整批筛掉）");
+    assert.strictEqual(escPanel.querySelectorAll("img[onerror]").length, 0, "昵称里的 img 必须被转义");
+    assert.strictEqual(escPanel.querySelector(".DropPaneList-name").textContent, evil, "昵称应按字面量显示");
+    assert.strictEqual(escPanel.querySelector(".DropPaneList-title").textContent, "<b>标题</b>", "标题应按字面量显示");
+    assert.ok(!/NaN/.test(escPanel.innerText), "缺 show_time 时不得出现 NaN");
+
+    console.log("✓ 场景 20b 通过: 失败保留原生列表、error!=0 有提示、字段缺失与特殊字符不再空/破结构");
 }
 
 /* ------------------------------------------------------------------ */
@@ -1961,6 +2007,7 @@ function testStaticGuardRails() {
     testChatMemoryRebindAfterRoomSwitch();
     testExPanelSelfHealBackoff();
     await testFollowListNoDuplicate();
+    await testFollowListFailurePaths();
     testExpandToolInitIsolation();
     await testFixedAnchorFallback();
     testLastLiveTimeCheapProbe();

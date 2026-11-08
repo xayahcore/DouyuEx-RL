@@ -505,15 +505,15 @@ function loadBarrage(opts) {
     let gmImpl = null;
     const factory = new Function(
         "document", "window", "console", "setInterval", "clearInterval", "setTimeout", "clearTimeout",
-        "MutationObserver", "initPkg_BarragePanel_Tip", "getUserUid", "openPage", "getLocalDateStr",
+        "MutationObserver", "initPkg_BarragePanel_Tip", "openPage", "getLocalDateStr",
         "addMuteUser", "rid", "showMessage", "getImageDanmakuHtml", "GM_xmlhttpRequest",
         EXGUARD_SRC + "\n" + EXUI_SRC + "\n" + DOMHOOK_SRC + "\n" + BARRAGE_SRC + "\n" +
-        "return { init: initPkg_BarragePanel, setFunc: setBarrgePanelFunc, recent: getUserRecentBarrage, withGuard: barragePanel__withGuard, pollOpts: barragePanel_pollOpts };"
+        "return { init: initPkg_BarragePanel, setFunc: setBarrgePanelFunc, withGuard: barragePanel__withGuard, pollOpts: barragePanel_pollOpts };"
     );
     const api = factory(
         win.document, win, log.console, clock.setInterval, clock.clearInterval, clock.setTimeout, clock.clearTimeout,
         win.MutationObserver, function () {},
-        async function () { return ""; }, function () {}, function () { return "2026-10-26"; },
+        function () {}, function () { return "2026-10-26"; },
         async function () { return muteResult; }, 9999,
         function (text) { messages.push(text); }, function () { return ""; },
         function (config) { gmCalls.push(config); if (gmImpl) gmImpl(config); }
@@ -549,13 +549,8 @@ async function testBarragePanelGuards() {
     assert.strictEqual(muteCase.log.errors.length, 0, "禁言接口空返回不得抛错");
     assert.ok(muteCase.messages.some((s) => s.indexOf("没有返回结果") !== -1), "禁言失败必须给用户看得见的提示");
 
-    // 请求兜底：onerror 必须 resolve null，而不是永不 settle
+    // 查弹幕（doseeing / fz996）已整体移除，这里只保留 withGuard 的异常兜底回归
     const c = loadBarrage();
-    c.setGm(function (config) { if (typeof config.onerror === "function") config.onerror(new Error("blocked")); });
-    const value = await c.api.recent("someone");
-    assert.strictEqual(value, null, "请求失败必须 resolve null");
-    assert.strictEqual(c.gmCalls.length, 1);
-    assert.ok(c.log.warns.some((s) => s.indexOf("请求失败") !== -1));
 
     // withGuard 内部抛错：旧实现 try/finally 没有 catch，异常会漏进 MutationObserver
     assert.doesNotThrow(function () { c.api.withGuard(function () { throw new Error("guard boom"); }); }, "withGuard 必须兜住异常");
@@ -592,9 +587,67 @@ function testStaticGuardRails() {
 
     const barrageCode = BARRAGE_SRC;
     assert.ok(barrageCode.indexOf("ExGuard_pollFor") !== -1, "BarragePanel 轮询必须走有上限实现");
-    assert.ok(barrageCode.indexOf("ExGuard_xhr") !== -1, "查弹幕的第二个请求必须走兜底包装");
+    assert.ok(barrageCode.indexOf("doseeing.com") === -1, "查弹幕死链必须已移除（数据源停服）");
 
     console.log("✓ 场景 9 通过: 源码级守卫（DomHook/LevelTask/五个包的兜底与上限）全部在位");
+}
+
+/* 场景 10: StyleHook / initStyles 在 document-start 没有 body/head 时不得抛错 */
+function testDomReadyWrites() {
+    const STYLEHOOK_SRC = read("src/require/StyleHook/StyleHook.js");
+    const STYLEHOOK_FACTORY = new Function("document", STYLEHOOK_SRC + "\nreturn { set: StyleHook_set };");
+    const makeDoc = (opts) => {
+        const doc = {
+            _styles: [],
+            _listeners: {},
+            body: opts.body === undefined ? { append: function (el) { doc._styles.push(el); } } : opts.body,
+            head: opts.head === undefined ? { append: function (el) { doc._styles.push(el); } } : opts.head,
+            documentElement: opts.documentElement === undefined ? { append: function (el) { doc._styles.push(el); } } : opts.documentElement,
+            getElementById: function () { return null; },
+            createElement: function () { return { id: "", innerHTML: "" }; },
+            addEventListener: function (type, fn) { (doc._listeners[type] = doc._listeners[type] || []).push(fn); },
+        };
+        return doc;
+    };
+
+    // ① body 为空、head 在：落到 head（旧实现 document.body.append 直接抛）
+    const noBody = makeDoc({ body: null });
+    assert.doesNotThrow(function () { STYLEHOOK_FACTORY(noBody).set("Ex_Style_A", "a{}"); });
+    assert.strictEqual(noBody._styles.length, 1, "body 为空时必须落到 head");
+
+    // ② 三个宿主都没有：挂 DOMContentLoaded，不抛；就绪后补上
+    const none = makeDoc({ body: null, head: null, documentElement: null });
+    assert.doesNotThrow(function () { STYLEHOOK_FACTORY(none).set("Ex_Style_B", "b{}"); });
+    assert.ok(none._listeners.DOMContentLoaded && none._listeners.DOMContentLoaded.length === 1,
+        "宿主机都没有时必须挂 DOMContentLoaded");
+    none.body = { append: function (el) { none._styles.push(el); } };
+    none._listeners.DOMContentLoaded[0]();
+    assert.strictEqual(none._styles.length, 1, "DOM 就绪后必须补上样式");
+
+    // ③ initStyles：head/documentElement 都没有时同样延后，不抛出（视频路由在 document-start 直调）
+    const MAIN_SRC = read("src/main.js");
+    const start = MAIN_SRC.indexOf("function initStyles() {");
+    const end = MAIN_SRC.indexOf("(async function () {", start);
+    assert.ok(start !== -1 && end !== -1, "src/main.js 里找不到 initStyles()，测试需同步");
+    const INIT_STYLES_FACTORY = new Function("document",
+        MAIN_SRC.slice(start, end) + "\nreturn { run: initStyles };");
+    const noHead = {
+        _listeners: {},
+        _appended: 0,
+        head: null,
+        documentElement: null,
+        createElement: function () { return { appendChild: function () {} }; },
+        createTextNode: function (t) { return { t: t }; },
+        addEventListener: function (type, fn) { (noHead._listeners[type] = noHead._listeners[type] || []).push(fn); },
+    };
+    assert.doesNotThrow(function () { INIT_STYLES_FACTORY(noHead).run(); });
+    assert.ok(noHead._listeners.DOMContentLoaded && noHead._listeners.DOMContentLoaded.length === 1,
+        "initStyles 在 head 为空时必须等 DOMContentLoaded");
+    noHead.head = { appendChild: function () { noHead._appended++; } };
+    noHead._listeners.DOMContentLoaded[0]();
+    assert.strictEqual(noHead._appended, 1, "DOM 就绪后必须补上基础样式");
+
+    console.log("✓ 场景 10 通过: document-start 无 body/head 时样式注入不抛错，就绪后补上");
 }
 
 (async function main() {
@@ -607,7 +660,8 @@ function testStaticGuardRails() {
     await testShieldBoundedAndIsolated();
     await testBarragePanelGuards();
     testStaticGuardRails();
-    console.log("=== 杂项 P1 防护回归（LevelTask / 请求兜底 / 有上限轮询 / DomHook）9 组场景全部通过 ===");
+    testDomReadyWrites();
+    console.log("=== 杂项 P1 防护回归（LevelTask / 请求兜底 / 有上限轮询 / DomHook / DOM 就绪）10 组场景全部通过 ===");
 })().catch((e) => {
     console.error("测试失败:", e && e.stack ? e.stack : e);
     process.exit(1);
