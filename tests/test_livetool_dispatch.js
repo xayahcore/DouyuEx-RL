@@ -38,7 +38,6 @@ const EXUI_SRC = readSrc("src/packages/ExUI/ExUI.js");
 const REPLY_SRC = readSrc("src/packages/LiveTool/Reply/Reply.js");
 const MUTE_SRC = readSrc("src/packages/LiveTool/Mute/Mute.js");
 const LOOP_SRC = readSrc("src/packages/BarrageLoop/BarrageLoop.js");
-const PANEL_SRC = readSrc("src/packages/BarragePanel/BarragePanel.js");
 
 // getStrMiddle / getType 是整条链的解析底座：直接从真实 common.js 里切出函数体，
 // 不用镜像实现，免得「测试里的解析和线上不一样」。
@@ -454,68 +453,6 @@ async function testBarrageLoopKeepsRunning() {
     dom.window.close();
 }
 
-/* ============================ ⑧ BarragePanel：查弹幕不得点了没反应 ============================ */
-
-async function testBarragePanelUserUid() {
-    console.log("=== ⑧ 查弹幕：接口失败/返回体缺字段必须给出结果，不能让按钮点了没反应 ===");
-    const dom = new JSDOM("<!DOCTYPE html><html><body></body></html>", { url: "https://www.douyu.com/9999" });
-    const win = dom.window;
-    const warnings = [];
-    const requests = [];
-
-    const factory = new Function(
-        "window", "document", "localStorage", "console", "setTimeout", "clearTimeout",
-        "GM_xmlhttpRequest", "rid", "showMessage", "openPage", "getLocalDateStr",
-        PANEL_SRC + `
-        return { getUserUid: getUserUid };
-        `
-    );
-    const api = factory(
-        win, win.document, win.localStorage,
-        { log: function () {}, warn: function () { warnings.push(Array.prototype.join.call(arguments, " ")); }, error: function () {} },
-        win.setTimeout, win.clearTimeout,
-        function (req) { requests.push(req); },
-        "9999", function () {}, function () {}, function () { return "2026-10-26"; }
-    );
-
-    // ① 请求失败
-    const p1 = api.getUserUid("某观众");
-    await waitTick();
-    requests[0].onerror({ message: "blocked" });
-    assert.strictEqual(await p1, "", "请求失败必须 resolve 成空串（旧实现永不 resolve）");
-
-    // ② 返回体为 null / 缺 suggest / fan 为空 / 昵称对不上
-    const cases = [
-        { response: null },
-        { response: {} },
-        { response: { suggest: {} } },
-        { response: { suggest: { fan: [] } } },
-        { response: { suggest: { fan: [{ nickname: "别人", user_id: "123" }] } } }
-    ];
-    for (let i = 0; i < cases.length; i++) {
-        const p = api.getUserUid("某观众");
-        await waitTick();
-        assert.doesNotThrow(function () {
-            requests[requests.length - 1].onload(cases[i]);
-        }, "返回体异常时 onload 不得抛错: " + JSON.stringify(cases[i]));
-        assert.strictEqual(await p, "", "异常返回体必须 resolve 成空串: " + JSON.stringify(cases[i]));
-    }
-
-    // ③ 正常命中
-    const ok = api.getUserUid("某观众");
-    await waitTick();
-    requests[requests.length - 1].onload({ response: { suggest: { fan: [{ nickname: "某观众", user_id: "abc123" }] } } });
-    assert.strictEqual(await ok, "abc123", "命中时必须返回 user_id（回归保护）");
-
-    assert.ok(
-        warnings.some(function (w) { return w.indexOf("查弹幕接口") !== -1; }),
-        "请求失败必须留 warn 线索: " + JSON.stringify(warnings)
-    );
-
-    console.log("✓ ⑧ 通过: 失败/超时/畸形返回体全部安全落地，正常查询不受影响");
-    dom.window.close();
-}
-
 (async function main() {
     testReplyExecNull();
     await testMuteExecNull();
@@ -525,7 +462,6 @@ async function testBarragePanelUserUid() {
     testRealWebSocketEntry();
     await testAsyncHandlerRejection();
     await testBarrageLoopKeepsRunning();
-    await testBarragePanelUserUid();
     console.log("=== P0-2 弹幕派发链隔离回归测试 100% 通过 ===");
 })().catch(function (e) {
     console.error("测试失败:", e && e.stack ? e.stack : e);

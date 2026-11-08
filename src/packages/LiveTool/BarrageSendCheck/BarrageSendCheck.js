@@ -39,9 +39,41 @@ let channelLastSeenAt = {};
 
 // 判定防抖延时(ms)：需留出服务端回执在网络上的往返时间
 const BARRAGE_CHECK_DELAY = 400;
+// 连发时再给本条一个回执窗口：上一条的回执可能先到，不能据此把本条判死
+const BARRAGE_CHECK_GRACE_MS = 1200;
+// 最近回执队列：只留 5 条 / 10 秒，足够覆盖连发，也不会无限增长
+const BARRAGE_ECHO_KEEP_MS = 10000;
+const BARRAGE_ECHO_KEEP_MAX = 5;
 // 熔断阈值：跟踪到自身弹幕达到该数量且始终零回执，则停用检测
 const BARRAGE_BREAKER_MIN_NODES = 5;
 const BARRAGE_BREAKER_MIN_MS = 5000;
+
+/**
+ * 最近几条自身回执的文本。
+ * 旧实现只有一个 myLastBarrage 单槽：连发 A→B 时，若 A 的回执晚于 B 的节点到达，
+ * B 会被拿去和 A 的文本比对，产生“可能发送失败”的误标（要等 B 的回执到了才自愈）。
+ */
+let recentSelfEchoes = [];
+
+function rememberSelfEcho(text) {
+  if (!text) return;
+  let now = Date.now();
+  recentSelfEchoes.push({ text: text, at: now });
+  while (recentSelfEchoes.length > BARRAGE_ECHO_KEEP_MAX ||
+         (recentSelfEchoes.length && now - recentSelfEchoes[0].at > BARRAGE_ECHO_KEEP_MS)) {
+    recentSelfEchoes.shift();
+  }
+}
+
+function hasSelfEcho(text) {
+  if (!text) return false;
+  let now = Date.now();
+  for (let i = 0; i < recentSelfEchoes.length; i++) {
+    let echo = recentSelfEchoes[i];
+    if (echo.text === text && now - echo.at <= BARRAGE_ECHO_KEEP_MS) return true;
+  }
+  return false;
+}
 
 // 锚定字段边界取值，避免 nn@= 误命中 bnn@=（粉丝牌名称）
 function getFieldValue(raw, key) {
@@ -123,7 +155,32 @@ function healDanmakuFailedMark(echoText) {
 // 记录自身弹幕回执
 function recordSelfEcho(text) {
   myLastBarrage = text;
-  healDanmakuFailedMark(extractEchoText(text));
+  let echoText = extractEchoText(text);
+  rememberSelfEcho(echoText);
+  healDanmakuFailedMark(echoText);
+}
+
+/**
+ * 判定一条自弹幕是否失败。
+ * retry = 0 是 400ms 的首次判定；此时若队列里没有本条的回执，先不进结论，
+ * 再等一个回执窗口（BARRAGE_CHECK_GRACE_MS）后复核一次 —— 连发的迟到回执就在这个窗口里到。
+ */
+function judgeSelfDanmu(node, contentEl, localText, retry) {
+  if (barrageCheckDisabled) return;
+  if (!myLastBarrage) return;          // 尚未收到任何自身回执 → 无法判定，宁可不报
+  if (hasSelfEcho(localText)) return;  // 队列里已有本条回执 = 发送成功
+  let echoText = extractEchoText(myLastBarrage);
+  if (!echoText) return;
+  if (echoText === localText) return;
+  if (retry < 1 && selfNodeTrackedCount >= 2) {
+    // 只有“这条之前已经跟踪过别的自弹幕”时才需要宽限：
+    // 单发场景下最近一条回执只可能是本条自己的，没有推迟的必要。
+    setTimeout(function () {
+      judgeSelfDanmu(node, contentEl, localText, retry + 1);
+    }, BARRAGE_CHECK_GRACE_MS);
+    return;
+  }
+  markDanmakuFailed(node, contentEl, buildCheckDiagnostic(localText, echoText));
 }
 
 // 判定现场快照：比对双方 + 各回执通道的最近活动时间。
@@ -203,15 +260,7 @@ function checkAndTrackSelfDanmu(node) {
 
   clearTimeout(barrageSendCheckTimer);
   barrageSendCheckTimer = setTimeout(function () {
-    if (barrageCheckDisabled) return;
-    // 尚未收到任何自身回执 → 无法判定，宁可不报也绝不误报
-    if (!myLastBarrage) return;
-
-    let echoText = extractEchoText(myLastBarrage);
-    if (!echoText) return;
-    if (echoText === localText) return; // 回执文本一致 = 发送成功
-
-    markDanmakuFailed(node, contentEl, buildCheckDiagnostic(localText, echoText));
+    judgeSelfDanmu(node, contentEl, localText, 0);
   }, BARRAGE_CHECK_DELAY);
 }
 

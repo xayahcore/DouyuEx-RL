@@ -75,7 +75,6 @@ function setBarragePanelCallBack() {
                             id = userNameDom[0].innerText;
                             setUserFansMedal(userNameDom[0], id);
                             setReplyBarrageButton(barragePanelButton);
-                            setSearchBarrageButton(barragePanelButton);
                             setBarragePanelButtonSplit(barragePanelButton);
                             setMuteButton(barragePanelButton);
                             setBarrgePanelFunc(barragePanelButton, id);
@@ -98,7 +97,6 @@ function setBarragePanelCallBack() {
                         id = userNameDom[0].innerText;
                         setUserFansMedal(userNameDom[0], id);
                         setReplyBarrageButton(barragePanelButton);
-                        setSearchBarrageButton(barragePanelButton);
                         setBarragePanelButtonSplit(barragePanelButton);
                         setMuteButton(barragePanelButton);
                         setBarrgePanelFunc(barragePanelButton, id);
@@ -230,22 +228,6 @@ function setMuteButton(dom) {
     dom.appendChild(a);
 }
 
-function setSearchBarrageButton(dom) {
-    if (!dom) {
-        ExGuard_warn("弹幕面板", "按钮容器不存在，本次跳过 setSearchBarrageButton");
-        return;
-    }
-    if (document.getElementById("barragePanel__search") != null) {
-        return;
-    }
-    let a = document.createElement("div");
-    a.className = "button-7e1395";
-    a.innerText = "查弹幕";
-    a.id = "barragePanel__search";
-    a.style = "z-index:5";
-    dom.appendChild(a);
-}
-
 function setReplyBarrageButton(dom) {
     if (!dom) {
         ExGuard_warn("弹幕面板", "按钮容器不存在，本次跳过 setReplyBarrageButton");
@@ -265,9 +247,8 @@ function setReplyBarrageButton(dom) {
 function setBarrgePanelFunc(parentDom, id) {
     const replyBtn = document.getElementById("barragePanel__reply");
     const muteBtn = document.getElementById("barragePanel__mute");
-    const searchBtn = document.getElementById("barragePanel__search");
-    if (!replyBtn || !muteBtn || !searchBtn) {
-        ExGuard_warn("弹幕面板", "回复/禁言/查弹幕按钮没有全部注入成功，本次跳过绑定");
+    if (!replyBtn || !muteBtn) {
+        ExGuard_warn("弹幕面板", "回复/禁言按钮没有全部注入成功，本次跳过绑定");
         return;
     }
 
@@ -311,108 +292,8 @@ function setBarrgePanelFunc(parentDom, id) {
             showMessage("【禁言】操作失败：" + ((e && e.message) || e), "error");
         }
     };
-
-    searchBtn.onclick = async () => {
-        // 接口失败时 getUserUid 会给出空串：必须显式提示，不能点了没反应
-        let uid = await getUserUid(id);
-        if (uid !== "") {
-            // dt=0（“全部日期”模式）在数据源端已返回 502 Bad Gateway，必须传具体直播日
-            openPage(`https://www.doseeing.com/data/fan/${uid}?type=chat&dt=${getLocalDateStr()}`, true);
-        } else {
-            showMessage("【查弹幕】未能解析该用户的 UID（接口异常或查无此人）", "warning");
-        }
-    };
 }
 
-function insertBarragePanel_SearchBarrage_Dom(parentDom) {
-    if (!parentDom) {
-        ExGuard_warn("弹幕面板", "面板按钮容器不存在，本次不插入查弹幕面板");
-        return;
-    }
-    let pMarginLeft = parseInt(parentDom.style.marginLeft);
-    let newMarginLeft = "-237px";
-    if (pMarginLeft > 237) {
-        newMarginLeft = "-237px";
-    } else {
-        newMarginLeft = "237px";
-    }
-    
-    let a = document.createElement("div");
-    a.className = "barragePanel__funcPanel";
-    a.style = `margin-left:${newMarginLeft}`;
-    a.innerHTML = `
-    <ul class="layui-timeline" id="barragePanel__searchPanel">
-        
-    </ul>
-    `;
-
-    parentDom.insertBefore(a, parentDom.childNodes[0]);
-}
-
-
-function getUserRecentBarrage(name) {
-    // 旧实现只有 onload：请求被拦 / 超时后 Promise 永不 settle（点了没反应）
-    return ExGuard_xhr({
-        method: "GET",
-        url: "http://dyapi.fz996.com/api/Wx/GetDataBarrage?keyword=" + encodeURIComponent(name || ""),
-        responseType: "json",
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        tag: "弹幕面板",
-    }, 15000);
-}
-
-/**
- * 按昵称反查 doseeing 的 user_id（查弹幕用）。
- *
- * 历史问题：只有 onload 且没有异常兜底 ——
- *  ① GM_xmlhttpRequest 失败/超时没有被监听的回调，Promise 永不 settle，按钮点了没反应；
- *  ② onload 里 `if (!ret.suggest) success = false;` 之后又直接 `ret.suggest.fan`，
- *     接口返回 null 或没有 suggest 字段时在 onload 里抛 TypeError，同样让 Promise 悬着。
- * 现在任何异常路径都 resolve 成空串，调用方据此给出提示。
- */
-function getUserUid(name) {
-    return new Promise(resolve => {
-        let settled = false;
-        const finish = (value) => {
-            if (settled) return;
-            settled = true;
-            resolve(value === undefined || value === null ? "" : value);
-        };
-        try {
-            GM_xmlhttpRequest({
-                method: "GET",
-                url: "https://www.doseeing.com/api/suggest_all?type=room&nickname=" + encodeURIComponent(name),
-                responseType: "json",
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'
-                },
-                onload: function(response) {
-                    // 数据源可能返回 null / 缺 suggest / 缺 fan：逐层判空，取不到一律当未找到
-                    let ret = (response && response.response) || {};
-                    let suggest = ret.suggest || {};
-                    let fan = suggest.fan;
-                    if (!fan || fan.length === 0 || !fan[0] || fan[0].nickname !== name) {
-                        finish("");
-                        return;
-                    }
-                    finish(fan[0].user_id);
-                },
-                onerror: function(err) {
-                    console.warn("[DouyuEx] 查弹幕接口请求失败：" + ((err && err.message) || err));
-                    finish("");
-                },
-                ontimeout: function() {
-                    console.warn("[DouyuEx] 查弹幕接口超时");
-                    finish("");
-                }
-            });
-        } catch (e) {
-            console.warn("[DouyuEx] 查弹幕请求无法发起：" + ((e && e.message) || e));
-            finish("");
-        }
-    });
-}
-
+/* 查弹幕（doseeing / fz996 两个第三方数据源）已于 2026-11-08 整体移除：
+   两个接口都停服，按钮点开只会得到一个空白页。 */
 
