@@ -2,6 +2,7 @@
 
 > **为纯净观播与硬核工程而生**。因原作者小淳于 2026 年 8 月正式停更，本项目由社区独立接棒，基于原作者纯净模块化源码架构进行**全量底层翻新、深水区缺陷清零、Zero-Polling 性能排毒与现代 MIUIX 工业级重构** —— 源头锁定原画秒开、全系 MIUIX 工业美学、页内弹幕穿透回溯、100% 封闭纯净沙盒。
 
+[![ScriptCat](https://img.shields.io/badge/ScriptCat-9071-4e90dc.svg?style=flat-square)](https://scriptcat.org/zh-CN/script-show-page/9071)
 [![Greasy Fork](https://img.shields.io/badge/Greasy%20Fork-595575-red.svg?style=flat-square)](https://greasyfork.org/zh-CN/scripts/595575-douyuex-rl-%E6%96%97%E9%B1%BC%E7%9B%B4%E6%92%AD%E9%97%B4%E5%A2%9E%E5%BC%BA%E6%8F%92%E4%BB%B6-reborn-lite)
 [![GitHub release](https://img.shields.io/github/v/release/xayahcore/DouyuEx-RL?color=blue&style=flat-square)](https://github.com/xayahcore/DouyuEx-RL/releases)
 [![Tests Passing](https://img.shields.io/badge/tests-passing-success?style=flat-square)](https://github.com/xayahcore/DouyuEx-RL)
@@ -11,8 +12,10 @@
 
 ### 🚀 快速安装
 
+- **ScriptCat 安装**：👉 [点击前往安装（支持脚本猫自动更新）](https://scriptcat.org/zh-CN/script-show-page/9071)
 - **Greasy Fork 官方安装**：👉 [点击前往安装（支持油猴自动更新）](https://greasyfork.org/zh-CN/scripts/595575-douyuex-rl-%E6%96%97%E9%B1%BC%E7%9B%B4%E6%92%AD%E9%97%B4%E5%A2%9E%E5%BC%BA%E6%8F%92%E4%BB%B6-reborn-lite)
 - **GitHub 源码仓库**：👉 [xayahcore/DouyuEx-RL](https://github.com/xayahcore/DouyuEx-RL)
+- **版本检查**：并发探测 Greasy Fork、ScriptCat、GitHub 与 jsDelivr 的版本源，取最大值，避免单一源缓存导致漏检。
 
 ---
 
@@ -89,7 +92,7 @@
 
 ### 📦 轻量化工程架构
 
-- **源码模块化拆分**：核心层与 44 个功能包各自独立成目录，通过构建脚本按需拼接，并做 Tree-Shaking 收敛压缩，未被接线的代码不会进入产物。
+- **源码模块化拆分**：核心层与 44 个功能包各自独立成目录，通过构建脚本按需拼接，并做 Tree-Shaking 收敛；未被接线的代码不会进入产物，产物保持未压缩可读（不做混淆/压缩）。
 
 ---
 
@@ -141,14 +144,11 @@ npm test
 
 ---
 
-## 📝 最新版本速递 (v2026.11.13.01)
+## 📝 最新版本速递 (v2026.11.14.01)
 
-- **👀 关注列表不再一片空白**：读取失败不再让列表永久空白 —— 只有增强列表渲染成功才隐藏原生列表，失败一律还原原生列表并说明原因（登录态失效 / 接口 error 码 / 数据不完整）；请求 8 秒没有回音按失败处理。失败后鼠标移到「关注」入口会自动补渲染一次，确实没人在播时显示「当前没有在播的关注」。
-- **🧩 关注列表数据与交互加固**：开播状态 / 轮播字段缺失不再把整批条目筛空，昵称、房名等接口文本统一转义，缺少开播时间不再出现「已播NaN秒」；切到「视频动态」等 tab 时增强列表自动收起；长按与单击改用标准事件监听，不再覆盖页面自己的 `mousedown` / `mouseup`。
-- **🖥 自动网页全屏修好**：旧主选择器在真机上已 0 命中、兜底又靠图标固定下标盲点。现在按「进入网页全屏」按钮的 SVG 图标签名定位，命中不到再退旧选择器与控制条尾部候选，每点一次都校验 `body.is-fullScreen`，成功即停；同一个按钮不重复点击，已全屏直接跳过。
-- **💬 连发弹幕不再误标发送失败**：保留最近 5 条 / 10 秒回执，上一条回执晚到不会再把新一条判死；首次判定没有拿到本条回执时再等 1.2 秒复核一次。
-- **🚀 启动期空 DOM 加固**：页面刚开始解析、还没有 `body` / `head` 时，样式注入与脚本注入不再失败甚至抛错（按 `body → head → documentElement` 兜底，全空就等 `DOMContentLoaded`）；自动网页全屏与去广告移到页面就绪后初始化，画中画入口的等待加上限。
-- **🧹 移除「查弹幕」**：doseeing、fz996 两个数据源均已停服，查弹幕按钮与面板整体退役。
+- **📦 产物改为未压缩可读**：所有 `.user.js` 构建产物统一交付未压缩版本（保留空白与变量名），不再交付压缩代码，符合 Greasy Fork 与 ScriptCat 的公开脚本规则；体积约 1.16 MiB，仍在 2 MB 限制内。
+- **🐱 ScriptCat 渠道接入**：新增 ScriptCat 安装入口与版本源；检查更新并发探测 Greasy Fork、ScriptCat、GitHub 与 jsDelivr，取最大值，单一源缓存不再导致漏检。
+- **🧭 更新入口按来源路由**：从 ScriptCat 安装的「前往更新」打开 ScriptCat，从 Greasy Fork 安装的打开 Greasy Fork；来源信息缺失时默认 ScriptCat。
 
 > 📖 **查阅完整历史版本演进与量化数据**：请参阅 [CHANGELOG.md](CHANGELOG.md)。
 

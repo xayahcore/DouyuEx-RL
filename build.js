@@ -294,28 +294,16 @@ function build() {
     process.exit(1);
   }
 
+  // 全部产物统一交付未压缩版本：Greasy Fork 与 ScriptCat 的公开脚本规则均禁止
+  // minified / obfuscated 代码（要求保留空白与变量名），压缩版会被判为不可读。
+  // treeShake() 只做 beautify + 死代码收敛（mangle: false），不是压缩，uglify 仍作
+  // 为 tree-shake 引擎使用；因此这里不再调用 uglifyjs.minify()。
   fs.writeFileSync("./dist/DouyuEx_RL.js", unminifiedOutput);
   fs.writeFileSync("./dist/douyuex.js", unminifiedOutput);
-
-  const result = uglifyjs.minify(shakenBody, { toplevel: true });
-  if (result.error) {
-    console.error("[Build] Uglify 压缩失败:", result.error);
-    process.exit(1);
-  }
-
-  const minifiedOutput = header + result.code;
-  try {
-    new vm.Script(minifiedOutput);
-    console.log("[Verify] 压缩产物 V8 语法核验通过 (100% OK)");
-  } catch (err) {
-    console.error("[Verify] 压缩产物语法校验失败:", err.message);
-    process.exit(1);
-  }
-
-  fs.writeFileSync("./dist/DouyuEx_RL.user.js", minifiedOutput);
-  fs.writeFileSync("./dist/douyuex.user.js", minifiedOutput);
-  fs.writeFileSync("./DouyuEx_RL.user.js", minifiedOutput);
-  console.log("[Build] 构建成功完成: ./DouyuEx_RL.user.js, ./dist/DouyuEx_RL.js 和 ./dist/DouyuEx_RL.user.js");
+  fs.writeFileSync("./dist/DouyuEx_RL.user.js", unminifiedOutput);
+  fs.writeFileSync("./dist/douyuex.user.js", unminifiedOutput);
+  fs.writeFileSync("./DouyuEx_RL.user.js", unminifiedOutput);
+  console.log("[Build] 构建成功完成（未压缩产物）: ./DouyuEx_RL.user.js, ./dist/DouyuEx_RL.js 和 ./dist/DouyuEx_RL.user.js");
 }
 
 build();

@@ -14,6 +14,19 @@
 const EX_UPDATE_LOG_SECTIONS = ["新增功能", "改进与修复", "其它"];
 
 const EX_UPDATE_LOG = {
+  "2026.11.14.01": {
+    "新增功能": [
+      "【ScriptCat】新增 ScriptCat 安装渠道与版本源：检查更新会并发探测 Greasy Fork、ScriptCat、GitHub 与 jsDelivr 并取最大值；从 ScriptCat 安装的用户会直接回到 ScriptCat 更新页。",
+      "【更新入口】「前往更新」按安装来源自动跳转：ScriptCat 装的开 ScriptCat，Greasy Fork 装的开 Greasy Fork；来源信息缺失时默认 ScriptCat。",
+    ],
+    "改进与修复": [
+      "【构建】所有用户脚本产物统一改为未压缩可读版本（保留空白与变量名），不再交付压缩代码，符合 Greasy Fork 与 ScriptCat 的公开脚本规则；体积约 1.16 MiB，仍在 2 MB 限制内。",
+    ],
+    "其它": [
+      "【测试】补充 ScriptCat 版本源探测与更新入口三条路由（ScriptCat / Greasy Fork / 未知来源）回归，npm test 保持全绿。",
+      "【文档】README 增加 ScriptCat 安装入口与版本检查说明，并把安装顺序调整为 ScriptCat 优先。",
+    ]
+  },
   "2026.11.13.01": {
     "新增功能": [
       "【关注列表·失败重试】关注列表读取失败后不再只能刷新页面：鼠标移到顶部「关注」入口会自动补渲染一次（下拉没展开不发请求）；确实没有人在播时显示「当前没有在播的关注」，不再是一片空白。",

@@ -1,4 +1,4 @@
-var curVersion = (typeof GM_info !== "undefined" && GM_info.script && GM_info.script.version) ? GM_info.script.version : "2026.11.13.01";
+var curVersion = (typeof GM_info !== "undefined" && GM_info.script && GM_info.script.version) ? GM_info.script.version : "2026.11.14.01";
 var isNeedUpdate = false;
 var lastestVersion = "";
 
@@ -150,6 +150,8 @@ function initPkg_Update_Func() {
 const UPDATE_VERSION_SOURCES = [
   // 权威源：GreasyFork 官方更新分发端点（Tampermonkey 自身检查更新所用）
   "https://update.greasyfork.org/scripts/595575.meta.js",
+  // 权威源：ScriptCat 官方更新分发端点（meta.js，约 7.5KB，同样是轻量 @version）
+  "https://scriptcat.org/scripts/code/9071/DouyuEx-RL.meta.js",
   // 备选源：GitHub Raw（约 5 分钟缓存）
   "https://raw.githubusercontent.com/xayahcore/DouyuEx-RL/main/package.json",
   // 备选源：jsDelivr 双节点（分支引用约 12 小时缓存，仅作兜底）
@@ -159,6 +161,29 @@ const UPDATE_VERSION_SOURCES = [
 
 const UPDATE_VERSION_TIMEOUT = 4000;
 const UPDATE_VERSION_TOTAL_TIMEOUT = 6000;
+
+const EX_UPDATE_PAGE_GREASYFORK = "https://greasyfork.org/zh-CN/scripts/595575-douyuex-rl-%E6%96%97%E9%B1%BC%E7%9B%B4%E6%92%AD%E9%97%B4%E5%A2%9E%E5%BC%BA%E6%8F%92%E4%BB%B6-reborn-lite";
+const EX_UPDATE_PAGE_SCRIPTCAT = "https://scriptcat.org/zh-CN/script-show-page/9071";
+
+/*
+ * 更新入口按「安装来源」路由：从 ScriptCat 装的开 ScriptCat，从 GF 装的开 GF。
+ * 依据是 GM_info.scriptUpdateURL（Tampermonkey / ScriptCat 均暴露）；部分管理器
+ * 还会把来源放在 GM_info.script.updateURL / downloadURL / installURL。
+ * 都拿不到（本地安装、GitHub raw、管理器不提供）时默认 ScriptCat —— 国内主渠道。
+ */
+function getUpdatePageUrl() {
+  var source = "";
+  try {
+    if (typeof GM_info !== "undefined" && GM_info) {
+      source = String(GM_info.scriptUpdateURL || "");
+      var meta = GM_info.script || {};
+      if (!source) source = String(meta.updateURL || meta.downloadURL || meta.installURL || "");
+    }
+  } catch (e) {}
+  if (/scriptcat\.org/i.test(source)) return EX_UPDATE_PAGE_SCRIPTCAT;
+  if (/greasyfork\.org/i.test(source)) return EX_UPDATE_PAGE_GREASYFORK;
+  return EX_UPDATE_PAGE_SCRIPTCAT;
+}
 
 function isVersionLike(v) {
   return /^\d{4}\.\d{2}\.\d{2}\.\d{2}$/.test(String(v == null ? "" : v).trim());
@@ -416,10 +441,11 @@ function createExUpdatePanel() {
     } else if (st === "upgrade") {
       // 已经走到「前往更新」= 这条通知被处理过，熄灭红点
       Update_markRemoteSeen();
+      var updateUrl = getUpdatePageUrl();
       if (typeof GM_openInTab === "function") {
-        GM_openInTab("https://greasyfork.org/zh-CN/scripts/595575-douyuex-rl-%E6%96%97%E9%B1%BC%E7%9B%B4%E6%92%AD%E9%97%B4%E5%A2%9E%E5%BC%BA%E6%8F%92%E4%BB%B6-reborn-lite", { active: true });
+        GM_openInTab(updateUrl, { active: true });
       } else {
-        window.open("https://greasyfork.org/zh-CN/scripts/595575-douyuex-rl-%E6%96%97%E9%B1%BC%E7%9B%B4%E6%92%AD%E9%97%B4%E5%A2%9E%E5%BC%BA%E6%8F%92%E4%BB%B6-reborn-lite", "_blank");
+        window.open(updateUrl, "_blank");
       }
     }
   };

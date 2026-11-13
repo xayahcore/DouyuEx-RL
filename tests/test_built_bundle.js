@@ -428,6 +428,12 @@ async function testBuiltBundle() {
         versionRequests.some((u) => u.includes("update.greasyfork.org")),
         "必须探测 GreasyFork 官方更新分发端点 meta.js 作为权威判据源"
     );
+    const scriptcatSource = versionRequests.find((u) => u.includes("scriptcat.org"));
+    assert.ok(scriptcatSource, "必须探测 ScriptCat 官方 meta.js 版本源");
+    assert.ok(
+        scriptcatSource.endsWith(".meta.js"),
+        "ScriptCat 版本源必须走 meta.js 轻量端点，不得下载完整脚本"
+    );
     assert.ok(
         versionRequests.length >= 3,
         `必须并发探测多个版本源（实际 ${versionRequests.length} 个），禁止“取第一个成功源即返回”`
@@ -466,6 +472,32 @@ async function testBuiltBundle() {
     assert.strictEqual(updateBtn.dataset.state, "upgrade", "两种载荷格式都必须被正确解析");
     assert.ok(updateBtn.textContent.includes(dualPayloadVersion), "必须解析出 meta.js 中的 @version");
     console.log("✓ 测试场景 10.2 通过: meta.js 的 @version 与 package.json 的 version 均能正确解析，HTML 垃圾载荷被拒绝");
+
+    // === 测试 10.3: 更新入口按安装来源路由 ===
+    console.log("--> 测试场景 10.3: 验证更新入口按安装来源路由...");
+    const openedUrls = [];
+    win.GM_openInTab = (url) => { openedUrls.push(url); };
+    const clickUpgradeAndRead = (source) => {
+        win.GM_info.scriptUpdateURL = source;
+        updateBtn.dataset.state = "upgrade";
+        openedUrls.length = 0;
+        updateBtn.click();
+        return openedUrls[0] || "";
+    };
+    assert.ok(
+        clickUpgradeAndRead("https://scriptcat.org/scripts/code/9071/x.user.js").includes("scriptcat.org"),
+        "从 ScriptCat 安装必须打开 ScriptCat 更新页"
+    );
+    assert.ok(
+        clickUpgradeAndRead("https://update.greasyfork.org/scripts/595575.meta.js").includes("greasyfork.org"),
+        "从 Greasy Fork 安装必须打开 Greasy Fork 更新页"
+    );
+    assert.ok(
+        clickUpgradeAndRead("").includes("scriptcat.org"),
+        "来源信息缺失时必须回退到 ScriptCat"
+    );
+    delete win.GM_info.scriptUpdateURL;
+    console.log("✓ 测试场景 10.3 通过: ScriptCat / Greasy Fork / 未知来源三条更新入口路由均正确");
 
     // === 测试 11: 三大面板操作区宽度一致性（统一 UI 引擎单一归属）===
     console.log("--> 测试场景 11: 验证 检查更新/开始签到/立即开始续牌 按钮宽度一致...");
