@@ -64,11 +64,11 @@
 
 ### 🎨 全系 MIUIX 工业级美学
 
-![二级 Dock 工具条](docs/images/dock-toolbar.png)
+![二级 Dock 工具条](https://raw.githubusercontent.com/xayahcore/DouyuEx-RL/main/docs/images/dock-toolbar.png)
 
-![扩展功能面板](docs/images/panel-extool.png)
+![扩展功能面板](https://raw.githubusercontent.com/xayahcore/DouyuEx-RL/main/docs/images/panel-extool.png)
 
-![直播间工具面板](docs/images/panel-livetool.png)
+![直播间工具面板](https://raw.githubusercontent.com/xayahcore/DouyuEx-RL/main/docs/images/panel-livetool.png)
 
 - **控件全面换装**：抹除浏览器原生粗糙的单选圆点、下拉框与数字微调箭头，全面换装为 `.miuix-seg` 分段胶囊、澎湃蓝跑道弹簧开关与内联矢量自绘箭头。
 - **三维铁壁尺寸锁定**：统一对三级面板注入 `380×370px` 严格尺寸锁定，配备吸顶式毛玻璃 Header、4px 极细圆角滑块与大号 `×` 关闭按钮，杜绝面板切换时的尺寸抖动。
@@ -78,7 +78,7 @@
 - **用户卡片「弹幕历史」页内穿透查询**：点击弹幕区任意用户名，在弹出的磨砂面板中直接查阅该用户的发言与送礼记录，支持分页与跨天回溯，**无需离开直播间**；无缝兼容普通、至尊、礼物展馆等 3 种用户等级卡片原生样式，接口容灾与跨日期串台自愈。
   > 📌 *注：历史弹幕数据调用第三方公开数据服务（doseeing.com），需自行在该站登录；未登录时会明确友好提示，不误报异常。*
 
-  ![历史弹幕面板](docs/images/panel-danmaku-history.png)
+  ![历史弹幕面板](https://raw.githubusercontent.com/xayahcore/DouyuEx-RL/main/docs/images/panel-danmaku-history.png)
 - **加固型弹幕发送回执 (SSOT)**：回归原作者单槽核心算法，叠加 uid 优先匹配、昵称归一化、转义容灾、超时删除线与迟到回执自愈，准确识别弹幕是否被系统静默吞咽。
 - **5 级模态礼物选择器**：双流礼物池即点即选，**背包资产现场 DOM 0ms 直探**，彻底淘汰原始数字 ID 输入，自动持久化记忆上次选用道具与赠送数量。
 
@@ -150,7 +150,7 @@ npm test
 - **🐱 ScriptCat 渠道接入**：新增 ScriptCat 安装入口与版本源；检查更新并发探测 Greasy Fork、ScriptCat、GitHub 与 jsDelivr，取最大值，单一源缓存不再导致漏检。
 - **🧭 更新入口按来源路由**：从 ScriptCat 安装的「前往更新」打开 ScriptCat，从 Greasy Fork 安装的打开 Greasy Fork；来源信息缺失时默认 ScriptCat。
 
-> 📖 **查阅完整历史版本演进与量化数据**：请参阅 [CHANGELOG.md](CHANGELOG.md)。
+> 📖 **查阅完整历史版本演进与量化数据**：请参阅 [CHANGELOG.md](https://github.com/xayahcore/DouyuEx-RL/blob/main/CHANGELOG.md)。
 
 ---
 
